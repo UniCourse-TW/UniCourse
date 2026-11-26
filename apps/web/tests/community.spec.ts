@@ -50,12 +50,17 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   // Post a question linked to the course from its 相關討論 link.
   await page.getByRole('link', { name: '相關討論' }).click();
   await expect(page).toHaveURL(/\/forum\?school=nthu&courseCode=DEMO201/);
-  await expect(page.getByLabel('相關課號（選填）')).toHaveValue('DEMO201');
-  await page.getByLabel('文章類型').selectOption('question');
-  await page.getByLabel('標題').fill(title);
-  await page.getByLabel('內容', { exact: true }).fill('第一行\n<b>不是粗體</b>');
-  await page.getByLabel('標籤（選填', { exact: false }).fill('期中考, 線代');
-  await page.getByRole('button', { name: '發表' }).click();
+  await expect(page.getByRole('group', { name: '已套用的篩選' })).toContainText('DEMO201');
+  // The compose drawer opens from the page head and is prefilled with the course.
+  await page.locator('summary', { hasText: '發表文章' }).click();
+  const compose = page.getByRole('region', { name: '發表文章' });
+  await expect(compose.getByLabel('相關課號')).toHaveValue('DEMO201');
+  await expect(compose.getByText('✓ 線性代數')).toBeVisible();
+  await compose.getByRole('radio', { name: '提問' }).check();
+  await compose.getByLabel('標題').fill(title);
+  await compose.getByLabel('內容', { exact: true }).fill('第一行\n<b>不是粗體</b>');
+  await compose.getByLabel('標籤').fill('期中考, 線代');
+  await compose.getByRole('button', { name: '發表', exact: true }).click();
 
   await expect(page).toHaveURL(/\/forum\/\d+$/);
   const thread = page.getByRole('article', { name: title });
@@ -66,6 +71,9 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   expect(await content.innerText()).toBe('第一行\n<b>不是粗體</b>');
   await expect(thread.locator('b')).toHaveCount(0);
   await expect(thread.getByRole('link', { name: '#期中考' })).toBeVisible();
+  // The side card links back to the course.
+  const card = page.getByRole('complementary', { name: '這門課' });
+  await expect(card.getByRole('link', { name: '查看課程' })).toHaveAttribute('href', `/courses/${course.id}`);
 
   // Reply, then upvote the question.
   await page.getByLabel('我要回覆').fill(`同問 ${username}`);
@@ -85,7 +93,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(upvote).toHaveAttribute('aria-pressed', 'false');
   await upvote.click();
   await expect(upvote).toHaveAttribute('aria-pressed', 'true');
-  await expect(thread.getByLabel('文章分數')).toHaveText('1');
+  await expect(thread.getByLabel('文章分數')).toHaveText('+1');
 
   // The forum list for the course shows the thread with its reply and score.
   await page.goto('/forum?school=nthu&courseCode=DEMO201');
@@ -95,6 +103,8 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await account.click();
   await nav.getByRole('link', { name: '個人頁面' }).click();
   await expect(page.getByRole('heading', { name: '測試同學' })).toBeVisible();
+  await expect(page.getByRole('group', { name: '活動統計' })).toContainText('課程評價');
+  await expect(page.getByRole('img', { name: '4 分（滿分 5 分）' })).toBeVisible();
   await expect(page.getByRole('link', { name: '線性代數' })).toHaveAttribute('href', `/courses/${course.id}`);
   await expect(page.getByText(`作業偏多 ${username}`)).toBeVisible();
   await expect(page.getByRole('link', { name: title })).toBeVisible();
@@ -130,6 +140,20 @@ test('a missing thread is a 404 page', async ({ page }) => {
   const response = await page.goto('/forum/999999999');
   expect(response?.status()).toBe(404);
   await expect(page.getByRole('heading', { name: '找不到這篇文章' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '回論壇' })).toHaveAttribute('href', '/forum');
+});
+
+test('the forum lists posts with category counts and an empty state', async ({ page }) => {
+  await page.goto('/forum');
+  const types = page.getByRole('navigation', { name: '文章分類' });
+  await expect(types.getByRole('link', { name: /^全部/ })).toHaveAttribute('aria-current', 'true');
+  await types.getByRole('link', { name: /^提問/ }).click();
+  await expect(page).toHaveURL(/type=question/);
+  await page.goto('/forum?q=zzzz-no-such-post');
+  await expect(page.getByText('沒有符合的文章')).toBeVisible();
+  await expect(page.getByRole('link', { name: '清除篩選' })).toHaveAttribute('href', '/forum');
+  // Signed out, 發表文章 leads to sign-in and back to the compose drawer.
+  await expect(page.getByRole('link', { name: '發表文章' }).first()).toHaveAttribute('href', /\/auth\?next=%2Fforum%3Fcompose%3D1/);
 });
 
 test.describe('without JavaScript', () => {
@@ -145,7 +169,7 @@ test.describe('without JavaScript', () => {
     await expect(page).toHaveURL(/\/settings$/);
     await page.getByLabel('自我介紹').fill('第一行\n第二行');
     await page.getByRole('button', { name: '儲存' }).click();
-    await expect(page.getByText('已儲存。')).toBeVisible();
+    await expect(page.getByRole('status').getByText('已儲存')).toBeVisible();
     await page.goto(`/u/${username}`);
     expect(await page.locator('.bio').innerText()).toBe('第一行\n第二行');
 
