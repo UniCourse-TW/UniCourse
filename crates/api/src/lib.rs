@@ -13,7 +13,7 @@ use unicourse_catalog::{
     self as catalog, CourseRanking, CrawlStatus, DepartmentCount, DepartmentOfferings,
     EducationSystem, ExtraValue, Institution, InstitutionKind, Institutions, InstructorOfferings,
     InstructorSummary, Meeting, Offering, Overview, OverviewTotals, Ownership, Requirement, School,
-    SchoolDetail, SchoolOverview,
+    SchoolDetail, SchoolOverview, SearchPage, SearchSort,
 };
 use utoipa::{
     IntoParams, Modify, OpenApi, ToSchema,
@@ -22,14 +22,17 @@ use utoipa::{
 
 mod auth;
 mod forum;
+mod history;
 mod ratings;
 mod text;
 
 #[derive(OpenApi)]
 #[openapi(
     paths(
-        schools, terms, departments, search, detail, rankings, overview, school_detail,
+        schools, terms, departments, search, search_page, detail, rankings, overview, school_detail,
         department_detail, instructor, institutions,
+        history::course_history, history::school_trends, history::department_trends,
+        history::instructor_trends,
         auth::register, auth::login, auth::logout, auth::me, auth::update_me, auth::profile,
         ratings::list, ratings::stats, ratings::mine, ratings::put_mine, ratings::delete_mine,
         forum::list, forum::create, forum::detail, forum::reply, forum::update, forum::delete,
@@ -39,7 +42,7 @@ mod text;
         School, Offering, Meeting, Requirement, ExtraValue, ErrorBody, CourseRanking, Overview,
         SchoolOverview, OverviewTotals, SchoolDetail, DepartmentCount, DepartmentOfferings,
         InstructorOfferings, InstructorSummary, Institutions, Institution, InstitutionKind,
-        Ownership, EducationSystem, CrawlStatus,
+        Ownership, EducationSystem, CrawlStatus, SearchSort, forum::TopLevelPostType,
     )),
     modifiers(&SessionCookie)
 )]
@@ -97,6 +100,40 @@ struct Filters {
     department: Option<String>,
 }
 
+impl Filters {
+    fn validated(&self) -> Result<(&str, catalog::Filters<'_>), ApiError> {
+        let query = search_text(self.q.as_deref())?;
+        ensure_no_nul([
+            self.school.as_deref(),
+            self.term.as_deref(),
+            self.department.as_deref(),
+        ])?;
+        let filters = catalog::Filters {
+            school: self.school.as_deref().filter(|value| !value.is_empty()),
+            term: self.term.as_deref().filter(|value| !value.is_empty()),
+            department: self.department.as_deref().filter(|value| !value.is_empty()),
+        };
+        Ok((query, filters))
+    }
+}
+
+#[derive(Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+struct SearchOptions {
+    /// Skip this many matches (default 0).
+    #[param(minimum = 0)]
+    offset: Option<i64>,
+    /// Sort by relevance (default), published enrollment descending, or title ascending.
+    sort: Option<SearchSort>,
+}
+
+#[derive(Deserialize, IntoParams)]
+#[into_params(parameter_in = Query)]
+struct DepartmentTerm {
+    /// Exact term such as `115-1`; omit for all terms.
+    term: Option<String>,
+}
+
 #[derive(Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 struct DepartmentFilters {
@@ -115,17 +152,53 @@ struct RankingFilters {
 
 #[derive(Debug, Serialize, ToSchema)]
 struct ErrorBody {
+    code: ErrorCode,
     message: &'static str,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+#[serde(rename_all = "snake_case")]
+enum ErrorCode {
+    InvalidInput,
+    InvalidQuery,
+    InvalidPath,
+    InvalidBody,
+    Unauthorized,
+    InvalidCredentials,
+    Forbidden,
+    NotFound,
+    MethodNotAllowed,
+    UsernameTaken,
+    RateLimited,
+    InternalError,
 }
 
 type ApiError = (StatusCode, Json<ErrorBody>);
 
 fn error(status: StatusCode, message: &'static str) -> ApiError {
-    (status, Json(ErrorBody { message }))
+    let code = match status {
+        StatusCode::BAD_REQUEST => ErrorCode::InvalidInput,
+        StatusCode::UNAUTHORIZED => ErrorCode::Unauthorized,
+        StatusCode::FORBIDDEN => ErrorCode::Forbidden,
+        StatusCode::NOT_FOUND => ErrorCode::NotFound,
+        StatusCode::METHOD_NOT_ALLOWED => ErrorCode::MethodNotAllowed,
+        StatusCode::CONFLICT => ErrorCode::UsernameTaken,
+        StatusCode::TOO_MANY_REQUESTS => ErrorCode::RateLimited,
+        _ => ErrorCode::InternalError,
+    };
+    coded_error(status, code, message)
+}
+
+fn coded_error(status: StatusCode, code: ErrorCode, message: &'static str) -> ApiError {
+    (status, Json(ErrorBody { code, message }))
 }
 
 fn bad_request(message: &'static str) -> ApiError {
     error(StatusCode::BAD_REQUEST, message)
+}
+
+fn invalid_query(message: &'static str) -> ApiError {
+    coded_error(StatusCode::BAD_REQUEST, ErrorCode::InvalidQuery, message)
 }
 
 /// PostgreSQL text cannot hold NUL, so a filter containing it is a client error, not a 500.
@@ -135,7 +208,7 @@ fn ensure_no_nul<'a>(values: impl IntoIterator<Item = Option<&'a str>>) -> Resul
         .flatten()
         .any(|value| value.contains('\0'))
     {
-        return Err(bad_request("Invalid query"));
+        return Err(invalid_query("Invalid query"));
     }
     Ok(())
 }
@@ -145,10 +218,10 @@ fn ensure_no_nul<'a>(values: impl IntoIterator<Item = Option<&'a str>>) -> Resul
 fn search_text(raw: Option<&str>) -> Result<&str, ApiError> {
     let query = raw.unwrap_or_default().trim();
     if query.chars().count() > 100 {
-        return Err(bad_request("Search must be at most 100 characters"));
+        return Err(invalid_query("Search must be at most 100 characters"));
     }
     if query.contains(['\0', '\n', '\r']) {
-        return Err(bad_request("Invalid query"));
+        return Err(invalid_query("Invalid query"));
     }
     Ok(query)
 }
@@ -161,7 +234,7 @@ fn database_error(cause: sqlx::Error) -> ApiError {
 fn query<T>(query: Result<Query<T>, QueryRejection>) -> Result<T, ApiError> {
     query
         .map(|Query(value)| value)
-        .map_err(|_| bad_request("Invalid query"))
+        .map_err(|_| invalid_query("Invalid query"))
 }
 
 /// Path segments that cannot be decoded name nothing, so they are a 404; NUL is a 400 like in
@@ -173,12 +246,16 @@ fn path<T>(
 ) -> Result<T, ApiError> {
     let Path(value) = path.map_err(|_| error(StatusCode::NOT_FOUND, not_found))?;
     if texts(&value).iter().any(|text| text.contains('\0')) {
-        return Err(bad_request("Invalid path"));
+        return Err(coded_error(
+            StatusCode::BAD_REQUEST,
+            ErrorCode::InvalidPath,
+            "Invalid path",
+        ));
     }
     Ok(value)
 }
 
-/// `Json` whose rejection is a `{message}` 400 instead of axum's plain-text error.
+/// `Json` whose rejection is a coded 400 instead of axum's plain-text error.
 struct Body<T>(T);
 
 impl<S: Send + Sync, T: DeserializeOwned> FromRequest<S> for Body<T> {
@@ -188,11 +265,12 @@ impl<S: Send + Sync, T: DeserializeOwned> FromRequest<S> for Body<T> {
         Json::<T>::from_request(request, state)
             .await
             .map(|Json(value)| Body(value))
-            .map_err(|rejection: JsonRejection| match rejection {
-                JsonRejection::MissingJsonContentType(_) => {
-                    bad_request("Expected an application/json body")
-                }
-                _ => bad_request("Invalid request body"),
+            .map_err(|rejection: JsonRejection| {
+                let message = match rejection {
+                    JsonRejection::MissingJsonContentType(_) => "Expected an application/json body",
+                    _ => "Invalid request body",
+                };
+                coded_error(StatusCode::BAD_REQUEST, ErrorCode::InvalidBody, message)
             })
     }
 }
@@ -206,15 +284,29 @@ pub fn router_with(pool: PgPool, config: Config) -> Router {
     Router::new()
         .route("/api/schools", get(schools))
         .route("/api/schools/{school}", get(school_detail))
+        .route("/api/schools/{school}/trends", get(history::school_trends))
         .route(
             "/api/schools/{school}/departments/{department}",
             get(department_detail),
         )
+        .route(
+            "/api/schools/{school}/departments/{department}/trends",
+            get(history::department_trends),
+        )
         .route("/api/instructors/{school}/{name}", get(instructor))
+        .route(
+            "/api/instructors/{school}/{name}/trends",
+            get(history::instructor_trends),
+        )
         .route("/api/terms", get(terms))
         .route("/api/departments", get(departments))
         .route("/api/courses", get(search))
+        .route("/api/courses/search", get(search_page))
         .route("/api/courses/{id}", get(detail))
+        .route(
+            "/api/courses/{school}/{course_code}",
+            get(history::course_history),
+        )
         .route("/api/rankings/courses", get(rankings))
         .route("/api/stats/overview", get(overview))
         .route("/api/institutions", get(institutions))
@@ -246,6 +338,10 @@ pub fn router_with(pool: PgPool, config: Config) -> Router {
         )
         .route("/api/posts/{id}/replies", post(forum::reply))
         .route("/api/posts/{id}/vote", put(forum::vote))
+        .fallback(|| async { error(StatusCode::NOT_FOUND, "Route not found") })
+        .method_not_allowed_fallback(|| async {
+            error(StatusCode::METHOD_NOT_ALLOWED, "Method not allowed")
+        })
         .with_state(AppState { pool, config })
 }
 
@@ -298,28 +394,44 @@ async fn search(
     filters: Result<Query<Filters>, QueryRejection>,
 ) -> Result<Json<Vec<Offering>>, ApiError> {
     let filters = query(filters)?;
-    let query = search_text(filters.q.as_deref())?;
-    ensure_no_nul([
-        filters.school.as_deref(),
-        filters.term.as_deref(),
-        filters.department.as_deref(),
-    ])?;
-    let filters = catalog::Filters {
-        school: filters.school.as_deref().filter(|value| !value.is_empty()),
-        term: filters.term.as_deref().filter(|value| !value.is_empty()),
-        department: filters
-            .department
-            .as_deref()
-            .filter(|value| !value.is_empty()),
-    };
-    catalog::search(&pool, query, &filters)
+    let (text, filters) = filters.validated()?;
+    catalog::search(&pool, text, &filters)
         .await
         .map(Json)
         .map_err(database_error)
 }
 
+#[utoipa::path(get, path = "/api/courses/search", params(Filters, SearchOptions), responses(
+    (status = 200, description = "Matching active offerings (up to 50 per page) and the total before pagination", body = SearchPage),
+    (status = 400, body = ErrorBody),
+    (status = 500, body = ErrorBody)
+))]
+async fn search_page(
+    State(pool): State<PgPool>,
+    filters: Result<Query<Filters>, QueryRejection>,
+    options: Result<Query<SearchOptions>, QueryRejection>,
+) -> Result<Json<SearchPage>, ApiError> {
+    let filters = query(filters)?;
+    let options = query(options)?;
+    let (text, filters) = filters.validated()?;
+    let offset = options.offset.unwrap_or_default();
+    if offset < 0 {
+        return Err(invalid_query("offset must be non-negative"));
+    }
+    catalog::search_page(
+        &pool,
+        text,
+        &filters,
+        options.sort.unwrap_or_default(),
+        offset,
+    )
+    .await
+    .map(Json)
+    .map_err(database_error)
+}
+
 #[utoipa::path(get, path = "/api/courses/{id}", params(("id" = String, Path, description = "Offering ID")), responses(
-    (status = 200, description = "Course offering", body = Offering),
+    (status = 200, description = "Course offering, including withdrawn offerings", body = Offering),
     (status = 404, body = ErrorBody),
     (status = 500, body = ErrorBody)
 ))]
@@ -351,7 +463,7 @@ async fn rankings(
     ensure_no_nul([filters.school.as_deref()])?;
     let limit = filters.limit.unwrap_or(20);
     if !(1..=100).contains(&limit) {
-        return Err(bad_request("limit must be between 1 and 100"));
+        return Err(invalid_query("limit must be between 1 and 100"));
     }
     let school = filters.school.as_deref().filter(|value| !value.is_empty());
     catalog::rankings(&pool, school, limit)
@@ -402,9 +514,10 @@ async fn school_detail(
 
 #[utoipa::path(get, path = "/api/schools/{school}/departments/{department}", params(
     ("school" = String, Path, description = "School slug"),
-    ("department" = String, Path, description = "Published offering unit name (exact, URL-encoded)")
+    ("department" = String, Path, description = "Published offering unit name (exact, URL-encoded)"),
+    DepartmentTerm
 ), responses(
-    (status = 200, description = "Up to 200 active offerings of the unit, newest term first", body = DepartmentOfferings),
+    (status = 200, description = "Up to 200 active offerings matching the term filter, and all available terms, newest first", body = DepartmentOfferings),
     (status = 400, body = ErrorBody),
     (status = 404, body = ErrorBody),
     (status = 500, body = ErrorBody)
@@ -412,11 +525,15 @@ async fn school_detail(
 async fn department_detail(
     State(pool): State<PgPool>,
     segments: Result<Path<(String, String)>, PathRejection>,
+    filters: Result<Query<DepartmentTerm>, QueryRejection>,
 ) -> Result<Json<DepartmentOfferings>, ApiError> {
     let (school, department) = path(segments, "Department not found", |(school, department)| {
         vec![school.as_str(), department.as_str()]
     })?;
-    catalog::department_offerings(&pool, &school, &department)
+    let filters = query(filters)?;
+    let term = filters.term.as_deref().filter(|term| !term.is_empty());
+    ensure_no_nul([term])?;
+    catalog::department_offerings(&pool, &school, &department, term)
         .await
         .map_err(database_error)?
         .map(Json)

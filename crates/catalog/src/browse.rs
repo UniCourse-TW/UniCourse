@@ -4,7 +4,7 @@ use serde::Serialize;
 use sqlx::{FromRow, PgPool};
 use utoipa::ToSchema;
 
-use crate::{OFFERINGS, Offering};
+use crate::{EnrollmentPoint, OFFERINGS, Offering};
 
 /// Most offerings returned by one instructor or department listing.
 pub const LISTING_LIMIT: i64 = 200;
@@ -29,6 +29,12 @@ pub struct CourseRanking {
     pub capacity_total: Option<i64>,
     /// Offering ID of the newest term (an active offering when there is one).
     pub latest_offering_id: String,
+    /// Newest active offering, if any.
+    #[schema(required = true)]
+    pub latest_active_offering_id: Option<String>,
+    /// Up to ten terms with offerings, newest first, including withdrawn offerings.
+    #[sqlx(json)]
+    pub trend: Vec<EnrollmentPoint>,
     /// Whether the newest offering comes from a synthetic demo snapshot.
     pub is_demo: bool,
 }
@@ -99,7 +105,9 @@ pub struct DepartmentOfferings {
     pub school: String,
     pub school_name: String,
     pub department: String,
-    /// All active offerings of the department; `offerings` holds at most 200 of them.
+    /// Terms with active offerings in the department, newest first, regardless of the filter.
+    pub terms: Vec<String>,
+    /// Active offerings matching the term filter; `offerings` holds at most 200 of them.
     pub total: i64,
     /// Newest term first, then by course code.
     pub offerings: Vec<Offering>,
@@ -147,7 +155,8 @@ pub async fn rankings(
         "SELECT ranking.school, school.name AS school_name, ranking.course_code, ranking.title,
              ranking.title_en, ranking.terms, ranking.offerings, ranking.enrolled_total,
              ranking.capacity_total, ranking.latest_offering_id::text AS latest_offering_id,
-             ranking.is_demo
+             ranking.is_demo, ranking.latest_active_offering_id::text AS latest_active_offering_id,
+             ranking.trend
          FROM course_rankings AS ranking
          JOIN schools AS school ON school.slug = ranking.school
          WHERE $1::text IS NULL OR ranking.school = $1
@@ -247,27 +256,32 @@ pub async fn department_offerings(
     pool: &PgPool,
     school: &str,
     department: &str,
+    term: Option<&str>,
 ) -> Result<Option<DepartmentOfferings>, sqlx::Error> {
     let Some(school_name) = school_name(pool, school).await? else {
         return Ok(None);
     };
-    let total: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM offerings WHERE school = $1 AND department = $2 AND active",
+    let (total, terms): (i64, Vec<String>) = sqlx::query_as(
+        "SELECT count(*) FILTER (WHERE $3::text IS NULL OR term = $3),
+             coalesce(array_agg(DISTINCT term ORDER BY term DESC), '{}')
+         FROM offerings WHERE school = $1 AND department = $2 AND active",
     )
     .bind(school)
     .bind(department)
+    .bind(term)
     .fetch_one(pool)
     .await?;
-    if total == 0 {
+    if terms.is_empty() {
         return Ok(None);
     }
     let statement = format!(
         "{OFFERINGS} WHERE offering.school = $1 AND offering.department = $2 AND offering.active
-         {LISTING_ORDER} LIMIT $3"
+         AND ($3::text IS NULL OR offering.term = $3) {LISTING_ORDER} LIMIT $4"
     );
     let offerings = sqlx::query_as(&statement)
         .bind(school)
         .bind(department)
+        .bind(term)
         .bind(LISTING_LIMIT)
         .fetch_all(pool)
         .await?;
@@ -275,6 +289,7 @@ pub async fn department_offerings(
         school: school.into(),
         school_name,
         department: department.into(),
+        terms,
         total,
         offerings,
     }))

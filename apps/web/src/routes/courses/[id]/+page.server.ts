@@ -21,10 +21,9 @@ async function loadRatings(fetch: typeof globalThis.fetch, school: string, cours
     const [stats, list, mine] = await Promise.all([
       client.GET('/api/courses/{school}/{courseCode}/ratings/stats', path),
       client.GET('/api/courses/{school}/{courseCode}/ratings', path),
-      // 404 here means "not rated yet" (the course itself exists, `stats` would 404 otherwise).
       signedIn ? client.GET('/api/courses/{school}/{courseCode}/ratings/me', path) : undefined
     ]);
-    if (!stats.data || !list.data) return undefined;
+    if (!stats.data || !list.data || (mine && !mine.response.ok)) return undefined;
     return { stats: stats.data, list: list.data, mine: mine?.data ?? null };
   } catch {
     return undefined;

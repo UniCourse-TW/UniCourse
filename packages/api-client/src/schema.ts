@@ -84,6 +84,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/courses/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search_page"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/courses/{id}": {
         parameters: {
             query?: never;
@@ -92,6 +108,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/courses/{school}/{courseCode}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["course_history"];
         put?: never;
         post?: never;
         delete?: never;
@@ -188,6 +220,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["instructor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instructors/{school}/{name}/trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["instructor_trends"];
         put?: never;
         post?: never;
         delete?: never;
@@ -324,6 +372,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/schools/{school}/departments/{department}/trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["department_trends"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/schools/{school}/trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["school_trends"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stats/overview": {
         parameters: {
             query?: never;
@@ -380,6 +460,18 @@ export interface components {
             displayName?: string | null;
             username: string;
         };
+        CourseHistory: {
+            courseCode: string;
+            department?: string | null;
+            latestActiveOfferingId: string | null;
+            school: string;
+            schoolName: string;
+            /** @description Newest term first, including withdrawn offerings. */
+            terms: components["schemas"]["CourseTerm"][];
+            title: string;
+            titleEn?: string | null;
+            totals: components["schemas"]["CourseTotals"];
+        };
         /** @description Cumulative totals for one cross-term course `(school, courseCode)` over every imported term. */
         CourseRanking: {
             /**
@@ -395,6 +487,8 @@ export interface components {
             enrolledTotal?: number | null;
             /** @description Whether the newest offering comes from a synthetic demo snapshot. */
             isDemo: boolean;
+            /** @description Newest active offering, if any. */
+            latestActiveOfferingId: string | null;
             /** @description Offering ID of the newest term (an active offering when there is one). */
             latestOfferingId: string;
             /**
@@ -412,6 +506,24 @@ export interface components {
             /** @description Title of the newest offering. */
             title: string;
             titleEn?: string | null;
+            /** @description Up to ten terms with offerings, newest first, including withdrawn offerings. */
+            trend: components["schemas"]["EnrollmentPoint"][];
+        };
+        CourseTerm: {
+            /** Format: int64 */
+            capacity: number | null;
+            /** Format: int64 */
+            enrolled: number | null;
+            offerings: components["schemas"]["Offering"][];
+            term: string;
+        };
+        CourseTotals: {
+            /** Format: int64 */
+            capacityTotal: number | null;
+            /** Format: int64 */
+            enrolledTotal: number | null;
+            offerings: number;
+            terms: number;
         };
         /**
          * @description `live`: in the nightly refresh; `partial`: crawler exists but is not scheduled or covers a
@@ -440,9 +552,11 @@ export interface components {
             offerings: components["schemas"]["Offering"][];
             school: string;
             schoolName: string;
+            /** @description Terms with active offerings in the department, newest first, regardless of the filter. */
+            terms: string[];
             /**
              * Format: int64
-             * @description All active offerings of the department; `offerings` holds at most 200 of them.
+             * @description Active offerings matching the term filter; `offerings` holds at most 200 of them.
              */
             total: number;
         };
@@ -452,9 +566,19 @@ export interface components {
          * @enum {string}
          */
         EducationSystem: "general" | "technical" | "military_police" | "religious" | "open";
+        EnrollmentPoint: {
+            /** Format: int64 */
+            capacity: number | null;
+            /** Format: int64 */
+            enrolled: number | null;
+            term: string;
+        };
         ErrorBody: {
+            code: components["schemas"]["ErrorCode"];
             message: string;
         };
+        /** @enum {string} */
+        ErrorCode: "invalid_input" | "invalid_query" | "invalid_path" | "invalid_body" | "unauthorized" | "invalid_credentials" | "forbidden" | "not_found" | "method_not_allowed" | "username_taken" | "rate_limited" | "internal_error";
         /** @description A school-specific scalar kept under its original field name. */
         ExtraValue: null | boolean | number | string;
         Institution: {
@@ -574,6 +698,7 @@ export interface components {
             content: string;
         };
         Offering: {
+            active: boolean;
             campus?: string | null;
             /** Format: int32 */
             capacity?: number | null;
@@ -825,10 +950,34 @@ export interface components {
              */
             terms: number;
         };
+        SearchPage: {
+            courses: components["schemas"]["Offering"][];
+            /** Format: int64 */
+            offset: number;
+            /** Format: int64 */
+            total: number;
+        };
+        /** @enum {string} */
+        SearchSort: "relevance" | "enrolled" | "title";
+        TermTrend: {
+            /** Format: int64 */
+            capacity: number | null;
+            /** Format: int64 */
+            courses: number;
+            /** Format: int64 */
+            enrolled: number | null;
+            /** Format: int64 */
+            offerings: number;
+            term: string;
+        };
+        /** @enum {string} */
+        TopLevelPostType: "announcement" | "article" | "question";
         /** @description A rating on a user's public profile. */
         UserRating: {
             courseCode: string;
             createdAt: string;
+            /** @description ID of the course's newest offering, if any. */
+            latestOfferingId: string | null;
             review?: string | null;
             school: string;
             /** Format: int32 */
@@ -1125,6 +1274,59 @@ export interface operations {
             };
         };
     };
+    search_page: {
+        parameters: {
+            query?: {
+                /**
+                 * @description Matches title, English title, department and instructors, or a course code prefix.
+                 *     Leading and trailing whitespace is trimmed; the trimmed value may be at most 100
+                 *     characters and must not contain line breaks or NUL.
+                 */
+                q?: string;
+                /** @description School slug (exact). */
+                school?: string;
+                /** @description Term such as `115-1` (exact); omit for all terms. */
+                term?: string;
+                /** @description Offering unit name (exact). */
+                department?: string;
+                /** @description Skip this many matches (default 0). */
+                offset?: number;
+                /** @description Sort by relevance (default), published enrollment descending, or title ascending. */
+                sort?: components["schemas"]["SearchSort"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Matching active offerings (up to 50 per page) and the total before pagination */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchPage"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     detail: {
         parameters: {
             query?: never;
@@ -1137,13 +1339,62 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Course offering */
+            /** @description Course offering, including withdrawn offerings */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["Offering"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    course_history: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description School slug */
+                school: string;
+                /** @description Cross-term course code (URL-encoded) */
+                courseCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Course history across all terms, including withdrawn offerings */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseHistory"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
             404: {
@@ -1219,13 +1470,21 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The signed-in user's rating */
+            /** @description The signed-in user's rating, or null if unrated */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["MyRating"];
+                    "application/json": null | components["schemas"]["MyRating"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
                 };
             };
             401: {
@@ -1236,7 +1495,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorBody"];
                 };
             };
-            /** @description Unknown course, or not rated yet */
+            /** @description Unknown course */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -1520,11 +1779,60 @@ export interface operations {
             };
         };
     };
+    instructor_trends: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description School slug */
+                school: string;
+                /** @description Exact instructor name (URL-encoded) */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Per-term active catalog totals, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TermTrend"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     listPosts: {
         parameters: {
             query?: {
                 /** @description `announcement`, `article` or `question`. */
-                type?: components["schemas"]["PostType"];
+                type?: components["schemas"]["TopLevelPostType"];
                 /** @description School slug (exact). */
                 school?: string;
                 /** @description Course code (exact); requires `school`. */
@@ -2021,7 +2329,10 @@ export interface operations {
     };
     department_detail: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Exact term such as `115-1`; omit for all terms. */
+                term?: string;
+            };
             header?: never;
             path: {
                 /** @description School slug */
@@ -2033,13 +2344,109 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Up to 200 active offerings of the unit, newest term first */
+            /** @description Up to 200 active offerings matching the term filter, and all available terms, newest first */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": components["schemas"]["DepartmentOfferings"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    department_trends: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description School slug */
+                school: string;
+                /** @description Published offering unit name (URL-encoded) */
+                department: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Per-term active catalog totals, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TermTrend"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    school_trends: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description School slug */
+                school: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Per-term active catalog totals, newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TermTrend"][];
                 };
             };
             400: {

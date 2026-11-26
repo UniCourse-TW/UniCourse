@@ -1,13 +1,15 @@
 use std::collections::BTreeMap;
 
 use serde::{Deserialize, Deserializer, Serialize};
-use sqlx::{FromRow, PgPool};
+use sqlx::{FromRow, PgConnection, PgPool};
 use utoipa::ToSchema;
 
 mod browse;
+mod history;
 mod institutions;
 
 pub use browse::*;
+pub use history::*;
 pub use institutions::*;
 
 /// School slugs accepted in snapshots. Keep in sync with `crawlers/kit/src/schools.ts`.
@@ -118,6 +120,7 @@ pub struct Offering {
     pub extra: Option<Extra>,
     pub imported_at: String,
     pub is_demo: bool,
+    pub active: bool,
 }
 
 /// Optional exact-match filters for [`search`]; `None` means "any".
@@ -128,6 +131,22 @@ pub struct Filters<'a> {
     pub department: Option<&'a str>,
 }
 
+#[derive(Clone, Copy, Debug, Default, Deserialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum SearchSort {
+    #[default]
+    Relevance,
+    Enrolled,
+    Title,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct SearchPage {
+    pub total: i64,
+    pub offset: i64,
+    pub courses: Vec<Offering>,
+}
+
 pub(crate) const OFFERINGS: &str = "SELECT offering.id::text AS id, offering.school,
     school.name AS school_name, offering.term, offering.course_code, offering.class_code,
     offering.source_id, offering.title, offering.title_en, offering.instructors,
@@ -136,7 +155,7 @@ pub(crate) const OFFERINGS: &str = "SELECT offering.id::text AS id, offering.sch
     offering.capacity, offering.enrolled, offering.language, offering.campus, offering.grade, offering.description,
     offering.syllabus_url, offering.source_url, offering.notes, offering.extra,
     to_char(snapshot.imported_at AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"') AS imported_at,
-    snapshot.is_demo
+    snapshot.is_demo, offering.active
     FROM offerings AS offering
     JOIN schools AS school ON school.slug = offering.school
     JOIN course_snapshots AS snapshot ON (snapshot.school, snapshot.term) = (offering.school, offering.term)";
@@ -184,34 +203,84 @@ pub async fn search(
     query: &str,
     filters: &Filters<'_>,
 ) -> Result<Vec<Offering>, sqlx::Error> {
-    // Each LIKE branch is backed by a trigram index (see the v2 migration).
+    let mut connection = pool.acquire().await?;
+    search_rows(&mut connection, query, filters, SearchSort::Relevance, 0).await
+}
+
+const SEARCH_WHERE: &str = "WHERE offering.active AND ($1::text IS NULL OR offering.school = $1)
+    AND ($2::text IS NULL OR offering.term = $2)
+    AND ($3::text IS NULL OR offering.department = $3)
+    AND (lower(offering.title) LIKE '%' || lower($4) || '%'
+        OR lower(offering.title_en) LIKE '%' || lower($4) || '%'
+        OR lower(offering.department) LIKE '%' || lower($4) || '%'
+        OR lower(offering.course_code) LIKE lower($4) || '%'
+        OR unicourse_instructor_text(offering.instructors) LIKE '%' || lower($4) || '%')";
+
+async fn search_rows(
+    connection: &mut PgConnection,
+    query: &str,
+    filters: &Filters<'_>,
+    sort: SearchSort,
+    offset: i64,
+) -> Result<Vec<Offering>, sqlx::Error> {
+    let sort_prefix = match sort {
+        SearchSort::Relevance => "",
+        SearchSort::Enrolled => "offering.enrolled DESC NULLS LAST,",
+        SearchSort::Title => "offering.title,",
+    };
     let statement = format!(
-        "{OFFERINGS}
-        WHERE offering.active AND ($2::text IS NULL OR offering.school = $2)
-            AND ($3::text IS NULL OR offering.term = $3)
-            AND ($4::text IS NULL OR offering.department = $4)
-            AND (lower(offering.title) LIKE '%' || lower($5) || '%'
-                OR lower(offering.title_en) LIKE '%' || lower($5) || '%'
-                OR lower(offering.department) LIKE '%' || lower($5) || '%'
-                OR lower(offering.course_code) LIKE lower($5) || '%'
-                OR unicourse_instructor_text(offering.instructors) LIKE '%' || lower($5) || '%')
-        ORDER BY (lower(offering.course_code) = lower($1)) DESC,
-            (offering.title = $1) DESC, offering.term DESC, offering.school,
-            offering.title, offering.id
-        LIMIT 50"
+        "{OFFERINGS} {SEARCH_WHERE}
+         ORDER BY {sort_prefix} (lower(offering.course_code) = lower($5)) DESC,
+             (offering.title = $5) DESC, offering.term DESC, offering.school,
+             offering.title, offering.id
+         LIMIT 50 OFFSET $6"
     );
     sqlx::query_as(&statement)
-        .bind(query)
         .bind(filters.school)
         .bind(filters.term)
         .bind(filters.department)
         .bind(like_literal(query))
-        .fetch_all(pool)
+        .bind(query)
+        .bind(offset)
+        .fetch_all(connection)
         .await
 }
 
+/// Search matches and their total from the same database snapshot, even if the page is empty.
+pub async fn search_page(
+    pool: &PgPool,
+    query: &str,
+    filters: &Filters<'_>,
+    sort: SearchSort,
+    offset: i64,
+) -> Result<SearchPage, sqlx::Error> {
+    let mut transaction = pool
+        .begin_with("BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY")
+        .await?;
+    let total: i64 = sqlx::query_scalar(&format!(
+        "SELECT count(*) FROM offerings AS offering {SEARCH_WHERE}"
+    ))
+    .bind(filters.school)
+    .bind(filters.term)
+    .bind(filters.department)
+    .bind(like_literal(query))
+    .fetch_one(&mut *transaction)
+    .await?;
+    let courses = if offset < total {
+        search_rows(&mut transaction, query, filters, sort, offset).await?
+    } else {
+        Vec::new()
+    };
+    transaction.commit().await?;
+    Ok(SearchPage {
+        total,
+        offset,
+        courses,
+    })
+}
+
 pub async fn offering(pool: &PgPool, id: i64) -> Result<Option<Offering>, sqlx::Error> {
-    let statement = format!("{OFFERINGS} WHERE offering.id = $1 AND offering.active");
+    let statement = format!("{OFFERINGS} WHERE offering.id = $1");
     sqlx::query_as(&statement)
         .bind(id)
         .fetch_optional(pool)

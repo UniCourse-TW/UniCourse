@@ -1,10 +1,6 @@
-// `@unicourse/api-client` only re-exports the catalog types, so the schema is imported by path.
-import type { components } from '../../../../packages/api-client/src/schema';
+import type { CrawlStatus, EducationSystem, Institution, Ownership } from '@unicourse/api-client';
 
-export type Institution = components['schemas']['Institution'];
-export type CrawlStatus = Institution['status'];
-export type EducationSystem = Institution['system'];
-export type Ownership = Institution['ownership'];
+export type { CrawlStatus, EducationSystem, Institution, Ownership } from '@unicourse/api-client';
 
 export const statusLabels: Record<CrawlStatus, string> = {
   live: '已收錄',

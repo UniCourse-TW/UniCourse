@@ -20,8 +20,8 @@ use sqlx::{FromRow, PgPool};
 use utoipa::ToSchema;
 
 use crate::{
-    ApiError, AppState, Body, ErrorBody, bad_request, database_error, error, forum, path, ratings,
-    text,
+    ApiError, AppState, Body, ErrorBody, ErrorCode, bad_request, coded_error, database_error,
+    error, forum, path, ratings, text,
 };
 
 pub(crate) const COOKIE: &str = "uc_session";
@@ -302,8 +302,9 @@ pub(crate) async fn login(
             .await
             .map_err(database_error)?;
         }
-        return Err(error(
+        return Err(coded_error(
             StatusCode::UNAUTHORIZED,
+            ErrorCode::InvalidCredentials,
             "Wrong username or password",
         ));
     }

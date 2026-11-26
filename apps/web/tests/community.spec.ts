@@ -93,7 +93,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   // Both show up on the public profile.
   await nav.getByRole('link', { name: `@${username}` }).click();
   await expect(page.getByRole('heading', { name: '測試同學' })).toBeVisible();
-  await expect(page.getByRole('link', { name: '線性代數' })).toHaveAttribute('href', /q=DEMO201&school=nthu&term=all/);
+  await expect(page.getByRole('link', { name: '線性代數' })).toHaveAttribute('href', `/courses/${course.id}`);
   await expect(page.getByText(`作業偏多 ${username}`)).toBeVisible();
   await expect(page.getByRole('link', { name: title })).toBeVisible();
 

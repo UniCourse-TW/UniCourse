@@ -33,7 +33,7 @@
       {#each profile.ratings as rating (`${rating.school}/${rating.courseCode}`)}
         <li class="rating">
           <p class="course">
-            <a href={courseSearchHref(rating.school, rating.courseCode)}>{rating.title ?? rating.courseCode}</a>
+            <a href={rating.latestOfferingId ? `/courses/${rating.latestOfferingId}` : courseSearchHref(rating.school, rating.courseCode)}>{rating.title ?? rating.courseCode}</a>
             <span class="code">{data.schoolNames[rating.school] ?? rating.school} · {rating.courseCode}</span>
           </p>
           <p class="score"><span aria-hidden="true">{stars(rating.score)}</span> {rating.score} / 5 分</p>
