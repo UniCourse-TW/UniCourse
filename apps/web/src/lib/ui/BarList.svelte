@@ -21,6 +21,7 @@
     value: item.value !== null && Number.isFinite(item.value) && item.value >= 0 ? item.value : null
   })));
   let ceiling = $derived(rows.reduce((highest, item) => Math.max(highest, item.value ?? 0), max ?? 0));
+  let hasScale = $derived(ceiling > 0 && ((max ?? 0) > 0 || rows.filter((item) => item.value !== null).length > 1));
   let columns: TableColumn<(typeof rows)[number]>[] = $derived([
     { id: 'label', label: '項目', value: (row) => row.label },
     { id: 'value', label: unit ? `數值（${unit}）` : '數值', numeric: true, value: (row) => row.value }
@@ -31,14 +32,12 @@
   <svelte:element this={ranked ? 'ol' : 'ul'} role="list" aria-label={label}>
     {#each rows as item (item.index)}
       <li>
-        <div class="bar-row">
+        <div class="bar-row" class:scaled={hasScale}>
           {#if item.href}<a href={item.href}>{item.label}</a>{:else}<span class="label">{item.label}</span>{/if}
-          <span class="track" aria-hidden="true">
-            {#if item.value !== null}
-              <span class="fill" class:muted={ranked && item.index >= 3} style:inline-size={`${barPercent(item.value, ceiling)}%`}></span>
-            {/if}
-          </span>
-          <span class="value ui-tabular">{displayValue(item.value)}{#if item.value !== null && unit}{` ${unit}`}{/if}</span>
+          {#if hasScale && item.value !== null}
+            <span class="track" aria-hidden="true"><span class="fill" class:muted={ranked && item.index >= 3} style:inline-size={`${barPercent(item.value, ceiling)}%`}></span></span>
+          {/if}
+          <span class="value ui-tabular" class:missing={item.value === null}>{item.value === null ? '未公布' : displayValue(item.value)}{#if item.value !== null && unit}{` ${unit}`}{/if}</span>
         </div>
       </li>
     {/each}
@@ -62,11 +61,12 @@
   ul { list-style: none; }
   .bar-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(5.5rem, max-content);
+    grid-template-columns: minmax(0, 1fr) minmax(0, max-content);
     gap: var(--space-2);
     align-items: center;
     min-block-size: 1.75rem;
   }
+  .bar-row.scaled { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) minmax(5.5rem, max-content); }
   a, .label { overflow-wrap: anywhere; }
   a {
     display: flex;
@@ -78,13 +78,14 @@
     touch-action: manipulation;
   }
   a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .value { text-align: end; overflow-wrap: anywhere; }
+  .value { grid-column: -2 / -1; text-align: end; overflow-wrap: anywhere; }
   .track { block-size: 10px; border-radius: var(--radius-pill); background: var(--line); }
   .fill { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); }
   .muted { opacity: 0.6; }
+  .missing { color: var(--muted); }
 
   @media (max-width: 32rem) {
-    .bar-row { grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-2); padding-block: var(--space-1); }
+    .bar-row, .bar-row.scaled { grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-2); padding-block: var(--space-1); }
     .track { grid-row: 2; grid-column: 1 / -1; }
   }
 </style>

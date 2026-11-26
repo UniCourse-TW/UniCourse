@@ -11,13 +11,14 @@
 
   let { value, max, unit, emphasis = true }: Props = $props();
   let valid = $derived(value !== null && Number.isFinite(value) && value >= 0 ? value : null);
+  let hasScale = $derived(valid !== null && Number.isFinite(max) && max > 0);
 </script>
 
 <span class="bar-cell">
-  <span class="track" aria-hidden="true">
-    {#if valid !== null}<span class="fill" class:emphasis style:inline-size={`${barPercent(valid, max)}%`}></span>{/if}
-  </span>
-  <span class="ui-tabular">{displayValue(valid)}{#if valid !== null && unit} {unit}{/if}</span>
+  {#if hasScale && valid !== null}
+    <span class="track" aria-hidden="true"><span class="fill" class:emphasis style:inline-size={`${barPercent(valid, max)}%`}></span></span>
+  {/if}
+  <span class="ui-tabular" title={valid === null ? '未公布' : undefined}>{displayValue(valid)}{#if valid !== null && unit} {unit}{/if}</span>
 </span>
 
 <style>

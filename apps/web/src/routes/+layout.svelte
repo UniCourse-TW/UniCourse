@@ -7,7 +7,7 @@
 
   let { data, children }: LayoutProps = $props();
   let here = $derived(page.url.pathname + page.url.search);
-  let query = $derived(page.url.pathname === '/' ? page.url.searchParams.get('q') ?? '' : '');
+  let onSearch = $derived(page.url.pathname === '/' && page.data.content?.kind === 'search');
   let accountOpen = $state(false);
 
   afterNavigate(() => { accountOpen = false; });
@@ -36,16 +36,20 @@
 
     <div class="tabs">
       {#each tabs as tab (tab.href)}
-        <a href={tab.href} aria-current={page.url.pathname === tab.href || page.url.pathname.startsWith(`${tab.href}/`) ? 'page' : undefined}>{tab.label}</a>
+        <a href={tab.href} aria-current={(page.url.pathname === tab.href && (tab.href !== '/' || !onSearch)) || page.url.pathname.startsWith(`${tab.href}/`) ? 'page' : undefined}>{tab.label}</a>
       {/each}
     </div>
 
     <div class="tools">
-      <form method="GET" action="/" role="search" aria-label="全站查課" class="nav-search">
-        <input type="search" name="q" value={query} maxlength="100" placeholder="課名、教師或課號" aria-label="全站搜尋關鍵字" />
-        <button aria-label="全站搜尋">{@render searchIcon()}</button>
-      </form>
-      <a href={page.url.pathname === '/' ? '#course-search' : '/#course-search'} class="mobile-search icon-action" aria-label="前往查課">{@render searchIcon()}</a>
+      {#if !onSearch}
+        <form method="GET" action="/" role="search" aria-label="全站查課" class="nav-search">
+          <input type="search" name="q" maxlength="100" placeholder="課名、教師或課號" aria-label="全站搜尋關鍵字" />
+          <button aria-label="全站搜尋">{@render searchIcon()}</button>
+        </form>
+      {:else}
+        <a href="#course-search" class="desktop-search" aria-current="location">{@render searchIcon()} 查課</a>
+      {/if}
+      <a href={page.url.pathname === '/' ? '#course-search' : '/#course-search'} class="mobile-search icon-action" aria-label="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}</a>
       <form method="POST" action="/?/theme" class="theme-form">
         <input type="hidden" name="returnTo" value={here} />
         {#if data.theme !== 'dark'}
@@ -84,9 +88,16 @@
   <div class="footer-inner">
     <div><a href="/" class="footer-mark">UniCourse</a><p>跨校查課，看十年修課人數。</p></div>
     <nav aria-label="頁尾導覽">
-      <a href="/schools">收錄狀態</a>
-      <a href="/terms">使用條款</a>
-      <a href="/privacy">隱私權政策</a>
+      <div class="footer-group">
+        <span>資料與透明度</span>
+        <a href="/#coverage">資料來源</a>
+        <a href="/schools">收錄狀態</a>
+      </div>
+      <div class="footer-group">
+        <span>站務</span>
+        <a href="/terms">使用條款</a>
+        <a href="/privacy">隱私權政策</a>
+      </div>
     </nav>
   </div>
 </footer>
@@ -116,6 +127,8 @@
   .nav-search button, .icon-action, .account summary { display: inline-grid; place-items: center; min-width: var(--target-min); min-height: var(--target-min); padding: 0; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink-2); cursor: pointer; }
   .nav-search button { min-height: 2.625rem; }
   .mobile-search, .set-light { display: none; }
+  .mobile-search[aria-current] { background: var(--brand-wash); color: var(--brand-ink); }
+  .desktop-search { display: flex; align-items: center; gap: var(--space-2); min-height: var(--target-min); padding-inline: var(--space-2); border-radius: var(--radius-control); color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; text-decoration: none; }
   [data-shell-theme='dark'] .set-light { display: inline-grid; }
   @media (prefers-color-scheme: dark) {
     .site-header:not([data-shell-theme]) .set-dark { display: none; }
@@ -134,12 +147,14 @@
   @media (prefers-reduced-motion: reduce) { .progress { width: 100%; animation: none; } }
   .page { flex: 1; padding-block: clamp(1.5rem, 4vw, 3rem) var(--space-12); }
   .site-footer { border-block-start: 1px solid var(--line); color: var(--muted); background: var(--panel); font-size: var(--t-base); }
-  .footer-inner { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); padding-block: var(--space-5); }
+  .footer-inner { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: start; gap: var(--space-4) var(--space-6); padding-block: var(--space-5); }
   .footer-inner p { margin: 0; }
   .footer-mark { font-weight: 750; color: var(--ink); text-decoration: none; }
-  .footer-inner nav { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); }
+  .footer-inner nav { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); }
+  .footer-group { display: grid; grid-template-columns: repeat(2, max-content); column-gap: var(--space-3); }
+  .footer-group > span { grid-column: 1 / -1; color: var(--ink); font-weight: 650; }
   .footer-inner nav a { display: grid; align-items: center; min-height: var(--target-min); color: var(--ink-2); }
-  @media (max-width: 55rem) { .nav-search { display: none; } .mobile-search { display: inline-grid; } }
+  @media (max-width: 55rem) { .nav-search, .desktop-search { display: none; } .mobile-search { display: inline-grid; } }
   @media (max-width: 39rem) {
     .bar { flex-wrap: wrap; gap: 0; padding-block-start: var(--space-1); }
     .tabs { order: 1; flex: 1 0 100%; }

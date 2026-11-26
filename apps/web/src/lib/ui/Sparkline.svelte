@@ -1,7 +1,7 @@
 <script lang="ts">
   import { linePath, lineSegments } from './chart-scale';
   import ChartValues from './ChartValues.svelte';
-  import { finiteValue } from './format';
+  import { displayValue, finiteValue } from './format';
   import type { TableColumn } from './types';
 
   interface Props {
@@ -33,24 +33,37 @@
     }));
   });
   let rows = $derived(samples.map((value, index) => ({ index, label: labels?.[index] ?? index + 1, value })));
+  let measured = $derived(rows.filter((row) => row.value !== null));
+  let status = $derived(measured.length ? '單期有資料' : '未公布');
+  let breakdown = $derived(measured.map((row) => `${row.label}：${displayValue(row.value)}`).join('、'));
   const columns: TableColumn<(typeof rows)[number]>[] = [
     { id: 'label', label: '期別', value: (row) => row.label },
     { id: 'value', label: '數值', numeric: true, value: (row) => row.value }
   ];
 </script>
 
-<svg viewBox="0 0 96 32" preserveAspectRatio="none" role={decorative ? undefined : 'img'}
-  aria-hidden={decorative || undefined} aria-label={decorative ? undefined : (segments.length ? label : `${label}：沒有可用數值`)}>
-  {#each segments as segment}
-    {#if segment.length === 1}
-      <ellipse cx={segment[0].x} cy={segment[0].y} rx="3" ry="2.67" />
-    {:else}
-      {@const path = linePath(segment)}
-      <path class="area" d={`${path} V32 H${segment[0].x} Z`} />
-      <path class="line" d={path} vector-effect="non-scaling-stroke" />
-    {/if}
-  {/each}
-</svg>
+{#if measured.length > 1}
+  <svg viewBox="0 0 96 32" preserveAspectRatio="none" role={decorative ? undefined : 'img'}
+    aria-hidden={decorative || undefined} aria-label={decorative ? undefined : label}>
+    {#if labels}<title>{breakdown}</title>{/if}
+    {#each segments as segment}
+      {#if segment.length === 1}
+        <ellipse cx={segment[0].x} cy={segment[0].y} rx="3" ry="2.67" />
+      {:else}
+        {@const path = linePath(segment)}
+        <path class="area" d={`${path} V32 H${segment[0].x} Z`} />
+        <path class="line" d={path} vector-effect="non-scaling-stroke" />
+      {/if}
+    {/each}
+  </svg>
+{:else}
+  <span class="sparse" role={decorative ? undefined : 'img'} aria-hidden={decorative || undefined}
+    aria-label={decorative ? undefined : `${label}：${status}${labels && breakdown ? `，${breakdown}` : ''}`}
+    title={labels && breakdown ? breakdown : status}>
+    {#if labels && measured.length}<span class="sparse-detail">{measured[0].label} · {displayValue(measured[0].value)}</span>
+    {:else}{status}{/if}
+  </span>
+{/if}
 {#if showValues && rows.length}
   <ChartValues {label} {columns} {rows} rowKey={(row) => row.index} />
 {/if}
@@ -60,4 +73,6 @@
   .area { fill: var(--brand); fill-opacity: 0.12; }
   .line { fill: none; stroke: var(--brand); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   ellipse { fill: var(--brand); }
+  .sparse { color: var(--muted); font-size: var(--t-sm); white-space: nowrap; }
+  .sparse-detail { font-variant-numeric: tabular-nums; }
 </style>
