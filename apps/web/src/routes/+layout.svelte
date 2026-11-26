@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { loginHref, profileHref } from '$lib/community-paths';
+  import '$lib/ui/tokens.css';
   import type { LayoutProps } from './$types';
 
   let { data, children }: LayoutProps = $props();
@@ -44,13 +45,13 @@
   :global(*) { box-sizing: border-box; }
   :global(body) {
     margin: 0;
-    background: #f9f8fd;
-    color: #211b32;
+    background: var(--shell-bg);
+    color: var(--shell-ink);
     font-family: system-ui, sans-serif;
     line-height: 1.55;
   }
-  :global(a) { color: #5630a5; }
-  .site-header { border-bottom: 1px solid #e5dfef; background: white; }
+  :global(a) { color: var(--shell-brand); }
+  .site-header { border-bottom: 1px solid var(--shell-line); background: var(--shell-panel); }
   .bar {
     display: flex;
     flex-wrap: wrap;
@@ -67,7 +68,7 @@
     align-items: center;
     padding: 0.2rem 0;
     text-decoration: none;
-    color: #211b32;
+    color: var(--shell-ink);
     font-weight: 750;
     font-size: 1.125rem;
   }
@@ -78,23 +79,23 @@
     min-height: 2.5rem;
     padding: 0.3rem 0.55rem;
     border-radius: 0.45rem;
-    color: #3b3150;
+    color: var(--shell-ink-2);
     text-decoration: none;
     font: inherit;
     font-weight: 600;
   }
-  .site-nav a[aria-current='page'] { color: #5630a5; background: #f1ecfb; }
+  .site-nav a[aria-current='page'] { color: var(--shell-brand); background: var(--shell-brand-wash); }
   .site-nav .me { max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; line-height: 1.9rem; }
-  .site-nav .login { border: 1px solid #5630a5; color: #5630a5; }
+  .site-nav .login { border: 1px solid var(--shell-brand); color: var(--shell-brand); }
   .logout { margin: 0; }
-  .logout button { border: 1px solid #d8d0e6; background: white; cursor: pointer; }
+  .logout button { border: 1px solid var(--shell-control-line); background: var(--shell-panel); cursor: pointer; }
   .page { max-width: 66rem; margin: auto; padding: clamp(1rem, 4vw, 3rem) 1.25rem; }
   .site-footer {
     display: flex;
     gap: 1.25rem;
     justify-content: center;
     padding: 1.5rem 1.25rem 2rem;
-    color: #594f69;
+    color: var(--shell-muted);
     font-size: 0.9rem;
   }
 </style>
