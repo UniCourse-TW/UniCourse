@@ -1,0 +1,220 @@
+{
+  "E2D47D2E-B529-4449-8619-8561D3401D32": {
+    "1": {
+      "1151_515607": {
+        "acy": "115",
+        "sem": "1",
+        "cos_id": "515607",
+        "cos_code": "CSCS00003",
+        "num_limit": "230",
+        "dep_limit": "N",
+        "URL": "",
+        "cos_cname": "生涯規劃及導師時間",
+        "cos_credit": ".00",
+        "cos_hours": "2.00",
+        "teacher": "陳添福",
+        "cos_time": "W78-EC114[GF],W78-EC122[GF]",
+        "memo": "自101學年度起入學者，學士班一年級學生每學期必修『導師時間』（0學分），需通過2學期始得畢業。一年級必修僅開學才開放選課。；本系生優先權順序：1年級，4年級，3年級，2年級",
+        "cos_ename": "Career Planning and Mentor of Hours",
+        "brief": "",
+        "degree": "1",
+        "dep_id": "550",
+        "dep_primary": "1",
+        "dep_cname": "資訊工程學系",
+        "dep_ename": "Department of Computer Science",
+        "cos_type": "必修",
+        "cos_type_e": "Required",
+        "crsoutline_type": "data",
+        "reg_num": "200",
+        "depType": "U"
+      },
+      "1151_515611": {
+        "acy": "115",
+        "sem": "1",
+        "cos_id": "515611",
+        "cos_code": "CSCS20012",
+        "num_limit": "50",
+        "dep_limit": "N",
+        "URL": "",
+        "cos_cname": "多媒體與人機互動總整與實作",
+        "cos_credit": "3.00",
+        "cos_hours": "3.00",
+        "teacher": "顏羽君、張永儒",
+        "cos_time": "T56-ED301[GF]",
+        "memo": "外系生請於開學上網加選；學士班七大主題學程；資工系學生優先選課；須修過基礎程式設計才可修多媒體與人機互動總整與實作；主開4年級；本系生優先權順序：3&amp;4年級，2年級，1年級",
+        "cos_ename": "Multimedia and Human Computer Interaction Capstone",
+        "brief": "",
+        "degree": "1",
+        "dep_id": "550",
+        "dep_primary": "1",
+        "dep_cname": "資訊工程學系",
+        "dep_ename": "Department of Computer Science",
+        "cos_type": "選修",
+        "cos_type_e": "Elective",
+        "crsoutline_type": "data",
+        "reg_num": "19",
+        "depType": "U"
+      }
+    },
+    "2": {
+      "1151_131106": {
+        "acy": "115",
+        "sem": "1",
+        "cos_id": "131106",
+        "cos_code": "MDBS30020",
+        "num_limit": "9999",
+        "dep_limit": "*",
+        "URL": "",
+        "cos_cname": "機器學習概論與實作",
+        "cos_credit": "3.00",
+        "cos_hours": "3.00",
+        "teacher": "陳麗芬",
+        "cos_time": "R789-YL839[YM]",
+        "memo": "1.本堂課將會以同步遠距教學方式上課，同學可提早5分鐘進入虛擬教室準備上課，連結每周會公告於E3系統上。2.有部分課程提早於開學前三週開始上課，詳細時間將會公告於E3. 3.開放隨班附讀,本課程亦為「人工智慧生醫應用學分學程」進階課程之一、「資料科學與智慧儀控學分學程」課程之一、《醫學系智慧健康照護跨域學程》醫護模組選修課程之一。",
+        "cos_ename": "Introduction to Machine Learning and Practice",
+        "brief": "",
+        "degree": "1",
+        "dep_id": "550",
+        "dep_primary": "2",
+        "dep_cname": "資訊工程學系",
+        "dep_ename": "Department of Computer Science",
+        "cos_type": "選修",
+        "cos_type_e": "Elective",
+        "crsoutline_type": "data",
+        "reg_num": "55",
+        "depType": "U"
+      },
+      "1151_515607": {
+        "acy": "115",
+        "sem": "1",
+        "cos_id": "515607",
+        "cos_code": "CSCS00003",
+        "num_limit": "230",
+        "dep_limit": "N",
+        "URL": "",
+        "cos_cname": "生涯規劃及導師時間",
+        "cos_credit": ".00",
+        "cos_hours": "2.00",
+        "teacher": "陳添福",
+        "cos_time": "W78-EC114[GF],W78-EC122[GF]",
+        "memo": "自101學年度起入學者，學士班一年級學生每學期必修『導師時間』（0學分），需通過2學期始得畢業。一年級必修僅開學才開放選課。；本系生優先權順序：1年級，4年級，3年級，2年級",
+        "cos_ename": "Career Planning and Mentor of Hours",
+        "brief": "",
+        "degree": "1",
+        "dep_id": "550",
+        "dep_primary": "2",
+        "dep_cname": "資訊工程學系",
+        "dep_ename": "Department of Computer Science",
+        "cos_type": "必修",
+        "cos_type_e": "Required",
+        "crsoutline_type": "data",
+        "reg_num": "200",
+        "depType": "U"
+      },
+      "1151_515611": {
+        "acy": "115",
+        "sem": "1",
+        "cos_id": "515611",
+        "cos_code": "CSCS20012",
+        "num_limit": "50",
+        "dep_limit": "N",
+        "URL": "",
+        "cos_cname": "多媒體與人機互動總整與實作",
+        "cos_credit": "3.00",
+        "cos_hours": "3.00",
+        "teacher": "顏羽君、張永儒",
+        "cos_time": "T56-ED301[GF]",
+        "memo": "外系生請於開學上網加選；學士班七大主題學程；資工系學生優先選課；須修過基礎程式設計才可修多媒體與人機互動總整與實作；主開4年級；本系生優先權順序：3&amp;4年級，2年級，1年級",
+        "cos_ename": "Multimedia and Human Computer Interaction Capstone",
+        "brief": "",
+        "degree": "1",
+        "dep_id": "550",
+        "dep_primary": "2",
+        "dep_cname": "資訊工程學系",
+        "dep_ename": "Department of Computer Science",
+        "cos_type": "選修",
+        "cos_type_e": "Elective",
+        "crsoutline_type": "data",
+        "reg_num": "19",
+        "depType": "U"
+      }
+    },
+    "dep_id": "E2D47D2E-B529-4449-8619-8561D3401D32",
+    "dep_cname": "資訊工程學系",
+    "dep_ename": "Department of Computer Science",
+    "costype": {
+      "1151_131106": {
+        "程式相關_程式相關": {
+          "course_category_cname": "程式相關_程式相關",
+          "course_category_ename": "Program related course_Program related course",
+          "course_category_type": "58",
+          "GECIName": "",
+          "GECIEngName": ""
+        },
+        "跨校區課程_跨校區課程": {
+          "course_category_cname": "跨校區課程_跨校區課程",
+          "course_category_ename": "Cross-Campus Course_Cross-Campus Course",
+          "course_category_type": "57",
+          "GECIName": "",
+          "GECIEngName": ""
+        },
+        "開放隨班附讀_開放隨班附讀": {
+          "course_category_cname": "開放隨班附讀_開放隨班附讀",
+          "course_category_ename": "Auditing course_Auditing course",
+          "course_category_type": "71",
+          "GECIName": "",
+          "GECIEngName": ""
+        }
+      },
+      "1151_515607": {
+        "大學導師_大學導師": {
+          "course_category_cname": "大學導師_大學導師",
+          "course_category_ename": "Undergraduate mentor’s hours course_Undergraduate mentor’s hours course",
+          "course_category_type": "65",
+          "GECIName": "",
+          "GECIEngName": ""
+        }
+      },
+      "1151_515611": {
+        "": {
+          "course_category_cname": "",
+          "course_category_ename": "",
+          "course_category_type": "",
+          "GECIName": "",
+          "GECIEngName": ""
+        }
+      }
+    },
+    "brief": {
+      "1151_131106": {
+        "": {
+          "brief_code": "",
+          "brief": ""
+        }
+      },
+      "1151_515607": {
+        "": {
+          "brief_code": "",
+          "brief": ""
+        }
+      },
+      "1151_515611": {
+        "": {
+          "brief_code": "",
+          "brief": ""
+        }
+      }
+    },
+    "language": {
+      "1151_131106": {
+        "授課語言代碼": "zh-tw"
+      },
+      "1151_515607": {
+        "授課語言代碼": "zh-tw"
+      },
+      "1151_515611": {
+        "授課語言代碼": "zh-tw"
+      }
+    }
+  }
+}

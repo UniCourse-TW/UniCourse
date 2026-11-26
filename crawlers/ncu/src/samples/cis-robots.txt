@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /
+Allow: /SeminarSys/*
+Allow: /admissions/*
+Allow: /ExamRegister/*
+Allow: /ApcourseSys/*
+Allow: /EnableSys/*
+Allow: /iTeacher/*
+Allow: /NsaSys/*
+Allow: /ncukids/*

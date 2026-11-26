@@ -1,0 +1,23 @@
+{
+ "success": true,
+ "info": {
+  "sub_id3": "IEE2000",
+  "sub_name": "工程數學(一)",
+  "sub_ename": "ENGINEERING MATHEMATICS(1)",
+  "scr_selcode": "2107",
+  "lang_name": "中文                                                      "
+ },
+ "description": {
+  "sub_id3": null,
+  "sub_name": "工程數學(一)",
+  "sub_ename": "ENGINEERING MATHEMATICS(1)",
+  "describe_ch": "本課程主要設計給大學部工程與科學科系初級學生提升數學思考與解題能力，以應付未來更進一步的課程進修。針對於常微分方程式求解方法的介紹與分析，此課程的內容主要包含一階、二階微分方程求解、拉普拉斯轉換與冪級數等議題。",
+  "describe_eh": "This course is designed for the beginning undergraduate engineering and science students who need to enhance mathematics skills in preparation for studies. To introduce and analyze methods of solving ordinary differential equations, the topics include first-order differential equations, second-order differential equations, Laplace transform, and series solutions.",
+  "pre_subname": "",
+  "pre_sub_id3": null,
+  "pre_sub_ename": "",
+  "pre_describe": null,
+  "pre_describe_en": null,
+  "scr_credit": 3
+ }
+}

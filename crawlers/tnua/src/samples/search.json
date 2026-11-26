@@ -1,0 +1,87 @@
+{
+  "d": {
+    "__type": "CourseSearch.CourseSearchWS.Return",
+    "ExtensionData": {},
+    "Status": 0,
+    "Log": "查尋成功!",
+    "ReturnDatas": {
+      "ExtensionData": {},
+      "Year": [],
+      "Dept": [],
+      "Class": [
+        {
+          "ExtensionData": {},
+          "Year": "115",
+          "Term": "1",
+          "CourseID": "1151-1110001",
+          "CourseName": "專題演講 &nbsp Forum",
+          "Teacher": "吳思珊",
+          "Field": "",
+          "Type": "必修",
+          "Credit": "1",
+          "Sect": "(一)5,6",
+          "UpLimit": "無",
+          "Remark": "學分另計；必修六學期",
+          "Room": "M2601",
+          "SumSelected": "213",
+          "DepName": "111",
+          "Target": "不開放 &nbsp 學期"
+        },
+        {
+          "ExtensionData": {},
+          "Year": "115",
+          "Term": "1",
+          "CourseID": "1151-1110002",
+          "CourseName": "音樂大師講座-黃俊文專題V &nbsp The Masters Series : Violinist Paul Huang V",
+          "Teacher": "黃俊文",
+          "Field": "",
+          "Type": "選修",
+          "Credit": "0.5",
+          "Sect": "師生商定",
+          "UpLimit": "0",
+          "Remark": "1.上課時間請詳見音樂系公告。\n2.與管絃擊所合上。\n3.由系辦公室配班選課。",
+          "Room": "",
+          "SumSelected": "1",
+          "DepName": "111",
+          "Target": "不開放 &nbsp 學期"
+        },
+        {
+          "ExtensionData": {},
+          "Year": "115",
+          "Term": "1",
+          "CourseID": "1151-1110007",
+          "CourseName": "管樂合奏 &nbsp Wind Ensemble",
+          "Teacher": "張佳韻",
+          "Field": "合唱或管絃樂合奏,管絃樂合奏或管樂合奏",
+          "Type": "組必修",
+          "Credit": "2",
+          "Sect": "(二)5,6,N(三)7,8",
+          "UpLimit": "無",
+          "Remark": "1.週二13:00-15:10上課，週三15:30-17:10上課\n2.與管絃擊所合上",
+          "Room": "M2601,M2602",
+          "SumSelected": "55",
+          "DepName": "111",
+          "Target": "不開放 &nbsp 學期"
+        },
+        {
+          "ExtensionData": {},
+          "Year": "115",
+          "Term": "1",
+          "CourseID": "1151-1112016",
+          "CourseName": "鋼琴演奏與實習 &nbsp Piano Workshop",
+          "Teacher": "肯恩 保羅,蔡佳憓",
+          "Field": "",
+          "Type": "組必修",
+          "Credit": "1",
+          "Sect": "(四)3,4",
+          "UpLimit": "20",
+          "Remark": "1.限二年級以上修習\n2.第1~7週的週四9/10~10/22，蔡佳憓老師\n3.第8~14週10/29~12/10，肯恩 保羅老師",
+          "Room": "M101,M2401",
+          "SumSelected": "16",
+          "DepName": "111",
+          "Target": "其他 &nbsp 學期"
+        }
+      ]
+    }
+  }
+}

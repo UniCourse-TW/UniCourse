@@ -1,0 +1,19 @@
+{
+  "name": "@unicourse/crawler-kit",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "test": "node --import tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "cheerio": "1.2.0",
+    "iconv-lite": "0.7.1",
+    "tsx": "4.21.0",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "5.9.3"
+  }
+}

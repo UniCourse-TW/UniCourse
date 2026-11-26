@@ -1,0 +1,174 @@
+[
+ {
+  "utCodL1": "0",
+  "utL1Text": "----- 請選擇 Choose unit -----",
+  "utL2": [
+   {
+    "utCodL2": "0",
+    "utL2Text": "----- 請選擇 Choose unit -----",
+    "utL3": [
+     {
+      "utCodL3": "0",
+      "utL3Text": "----- 請選擇 Choose unit -----"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "utCodL1": "01",
+  "utL1Text": "整開 / 通識課程 / 校級選修 Integrated Courses/General Education/Selective Courses, NCCU",
+  "utL2": [
+   {
+    "utCodL2": "0",
+    "utL2Text": "----- 請選擇 Choose unit -----",
+    "utL3": [
+     {
+      "utCodL3": "0",
+      "utL3Text": "----- 請選擇 Choose unit -----"
+     }
+    ]
+   },
+   {
+    "utCodL2": "A1",
+    "utL2Text": "整開 / Integrated Courses",
+    "utL3": [
+     {
+      "utCodL3": "0",
+      "utL3Text": "----- 請選擇 Choose unit -----"
+     },
+     {
+      "utCodL3": "105",
+      "utL3Text": "管理學 / Management"
+     },
+     {
+      "utCodL3": "106",
+      "utL3Text": "統計學 / Statistics"
+     }
+    ]
+   },
+   {
+    "utCodL2": "A2",
+    "utL2Text": "通識 / General Education",
+    "utL3": [
+     {
+      "utCodL3": "0",
+      "utL3Text": "----- 請選擇 Choose unit -----"
+     },
+     {
+      "utCodL3": "2S1",
+      "utL3Text": "中國語文類通識 / General Course/Chinese"
+     },
+     {
+      "utCodL3": "2S2",
+      "utL3Text": "外國語文類通識 / General Course/Foreign Languages"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "utCodL1": "02",
+  "utL1Text": "輔系專班 / 學分學程專班 Minor/Credited Program",
+  "utL2": [
+   {
+    "utCodL2": "0",
+    "utL2Text": "----- 請選擇 Choose unit -----",
+    "utL3": [
+     {
+      "utCodL3": "0",
+      "utL3Text": "----- 請選擇 Choose unit -----"
+     }
+    ]
+   },
+   {
+    "utCodL2": "A3",
+    "utL2Text": "輔系專班 / Minor",
+    "utL3": [
+     {
+      "utCodL3": "0",
+      "utL3Text": "----- 請選擇 Choose unit -----"
+     },
+     {
+      "utCodL3": "3S1",
+      "utL3Text": "中輔 / Dept. of Chinese Literature Course Schedule for Minor Students"
+     },
+     {
+      "utCodL3": "3S2",
+      "utL3Text": "外輔 / Dept. of Diplomacy Course Schedule for Minor Students"
+     }
+    ]
+   },
+   {
+    "utCodL2": "A4",
+    "utL2Text": "學分學程專班 / Credited Program",
+    "utL3": [
+     {
+      "utCodL3": "0",
+      "utL3Text": "----- 請選擇 Choose unit -----"
+     },
+     {
+      "utCodL3": "P01",
+      "utL3Text": "台灣與近代世界學程 / Taiwan and Modern World Multi-Fields Program"
+     },
+     {
+      "utCodL3": "P04",
+      "utL3Text": "創意學程 / Creativity Program"
+     }
+    ]
+   }
+  ]
+ },
+ {
+  "utCodL1": "200",
+  "utL1Text": "社會科學學院 Social Sciences",
+  "utL2": [
+   {
+    "utCodL2": "0",
+    "utL2Text": "----- 請選擇 Choose unit -----",
+    "utL3": [
+     {
+      "utCodL3": "0",
+      "utL3Text": "----- 請選擇 Choose unit -----"
+     }
+    ]
+   },
+   {
+    "utCodL2": "1",
+    "utL2Text": "學士班 / Undergraduate",
+    "utL3": [
+     {
+      "utCodL3": "0",
+      "utL3Text": "----- 請選擇 Choose unit -----"
+     },
+     {
+      "utCodL3": "202",
+      "utL3Text": "政治學系 / Political Science"
+     },
+     {
+      "utCodL3": "204",
+      "utL3Text": "社會學系 / Sociology"
+     }
+    ]
+   },
+   {
+    "utCodL2": "2",
+    "utL2Text": "碩士班 / MA Program",
+    "utL3": [
+     {
+      "utCodL3": "0",
+      "utL3Text": "----- 請選擇 Choose unit -----"
+     },
+     {
+      "utCodL3": "252",
+      "utL3Text": "政治學系 / Political Science"
+     },
+     {
+      "utCodL3": "254",
+      "utL3Text": "社會學系 / Sociology"
+     }
+    ]
+   }
+  ]
+ }
+]

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html><head><meta charset=utf-8></head><body>
+<div>
+<div class="panel-group hidden-xs">
+            <div class="col-lg-2 col-md-3 col-sm-4 col-xs-12 pnl_dept">
+            <div class="panel panel-default">
+                <div class="panel-heading">其他</div>
+                <div class="panel-body">
+                    <li class='btn_dept' data-dept='A2'>(A2)體育室 OPE</li><li class='btn_dept' data-dept='A3'>(A3)學生安全組 MT</li><li class='btn_dept' data-dept='A4'>(A4)師培中心 CTE</li><li class='btn_dept' data-dept='A5'>(A5)計網中心 CN</li><li class='btn_dept' data-dept='A6'>(A6)服務學習 SS</li><li class='btn_dept' data-dept='AA'>(AA)共同英授 GCTE</li><li class='btn_dept' data-dept='AI'>(AI)AI聯盟 AIA</li><li class='btn_dept' data-dept='AJ'>(AJ)校級校外實習 </li><li class='btn_dept' data-dept='AL'>(AL)AP大學先修 </li><li class='btn_dept' data-dept='AT'>(AT)產業聯盟(B) SIAC</li><li class='btn_dept' data-dept='ZA'>(ZA)AI聯盟 AIA</li><li class='btn_dept' data-dept='ZT'>(ZT)產業聯盟(M) SIAC</li>                </div></div></div>
+<script>
+    $(document).ready(function(){
+        $('.btn_dept').click(function(){ 
+            $.ajax({
+				type : "post",
+				url  :  "./index.php?c=qry_all" + "&m=result_init",
+				data : {
+						'dept_no' : $(this).data('dept'),
+                        'crypt'   : 'BTMHZwZ4DTwFNgNlU3kGY1IyVTRbegIyUzA='
+					},
+                dataType:"json",
+                async :true,
+                beforeSend:function(){  
+                    $('.loading:first').show();
+                },
+				success : function(data) {
+                    if(data.err != ''){
+                        $('.loading').hide();
+                        alert(data.err);    //有錯誤（非由正常路徑查詢）
+                    }
+					else location.href='./index.php?c=qry_all'+ "&m=result&i="+data.id;
+				},
+				error:function(XMLHttpRequest, textStatus, errorThrown){
+                    $('.loading').hide();
+			        alert("抱歉，資料處理失敗!");
+                }
+			}).complete(function(){
+                // $.unblockUI();
+            });
+        })
+            });
+</script>
+</body></html>

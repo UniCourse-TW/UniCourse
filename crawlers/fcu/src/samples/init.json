@@ -1,0 +1,122 @@
+{
+ "defaultYearSms": {
+  "year": 115,
+  "sms": 1
+ },
+ "yearList": [
+  107,
+  108,
+  109,
+  110,
+  111,
+  112,
+  113,
+  114,
+  115,
+  116
+ ],
+ "languageList": [
+  {
+   "id": "09",
+   "cht": "韓語",
+   "en": "Korean"
+  },
+  {
+   "id": "10",
+   "cht": "俄語",
+   "en": "Russian"
+  },
+  {
+   "id": "11",
+   "cht": "越南語",
+   "en": "Vietnamese"
+  },
+  {
+   "id": "12",
+   "cht": "印尼語",
+   "en": "Indonesian"
+  },
+  {
+   "id": "13",
+   "cht": "馬來語",
+   "en": "Malaysian"
+  },
+  {
+   "id": "14",
+   "cht": "泰語",
+   "en": "Thai"
+  },
+  {
+   "id": "01",
+   "cht": "中文",
+   "en": "Chinese"
+  },
+  {
+   "id": "02",
+   "cht": "英語",
+   "en": "English"
+  },
+  {
+   "id": "08",
+   "cht": "中英",
+   "en": "Chinese & English"
+  },
+  {
+   "id": "03",
+   "cht": "日語",
+   "en": "Japanese"
+  },
+  {
+   "id": "04",
+   "cht": "德語",
+   "en": "German"
+  },
+  {
+   "id": "05",
+   "cht": "法語",
+   "en": "French"
+  },
+  {
+   "id": "06",
+   "cht": "西班牙語",
+   "en": "Spanish"
+  },
+  {
+   "id": "07",
+   "cht": "其他",
+   "en": "Other"
+  }
+ ],
+ "progTypeList": [
+  {
+   "progType": "DD",
+   "cht": "雙主修",
+   "en": "Double Degree"
+  },
+  {
+   "progType": "MN",
+   "cht": "輔系",
+   "en": "Minor"
+  },
+  {
+   "progType": "MP",
+   "cht": "微學程",
+   "en": "Micro Credential"
+  },
+  {
+   "progType": "PC",
+   "cht": "學分學程",
+   "en": "Certificate"
+  },
+  {
+   "progType": "PM",
+   "cht": "第二主修",
+   "en": "Second Major"
+  },
+  {
+   "progType": "PN",
+   "cht": "輔修",
+   "en": "Specific Minor"
+  }
+ ]
+}

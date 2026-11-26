@@ -1,0 +1,975 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="pragma" content="no-cache">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="政大教學大綱">
+    <meta name="author" content="政大電算中心">
+    <meta name="copyright" content="國立政治大學">
+    <link rel="publisher" href="https://www.nccu.edu.tw">
+    <meta name="keywords" content="政治大學,教師系統,課程大綱,教學大綱">
+
+    <meta itemprop="name" content="政大教學大綱">
+    <meta itemprop="image" content="">
+    <meta itemprop="description" content="本系統提供學生檢視課程大綱、每周授課進度。">
+
+    <meta property="og:title" content="政大教學大綱">
+    <meta property="og:url" content="">
+    <meta property="og:image" content="">
+    <meta property="og:description" content="本系統提供學生檢視課程大綱、每周授課進度。">
+
+    <title>政大教學大綱</title>
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script type="text/javascript" src="https://newdoc.nccu.edu.tw/teaContent/js/jquery-2.1.1.min.js"></script>   
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.1-beta.2/Chart.min.js"></script>
+    <!-- Bootstrap -->
+    <link rel="stylesheet" type="text/css" href="https://newdoc.nccu.edu.tw/teaContent/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://newdoc.nccu.edu.tw/teaContent/css/animate.css">
+    
+    <link rel="stylesheet" href="https://webapp.nccu.edu.tw/css/font-awesome/4.3.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://newdoc.nccu.edu.tw/teaContent/css/jquery.bxslider.css">
+    <link rel="stylesheet" type="text/css" href="https://newdoc.nccu.edu.tw/teaContent/css/normalize.css" />
+    <link rel="stylesheet" type="text/css" href="https://newdoc.nccu.edu.tw/teaContent/css/demo.css" />
+    <link rel="stylesheet" type="text/css" href="https://newdoc.nccu.edu.tw/teaContent/css/set1.css" />
+    <link rel="stylesheet" type="text/css" href="https://newdoc.nccu.edu.tw/teaContent/css/bootstrap-print.min.css" /><!--2017.6.21-->
+    <link rel="stylesheet" type="text/css" href="https://newdoc.nccu.edu.tw/teaContent/css/bootstrap-print-lg.min.css" /><!--2017.6.21-->
+    <link href="https://newdoc.nccu.edu.tw/teaContent/css/overwrite.css" rel="stylesheet">
+    
+
+    <link rel="stylesheet" type="text/css" href="https://kendo.cdn.telerik.com/2017.2.621/styles/kendo.common-material.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://kendo.cdn.telerik.com/2017.2.621/styles/kendo.material.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://kendo.cdn.telerik.com/2017.2.621/styles/kendo.material.mobile.min.css" />
+    <script type="text/javascript" src="https://kendo.cdn.telerik.com/2017.2.621/js/kendo.all.min.js"></script>
+
+    <!-- =======================================================
+        Theme Name: eNno
+        Theme URL: https://bootstrapmade.com/enno-free-simple-bootstrap-template/
+        Author: BootstrapMade
+        Author URL: https://bootstrapmade.com
+    ======================================================= -->
+    <!-- Custom Fonts -->
+    
+    <link rel="stylesheet" href="https://webapp.nccu.edu.tw/css/font-awesome/4.3.0/css/font-awesome.min.css" />
+    <script>
+        // Picture element HTML5 shiv
+        document.createElement("picture");
+    </script>
+    <script async src="https://newdoc.nccu.edu.tw/teaContent/js/picturefill.min.js"></script>
+    <!-- Retina.js !-->
+    <script async src="https://newdoc.nccu.edu.tw/teaContent/js/retina.min.js"></script>
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-default navbar-fixed-top hidden-print" role="navigation">
+        <div class="container">
+            <!-- Brand and toggle get grouped for better mobile display -->
+            <div class="navbar-header">
+                <a class="navbar-brand"><span><span style="font-size:70%;">國立政治大學校務行政系統  </span>教學大綱 Syllabus</span></a>
+            </div>
+            <div class="navbar-collapse collapse">
+                <div class="menu">
+                    <ul class="nav nav-tabs" role="tablist"></ul>
+                </div>
+            </div>
+            <!-- /.navbar-collapse -->
+        </div>
+        <!-- /.container -->
+    </nav>
+    <!-- Page Content -->
+    <div class="container">
+        <div class="row">
+            <div class="visible-print text-center">
+                <h1>教學大綱 Syllabus</h1>
+            </div>
+            <div class="col-sm-12">
+                
+                <h2><span class="visible-print visible-print-inline">科目名稱：</span><span class="Zh" id="CourseName">個體經濟學</span></h2><!--2017.05.03-->
+                <h5><span class="visible-print visible-print-inline">Course Name: </span><span class="En" id="CourseNameEn">Microeconomics</span></h5><!--2017.05.03-->
+                <input type="hidden" name="courseUrl" id="courseUrl" value="3257366B2F41364D322B58736D593570686D2F477261526C4A7A4235444B64565731425845466C39463462527861746C7541656E3258347A6273765277686C502F61454661473630716470612B62624B4D302F414654674B51764B69766D742F66343755656257456F2B747A39394470634B306948517767336448582F76307275464A3743375A48524B792F72563735684646643941434768754565543468304739577368495254773431646C5251366D306E7334704C6D377357747956574B58445841516E7570342F784A6279696C413271544135675251457937412B7576366C456D79644478466678655A4E764A6C72542F4F4954323538424E7137336C2F6B6F2B5A32686361532B6D6E3037363035376436694E3862566D676B3241326A71654D6C7935423036453D" />
+            </div>
+        </div><!--/.row!-->
+        <div class="row">
+            <div class="col-sm-5 col-p-6">
+                <!--2017.6.21-->
+                <ul class="nav nav-tabs">
+                    <li class="sylview-textS">
+                        <i class="fa fa-calendar"></i> <span class="Zh">學年學期：115-1</span>
+                        <span class="En">
+
+                            Fall Semester, 2026
+                        </span>
+                    </li>
+                    <li class="sylview-textS">
+                        <i class="fa fa-bookmark-o"></i> <span class="Zh">科目代碼：000217041</span>
+                        <span class="En">Course No.000217041</span>
+                    </li>
+                </ul>
+                <div class="row text-center sylview--mtop">
+                    <div class="clearfix"></div>
+                    <div class="col-xs-offset-1 col-xs-3">
+                        <div class="wow bounceIn" data-wow-offset="0" data-wow-delay="0.1s">
+                            <div class="icon">
+                                <i class="fa fa-cubes fa-3x"></i>
+                            </div>
+                            <h4>修別：必</h4>
+                            <p>Type of Credit: Required            </p>
+                        </div>
+                    </div>
+
+                    <div class="col-xs-4">
+                        <div class="wow bounceIn" data-wow-offset="0" data-wow-delay="0.4s">
+                            <div class="icon">
+                                <i class="sylview-icontext sylview-icontextB">3.0</i>
+                            </div>
+                            <h4>學分數</h4>
+                            <p>Credit(s)</p>
+                        </div>
+                    </div>
+                    <div class="col-xs-3">
+                        <div class="wow bounceIn" data-wow-offset="0" data-wow-delay="0.5s">
+                            <div class="icon">
+                                <i class="sylview-icontext sylview-icontextB">200</i>
+                            </div>
+                            
+                            
+                            <h4>預收人數</h4>
+                            <p>Number of Students</p>
+                        </div>
+                    </div>
+                </div><!--/.row!-->
+                <div class="row">
+                    <div class="col-sm-11">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <span class="Zh">課程資料</span><span class="En">Course Details</span>
+                            </div>
+                            <div class="panel-body">
+                                <ul class="nav nav-divider">
+                                    <li><span class="Zh">開課單位：經濟系                                                                                                 </span><span class="En">Course Department:Economics </span></li>
+                                    <li><span class="Zh">授課老師：黃柏鈞                                                                                                 </span><span class="En">Instructor: HUANG PO-CHUN                                                                                                                                                                                           </span></li>
+                                    <li><span class="Zh">先修科目：[ 經濟學(全學年)(修習且及格)]</span><span class="En">Prerequisite([])</span></li>
+                                    <li><span class="Zh">上課時間：三D56         </span><span class="En">Session: wed13-16</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div><!--/.row!-->
+            </div><!--/.col-sm-5!-->
+
+            <div class="col-sm-7 sylview--mtop col-p-6">
+                <!--2017.6.21-->
+                <div class="clearfix"></div>
+                <h2 class="text-primary"><span class="Zh">課程簡介</span><span class="En">Course Description</span></h2>
+                <p><span style="font-size:16px">This is a one-year course in intermediate microeconomics. We will cover fundamentals in microeconomics and have a substantial focus on real-world problems. In the first semester, we will focus on three topics:</span></p>
+
+<p><span style="font-size:16px">1. Consumer Demand</span></p>
+
+<p><span style="font-size:16px">2. Consumer Welfare and Policy Applications</span></p>
+
+<p><span style="font-size:16px">3. Production and Costs.</span></p>
+
+<p><span style="font-size:16px"><span class="marker"><strong>加簽方式：開學第一堂課統一處理加簽，已修畢大一經濟學之經濟系與雙主修經濟系同學優先加簽後，其餘由抽籤決定加簽名單</strong></span></span></p>
+
+                <div class="row sylview-mtop fa-border">
+                    <div class="col-md-6">
+                        <h3 class="text-primary">
+                            <span class="Zh">核心能力分析圖</span>
+                            <span class="En">Core Competence Analysis Chart</span>
+                        </h3>
+                        <div id="chart" align="left">
+                            
+                        </div>
+                        <div id="noChart" style="display:none">
+                            「無核心能力」
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <!--2018.4.12新增能力項目說明p,ul-->
+                        <p class="text-info sylview-mtop"><b>能力項目說明</b></p>
+                        <ul id="listUnstyled" class="list-unstyled small"></ul>
+                    </div>
+
+                    
+                </div>
+            </div>
+        </div>
+    </div><!--/.container-->
+    <hr class="sylview--mbottom">
+    
+    
+    <div class="container-fluid bg-info sylview-section sylview-mtop">
+        <div class="row">
+            <div class="col-md-offset-2 col-md-8 col-sm-offset-1 col-sm-10">
+                <h2 class="text-primary text-center col-p-4"><span class="Zh">課程目標與學習成效</span><span class="En">Course Objectives &amp; Learning Outcomes </span></h2><!--2017.6.21-->
+                <div class="col-p-8">
+                    <!--2017.6.21-->
+                    <p><span style="font-size:16px">Understand basic microeconomic theories and apply microeconomic reasoning to public issues</span></p>
+
+                </div><!--2017.6.21-->
+            </div>
+        </div><!--/.row-->
+    </div><!--/.container-->
+        <div class="container-fluid sylview-section  sylview-mtop">
+            <div class="row">
+                <div class="col-md-offset-2 col-md-8">
+                    <h2 class="text-primary text-center"><span class="Zh">課程屬性</span><span class="En">Course Characteristics </span></h2>
+                    <div>
+                        <!--2026.3.24-->
+                        <div>
+                            <div class="Zh">
+                                <p>
+                                    <b>
+                                        級分說明 Score Description:
+                                    </b>
+                                </p> 1關聯性最弱，2關聯性稍弱，3關聯性中等，4關聯性稍強，5關聯性最強。(1-5非百分比，而是Rank)
+                            </div>
+                            <p>
+                                <span class="En">
+                                    1 indicates weakest relevance, 2 indicates slightly weaker relevance, 3 indicates moderate relevance, 4 indicates slightly stronger relevance, and 5 indicates strongest relevance. (1-5 does not represent a certain percentage but indicates the rank).
+                                </span>
+                            </p>
+                        </div>
+                        <!--2026.3.18-->
+                        <table class="table table-hover table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="col-xs-3 col-md-3" style="background-color: #F0F0F0; "><span class="Zh">課程屬性項目</span><span class="En">Course Characteristics Items</span></th>
+                                    <th class="col-xs-1 col-md-1" style="background-color: #F0F0F0; "><span class="Zh">級分(1~5)</span><span class="En">Ranking</span></th>
+                                    <th class="col-xs-8 col-md-8" style="background-color: #F0F0F0; "><span class="Zh">說明</span><span class="En">Description</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                    <tr>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">人文關懷課程 </span> <span class="En">Humanity and Care Course</span></label></td>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">4 </span> </label></td>
+                                        <td style="background-color: #F0F0F0; ">
+                                                <span class="Zh">課程教學內容涉及學生人文關懷素養與態度之培養。</span>
+                                                                                            <span class="En">The course contents include the development of students&#39; abilities and appreciation for humanistic care.</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">跨領域課程 </span> <span class="En">Interdisciplinary Course</span></label></td>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">3 </span> </label></td>
+                                        <td style="background-color: #F0F0F0; ">
+                                                <span class="Zh">課程教學包含不同學門、領域之內容。</span>
+                                                                                            <span class="En">The courses include contents from different disciplines and fields.</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">社會參與課程 </span> <span class="En">Social Engagement Course</span></label></td>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">4 </span> </label></td>
+                                        <td style="background-color: #F0F0F0; ">
+                                                <span class="Zh">課程教學內容涉及社會參與、服務等。</span>
+                                                                                            <span class="En">The course contents include social engagement and services.</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">總整課程 </span> <span class="En">Capstone Course</span></label></td>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">3 </span> </label></td>
+                                        <td style="background-color: #F0F0F0; ">
+                                                <span class="Zh">係統整與深化學生歷年所學，並運用於實務操作與討論，藉以檢視和評估學生的整體學習成效。</span>
+                                                                                            <span class="En">The courses are designed to integrate and intensify students&#39; academic results from previous years and apply them in practice and discussions for the purpose of reviewing and evaluating the overall effectiveness of students&#39; learning.</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">永續課程 </span> <span class="En">SDGs</span></label></td>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">4 </span> </label></td>
+                                        <td style="background-color: #F0F0F0; ">
+                                                <span class="Zh"><a href='https://drive.google.com/file/d/10qeLzNtNjwaVbzCM3DvXuvq0XTLtdYXD/view?usp=share_link' target="_blank"><span> 課程主軸明確探討永續性之統整概念及/或聯合國永續發展目標及/或「生態」與「社會/文化/經濟」系統之間的相互依賴性。關聯度級分請點選連結說明。 </span></a></span>
+                                                                                            <span class="En"><a href='https://drive.google.com/file/d/1-cMRkA1NPjudAl776CeCNmPhKkwoYNnd/view?usp=share_link' target="_blank"><span> A unit of instruction that has a primary and explicit focus on the integrated concept of sustainability, and/or UN Sustainable Development Goals, and/or the interdependence of ecological and social/cultural/economic systems. Please refer to the link of relevance score. </span></a></span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">資訊判讀課程 </span> <span class="En">Information Literacy Course</span></label></td>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">4 </span> </label></td>
+                                        <td style="background-color: #F0F0F0; ">
+                                                <span class="Zh">課程內容旨在教授媒體、網路相關專業資訊之真偽辨別與判讀能力。</span>
+                                                                                            <span class="En">The course would provide skills to evaluate the quality of information found  on  the media and the Internet.</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">AI 素養課程 </span> <span class="En">AI Competence Course</span></label></td>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">4 </span> </label></td>
+                                        <td style="background-color: #F0F0F0; ">
+                                                <span class="Zh">將 AI 知能運用融入課程，引導師生與 AI 共學、協作，多元培養學生 AI 素養。</span>
+                                                                                            <span class="En">Integrate the application of AI knowledge into the curriculum, lead teachers and students to learn and collaborate with AI, and cultivate students&#39; AI literacy.</span>
+                                        </td>
+                                    </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div><!--/.row-->
+        </div><!--/.container-->
+    <div class="container">
+        <div class="row">
+            <div class="col-md-5">
+            </div>
+            <div class="col-md-7">
+            </div>
+        </div><!--/.row!-->
+    </div><!--/.container!-->
+    <div class="container-fluid bg-info sylview-section sylview-mtop">
+        <div class="row" id="objectives">
+            <div class="col-md-offset-2 col-md-8">
+                <h2 class="text-primary text-center"><span class="Zh">每周課程進度與作業要求</span><span class="En"> Course Schedule &amp; Requirements</span></h2>
+                <p><span style="font-size:16px">Lecture 1: Introduction </span></p>
+
+<p><span style="font-size:16px">Lecture 2: Supply and Demand I </span></p>
+
+<ul>
+	<li>
+	<p><span style="font-size:16px">Demand and Supply</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Equilibrium</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Comparative Statics</span></p>
+	</li>
+</ul>
+
+<p><span style="font-size:16px">Lecture 3: Supply and Demand II </span></p>
+
+<ul>
+	<li>
+	<p><span style="font-size:16px">Comparative Statics Using Calculus</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Elasticities</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Effects of a Sales Tax </span></p>
+	</li>
+</ul>
+
+<p><span style="font-size:16px">Lecture 4: Consumer Theory I </span></p>
+
+<ul>
+	<li>
+	<p><span style="font-size:16px">Effects of a Sales tax </span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Preferences</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Utility  </span></p>
+	</li>
+</ul>
+
+<p><span style="font-size:16px">Lecture 5: Consumer Theory II </span></p>
+
+<ul>
+	<li>
+	<p><span style="font-size:16px">Utility functions</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Budget Constraints</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Constrained Optimization</span></p>
+	</li>
+</ul>
+
+<p><strong><span style="font-size:16px">Midterm Exam 1: 10/14</span></strong></p>
+
+<p><span style="font-size:16px">Lecture 6: Demand I </span></p>
+
+<ul>
+	<li>
+	<p><span style="font-size:16px">Constrained Optimization II</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Lagrangian Method</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Behavioral Economics: Tax Salience</span></p>
+	</li>
+</ul>
+
+<p><span style="font-size:16px">Lecture 7: Demand II </span></p>
+
+<ul>
+	<li>
+	<p><span style="font-size:16px">Price Effect and Demand Curve</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Income Effect and Engel Curve</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Price Effect = Income Effect + Substitution Effect</span></p>
+	</li>
+</ul>
+
+<p><span style="font-size:16px">Lecture 8: Demand III </span></p>
+
+<ul>
+	<li>
+	<p><span style="font-size:16px">Slutsky Equation</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Derive Slutsky Equation Using Calculus</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Cost-of-living Adjustments I</span></p>
+	</li>
+</ul>
+
+<p><span style="font-size:16px">Lecture 9: Demand IV </span></p>
+
+<ul>
+	<li>
+	<p><span style="font-size:16px">Review</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Cost-of-Living Adjustments II</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Revealed Preferences</span></p>
+	</li>
+</ul>
+
+<p><strong><span style="font-size:16px">Midterm Exam 2: 11/18</span></strong></p>
+
+<p><span style="font-size:16px">Lecture 10: Consumer Welfare </span></p>
+
+<ul>
+	<li>
+	<p><span style="font-size:16px">Consumer Surplus</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Compensated Variation</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Equivalent Variation</span></p>
+	</li>
+</ul>
+
+<p><span style="font-size:16px">Lecture 11: Policy Applications and Labor Supply Model </span></p>
+
+<ul>
+	<li>
+	<p><span style="font-size:16px">Effects of Government Policies</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Labor Supply Model</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Income and Substitution Effects of a Wage Change</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Applications of Labor Supply Model</span></p>
+	</li>
+</ul>
+
+<p><span style="font-size:16px">Lecture 12: Production </span></p>
+
+<ul>
+	<li>
+	<p><span style="font-size:16px">Short-Run and Long-Run Production</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">The Elasticity of Substitution</span></p>
+	</li>
+	<li>
+	<p><span style="font-size:16px">Returns to Scale</span></p>
+	</li>
+</ul>
+
+<p><span style="font-size:16px">Lecture 13: Review for Final Exam </span></p>
+
+<p><span style="font-size:16px">(Optional: Two-Period Consumption Model) </span></p>
+
+<p><strong><span style="font-size:16px">Final Exam: 12/23</span></strong></p>
+
+<p> </p>
+            </div>
+        </div><!--/.row!-->
+    </div><!--/.container!-->
+    <div class="container-fluid sylview-section">
+        <div class="row">
+            <h2 class="text-primary text-center sylview--mbottom col-p-4"><span class="Zh">授課方式</span><span class="En">Teaching Approach</span></h2><!--2017.6.21-->
+            <div class="col-sm-offset-2 col-sm-8 col-p-8 col-p-offset-0">
+                <!--2017.6.21-->
+                <div class="col-sm-offset-1 col-sm-2 col-xs-4 text-center col-p-2 col-p-offset-0">
+                    <div class="wow bounceIn" data-wow-offset="0" data-wow-delay="0.1s">
+                        <div class="icon">
+                            <i class="sylview-icontext">
+                                70%
+                            </i>
+                        </div>
+                        <h4>
+                            <span class="Zh">講述</span>
+                            <span class="En">Lecture</span>
+                        </h4>
+                    </div>
+                </div>
+                <div class="col-sm-2 col-xs-4 text-center col-p-2">
+                    <!--2017.6.21-->
+                    <div class="wow bounceIn" data-wow-offset="0" data-wow-delay="0.4s">
+                        <div class="icon">
+                            <i class="sylview-icontext">20%</i>
+                        </div>
+                        <h4>
+                            <span class="Zh">討論</span>
+                            <span class="En">Discussion</span>
+                        </h4>
+                    </div>
+                </div>
+                <div class=" col-sm-2 col-xs-4 text-center col-p-2">
+                    <!--2017.6.21-->
+                    <div class="wow bounceIn" data-wow-offset="0" data-wow-delay="0.2s">
+                        <div class="icon">
+                            <i class="sylview-icontext">0%</i>
+                        </div>
+                        <h4>
+                            <span class="Zh">小組活動</span>
+                            <span class="En">Group activity</span>
+                        </h4>
+                    </div>
+                </div>
+                <div class="col-sm-offset-0 col-sm-2 col-xs-offset-2 col-xs-4 text-center col-p-2 col-p-offset-0">
+                    <!--2017.6.21-->
+                    <div class="wow bounceIn" data-wow-offset="0" data-wow-delay="0.6s">
+                        <div class="icon">
+                            <i class="sylview-icontext">10%</i>
+                        </div>
+                        <h4>
+                            <span class="Zh">數位學習</span>
+                            <span class="En">E-learning</span>
+                        </h4>
+                    </div>
+                </div>
+                <div class="col-sm-2 col-xs-4 text-center col-p-2">
+                    <!--2017.6.21-->
+                    <div class="wow bounceIn" data-wow-offset="0" data-wow-delay="0.5s">
+                        <div class="icon">
+                            <i class="sylview-icontext">0%</i>
+                        </div>
+                        <h4>
+                            <span class="Zh">其他：</span>
+                            <span class="En">Others:</span>
+                            <span></span>
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div><!--/.row!-->
+    </div><!--/.container-f!-->
+    <div class="container-fluid bg-info sylview-section">
+        <div class="row">
+            <div class="col-md-offset-3 col-md-6 col-sm-offset-1 col-sm-10 col-p-offset-0">
+                <!--2017.04.27--><!--2017.6.21-->
+                <h2 class="text-primary text-center col-p-4"><span class="Zh">評量工具與策略、評分標準成效</span><span class="En">Evaluation Criteria</span></h2><!--2017.6.21-->
+                <div class="col-p-8">
+                    <!--2017.6.21-->
+                    <p><span style="font-size:16px">During this course, students will be assessed through two midterm exams and a final exam. The final course grade will be calculated as follows:</span></p>
+
+<ul>
+	<li><span style="font-size:16px">45% of the grade will come from the highest score among the three exams.</span></li>
+	<li><span style="font-size:16px">35% will be based on the second highest exam score.</span></li>
+	<li><span style="font-size:16px">20% will be derived from the lowest exam score.</span></li>
+</ul>
+
+                </div>
+            </div>
+        </div><!--/.row!-->
+    </div><!--/.container-f!-->
+    <div class="container-fluid sylview-section">
+        <div class="row">
+            <div class="col-md-offset-3 col-md-6 col-sm-offset-1 col-sm-10 col-p-offset-0">
+                <!--2017.6.21-->
+                <h2 class="text-primary text-center sylview--mbottom col-p-4"><span class="Zh">指定/參考書目</span><span class="En">Textbook &amp; References</span></h2><!--2017.6.21-->
+                
+                <div class="col-p-8">
+                    <!--2017.6.21-->
+                    <p><span style="font-size:16px"><span style="font-family:Arial,Helvetica,sans-serif"><strong>Text:</strong></span></span></p>
+
+<p><span style="font-size:16px"><span style="font-family:Arial,Helvetica,sans-serif">Jeffrey M. Perloff, <em>Microeconomics: Theory and Applications with Calculus 5/E</em>, Global Edition, Pearson</span></span></p>
+
+<p><span style="font-size:16px"><span style="font-family:Arial,Helvetica,sans-serif"><strong>Supplememtary Text:</strong></span></span></p>
+
+<p><span style="font-size:16px"><span style="font-family:Arial,Helvetica,sans-serif">Steven Lansburg, <em>Price Theory and Applications</em>, 9<sup>th</sup> edition, 2013</span></span></p>
+
+<p><span style="font-size:16px"><span style="font-family:Arial,Helvetica,sans-serif">Armen A. Alchian and William R. Allen, <em>Exchange & Production</em></span><em>: Competition, Coordination, and Control</em>, 3rd edition, 1983</span></p>
+
+                </div>
+                <div class="col-p-8 sylview-mtop">
+                    <!--2017.7.19 div-->
+                    <h4 class="text-info">
+                        已申請之圖書館指定參考書目
+                        <span class="pull-right small hidden-print">
+                            
+                            <a href="https://nccu.primo.exlibrisgroup.com/discovery/search?tab=CourseReserves&search_scope=CourseReserves&vid=886NCCU_INST:886NCCU_INST&lang=zh-tw&offset=0" target="_blank">
+                                圖書館指定參考書查詢
+                            </a> |<a href="https://www.lib.nccu.edu.tw/zh_tw/6/604/UsingReservedBooks" target="_blank">相關處理要點</a>
+                        </span>
+                    </h4>
+                </div>
+
+                <div class="alert text-center text-danger sylview-circle hidden-print">
+                    <!--2017.6.21-->
+                    <h3><i class="fa fa-book fa-2x text-danger"></i></h3>
+                    <span class="Zh">維護智慧財產權，務必使用正版書籍。</span>
+                    <span class="En">Respect Copyright.</span>
+                </div>
+            </div>
+        </div><!--/.row!-->
+    </div><!--/.container-f!-->
+    <!--AI 2026.07.23 -->  
+   
+        <div class="container-fluid bg-info sylview-section">
+            <div class="row">
+                <div class="col-md-offset-2 col-md-8">
+                    <h2 class="text-primary text-center"><span class="Zh">課程AI能力關聯</span><span class="En">Course–AI Competency Relevance</span></h2>
+                    <div>
+                        <div>
+
+                            <div class="Zh" style="line-height: 1.4;">
+                                <p><b>級分說明 Score Description: </b></p>
+                                0：無關聯，課程內容、活動及評量均未涉及。<br>
+                                1：極低關聯，僅於課堂中簡單提及，未安排學習活動。<br>
+                                2：低度關聯，少數單元或活動涉及，但非主要教學內容。<br>
+                                3：中度關聯，明確納入部分教學活動、作業或評量。<br>
+                                4：高度關聯，為重要學習內容，融入多數教學活動或評量。<br>
+                                5：核心關聯，為課程核心學習目標，且有系統性教學與評量。
+                            </div>
+                            <div class="En" style="line-height: 1.4;">
+                                0：No relevance: The course content, learning activities, and assessments do not address this competency.<br>
+                                1：Very low relevance: The competency is only briefly mentioned in class, with no related learning activities.<br>
+                                2：Low relevance: The competency is addressed in a small number of units or activities but is not a major component of the course.<br>
+                                3：Moderate relevance: The competency is explicitly incorporated into some learning activities, assignments, or assessments.<br>
+                                4：High relevance: The competency is an important learning component and is integrated into most learning activities or assessments.<br>
+                                5：Core relevance: The competency is a core learning objective of the course and is addressed through systematic instruction and assessment.<br>
+                            </div>
+                        </div>
+                        <table class="table table-hover table-striped">
+                            <thead>
+                                <tr>
+                                    <th class="col-xs-3 col-md-3" style="background-color: #F0F0F0; "><span class="Zh">課程AI能力項目</span><span class="En">Course–AI Competency Items</span></th>
+                                    <th class="col-xs-1 col-md-1" style="background-color: #F0F0F0; "><span class="Zh">級分(0~5)</span><span class="En">Ranking</span></th>
+                                    <th class="col-xs-8 col-md-8" style="background-color: #F0F0F0; "><span class="Zh">說明</span><span class="En">Description</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                    <tr>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">能力A：教授學生運用 AI 學習的能力 </span> <span class="En">Competency A: Teaching Students to Use AI for Learning</span></label></td>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">3 </span> </label></td>
+                                        <td style="background-color: #F0F0F0; ">
+                                                <span class="Zh">本課程培養學生依專業或學習需求，理解、選用及運用AI工具，進行資訊整理、資料產出、提問與自主學習的程度。</span>
+                                                                                            <span class="En">This course develops students&#39;ability to understand, select, and use AI tools according to their disciplinary or learning needs for information organization, data or content generation, inquiry, and self-directed learning.</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">能力B：教授學生負責任使用 AI 的能力 </span> <span class="En">Competency B: Teaching Students to Use AI Responsibly</span></label></td>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">3 </span> </label></td>
+                                        <td style="background-color: #F0F0F0; ">
+                                                <span class="Zh">本課程培養學生遵循學術誠信、智慧財產權、個人資料及相關倫理規範，並辨識AI偏誤、錯誤資訊與資安風險的程度。</span>
+                                                                                            <span class="En">This course develops students’ ability to comply with academic integrity, intellectual property, personal data protection, and relevant ethical requirements, as well as to identify AI bias, misinformation, and cybersecurity risks.</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">能力C：教授學生運用AI解決問題的能力 </span> <span class="En">Competency C: Teaching Students to Use AI for Problem-Solving</span></label></td>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">3 </span> </label></td>
+                                        <td style="background-color: #F0F0F0; ">
+                                                <span class="Zh">本課程培養學生運用AI分析問題、整合專業知識、優化流程，並透過人機協作提出、驗證及修正解決方案的程度。</span>
+                                                                                            <span class="En">This course develops students’ ability to use AI to analyze problems, integrate disciplinary knowledge, optimize processes, and propose, validate, and refine solutions through human–AI collaboration.</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">能力D：教授學生AI無法取代的能力 </span> <span class="En">Competency D: Developing Human-Centered Competencies That AI Cannot Replace</span></label></td>
+                                        <td style="background-color: #F0F0F0; "><label><span class="Zh">3 </span> </label></td>
+                                        <td style="background-color: #F0F0F0; ">
+                                                <span class="Zh">本課程培養學生自主判斷、承擔責任、溝通協作、同理關懷、多元思考及創意實踐等以人為本能力的程度。</span>
+                                                                                            <span class="En">This course develops students’ human-centered competencies, including independent judgment, accountability, communication and collaboration, empathy and care, diverse perspectives, and creative practice.</span>
+                                        </td>
+                                    </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div><!--/.row-->
+        </div><!--/.container-->
+
+    <!--2024.11.05-->
+
+        <div class="container-fluid bg-info sylview-section">
+            <div class="row">
+                <div class="col-md-offset-3 col-md-6 col-sm-offset-1 col-sm-10 col-p-offset-0">
+                    <h2 class="text-primary text-center col-p-4"><span class="Zh">本課程可否使用生成式AI工具</span><span class="En">Course Policies on the Use of Generative AI Tools</span></h2>
+                    <div class="col-p-4">
+                            <span class="Zh form-inline">有條件開放使用:除考試外，完全開放使用</span>
+                            <span class="En">Conditional Permitted to Use </span>
+                    </div>
+                </div>
+            </div><!--/.row!-->
+        </div><!--/.container-f!-->
+    <div class="container-fluid bg-gray sylview-section">
+        <div class="row">
+            <div class="col-md-2 col-md-offset-3">
+                <h3 class="text-center text-info hidden-print"><i class="fa fa-link fa-2x"></i></h3><!--2017.6.21-->
+                <h3 class="text-center text-info"><span class="Zh">課程相關連結</span><span class="En">Course Related Links</span></h3>
+            </div>
+            <div class="col-md-4">
+                <pre>
+</pre>
+            </div>
+        </div><!--/row-->
+        <hr class="sylview-hr-gray hidden-print"><!--2017.6.21-->
+        <div class="row">
+            <div class="col-md-2 col-md-offset-3 col-p-4">
+                <!--2017.6.21-->
+                <h3 class="text-center text-info"><i class="fa fa-file-o fa-2x"></i></h3>
+                <h3 class="text-center text-info"><span class="Zh">課程附件</span><span class="En">Course Attachments</span></h3><!--2017.6.21-->
+            </div>
+            <div class="col-md-4 col-p-6">
+                <!--2017.6.21-->
+                <ul class="list-group">
+                </ul>
+            </div>
+        </div><!--/row-->
+    </div><!--/container-->
+    <div class="container-fluid sylview-section bg-black">
+        <div class="row">
+            <div class="col-sm-offset-3 col-sm-1 hidden-xs text-right sylview--mbottom hidden-print">
+                <!--2017.6.21-->
+                <h2><i class="fa fa-mobile-phone fa-4x wow tada" data-wow-offset="0" data-wow-delay="1s" data-wow-duration="1s"></i></h2>
+            </div>
+            <div class="col-sm-6 col-p-12">
+                <!--2017.6.21-->
+                <h3 class="col-p-4">
+                    <span class="Zh">課程進行中，使用智慧型手機、平板等隨身設備</span><!--2017.6.21-->
+                    <span class="En">To Use Smart Devices During the Class</span>
+                </h3>
+                <div class="col-p-8">
+                        <span class="Zh">
+                            否
+                        </span>
+                        <span class="En">No</span>
+                </div>
+            </div>
+        </div><!--/.row!-->
+    </div><!--/.container-f!-->
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12 col-sm-4 col-p-12">
+                    <!--2017.6.21-->
+                    <h3 class="text-primary col-p-4"><span class="Zh">授課教師Office Hours及地點</span><span class="En">Office Hours &amp; Office Location</span></h3><!--2017.6.21-->
+                    <div class="col-p-8">
+                        <!--2017.6.21-->
+                        <p>Wednesday 4-5pm 綜院南棟10F 51043</p>
+
+                    </div>
+                </div>
+                <div class="col-xs-12 col-sm-4 col-p-12">
+                    <!--2017.6.21-->
+                    <h3 class="text-primary col-p-4"><span class="Zh">教學助理基本資料</span><span class="En">Teaching Assistant Information</span></h3><!--2017.6.21-->
+                    <div class="col-p-8">
+                        <!--2017.6.21-->
+                        <p>侯姿羽 cody510511@gmail.com </p>
+
+<p>郭柔妤 114258015@nccu.edu.tw</p>
+
+<p>鄭澔哲 114258047@g.nccu.edu.tw</p>
+
+<p>邱庭妍 110208093@g.nccu.edu.tw </p>
+
+<p> </p>
+
+                    </div>
+                </div>
+
+                
+                <div class="col-xs-12 col-sm-4 hidden-print">
+                    <!--2017.6.21-->
+                    
+                    <p></p>
+                    <p class="powerby">Powered by NCCU Computer Center</p>
+                </div>
+            </div><!--/.row!-->
+        </div>
+    </footer>
+    <a href="#" class="hidden-print text-primary">
+        <!--2017.10.12-->
+        <div class="goprint">
+            <i class="fa fa-print fa-2x"></i><br><span class="small">列印</span>
+        </div>
+    </a>
+    <a href="#" class="hidden-print">
+        <div class="gototop">
+            <h3><span class="glyphicon glyphicon-chevron-up"></span></h3>
+        </div>
+    </a>
+    <a href="#">
+        <div class="gototop">
+            <h3><span class="glyphicon glyphicon-chevron-up"></span></h3>
+        </div>
+    </a>
+
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script type="text/javascript" src="https://newdoc.nccu.edu.tw/teaContent/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://newdoc.nccu.edu.tw/teaContent/js/wow.min.js"></script>
+    <script type="text/javascript" src="https://newdoc.nccu.edu.tw/teaContent/js/jquery.easing.1.3.js"></script>
+    <script type="text/javascript" src="https://newdoc.nccu.edu.tw/teaContent/js/jquery.isotope.min.js"></script>
+    <script type="text/javascript" src="https://newdoc.nccu.edu.tw/teaContent/js/jquery.bxslider.min.js"></script>
+    
+    
+
+    <link type="text/css" href="https://newdoc.nccu.edu.tw/teaContent/css/style.css" rel="stylesheet">
+    
+    <script type="text/javascript">
+        /*2017.05.03 科目名稱到navbar*/
+        /* $(window).scroll(moveTitle);*/
+        $(window).on("scroll", moveTitle);
+        function moveTitle() {
+
+            //var yScroll = window.pageYOffset;
+            var yScroll = document.documentElement.scrollTop;
+            var scrollPos = 150;
+            var newTitle = $("#CourseName").html();
+            var newTitleEn = $("#CourseNameEn").html();
+            //var oTitle = '教學大綱維護 Syllabus';
+            var oTitle = '<span style="font-size:70%;">國立政治大學校務行政系統  </span>' + '教學大綱 Syllabus';
+            if (yScroll > scrollPos) {
+                $(".navbar-brand span").html(newTitle);
+                $(".navbar-brand span").append(" ");
+                $(".navbar-brand span").append(newTitleEn);
+            } else {
+                $(".navbar-brand span").html(oTitle);
+            }
+        };
+    </script>
+
+    <script type="text/javascript">
+        //$(function () {
+        $('.goprint').on("click", function () {
+            window.print();
+        });
+        var stuData = [], teaData = [], labelData = [], kerlData = [];
+
+        $.ajax({
+            url: "https://webapp.nccu.edu.tw/syllabus/api/syllabus/Radar",
+            crossDomain: true,
+            dataType: 'json',
+            data: { courUrl: $("#courseUrl").val() },
+            success: function (data) {
+
+                console.log(data);
+                if (data.length == 0) {
+                    $("#noChart").show();
+                    $("#chart").hide();
+                }
+                else {
+                    var j = 0;
+                    $.each(data, function () {
+                        teaData.push(this.LevNum);
+                        stuData.push(this.LevNumAvg);
+                        $('#listUnstyled').append('<li>' + String.fromCharCode(65 + j) + ". " + this.KerlNam + '</li>');
+                        kerlData.push(this.KerlNam);
+                        j++;
+                    });
+                    for (i = 0; i < teaData.length; i++) {
+                        labelData.push(String.fromCharCode(65 + i));
+                    }
+
+                    $("#chart").kendoChart({
+                        title: {
+                            text: "雷達圖"
+                        },
+                        legend: {
+                            position: "bottom"
+                        },
+                        seriesDefaults: {
+                            type: "radarLine"
+                        },
+                        series: [{
+                            name: "老師",
+                            data: teaData
+                        }, {
+                            name: "學生",
+                            data: stuData
+
+                        }],
+                        categoryAxis: {
+                            categories: labelData
+                        },
+                        valueAxis: {
+                            labels: {
+                                format: "{0}"
+                            },
+                            max: 5,
+                            min: 0
+                        },
+                        tooltip: {
+                            visible: true,
+                            format: "{0}"
+                        }
+                    });
+                }
+            }
+        });
+
+        //})
+    </script>
+    <script type="text/javascript">
+        function ShowFile(num) {
+
+            var fileIdName = "FileIdName_" + num;
+            var tmpFile = $("#" + fileIdName);
+            var fileUrlStr = "FileUrlStr_" + num;
+            var tmpUrl = $("#" + fileUrlStr);
+            var fileName = tmpFile[0].defaultValue;
+            var urlStr = tmpUrl[0].defaultValue;
+            var fileUrl = urlStr + fileName;
+
+            var fileId = "showFileNum_" + num;
+            var fileHtml = "<br><a><div><iframe src='" + fileUrl + "' width='525' height=300 scrolling='yes' frameborder='0'></iframe></div></a>";
+            $("#" + fileId)[0].innerHTML = fileHtml;
+
+            var closefileId = "CloseFileId_" + num;
+            $("#" + closefileId).show();
+        }
+
+        function CloseFile(num) {
+            var fileId = "showFileNum_" + num;
+            $("#" + fileId)[0].innerHTML = '';
+
+            var closefileId = "CloseFileId_" + num;
+            $("#" + closefileId).hide();
+        }
+
+        //function downloadFile(obj, num) {
+        //    var fileName = obj.innerText;
+        //    var fileNum = num;
+        //    var fileId = "prtFile_" + fileNum;
+        //    var w_width = 1418;                                                                            //設定開啟視窗的寬度1050*1.3=1365 1050*1.35=1418
+        //    var w_height = 810;                                                                            //設定開啟視窗的高度600*1.3=780 600*1.35=810
+        //    var x = (screen.width - w_width) / 2;                                                          //計算螢幕與開啟視窗的寬度
+        //    var y = (screen.height - w_height) / 8;                                                        //計算螢幕與開啟視窗的高度
+        //    //var fileUrl = "teasyllabus/1091032001061/" + fileName;
+        //    //var openUrl = window.open(fileUrl, fileName, 'height=' + w_height + ',width=' + w_width + ',top=' + y + ',left=' + x +',toolbar=no,menubar=no,scrollbars=no,resizable=no,location=no,status=no');
+        //    var openUrl = window.open('', fileName, 'height=' + w_height + ',width=' + w_width + ',top=' + y + ',left=' + x);
+        //    var printingPage = document.getElementById(fileId);
+        //    var str = "<HTML><BODY>" + printingPage.outerHTML + "</BODY></HTML>";
+        //    openUrl.document.write(str);
+        //    openUrl.document.title = fileName;
+        //    var test = openUrl.document.textContent;
+        //    debugger;
+        //}
+    </script>
+</body>
+</html>

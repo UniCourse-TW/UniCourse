@@ -1,0 +1,105 @@
+{
+  "F247D032-D9C1-4544-BC86-C2344E72746C": {
+    "1": {
+      "1151_110063": {
+        "acy": "115",
+        "sem": "1",
+        "cos_id": "110063",
+        "cos_code": "MDMD10170",
+        "num_limit": "9999",
+        "dep_limit": "*",
+        "URL": "",
+        "cos_cname": "胚胎學",
+        "cos_credit": ".30",
+        "cos_hours": ".30",
+        "teacher": "傅毓秀、鄭瓊娟、李學德、王先逸",
+        "cos_time": "M1234T1234W1234R1234F1234-YT001[YM]",
+        "memo": "限醫三牙二, 上課時間及地點請參照PBL整合課程行事曆",
+        "cos_ename": "Embryology",
+        "brief": "",
+        "degree": "1",
+        "dep_id": "101",
+        "dep_primary": "1",
+        "dep_cname": "醫學系",
+        "dep_ename": "School of Medicine",
+        "cos_type": "必修",
+        "cos_type_e": "Required",
+        "crsoutline_type": "data",
+        "reg_num": "188",
+        "depType": "U"
+      },
+      "1151_110068": {
+        "acy": "115",
+        "sem": "1",
+        "cos_id": "110068",
+        "cos_code": "MDMD10020",
+        "num_limit": "9999",
+        "dep_limit": "*",
+        "URL": "",
+        "cos_cname": "導師時間",
+        "cos_credit": ".00",
+        "cos_hours": "2.00",
+        "teacher": "楊智傑、黃金洲、宋思賢、紀乃方、梁立霖、梁仁峯、林祐霆、郭曉縈、吳莉玲、陳明德、黃文彬、王維庭、陳威志",
+        "cos_time": "",
+        "memo": "",
+        "cos_ename": "Class Meeting",
+        "brief": "",
+        "degree": "1",
+        "dep_id": "101",
+        "dep_primary": "1",
+        "dep_cname": "醫學系",
+        "dep_ename": "School of Medicine",
+        "cos_type": "必修",
+        "cos_type_e": "Required",
+        "crsoutline_type": "data",
+        "reg_num": "150",
+        "depType": "U"
+      }
+    },
+    "dep_id": "F247D032-D9C1-4544-BC86-C2344E72746C",
+    "dep_cname": "醫學系",
+    "dep_ename": "School of Medicine",
+    "costype": {
+      "1151_110063": {
+        "": {
+          "course_category_cname": "",
+          "course_category_ename": "",
+          "course_category_type": "",
+          "GECIName": "",
+          "GECIEngName": ""
+        }
+      },
+      "1151_110068": {
+        "大學導師_大學導師": {
+          "course_category_cname": "大學導師_大學導師",
+          "course_category_ename": "Undergraduate mentor’s hours course_Undergraduate mentor’s hours course",
+          "course_category_type": "65",
+          "GECIName": "",
+          "GECIEngName": ""
+        }
+      }
+    },
+    "brief": {
+      "1151_110063": {
+        "": {
+          "brief_code": "",
+          "brief": ""
+        }
+      },
+      "1151_110068": {
+        "": {
+          "brief_code": "",
+          "brief": ""
+        }
+      }
+    },
+    "language": {
+      "1151_110063": {
+        "授課語言代碼": "zh-tw"
+      },
+      "1151_110068": {
+        "授課語言代碼": "zh-tw"
+      }
+    }
+  }
+}
