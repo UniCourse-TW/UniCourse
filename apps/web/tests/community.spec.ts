@@ -8,6 +8,22 @@ async function ratingCount(page: Page) {
   return Number(text?.match(/(\d+) 則評價/)?.[1]);
 }
 
+/**
+ * Opens the nav's account menu. It closes after each navigation, and a click that lands before
+ * hydration can be undone by it, so retry until the menu's links are visible.
+ */
+async function openMenu(page: Page) {
+  const nav = page.getByRole('navigation', { name: '主要導覽' });
+  const account = nav.getByLabel('帳號選單');
+  await expect(async () => {
+    // The summary's parent is the menu's <details>.
+    if (!(await account.locator('xpath=..').evaluate((details) => (details as HTMLDetailsElement).open))) {
+      await account.click();
+    }
+    await expect(nav.getByRole('link', { name: '個人頁面' })).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 10_000 });
+}
+
 test('registers, rates a course, posts a linked question, replies, votes and logs out', async ({ page, request }) => {
   // The fixture's 115-1 線性代數 offering at nthu (DEMO201), looked up through the API.
   const search = await request.get(`${API}/api/courses`, { params: { q: '線性', school: 'nthu', term: '115-1' } });
@@ -99,8 +115,8 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await page.goto('/forum?school=nthu&courseCode=DEMO201');
   await expect(page.getByRole('link', { name: title })).toBeVisible();
 
-  // Both show up on the public profile.
-  await account.click();
+  // Both show up on the public profile, linked from the account menu.
+  await openMenu(page);
   await nav.getByRole('link', { name: '個人頁面' }).click();
   await expect(page.getByRole('heading', { name: '測試同學' })).toBeVisible();
   await expect(page.getByRole('group', { name: '活動統計' })).toContainText('課程評價');
@@ -119,7 +135,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   expect((await page.goto(threadUrl))?.status()).toBe(404);
 
   // Logging out is a POST; afterwards the nav offers sign-in again and rating needs a login.
-  await account.click();
+  await openMenu(page);
   await nav.getByRole('button', { name: '登出' }).click();
   await expect(nav.getByRole('link', { name: '登入／註冊' })).toBeVisible();
   await page.goto(`/courses/${course.id}`);
