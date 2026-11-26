@@ -1,4 +1,4 @@
-import { decodeEntities, remapExtra, stripControl, withExtra, withoutPlaceholderInstructors, type ExtraRecord, type ExtraValue, type Offering } from '@unicourse/crawler-kit';
+import { decodeEntities, oneLineText, remapExtra, stripControl, withExtra, withoutPlaceholderInstructors, type ExtraRecord, type ExtraValue, type Offering } from '@unicourse/crawler-kit';
 
 function parseJson(value: ExtraValue): Record<string, Record<string, unknown>> | undefined {
   if (typeof value !== 'string' || !value.startsWith('{')) return undefined;
@@ -10,12 +10,13 @@ function parseJson(value: ExtraValue): Record<string, Record<string, unknown>> |
   }
 }
 
-const joined = (values: unknown[]) => [...new Set(values.filter((v): v is string => typeof v === 'string' && v.trim() !== '').map((v) => v.trim()))].join('、');
+const joined = (values: unknown[]) =>
+  [...new Set(values.filter((v): v is string => typeof v === 'string' && v.trim() !== '').map((v) => decodeEntities(v).trim()))].join('、');
 
 /** `{"大學導師_大學導師": {"course_category_cname": "大學導師_大學導師", …}}` -> `大學導師`. */
 export function courseCategories(value: ExtraValue): string | undefined {
   const items = parseJson(value);
-  if (!items) return typeof value === 'string' && value.trim() ? value : undefined;
+  if (!items) return typeof value === 'string' && value.trim() ? joined(value.split('、')) : undefined;
   // `cname` is `<category>_<subcategory>`, almost always the same text twice (`程式相關_程式相關`) or the
   // subcategory cut short (`通識校基本素養_通識校基本`); the first part is the label the timetable shows.
   return joined(Object.values(items).map((item) => String(item?.course_category_cname ?? '').split('_')[0])) || undefined;
@@ -24,7 +25,7 @@ export function courseCategories(value: ExtraValue): string | undefined {
 /** `{"Z106": {"brief_code": "Z106", "brief": "領域課程-個人、社會與文化(110)"}}` -> the `brief` texts. */
 export function briefs(value: ExtraValue): string | undefined {
   const items = parseJson(value);
-  if (!items) return typeof value === 'string' && value.trim() ? value : undefined;
+  if (!items) return typeof value === 'string' && value.trim() ? joined(value.split('、')) : undefined;
   return joined(Object.values(items).flatMap((item) => String(item?.brief ?? '').split(','))) || undefined;
 }
 
@@ -39,7 +40,8 @@ const EXTRA_RULES = {
     const hours = typeof value === 'number' ? value : Number(String(value ?? '').trim());
     return Number.isFinite(hours) && hours > 0 ? ['上課時數', hours] : undefined;
   },
-  dep_ename: '開課單位英文名稱',
+  dep_ename: (value: ExtraValue): [string, ExtraValue] | undefined =>
+    typeof value === 'string' && value.trim() ? ['開課單位英文名稱', value.trim()] : undefined,
   costype: (value: ExtraValue): [string, ExtraValue] | undefined => {
     const label = courseCategories(value);
     return label ? ['課程類別', label] : undefined;
@@ -57,7 +59,7 @@ const EXTRA_RULES = {
   depType: null
 };
 
-const clean = (value: string | undefined) => (value === undefined ? undefined : stripControl(decodeEntities(value)).trim() || undefined);
+const clean = (value: string | undefined) => (value === undefined ? undefined : oneLineText(stripControl(decodeEntities(value))) || undefined);
 
 /**
  * Offering-level cleanup shared by the crawler and `retidy` (old snapshots): readable `extra`, decoded HTML entities

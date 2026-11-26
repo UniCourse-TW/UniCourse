@@ -90,7 +90,7 @@ Quirks in old terms (checked on 105-1 … 112-2):
   course to take (e.g. 課號 `Common1011` 國文領域 for 生技系); they are skipped.
 - Rows marked 停開 (cancelled icon, 2,290 serials in 115-1) are skipped.
 - The same 流水號 is listed once per 授課對象 (target department). Those rows are merged into one
-  offering; every 授課對象 is kept in `extra.授課對象` and the extra dpt_codes in `extra.授課對象代碼`.
+  offering; every 授課對象 is kept in `extra.授課對象` (the extra dpt_codes are not kept: the names already say it).
   The first row wins for 必/選修, which can differ between target departments; a missing value is
   filled from a later row.
 
@@ -114,7 +114,7 @@ Quirks in old terms (checked on 105-1 … 112-2):
 | 備註 | `notes`; `language` | `language` = `英語` only when 備註 says `本課程以英語授課` (`日語` likewise) |
 | 課程識別碼 | `extra.課程識別碼` | e.g. `002 50010` |
 | 全/半年 | `extra.全/半年` | |
-| 加選方式 | `extra.加選方式` | 1/2/3 |
+| 加選方式 | `extra.加選方式` | The 1/2/3 code spelled out with the legend under the result table: 不限人數，直接上網加選 / 向教師取得授權碼後加選 / 有人數限制，第一週上網登記後分發，第二週起依授權碼加選 |
 | 領域專長 | `extra.領域專長` | |
 | 選課限制條件 | `extra.選課限制條件` | |
 | 授課對象 | `extra.授課對象` | all target departments, `、`-joined |

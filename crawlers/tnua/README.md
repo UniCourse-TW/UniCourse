@@ -25,11 +25,11 @@
 | 開課單位下拉選項 | `department`, `departmentCode` | 採用網站公開的單位名稱及篩選代碼，例如 `CA111`。 |
 | 學分 `Credit`、必選修 `Type` | `credits`, `requirement`, `requirementText` | 保留小數學分及原始必選修文字。 |
 | 時段 `Sect`、教室 `Room` | `schedule`, `scheduleText` | 原文分隔存入 `scheduleText`；可解析時保留星期與校方節次（含 `N`）。「師生商定」不編造時間，多個教室未明示配對時不填 `location`。 |
-| 選課上限 `UpLimit` | `capacity` | 數字照錄（含 0）；`無` 等文字保留於 `extra.上限`。 |
+| 選課上限 `UpLimit` | `capacity` | 數字照錄（含 0）；但上限 0 而已有選課人數（室內樂、主修、獨立研究等由系所加選）時不視為名額而省略；`無` 等文字保留於 `extra.上限`。 |
 | 已選 `SumSelected` | `enrolled` | 照錄官網已選人數（含 0）；無有效數值則省略，與選課上限無關。 |
 | 「全英語授課」搜尋結果 | `language` | 僅標註公開篩選結果確認的 `全英語授課`，不推定其他課程的授課語言。 |
 | 備註 `Remark` | `notes` | 保留文字；移除電子郵件及手機號碼。 |
-| `Field`、`Target` | `extra` | `領域`、`選課對象`、`學期別`。 |
+| `Field`、`Target` | `extra` | `領域`、`選課對象`、`學期別`。`領域` 解碼 HTML 實體（`&amp;`）、去重並以 `、` 連接。 |
 | 大綱彈窗 `PageGetIntroduction` | `description` | 僅擷取可辨識的課程簡介；`UNICOURSE_TNUA_DETAILS=1` 才逐門查詢，每門增加一次請求。 |
 | 進階查詢頁 | `sourceUrl` | 彈窗沒有可分享的大綱網址，故 `syllabusUrl` 不填。 |
 

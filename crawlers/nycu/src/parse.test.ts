@@ -117,13 +117,16 @@ test('costype and brief JSON become short label lists', () => {
     '大學導師、通識校基本素養'
   );
   assert.equal(briefs('{"Z1":{"brief_code":"Z1","brief":"其它(87),語言與溝通-第二外語(111)"}}'), '其它(87)、語言與溝通-第二外語(111)');
+  assert.equal(briefs('{"A":{"brief":"中級以上 Intermediate &amp; Up(98)"}}'), '中級以上 Intermediate & Up(98)');
+  // Already-converted values (a second retidy) are left as they are, apart from entity decoding.
+  assert.equal(briefs('中級以上 Intermediate &amp; Up(98)、華語(100)'), '中級以上 Intermediate & Up(98)、華語(100)');
 });
 
 test('tidyOffering repairs old snapshots and is idempotent', () => {
   const old = {
     sourceId: '517301',
     courseCode: 'X',
-    title: '導師時間',
+    title: '導師時間  -職涯學院',
     titleEn: 'Mentor&#39;s Hours (I)\u007f',
     instructors: [],
     capacity: 0,
@@ -136,6 +139,8 @@ test('tidyOffering repairs old snapshots and is idempotent', () => {
   } as Offering;
   const once = tidyOffering(old);
   assert.equal(once.titleEn, "Mentor's Hours (I)");
+  assert.equal(once.title, '導師時間 -職涯學院');
+  assert.equal(tidyOffering({ ...old, extra: { dep_ename: null } }).extra, undefined);
   assert.equal(once.capacity, undefined);
   assert.equal(once.enrolled, 30);
   assert.deepEqual(once.extra, { 開課單位英文名稱: 'Department of Computer Science', 課程網頁: 'https://example.nycu.edu.tw/course' });

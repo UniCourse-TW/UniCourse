@@ -62,12 +62,12 @@ characters (the data contains DEL bytes) are removed, `\r\n` becomes `\n`.
 | `sub_name` (`lang: en`) | `titleEn` | Upper-case English title as published. |
 | `scr_period` 上課時間/上課教室/授課教師 | `schedule`, `scheduleText`, `instructors` | See below. |
 | `scr_teacher` | `instructors` | Only used to locate the instructor list in `scr_period` (it is truncated for long lists). |
-| `cls_id` (first 4 chars) | `departmentCode`, `department` | 系所 id/name from `GetUnitList`; omitted when the id is not in any unit list (~7%, e.g. `XC07` 通識選修, some 專班). |
+| `cls_id` (first 4 chars) | `departmentCode`, `department` | 系所 id/name from `GetUnitList`. The service stores names in a 13-character column, so long program names arrive cut (`美國加州舊金山州立大學資訊` = NM07, the SFSU 2+2 資訊工程雙學士學位學程); `src/tidy.ts` maps every cut name seen in 105-1…115-1 to its full name (sources in the comment there) and appends `…` to any new cut name. When the id is in no unit list (`XC07` 通識選修, some 專班) the offering college (`extra.開課學院`, e.g. `通識中心`) is used and `departmentCode` is omitted. |
 | `cls_name` / `cls_id` 開課班級 | `extra.開課班級`, `extra.班級代碼` | All classes of the merged rows, `、` / `,` joined. |
 | 學制 / 學院 of the query | `extra.學制`, `extra.開課學院` | Query context the row was found under. |
 | `scr_credit` 學分 | `credits` | |
 | `scj_scr_mso` 必選修 | `requirementText`, `requirement` | Only `必修` / `選修` occur; via `requirementFromText`. |
-| `scr_precnt` 開放名額 | `capacity` | |
+| `scr_precnt` 開放名額 | `capacity` or `extra.開放名額` | 開放名額 is the number of seats opened in online selection; students the department pre-registers (必修 帶入) are not in it, so e.g. `微積分(一)實習` shows 開放名額 5 with 63 students and many 必修 show 0. Used as `capacity` only when it is ≥ `enrolled`; otherwise kept as `extra.開放名額`. |
 | `scr_acptcnt` 實收名額 | `enrolled` | The published enrollment count, not 開放名額; keep nonnegative integers including zero and omit blanks. |
 | 授課語言 (language query) | `language` | `中文`, `英語`, `中英`, `日語`, … (from `init.languageList`). |
 | `scr_english` 英語/EMI | `extra.EMI課程` | boolean. |
@@ -75,7 +75,6 @@ characters (the data contains DEL bytes) are removed, `\r\n` becomes `\n`.
 | `scr_ldl` 上課方式 | `extra.上課方式` | 課堂教學 / 實時線上 / 混成式學習 / 線上教學On-line. |
 | `scr_date` 開課期程 | `extra.開課期程` | `全學期` or a date range. |
 | `scr_remarks` 備註 | `notes` | |
-| `unt_ls` | `extra.unt_ls` | Undocumented numeric unit code, kept raw. |
 | — | `syllabusUrl`, `sourceUrl` | `CourseOutline.aspx?lang=cht&courseid={year}{sms}{選課代碼}` (public redirector to the syllabus). |
 | syllabus `description.describe_ch` | `description` | Only with `FCU_FETCH_SYLLABUS=1`; English `describe_eh` as fallback. |
 
