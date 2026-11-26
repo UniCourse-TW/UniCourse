@@ -197,6 +197,8 @@ export interface Landscape {
   checkedAt: string;
   totalSites: number;
   totalSchools: number;
+  /** Schools with at least one surveyed site, whole dataset (the filtered count is in `stats`). */
+  surveyedSchools: number;
   shownSites: number;
   stats: {
     schools: number;
@@ -302,6 +304,7 @@ export function buildLandscape(filters: LandscapeFilters): Landscape {
     checkedAt,
     totalSites: sites.length,
     totalSchools: institutions.length,
+    surveyedSchools: new Set(sites.flatMap((site) => site.schools)).size,
     shownSites: kept.length,
     stats: {
       schools: new Set(kept.flatMap((site) => site.schools)).size,

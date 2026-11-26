@@ -73,7 +73,8 @@
           </div>
         </details>
       {:else}
-        <a href={loginHref(here)} class="login" aria-label="登入／註冊">登入</a>
+        <a href={page.url.pathname === '/auth' ? page.url.pathname + page.url.search : loginHref(here)} class="login" aria-label="登入／註冊"
+          aria-current={page.url.pathname === '/auth' ? 'page' : undefined}>登入</a>
       {/if}
     </div>
   </nav>
@@ -135,6 +136,7 @@
     .site-header:not([data-shell-theme]) .set-light { display: inline-grid; }
   }
   .login { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target-min); min-width: var(--target-min); padding-inline: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); font-size: var(--t-base); font-weight: 650; white-space: nowrap; text-decoration: none; }
+  .login[aria-current='page'] { border-color: var(--brand); color: var(--brand-ink); background: var(--brand-wash); }
   .account { position: relative; }
   .account summary { display: flex; gap: var(--space-1); padding-inline: var(--space-2); list-style: none; font-weight: 650; }
   .account summary::-webkit-details-marker { display: none; }

@@ -28,13 +28,13 @@
   <section aria-labelledby="account">
     <h2 id="account">帳號資料</h2>
     <p>註冊時只儲存你選的帳號名稱與經雜湊處理的密碼；本站不會儲存明文密碼。你可以在<a href="/settings">帳號設定</a>填寫顯示名稱、就讀學校與自我介紹，這些欄位都是選填，也可以隨時清空。</p>
-    <table>
-      <thead><tr><th>資料</th><th>用途</th><th>是否公開</th></tr></thead>
-      <tbody>
-        <tr><td>帳號名稱</td><td>登入與署名</td><td>公開</td></tr>
-        <tr><td>密碼雜湊</td><td>驗證登入</td><td>不公開</td></tr>
-        <tr><td>顯示名稱、學校、自我介紹</td><td>個人頁面</td><td>公開（選填）</td></tr>
-        <tr><td>評分、心得、文章、回覆、投票</td><td>社群功能</td><td>內容公開；投票只顯示合計</td></tr>
+    <table role="table">
+      <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">資料</th><th role="columnheader" scope="col">用途</th><th role="columnheader" scope="col">是否公開</th></tr></thead>
+      <tbody role="rowgroup">
+        <tr role="row"><td role="cell" data-label="資料">帳號名稱</td><td role="cell" data-label="用途">登入與署名</td><td role="cell" data-label="是否公開">公開</td></tr>
+        <tr role="row"><td role="cell" data-label="資料">密碼雜湊</td><td role="cell" data-label="用途">驗證登入</td><td role="cell" data-label="是否公開">不公開</td></tr>
+        <tr role="row"><td role="cell" data-label="資料">顯示名稱、學校、自我介紹</td><td role="cell" data-label="用途">個人頁面</td><td role="cell" data-label="是否公開">公開（選填）</td></tr>
+        <tr role="row"><td role="cell" data-label="資料">評分、心得、文章、回覆、投票</td><td role="cell" data-label="用途">社群功能</td><td role="cell" data-label="是否公開">內容公開；投票只顯示合計</td></tr>
       </tbody>
     </table>
   </section>
@@ -47,15 +47,15 @@
 
   <section aria-labelledby="reviews">
     <h2 id="reviews">外部評論索引儲存的資料</h2>
-    <p>為了在課程頁列出其他網站上的相關討論，本站為允許搜尋索引的公開看板建立索引。每一筆只儲存下列欄位，不儲存全文，也不儲存任何未公開的資料：</p>
-    <table>
-      <thead><tr><th>欄位</th><th>說明</th></tr></thead>
-      <tbody>
-        <tr><td>連結</td><td>原文網址，點擊後回到原網站。</td></tr>
-        <tr><td>標題與日期</td><td>原文標題與發文日期。</td></tr>
-        <tr><td>作者帳號</td><td>原站顯示的帳號（handle），不另外比對真實身分。</td></tr>
-        <tr><td>摘要</td><td>不超過 120 字，取自公開內文開頭。</td></tr>
-        <tr><td>比對結果</td><td>對應的學校、課程與教師，以及看板與推文數。</td></tr>
+    <p><span class="status">目前狀態</span>外部評論索引尚未上線，目前沒有儲存任何外站資料；課程頁只提供站外搜尋連結。上線後，為了在課程頁列出其他網站上的相關討論，本站會為允許搜尋索引的公開看板建立索引。每一筆只儲存下列欄位，不儲存全文，也不儲存任何未公開的資料：</p>
+    <table role="table">
+      <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">欄位</th><th role="columnheader" scope="col">說明</th></tr></thead>
+      <tbody role="rowgroup">
+        <tr role="row"><td role="cell" data-label="欄位">連結</td><td role="cell" data-label="說明">原文網址，點擊後回到原網站。</td></tr>
+        <tr role="row"><td role="cell" data-label="欄位">標題與日期</td><td role="cell" data-label="說明">原文標題與發文日期。</td></tr>
+        <tr role="row"><td role="cell" data-label="欄位">作者帳號</td><td role="cell" data-label="說明">原站顯示的帳號（handle），不另外比對真實身分。</td></tr>
+        <tr role="row"><td role="cell" data-label="欄位">摘要</td><td role="cell" data-label="說明">不超過 120 字，取自公開內文開頭。</td></tr>
+        <tr role="row"><td role="cell" data-label="欄位">比對結果</td><td role="cell" data-label="說明">對應的學校、課程與教師，以及看板與推文數。</td></tr>
       </tbody>
     </table>
     <p>只收錄站方 robots 檔以 <code>Content-Signal</code> 明確允許搜尋的網站；其他網站只提供連結。索引內容不用於訓練模型，不提供給第三方；原文被刪除時會在下次更新時移除。收錄原則詳見<a href="/terms#reviews">使用條款</a>。</p>
@@ -73,7 +73,11 @@
 
   <section aria-labelledby="contact">
     <h2 id="contact">移除與聯絡</h2>
-    <p>想刪除帳號、移除外部索引中的某一筆，或對資料處理有疑問，請到 GitHub 建立 issue，並附上相關頁面的連結；不要在 issue 中張貼密碼或其他不想公開的資料。</p>
-    <p class="callout"><a href={ISSUES_URL} rel="noopener external">UniCourse-TW/UniCourse issues <span aria-hidden="true">↗</span></a><br />請求通常在七天內處理；處理結果會回覆在同一則 issue。</p>
+    <p>想刪除帳號、移除外部索引中的某一筆，或對資料處理有疑問，請附上相關頁面的連結，用下面任一方式聯絡：</p>
+    <p class="callout">
+      <a href={ISSUES_URL} rel="noopener external">在 GitHub 建立請求（UniCourse-TW/UniCourse issues） <span aria-hidden="true">↗</span></a>
+      <span class="note">issue 是公開頁面，請不要張貼密碼、學號或其他不想公開的資料。不方便公開時，可改用 GitHub 的私密回報（Security advisory）或<a href="https://github.com/UniCourse-TW" rel="noopener external">UniCourse-TW 組織頁</a>上列出的維護者信箱。</span>
+      <span class="note">請求通常在七天內處理；處理結果會回覆在同一則 issue 或原信件。</span>
+    </p>
   </section>
 </LegalDoc>

@@ -14,7 +14,7 @@
     if (route.startsWith('/courses/')) {
       return {
         title: '找不到這門課程',
-        description: '可能已被校方移除，或網址有誤。',
+        description: '這個班次可能還沒收錄、已不在校方系統，或連結已失效。用課名或課號再找一次：',
         secondary: { href: '/', label: '回首頁' },
         also: [SCHOOLS, FORUM],
         search: true
@@ -64,12 +64,15 @@
         secondary: { href: '/', label: '回首頁' }
       };
     }
+    // A last segment that looks like a course code or a name is worth a search.
+    const tail = decodeURIComponent(segments.at(-1) ?? '');
     return {
       title: '找不到這個頁面',
       description: '網址可能有誤，或這個頁面已被移除。',
       secondary: { href: '/', label: '回首頁' },
       also: [SCHOOLS, FORUM, { href: '/landscape', label: '看課程網站總覽' }],
-      search: true
+      search: true,
+      query: /^[A-Za-z0-9-]{3,12}$/.test(tail) || /^[\u4e00-\u9fff]{2,12}$/.test(tail) ? tail : ''
     };
   }
 

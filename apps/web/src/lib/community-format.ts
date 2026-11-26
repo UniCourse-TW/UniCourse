@@ -21,7 +21,7 @@ export function authorName(author: { username: string; displayName?: string | nu
 
 export const postTypeLabels: Record<PostType, string> = {
   announcement: '公告',
-  article: '文章',
+  article: '心得',
   question: '提問',
   reply: '回覆'
 };

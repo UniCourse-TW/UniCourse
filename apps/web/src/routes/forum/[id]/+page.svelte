@@ -97,9 +97,11 @@
       </p>
     {/if}
     {#if kind === '文章'}
-      <a class="action" href="#reply-form">回覆</a>
+      <a class="action reply-link" href="#reply-form">回覆</a>
     {/if}
     {#if isAuthor || user?.isAdmin}
+      <!-- Author tools sit apart from voting, so a thumb aimed at 推 never lands on 刪除. -->
+      <span class="manage-sep" aria-hidden="true"></span>
       <!-- Re-created after each save so the panels close again. -->
       {#key `${item.updatedAt}|${item.title}|${item.content}`}
         {#if isAuthor}
@@ -137,13 +139,20 @@
 {/snippet}
 
 <div class="cm thread-page">
+  <!-- Same trail on every device: 論壇 / 學校的討論 / 課號（課程頁或這門課的討論）. -->
   <nav class="crumbs" aria-label="麵包屑">
-    <a href="/forum"><span aria-hidden="true" class="back">‹&nbsp;</span>論壇</a>
+    <a href="/forum">論壇</a>
     {#if post.school}
       <span class="sep" aria-hidden="true">/</span>
-      <a href={forumHref({ school: post.school, courseCode: post.courseCode ?? undefined })}>
-        {schoolName}{#if post.courseCode}&nbsp;<span class="mono">{post.courseCode}</span>{/if}
-      </a>
+      <a href={forumHref({ school: post.school })}>{schoolName}</a>
+      {#if post.courseCode}
+        <span class="sep" aria-hidden="true">/</span>
+        {#if course?.offering}
+          <a class="mono" href="/courses/{course.offering.id}" title="{course.offering.title} 課程頁">{post.courseCode}</a>
+        {:else}
+          <a class="mono" href={forumHref({ school: post.school, courseCode: post.courseCode })}>{post.courseCode}</a>
+        {/if}
+      {/if}
     {/if}
   </nav>
 
@@ -176,6 +185,11 @@
             {#if offering.isDemo}<Badge label="示範" tone="demo" />{/if}
           </p>
           <p class="sub">{[offering.schoolName, offering.department, offering.instructors.join('、')].filter(Boolean).join(' · ')}</p>
+          <!-- Phones get the key numbers on one line; the grid below is for wider screens. -->
+          <p class="brief num" aria-hidden="true">
+            {offering.term}<span class="sep">·</span>{offering.enrolled != null ? fmt.format(offering.enrolled) : '—'} / {offering.capacity != null ? fmt.format(offering.capacity) : '—'}
+            {#if course.rating?.average != null}<span class="sep">·</span><span class="star">★</span> {course.rating.average.toFixed(1)}{/if}
+          </p>
           <dl class="facts">
             <div><dt>最新學期</dt><dd class="num">{offering.term}</dd></div>
             <div>
@@ -198,22 +212,25 @@
             <a href={courseSearchHref(post.school ?? '', post.courseCode ?? '')}>搜尋這個課號</a>
           </p>
         {/if}
-        <h3 class="eyebrow others-title">其他討論（{course.otherCount}）</h3>
-        {#if course.others.length}
-          <ul class="others">
-            {#each course.others as other (other.id)}
-              <li>
-                <a href={postHref(other.id)}>{other.title}</a>
-                <span class="n num">{postTypeLabels[other.type]} · {other.replyCount} 回覆</span>
-              </li>
-            {/each}
-          </ul>
-          {#if course.otherCount > course.others.length}
-            <a class="all" href={forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}>看全部 {course.otherCount} 篇 →</a>
+        <!-- Open on desktop by CSS; phones collapse the list so the first reply stays in reach. -->
+        <details class="others-box">
+          <summary class="eyebrow others-title">其他討論（{course.otherCount}）</summary>
+          {#if course.others.length}
+            <ul class="others">
+              {#each course.others as other (other.id)}
+                <li>
+                  <a href={postHref(other.id)}>{other.title}</a>
+                  <span class="n num">{postTypeLabels[other.type]} · {other.replyCount} 回覆</span>
+                </li>
+              {/each}
+            </ul>
+            {#if course.otherCount > course.others.length}
+              <a class="all" href={forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}>看全部 {course.otherCount} 篇 →</a>
+            {/if}
+          {:else}
+            <p class="sub none">這門課還沒有其他討論。<a href={forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}>到這門課的討論區</a></p>
           {/if}
-        {:else}
-          <p class="sub">這門課還沒有其他討論。</p>
-        {/if}
+        </details>
       </aside>
     {/if}
 
@@ -239,21 +256,21 @@
           {/each}
         </ol>
       {/if}
-      <p class="cm-sr" role="status">{announcement}</p>
-
       {#if user}
         <form method="POST" action="?/reply" class="reply-form cm-form" id="reply-form" use:enhance={submitReply}>
           <div class="cm-field">
             <div class="cm-label">
               <label for="reply-content">我要回覆</label>
-              <span class="cm-count" aria-live="polite">{fmt.format(replyLength)} / 20,000</span>
+              <span class="cm-hint">純文字，保留換行</span>
             </div>
             <textarea id="reply-content" class="cm-input" name="content" required rows="4" maxlength="20000" defaultValue={replyDraft}
-              placeholder="分享你的經驗或回答問題。純文字，保留換行。"
+              placeholder="分享你的經驗或回答問題。"
               oninput={(event) => (replyLength = [...event.currentTarget.value].length)}></textarea>
           </div>
           {#if form?.action === 'reply' && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
-          <div class="row">
+          <div class="row submit-row">
+            <p class="status" role="status">{#if announcement}<span class="ok"><span aria-hidden="true">✓</span> {announcement}</span>{/if}</p>
+            <span class="cm-count" aria-live="polite">{fmt.format(replyLength)} / 20,000</span>
             <button class="cm-btn" aria-busy={replying} disabled={replying}>{replying ? '送出中…' : '送出回覆'}</button>
           </div>
         </form>
@@ -273,7 +290,7 @@
   .crumbs { display: flex; flex-wrap: wrap; align-items: center; margin-block-end: var(--space-3); color: var(--muted); font-size: var(--t-base); }
   .crumbs a { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); text-decoration: none; font-weight: 600; }
   .crumbs a:hover { color: var(--brand-ink); text-decoration: underline; }
-  .back { display: none; }
+  .crumbs a.mono { color: var(--brand-ink); }
 
   .layout { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1fr); }
   .layout.with-aside { grid-template-columns: minmax(0, 1fr) 18.5rem; column-gap: var(--space-8); }
@@ -301,6 +318,8 @@
   }
 
   .controls { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-1); align-items: center; margin-block-start: var(--space-4); }
+  .manage-sep { inline-size: 1px; block-size: 1.25rem; margin-inline: var(--space-2); background: var(--line); }
+  .reply-link { color: var(--brand-ink) !important; }
   .vote {
     display: inline-flex;
     align-items: center;
@@ -329,6 +348,7 @@
   .vote button[aria-pressed='true'] { color: var(--brand-ink); background: var(--brand-wash); box-shadow: inset 0 0 0 1px var(--brand); }
   .vote button[aria-pressed='true']:last-of-type { color: var(--down); background: color-mix(in srgb, var(--down) var(--status-tint), var(--panel-raised)); box-shadow: inset 0 0 0 1px var(--down); }
   .vote button:disabled { opacity: 0.6; cursor: progress; }
+  .vote[aria-busy='true'] .cm-score { opacity: 0.5; }
   .vote .cm-score { min-inline-size: 2.5rem; padding-inline: var(--space-1); text-align: center; font-size: var(--t-base); }
   .vote.static { gap: var(--space-1); padding: 0 var(--space-2) 0 0; min-block-size: 2.375rem; border-color: transparent; background: transparent; }
   .vote.static .label { color: var(--muted); font-size: var(--t-sm); }
@@ -349,13 +369,17 @@
   }
   .action::-webkit-details-marker { display: none; }
   .action:hover { color: var(--brand-ink) !important; background: var(--hover-row); }
-  .danger > .action:hover { color: var(--down) !important; }
+  .danger > .action { color: var(--down) !important; }
+  .danger > .action:hover { background: color-mix(in srgb, var(--down) var(--status-tint), var(--panel-raised)); }
   .panel[open] { flex-basis: 100%; order: 10; padding: var(--space-3) var(--space-4) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .panel[open] > .action { margin-inline-start: calc(-1 * var(--space-2)); color: var(--ink) !important; }
   .panel.danger[open] { border-color: color-mix(in srgb, var(--down) 45%, var(--line)); }
   .confirm { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
   .confirm p { flex: 1 1 16rem; color: var(--ink-2); font-size: var(--t-base); }
   .row { display: flex; gap: var(--space-2); }
+  .submit-row { flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-3); }
+  .submit-row .status { flex: 1 1 10rem; margin: 0 !important; font-size: var(--t-base); }
+  .submit-row .ok { color: var(--up); font-weight: 600; }
 
   .course {
     min-inline-size: 0;
@@ -370,13 +394,18 @@
   .course-title a { font-size: var(--t-lg); font-weight: 650; }
   .code { color: var(--muted); }
   .sub { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; }
+  .brief { display: none; }
+  .others-box { margin-block-start: var(--space-4); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
+  .others-box > summary { list-style: none; cursor: default; pointer-events: none; }
+  .others-box > summary::-webkit-details-marker { display: none; }
+  .others-box::details-content { display: block; content-visibility: visible; }
+  .none a { margin-inline-start: var(--space-1); font-weight: 600; }
   .facts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin: var(--space-3) 0; }
   .facts div { padding: var(--space-2); border-radius: var(--radius-control); background: var(--panel-raised); border: 1px solid var(--line); }
   dt { color: var(--muted); font-size: var(--t-xs); }
   dd { margin: 0; font-weight: 600; }
   dd small { color: var(--muted); font-weight: 400; font-size: var(--t-xs); }
   .star { color: var(--warn); }
-  .others-title { margin-block-start: var(--space-4) !important; padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
   .others { display: grid; gap: var(--space-2); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
   .others a { display: block; font-weight: 600; line-height: 1.45; text-decoration: none; }
   .others a:hover { text-decoration: underline; }
@@ -400,11 +429,26 @@
     .layout.with-aside { grid-template-columns: minmax(0, 1fr); }
     .with-aside .post, .with-aside .replies, .with-aside .course { grid-column: 1; grid-row: auto; position: static; }
   }
+  @media (max-width: 56rem) {
+    /* Phone card: title line, one line of numbers, a button; the rest folds away. */
+    .course { padding: var(--space-3) var(--space-4); }
+    .brief { display: block; margin-block-start: var(--space-2) !important; color: var(--ink-2); font-size: var(--t-base); font-weight: 600; }
+    .facts { display: none; }
+    .course .cm-btn.block { inline-size: auto; min-inline-size: 10rem; margin-block-start: var(--space-2); }
+    .others-box { margin-block-start: var(--space-3); padding-block-start: var(--space-2); }
+    .others-box > summary { display: flex; align-items: center; justify-content: space-between; min-block-size: var(--target-min); cursor: pointer; pointer-events: auto; }
+    .others-box > summary::after { content: '▾'; color: var(--muted); }
+    .others-box[open] > summary::after { content: '▴'; }
+    .others-box::details-content { content-visibility: auto; }
+    .others-box:not([open])::details-content { content-visibility: hidden; }
+  }
   @media (max-width: 40rem) {
-    .crumbs .sep, .crumbs a + .sep + a { display: none; }
-    .back { display: inline; }
     .crumbs { margin-block-end: var(--space-1); }
     .vote button { min-block-size: var(--target-min); }
-    .reply-form .row .cm-btn { flex: 1; }
+    .manage-sep { display: none; }
+    .controls > .panel:not([open]) { margin-inline-start: auto; }
+    .controls > .panel:not([open]) + .panel:not([open]) { margin-inline-start: 0; }
+    .submit-row .cm-btn { flex: 1 1 100%; }
+    .submit-row .status:empty { display: none; }
   }
 </style>

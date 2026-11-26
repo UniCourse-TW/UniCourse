@@ -6,7 +6,7 @@ test('the old static address redirects and the page renders from the bundled dat
   await expect(page).toHaveURL('/landscape');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('臺灣大專校院課程網站總覽');
   const tiles = page.getByRole('group', { name: '網站統計' });
-  for (const label of ['涉及學校', '官方系統', '第三方服務', '運作中']) await expect(tiles.getByRole('term').filter({ hasText: label })).toBeVisible();
+  for (const label of ['已盤點到網站的學校', '官方系統', '第三方服務', '運作中']) await expect(tiles.getByRole('term').filter({ hasText: label })).toBeVisible();
   await expect(page.getByRole('table', { name: /第三方查課網站/ })).toBeVisible();
   // Schools keep their anchor and link to the status page when they have imported offerings.
   const ntu = page.locator('#ntu');
