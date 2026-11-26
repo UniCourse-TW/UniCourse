@@ -9,6 +9,8 @@ COPY crawlers ./crawlers
 RUN find crawlers -mindepth 2 -maxdepth 2 ! -name package.json -exec rm -rf {} + ; \
     pnpm install --frozen-lockfile
 COPY packages ./packages
+# /landscape imports data/course-sites.json and data/institutions.json at build time.
+COPY data ./data
 COPY apps/web ./apps/web
 RUN pnpm --filter @unicourse/web build \
     && pnpm --filter @unicourse/web --prod deploy --legacy /out
