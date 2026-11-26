@@ -1,4 +1,5 @@
 import { compact, loadHtml, requirementFromText, type Meeting, type Offering } from '@unicourse/crawler-kit';
+import { tidyOffering } from './tidy.ts';
 
 export const advancedUrl = 'https://selcrs1.tnua.edu.tw/CourseSearch/AdvancedSearch.aspx';
 
@@ -78,7 +79,7 @@ export function toOffering(row: CourseRow, sourceTerm: string, department: { cod
   const capacity = row.UpLimit.trim();
   const selected = row.SumSelected.trim();
   const [target, duration] = row.Target.split(/\s*&nbsp;?\s*|\u00a0/, 2);
-  return compact({
+  return tidyOffering(compact({
     sourceId,
     courseCode: sourceId,
     title,
@@ -97,7 +98,7 @@ export function toOffering(row: CourseRow, sourceTerm: string, department: { cod
     notes: redactContact(row.Remark),
     extra: compact({ 領域: row.Field, 選課對象: target, 學期別: duration,
       上限: /^\d+$/.test(capacity) ? '' : capacity })
-  });
+  }));
 }
 
 export function parseIntroduction(payload: unknown): string | undefined {

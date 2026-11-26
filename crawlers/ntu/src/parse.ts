@@ -1,4 +1,5 @@
 import { compact, requirementFromText, type Meeting, type Offering } from '@unicourse/crawler-kit';
+import { tidyOffering } from './tidy.ts';
 
 /**
  * Parsers for 臺大課程網 (nol.ntu.edu.tw/nol/coursesearch). The result table is regular,
@@ -278,7 +279,7 @@ export function toOffering(
     課程網頁: row.courseWeb,
     異動: row.changed ? true : undefined
   }) as Record<string, string | boolean>;
-  return compact({
+  return tidyOffering(compact({
     sourceId: row.serial!,
     courseCode: row.courseNo ?? row.identifier!,
     classCode: row.classCode,
@@ -299,7 +300,7 @@ export function toOffering(
     sourceUrl: url,
     notes: row.notes,
     extra: Object.keys(extra).length ? extra : undefined
-  }) as Offering;
+  }) as Offering);
 }
 
 export interface DetailInfo {

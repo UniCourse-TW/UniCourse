@@ -13,6 +13,7 @@ import {
   toOffering,
   verifyResultTerm
 } from './parse.ts';
+import { tidyOffering } from './tidy.ts';
 
 const sample = (name: string) => readFile(new URL(`./samples/${name}`, import.meta.url), 'utf8');
 
@@ -151,4 +152,18 @@ test('detail page: English title and description', async () => {
 
 test('htmlText decodes entities and collapses whitespace', () => {
   assert.equal(htmlText(' a&nbsp;&amp;<b>b</b><br>c&#x41;&#66; '), 'a &b cAB');
+});
+
+test('tidyOffering spells out 加選方式 and drops 授課對象代碼', () => {
+  const old = {
+    sourceId: '97001',
+    courseCode: 'PE1003',
+    title: '健康體適能',
+    instructors: [],
+    sourceUrl: 'https://nol.ntu.edu.tw/nol/coursesearch/search_result.php',
+    extra: { 課程識別碼: '002 50010', 加選方式: '2', 授課對象: '課外活動組、體育室', 授課對象代碼: '1010,10A0,0000' }
+  } as Offering;
+  const once = tidyOffering(old);
+  assert.deepEqual(once.extra, { 課程識別碼: '002 50010', 加選方式: '向教師取得授權碼後加選', 授課對象: '課外活動組、體育室' });
+  assert.deepEqual(tidyOffering(once), once);
 });

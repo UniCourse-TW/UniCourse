@@ -1,4 +1,5 @@
 import { defineCrawler } from '@unicourse/crawler-kit';
+import { tidyOffering } from './tidy.ts';
 import { parseDescription, parseOfferings, preferredCourse, sourceUrl, type CourseCandidate } from './parse.ts';
 
 type Form = Record<string, string>;
@@ -100,6 +101,6 @@ export const crawler = defineCrawler({
       }
     }
     log(`read ${rows} rows from ${visited.size} department queries; ${courses.size} unique offerings in ${requests} requests before retries`);
-    return selected;
+    return selected.map(tidyOffering);
   }
 });

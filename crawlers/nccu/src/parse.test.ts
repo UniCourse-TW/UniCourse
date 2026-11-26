@@ -13,6 +13,7 @@ import {
   type NccuCourse,
   type UnitL1
 } from './parse.ts';
+import { tidyOffering } from './tidy.ts';
 
 const sample = async <T>(name: string): Promise<T> =>
   JSON.parse(await readFile(new URL(`./samples/${name}`, import.meta.url), 'utf8')) as T;
@@ -77,14 +78,14 @@ test('API rows map to valid offerings', async () => {
   assert.equal(micro.notes, '本課程有實習課。本課程下學期由陳鎮洲老師授課。');
   assert.match(micro.syllabusUrl!, /^https:\/\/newdoc\.nccu\.edu\.tw\/teaschm\/1151\/schmPrv\.jsp/);
   assert.equal(micro.sourceUrl, micro.syllabusUrl);
-  assert.equal(micro.extra?.smtQty, '全學年科目');
-  assert.equal(micro.extra?.info, undefined);
+  assert.equal(micro.extra?.['全/半年'], '全學年科目');
+  assert.equal(micro.extra?.異動資訊, undefined);
 
   const ip = bySource.get('042139021')!;
   assert.deepEqual(ip.instructors, ['莊弘鈺', '鄭菀瓊']);
   assert.equal(ip.requirement, 'general');
   assert.equal(ip.requirementText, '社會通識');
-  assert.equal(ip.extra?.info, '教室異動於2026/09/02;');
+  assert.equal(ip.extra?.異動資訊, '教室異動於2026/09/02;');
 
   const twoDays = bySource.get('042116041')!;
   assert.equal(twoDays.schedule?.length, 2);
@@ -118,7 +119,7 @@ test('old-term (105-1) rows use the same format', async () => {
   assert.equal(law.requirement, 'elective');
   assert.deepEqual(law.schedule, [{ day: 5, periods: ['3', '4'], location: '商館260305' }]);
   assert.equal(law.notes, '與法律系合開');
-  assert.equal(law.extra?.info, '教室異動於2016/09/14;');
+  assert.equal(law.extra?.異動資訊, '教室異動於2016/09/14;');
   assert.match(law.syllabusUrl!, /\/teaschm\/1051\/schmPrv\.jsp-yy=105&smt=1/);
 
   const russian = bySource.get('504032021')!;
@@ -130,7 +131,7 @@ test('old-term (105-1) rows use the same format', async () => {
 
   const general = bySource.get('405936001')!;
   assert.equal(general.requirement, 'general');
-  assert.equal(general.extra?.lmtKind, '跨領域(社會、自然)');
+  assert.equal(general.extra?.通識類別, '跨領域(社會、自然)');
 });
 
 test('syllabus page yields description and capacity', async () => {
@@ -147,4 +148,42 @@ test('syllabus page yields description and capacity', async () => {
   assert.match(div.description!, /Macroeconomics is a year-long course/);
   assert.match(div.description!, /IS-LM-PC model/);
   assert.equal(div.capacity, undefined);
+});
+
+test('extra uses the query UI labels, never raw API field names', async () => {
+  const zh = await sample<NccuCourse[]>('course-zh.json');
+  for (const row of zh) {
+    for (const key of Object.keys(toOffering(row).extra ?? {})) assert.doesNotMatch(key, /^[A-Za-z_]+$/, key);
+  }
+  const micro = toOffering(zh.find((row) => row.subNum === '000217041')!);
+  assert.equal(micro.extra?.開課層級, '學士班');
+  assert.equal(micro.extra && 'subOdr' in micro.extra, false);
+});
+
+test('tidyOffering migrates old snapshots (raw keys, DEL bytes) and is idempotent', () => {
+  const old = {
+    sourceId: '209630001',
+    courseCode: '209630001',
+    title: '語言學專題',
+    instructors: [],
+    notes: '須先修過\u007f語言學相關課程',
+    sourceUrl: 'https://qrysub.nccu.edu.tw/',
+    extra: { core: '否', emiType: '否', gdeType: '碩士班', gdeTpe: '是', gdeTpeMsg: '(適用於108學年度前入學的學生)', pay: '免費', tranTpe: '一般', subOdr: '313', smtQty: '單學期科目', far: '同步遠距', lmtKind: '外文通識', info: '教室異動於2020/09/15;' }
+  } as Offering;
+  const once = tidyOffering(old);
+  assert.equal(once.notes, '須先修過語言學相關課程');
+  assert.deepEqual(once.extra, {
+    核心通識: '否',
+    EMI課程: '否',
+    開課層級: '碩士班',
+    可抵免通識: '是',
+    可抵免通識說明: '(適用於108學年度前入學的學生)',
+    收費: '免費',
+    選課方式: '一般',
+    '全/半年': '單學期科目',
+    遠距教學: '同步遠距',
+    通識類別: '外文通識',
+    異動資訊: '教室異動於2020/09/15;'
+  });
+  assert.deepEqual(tidyOffering(once), once);
 });

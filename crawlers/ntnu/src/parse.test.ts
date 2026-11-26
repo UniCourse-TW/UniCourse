@@ -14,6 +14,7 @@ import {
   toOffering,
   verifyGridTerm
 } from './parse.ts';
+import { tidyOffering } from './tidy.ts';
 
 const sample = (name: string) => readFile(new URL(`./samples/${name}`, import.meta.url), 'utf8');
 
@@ -142,4 +143,21 @@ test('old-term (105-1) grid rows use the same format', async () => {
   assert.equal(timed.enrolled, 50);
   assert.equal(timed.capacity, 50);
   Offering.parse(timed);
+});
+
+test('tidyOffering drops 未定 and a 0 limit with students', () => {
+  const old = {
+    sourceId: '1477',
+    courseCode: 'X',
+    title: '分項華語文教學實習',
+    instructors: ['未定'],
+    capacity: 0,
+    enrolled: 14,
+    sourceUrl: 'https://courseap2.itc.ntnu.edu.tw/acadmOpenCourse/index.jsp'
+  } as Offering;
+  const once = tidyOffering(old);
+  assert.deepEqual(once.instructors, []);
+  assert.equal(once.capacity, undefined);
+  assert.deepEqual(tidyOffering(once), once);
+  assert.equal(tidyOffering({ ...old, enrolled: 0 }).capacity, 0);
 });

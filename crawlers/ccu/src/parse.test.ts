@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { Offering } from '@unicourse/crawler-kit';
 import { parseDepartment, parseDepartments, parseSchedule, parseSyllabus, sourceUrl } from './parse.ts';
+import { tidyOffering } from './tidy.ts';
 
 const sample = (name: string) => readFileSync(new URL(`./samples/${name}`, import.meta.url), 'utf8');
 const department = (code: string) => new URL(`${sourceUrl}?cd=${code}&yearterm=115_1`);
@@ -58,4 +59,16 @@ test('parses an archived 2016 term page (105-1) and keeps rows without a syllabu
   assert.deepEqual(unlinked.schedule, [{ day: 5, periods: ['2', '3'] }]);
   assert.equal(unlinked.enrolled, undefined);
   assert.throws(() => parseDepartment(html, listUrl, 106, 1), /requested term/);
+});
+
+test('tidyOffering drops bare staff numbers printed instead of a teacher name', () => {
+  const old = {
+    sourceId: '5268120_01',
+    courseCode: '5268120',
+    title: '財務研究方法研討',
+    instructors: ['728933822', '林岳喬'],
+    sourceUrl
+  } as Offering;
+  assert.deepEqual(tidyOffering(old).instructors, ['林岳喬']);
+  assert.deepEqual(tidyOffering({ ...old, instructors: ['589142538'] }).instructors, []);
 });
