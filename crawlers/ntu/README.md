@@ -7,8 +7,8 @@
   `search_result.php?current_sem=115-1&cstype=1&csname=&alltime=yes&allproced=yes&allsel=yes&op=stu&page_cnt=150&startrec=<n>`
   (the server caps `page_cnt` at 150). The same query with `lang=EN` gives English titles.
 - Department names: the 開課學院 / 開課系所 selects on `search_for_02_dpt.php`.
-- Historical terms `114-2`, `114-1`, `113-2`, and `113-1` are available through the same
-  `current_sem` parameter. The crawler checks the semester on the returned course links in both languages.
+- Historical terms are available through the same `current_sem` parameter; see
+  [Past terms](#past-terms). The crawler checks the semester on the returned course links in both languages.
 - Per-offering page (`sourceUrl` = `syllabusUrl`): `print_table.php?course_id=&class=&dpt_code=&ser_no=&semester=&lang=CH`
   (課程大綱), linked from each course title.
 
@@ -32,6 +32,57 @@ The newer front end `course.ntu.edu.tw` is a Next.js app whose data comes from `
 - Optional `NTU_FETCH_DETAILS=1`: one `print_table.php` request per offering (~9,750 more requests,
   roughly 1.5 h at the default rate) to add `description` (課程概述). Off by default; verified on a
   3-offering run.
+
+## Past terms
+
+The 快速查詢 form's 學期 select (`current_sem`) lists every term from **93-1 to 115-1** (no summer
+terms). Crawled so far into `snapshots/history/`: **105-1 … 114-2** (20 terms, ten academic years),
+plus 115-1 in `snapshots/`; 93-1 … 104-2 are still offered by the select but were not crawled
+(outside the ten-year target). The same endpoint, parameters and parser work for every crawled term;
+no code change was needed.
+
+Result per term (2026-11-27, kit defaults, run serially; requests = 1 department page + CH pages +
+EN pages, no retries were needed):
+
+| term | rows | offerings | requests | seconds |
+| --- | ---: | ---: | ---: | ---: |
+| 105-1 | 13,586 | 8,976 | 183 | 226 |
+| 105-2 | 12,952 | 8,716 | 175 | 216 |
+| 106-1 | 13,166 | 8,877 | 177 | 215 |
+| 106-2 | 12,816 | 8,689 | 173 | 208 |
+| 107-1 | 13,134 | 8,937 | 177 | 227 |
+| 107-2 | 12,954 | 8,688 | 175 | 214 |
+| 108-1 | 13,381 | 9,004 | 181 | 222 |
+| 108-2 | 13,500 | 8,868 | 181 | 222 |
+| 109-1 | 14,106 | 9,308 | 191 | 238 |
+| 109-2 | 14,134 | 9,092 | 191 | 236 |
+| 110-1 | 14,449 | 9,331 | 195 | 236 |
+| 110-2 | 14,586 | 9,266 | 197 | 266 |
+| 111-1 | 15,176 | 9,697 | 205 | 258 |
+| 111-2 | 17,767 | 9,574 | 239 | 300 |
+| 112-1 | 15,472 | 9,822 | 209 | 261 |
+| 112-2 | 15,332 | 9,662 | 207 | 261 |
+| 113-1 … 114-2 | 15,605–16,589 | 9,903–10,070 | 211–223 | 263–281 |
+
+`rows` is the 共查詢到 count (incl. placeholder, cancelled and per-授課對象 duplicate rows); `pages = ceil(rows / 150)` and `requests = 1 + 2 × pages`. 111-2 has an unusually high row count (17,767) but a normal number of offerings.
+None of the terms publishes `enrolled` (see the field mapping).
+
+Quirks in old terms (checked on 105-1 … 112-2):
+
+- Pages are UTF-8 in every term; no Big5.
+- Rooms are wrapped in a campus-map link (`二1,2<a href=map.ntu.edu.tw…>(大氣B105)</a>`); tag
+  stripping gives the same `二1,2(大氣B105)` text as today. Period labels are unchanged (0–10, A–D).
+- Course web links point to CEIBA (`http://ceiba.ntu.edu.tw/1051…`) instead of NTU COOL.
+- 105-1 only: 686 offerings (7.6 %, e.g. 全民國防教育 `MilTr…`, many `…8000`-style research
+  courses) have an empty 學分 cell on the official list, so `credits` is omitted for them. Every
+  other term has credits on all offerings.
+- `search_for_02_dpt.php` ignores `current_sem` and always returns today's department list, so
+  `department` for a code that no longer exists falls back to the first 授課對象. Coverage stays
+  at 94–95 % in every term.
+- 異動 (`chg.gif`) marks 8–9 % of offerings in each term; it means the row changed during that
+  term's course selection, not later.
+- Field coverage is otherwise stable across 105-1 … 114-2: `titleEn` 100 %, `capacity` 98–100 %,
+  `schedule` 64–66 %, 190–220 offerings without an instructor per term.
 
 ## Rows that are not offerings
 

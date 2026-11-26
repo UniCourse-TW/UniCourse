@@ -109,6 +109,40 @@ test('highlighted (yellow) rows and capacity with a note', async () => {
   assert.equal(offering.requirementText, '選修');
 });
 
+test('old term (105-1): same layout, map-linked rooms, empty 學分 cell', async () => {
+  const html = await sample('search-result-ch-105-1.html');
+  assert.equal(parseTotal(html), 13586);
+  const rows = parseResultRows(html);
+  verifyResultTerm(rows, '105-1');
+  assert.equal(rows.length, 12);
+
+  const atm = rows.find((row) => row.serial === '73601')!;
+  assert.equal(atm.courseNo, 'AtmSci1009');
+  assert.equal(atm.audience, '地科學程');
+  // Rooms are wrapped in a campus-map link in old terms; the text stays `二1,2(大氣B105)`.
+  assert.equal(atm.timeText, '二1,2(大氣B105)');
+  assert.equal(atm.courseWeb, 'http://ceiba.ntu.edu.tw/1051AtmSci1009_');
+
+  const { merged, cancelled } = mergeRows(rows);
+  assert.equal(cancelled, 2);
+  const departments = parseDepartments(await sample('dept-options.html'));
+  const offerings = merged.map((row) => toOffering(row, '105-1', departments));
+  for (const offering of offerings) Offering.parse(offering);
+
+  const probability = offerings.find((o) => o.sourceId === '51712')!;
+  assert.equal(probability.extra?.授課對象, '應數所、數學所、數學系');
+  assert.equal(probability.requirementText, '必修', 'first 授課對象 row wins');
+  assert.deepEqual(probability.schedule, [{ day: 5, periods: ['6', '7', '8'], location: '天數302' }]);
+
+  // Some 105-1 rows (e.g. 全民國防教育) publish no credits; the field is omitted, not guessed.
+  const defence = offerings.find((o) => o.sourceId === '93001')!;
+  assert.equal(defence.credits, undefined);
+  assert.equal(defence.capacity, 41);
+  assert.equal(defence.extra?.總人數, '41(含開放臺大系統人數:4)');
+  assert.equal(defence.extra?.課程網頁, 'http://ceiba.ntu.edu.tw/1051MilTr1006_01');
+  assert.match(defence.sourceUrl, /semester=105-1/);
+});
+
 test('detail page: English title and description', async () => {
   const detail = parseDetail(await sample('print-table.html'));
   assert.equal(detail.titleEn, 'Health Related Physical Fitness');
