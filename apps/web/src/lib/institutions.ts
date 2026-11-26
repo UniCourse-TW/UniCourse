@@ -81,15 +81,45 @@ export function matches(institution: Institution, filters: Filters) {
   );
 }
 
-/** Rows grouped by education system (fixed order, empty groups dropped), each sorted by code. */
+export const schoolSorts = ['status', 'name', 'terms', 'offerings', 'updated'] as const;
+export type SchoolSort = (typeof schoolSorts)[number];
+const schoolNames = new Intl.Collator('zh-TW-u-co-stroke');
+
+export function sortInstitutions(institutions: Institution[], sort: SchoolSort, direction: 'asc' | 'desc') {
+  const compare: Record<SchoolSort, (left: Institution, right: Institution) => number> = {
+    status: (left, right) => statuses.indexOf(left.status) - statuses.indexOf(right.status),
+    name: (left, right) => schoolNames.compare(left.name, right.name),
+    terms: (left, right) => left.terms.length - right.terms.length,
+    offerings: (left, right) => left.offerings - right.offerings,
+    updated: (left, right) => (left.latestImportedAt ?? '').localeCompare(right.latestImportedAt ?? '')
+  };
+  return [...institutions].sort((left, right) => (
+    (direction === 'asc' ? 1 : -1) * compare[sort](left, right) || left.code.localeCompare(right.code)
+  ));
+}
+
+export function coverageYears(institutions: Institution[]) {
+  const latest = institutions.reduce((year, institution) => institution.terms.reduce((current, term) => (
+    /^\d{3,4}-[12]$/.test(term) ? Math.max(current, Number(term.split('-')[0])) : current
+  ), year), 115);
+  return Array.from({ length: 10 }, (_, index) => String(latest - 9 + index));
+}
+
+export function yearCoverage(terms: string[], years: string[]) {
+  const counts = new Map<string, number>();
+  for (const term of new Set(terms)) {
+    const [year, semester] = term.split('-');
+    if (semester === '1' || semester === '2') counts.set(year, (counts.get(year) ?? 0) + 1);
+  }
+  return years.map((period) => ({ period, value: counts.get(period) ?? 0 }));
+}
+
 export function groupBySystem(institutions: Institution[]) {
   return systems
     .map((system) => ({
       system,
       label: systemLabels[system],
-      institutions: institutions
-        .filter((institution) => institution.system === system)
-        .sort((a, b) => (a.code < b.code ? -1 : a.code > b.code ? 1 : 0))
+      institutions: institutions.filter((institution) => institution.system === system)
     }))
     .filter((group) => group.institutions.length > 0);
 }
