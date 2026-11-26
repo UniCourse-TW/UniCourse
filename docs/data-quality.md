@@ -86,9 +86,10 @@ Files regenerated on 2026-11-27 (git-ignored, main checkout `snapshots/`; origin
 
 - Re-crawled: `snapshots/{ccu,fcu,nccu,nchu,nthu,ntnu,ntu,nycu,tnua}-115-1.json` (NYCU 115-1 also re-tidied after a
   late fix, same code path).
-- Re-parsed with `retidy`: every `snapshots/history/{fcu,nccu,nchu,nthu,ntu,nycu,tnua}-*.json` (147 files, all
-  changed); `history/ntnu-*.json` (13 of 20 changed: placeholder instructors, 0 limits) and `history/ccu-109-2.json`
-  (one staff number); the other CCU/NTNU history files were checked and left byte-identical.
+- Re-parsed with `retidy` (all 182 history files were run; files with no change were left byte-identical):
+  every `snapshots/history/{fcu,nccu,nchu,ntu,nycu,tnua}-*.json` (120 files); `history/nthu-*.json` except
+  104-1, 104-2, 105-1, 105-2, 106-2, 107-1, 107-2 (15 files); `history/ntnu-*.json` 105-1, 105-2, 106-2, 107-1,
+  108-2, 109-1, 109-2, 111-1, 112-1, 113-1, 114-2 (11 files); `history/ccu-109-2.json` (one staff number).
 - Not touched: `ntua-115-1.json`, `ncku-115-1-smoke.json` (not in production).
 
 ## Rules for the UI / API
