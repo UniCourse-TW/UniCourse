@@ -77,6 +77,11 @@ test('review titles: term, course title and teachers', () => {
     ['[評價] 107-暑 王道一 經濟學原理上', { tag: '評價', term: '107-3', courseTitle: '經濟學原理上', teachers: ['王道一'] }],
     // Unknown name order falls back to course first; ingest also tries the swap.
     ['[評價] 107-暑 拉貝明契 德文一上下', { tag: '評價', term: '107-3', courseTitle: '拉貝明契', teachers: ['德文一上下'] }],
+    ['Fw: [心得] 台灣史-楊凡逸', { tag: '心得', term: undefined, courseTitle: '台灣史', teachers: ['楊凡逸'] }],
+    ['[心得] 熱統計物理一--吳國安', { tag: '心得', term: undefined, courseTitle: '熱統計物理一', teachers: ['吳國安'] }],
+    ['Fw: [心得] 張巧螓－日文(一)', { tag: '心得', term: undefined, courseTitle: '日文(一)', teachers: ['張巧螓'] }],
+    ['[心得] [通識平台] 陳柏偉 音樂創作與台灣社會運', { tag: '心得', term: undefined, courseTitle: '音樂創作與台灣社會運', teachers: ['陳柏偉'] }],
+    ['Fw: [心得] 德文(一)(二)  (轉錄)', { tag: '心得', term: undefined, courseTitle: '德文(一)(二)', teachers: undefined }],
     ['Re: [問題] 請問何憲章老師投資學', { tag: '問題', term: undefined, courseTitle: '投資學', teachers: ['何憲章'] }],
     ['[公告] NTUCourse板板規', { tag: '公告', term: undefined, courseTitle: 'NTUCourse板板規', teachers: undefined }]
   ];

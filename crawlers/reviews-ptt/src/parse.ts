@@ -219,6 +219,8 @@ export function parseReviewTitle(raw: string): ParsedTitle {
   const tagMatch = /^[[【［]([^\]】］]{1,6})[\]】］]\s*/.exec(title);
   const tag = tagMatch?.[1].trim() || undefined;
   if (tagMatch) title = title.slice(tagMatch[0].length);
+  // A second bracket is a category, not part of the course: `[心得] [通識平台] 聖經與人生`.
+  title = title.replace(/^[[【［][^\]】］]{1,8}[\]】］]\s*/, '');
   const result: ParsedTitle = { tag };
   if (!title) return result;
 
@@ -239,6 +241,13 @@ export function parseReviewTitle(raw: string): ParsedTitle {
 
   // A leading term glued to the next word: `106(全)梁明義 總體經濟學`.
   title = title.replace(/^(\d{3}(?:[-_.]?0?[123]|[-_]?[（(]?(?:全|上|下|暑)[）)]?)?)(?![全上下暑])(?=[\u4e00-\u9fff])/, '$1 ');
+  // Dashes between course and teacher (`台灣史-楊凡逸`, `日文(一)－張巧螓`, `熱統計物理一--吳國安`) become
+  // spaces; a hyphen between digits (113-1) or inside Latin text is kept.
+  title = title
+    .replace(/\s*(?:-{2,}|[－─—–])\s*/g, ' ')
+    .replace(/\s+-\s+/g, ' ')
+    .replace(/(?<=[\u4e00-\u9fff）)])-(?=[\u4e00-\u9fff])/g, ' ')
+    .trim();
   const tokens = title.split(' ').filter(Boolean);
   const rest: string[] = [];
   for (const token of tokens) {
@@ -274,7 +283,7 @@ export function parseReviewTitle(raw: string): ParsedTitle {
 
 function finish(result: ParsedTitle): ParsedTitle {
   const courseTitle = result.courseTitle?.replace(/[?？!！~～]+$/g, '').trim();
-  const teachers = result.teachers?.filter((name) => name.length <= 20);
+  const teachers = result.teachers?.filter((name) => name.length <= 20 && !/^[（(].*[）)]$/.test(name));
   return {
     tag: result.tag,
     term: result.term,
