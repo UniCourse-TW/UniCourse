@@ -1440,3 +1440,79 @@ async fn coverage_endpoints_share_all_imported_data_and_cache(pool: PgPool) {
     let fresh = call(&fresh_app, "GET", "/api/coverage", None, None).await;
     assert_eq!(fresh.body["totals"]["offerings"], 10);
 }
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn external_reviews_by_course_and_instructor(pool: PgPool) {
+    seed(&pool).await;
+    let reviews = include_bytes!("../../../fixtures/external-reviews/ptt-demo.json");
+    let snapshot = unicourse_ingest::parse_external_reviews(reviews).unwrap();
+    unicourse_ingest::import_external_reviews(&pool, &snapshot)
+        .await
+        .unwrap();
+    let app = unicourse_api::router(pool);
+
+    let course = call(
+        &app,
+        "GET",
+        "/api/courses/nthu/DEMO201/external-reviews",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(course.status, StatusCode::OK);
+    assert_eq!(
+        course.body["sources"],
+        json!([{ "source": "ptt", "sourceLabel": "PTT 批踢踢", "count": 1 }])
+    );
+    let post = &course.body["posts"][0];
+    assert_eq!(post["title"], "[心得] 114-2 線性代數 王示範");
+    assert_eq!(post["pushScore"], 12);
+    assert_eq!(post["postedAt"], "2026-07-01T08:00:00Z");
+    assert_eq!(
+        post["match"],
+        json!({ "school": "nthu", "courseCode": "DEMO201", "instructor": "王示範", "kind": "exact" })
+    );
+    let sources: Vec<_> = course.body["linkOnly"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|link| link["source"].as_str().unwrap())
+        .collect();
+    assert_eq!(sources, ["opt", "dcard"]);
+
+    // Instructor listing: the matched post and the unmatched question naming the teacher, newest first.
+    let teacher = call(
+        &app,
+        "GET",
+        "/api/instructors/nthu/%E7%8E%8B%E7%A4%BA%E7%AF%84/external-reviews",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(teacher.status, StatusCode::OK);
+    let titles: Vec<_> = teacher.body["posts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|post| post["title"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        titles,
+        [
+            "[心得] 114-2 線性代數 王示範",
+            "[問題] 王示範老師的線代會點名嗎"
+        ]
+    );
+    assert_eq!(teacher.body["posts"][1]["match"], Value::Null);
+
+    let missing = call(
+        &app,
+        "GET",
+        "/api/courses/nthu/NOPE/external-reviews",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(missing.status, StatusCode::NOT_FOUND);
+    assert_eq!(missing.body["message"], "Course not found");
+}

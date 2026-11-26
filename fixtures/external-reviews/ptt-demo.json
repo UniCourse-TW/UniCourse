@@ -1,0 +1,54 @@
+{
+  "format": "external-reviews",
+  "version": 1,
+  "source": "ptt",
+  "board": "DEMO_Course",
+  "boardUrl": "https://example.com/demo/ptt/DEMO_Course/",
+  "school": "nthu",
+  "isDemo": true,
+  "fetchedAt": "2026-11-27T00:00:00Z",
+  "posts": [
+    {
+      "url": "https://example.com/demo/ptt/DEMO_Course/1",
+      "title": "[心得] 114-2 線性代數 王示範",
+      "author": "demo_user1",
+      "postedAt": "2026-07-01T08:00:00Z",
+      "pushScore": 12,
+      "excerpt": "示範資料：老師講解清楚，作業每週一次，期中期末各佔三成。",
+      "tag": "心得",
+      "term": "114-2",
+      "courseTitle": "線性代數",
+      "teachers": ["王示範"]
+    },
+    {
+      "url": "https://example.com/demo/ptt/DEMO_Course/2",
+      "title": "[評價] 林範例 計算機程式設計（一）",
+      "author": "demo_user2",
+      "postedAt": "2026-02-10T12:30:00Z",
+      "pushScore": -3,
+      "excerpt": "示範資料：程式作業量大，但助教回覆很快。",
+      "tag": "評價",
+      "courseTitle": "林範例",
+      "teachers": ["計算機程式設計（一）"]
+    },
+    {
+      "url": "https://example.com/demo/ptt/DEMO_Course/3",
+      "title": "[問題] 王示範老師的線代會點名嗎",
+      "author": "demo_user3",
+      "postedAt": "2025-09-01T01:00:00Z",
+      "pushScore": 0,
+      "tag": "問題",
+      "courseTitle": "線代會點名嗎",
+      "teachers": ["王示範"]
+    },
+    {
+      "url": "https://example.com/demo/ptt/DEMO_Course/4",
+      "title": "[心得] 藝術與人文導論",
+      "author": "demo_user1",
+      "postedAt": "2025-01-15T03:00:00Z",
+      "excerpt": "示範資料：通識課，期末交一份報告。",
+      "tag": "心得",
+      "courseTitle": "藝術與人文導論"
+    }
+  ]
+}

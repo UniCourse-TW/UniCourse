@@ -27,6 +27,8 @@ Production status per school lives in each package README; `scripts/crawl-all.sh
 `ntua` (login-only campus list) and `ncku` (CAPTCHA) by default.
 `crawl-all.sh` also skips `tvc`, which runs weekly as its own job. Import with
 `cargo run -p unicourse-ingest -- snapshots/*.json snapshots/tvc`.
+`crawlers/reviews-ptt` is not a school crawler: it writes `external-reviews` snapshots (PTT course boards) for
+`unicourse-ingest --external-reviews`; see `docs/external-reviews.md`.
 
 Rules: public, login-free sources only; honour robots.txt; at most 2 concurrent requests and ≥400 ms spacing
 per school (kit defaults); identify as `UniCourseBot`; never set `isDemo: true` on real data; never commit

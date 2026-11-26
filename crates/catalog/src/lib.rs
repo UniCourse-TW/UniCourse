@@ -9,12 +9,14 @@ use utoipa::ToSchema;
 
 mod browse;
 mod coverage;
+mod external_reviews;
 mod history;
 mod institutions;
 mod search;
 
 pub use browse::*;
 pub use coverage::*;
+pub use external_reviews::*;
 pub use history::*;
 pub use institutions::*;
 pub use search::{search, search_page};

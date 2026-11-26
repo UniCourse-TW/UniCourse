@@ -7,6 +7,7 @@ db:
 
 seed:
     cargo run --locked --package unicourse-ingest -- fixtures/ntnu-115-1.json fixtures/nycu-115-1.json fixtures/nthu-115-1.json fixtures/nthu-114-2.json
+    cargo run --locked --package unicourse-ingest -- --external-reviews fixtures/external-reviews
 
 dev: db seed
     bash scripts/dev.sh

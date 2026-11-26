@@ -211,7 +211,7 @@
 
   <div class="community">
     <CommunityRatings ratings={data.ratings} user={data.user} {form} courseCode={course.courseCode} />
-    <div class="external-slot"><CourseExternalReviews school={course.school} courseCode={course.courseCode} reviews={undefined} /></div>
+    <div class="external-slot"><CourseExternalReviews school={course.school} courseCode={course.courseCode} reviews={data.externalReviews} /></div>
   </div>
 
   <section class="forum" aria-labelledby="forum-title">

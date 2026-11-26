@@ -22,6 +22,9 @@ export type InstitutionKind = Schemas['InstitutionKind'];
 export type CrawlStatus = Schemas['CrawlStatus'];
 export type EducationSystem = Schemas['EducationSystem'];
 export type Ownership = Schemas['Ownership'];
+export type ExternalReviews = Schemas['ExternalReviews'];
+export type ExternalReview = Schemas['ExternalReview'];
+export type OutboundLink = Schemas['OutboundLink'];
 
 export type ErrorBody = Schemas['ErrorBody'];
 export type ErrorCode = Schemas['ErrorCode'];

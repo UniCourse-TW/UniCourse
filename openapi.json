@@ -570,6 +570,76 @@
         }
       }
     },
+    "/api/courses/{school}/{courseCode}/external-reviews": {
+      "get": {
+        "tags": [
+          "external_reviews"
+        ],
+        "operationId": "courseExternalReviews",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "courseCode",
+            "in": "path",
+            "description": "Cross-term course code (URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Indexed posts about the course from other sites, newest first, plus outbound search links",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalReviews"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/courses/{school}/{courseCode}/ratings": {
       "get": {
         "tags": [
@@ -1083,6 +1153,76 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/InstructorOfferings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/instructors/{school}/{name}/external-reviews": {
+      "get": {
+        "tags": [
+          "external_reviews"
+        ],
+        "operationId": "instructorExternalReviews",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Instructor name exactly as published (URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Indexed posts naming the teacher, newest first, plus outbound search links",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalReviews"
                 }
               }
             }
@@ -2651,6 +2791,193 @@
           "internal_error"
         ]
       },
+      "ExternalMatchKind": {
+        "type": "string",
+        "description": "How a post was matched to a course at import time.",
+        "enum": [
+          "exact",
+          "title",
+          "contains"
+        ]
+      },
+      "ExternalReview": {
+        "type": "object",
+        "description": "One indexed post. Only search-result fields are stored; open `url` for the full text.",
+        "required": [
+          "source",
+          "sourceLabel",
+          "board",
+          "url",
+          "title",
+          "teachers",
+          "isDemo"
+        ],
+        "properties": {
+          "author": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "board": {
+            "type": "string",
+            "description": "Board or forum name, e.g. `NTUcourse`."
+          },
+          "courseTitle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "excerpt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "At most 120 characters from the start of the post."
+          },
+          "isDemo": {
+            "type": "boolean"
+          },
+          "match": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ExternalReviewMatch",
+                "description": "The catalog course this post was matched to; `null` when unmatched."
+              }
+            ]
+          },
+          "postedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pushScore": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "PTT 推文 score: pushes minus boos."
+          },
+          "source": {
+            "type": "string",
+            "description": "Source id, e.g. `ptt`."
+          },
+          "sourceLabel": {
+            "type": "string",
+            "description": "Human source name, e.g. `PTT 批踢踢`."
+          },
+          "tag": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Title tag such as 評價 or 心得."
+          },
+          "teachers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "term": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Term named in the title, `YYY-N`."
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
+      "ExternalReviewMatch": {
+        "type": "object",
+        "required": [
+          "school",
+          "courseCode",
+          "kind"
+        ],
+        "properties": {
+          "courseCode": {
+            "type": "string"
+          },
+          "instructor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Catalog spelling of the matched teacher, if any."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ExternalMatchKind"
+          },
+          "school": {
+            "type": "string"
+          }
+        }
+      },
+      "ExternalReviews": {
+        "type": "object",
+        "required": [
+          "sources",
+          "posts",
+          "linkOnly"
+        ],
+        "properties": {
+          "linkOnly": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OutboundLink"
+            },
+            "description": "Search links on sites we only link to, built from their public URL patterns."
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExternalReview"
+            },
+            "description": "Up to 100 indexed posts, newest first."
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExternalSourceCount"
+            },
+            "description": "All indexed posts, by source (the list below is capped at 100)."
+          }
+        }
+      },
+      "ExternalSourceCount": {
+        "type": "object",
+        "description": "Number of posts from one source.",
+        "required": [
+          "source",
+          "sourceLabel",
+          "count"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "source": {
+            "type": "string"
+          },
+          "sourceLabel": {
+            "type": "string"
+          }
+        }
+      },
       "ExtraValue": {
         "oneOf": [
           {
@@ -3213,6 +3540,28 @@
               "string",
               "null"
             ]
+          }
+        }
+      },
+      "OutboundLink": {
+        "type": "object",
+        "description": "An outbound search link to a `link_only` source; nothing from that site is stored or shown.",
+        "required": [
+          "source",
+          "label",
+          "url"
+        ],
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Human source name, e.g. `OPT 歐趴糖`."
+          },
+          "source": {
+            "type": "string",
+            "description": "Source id: `opt`, `dcard` or `ntu-rating`."
+          },
+          "url": {
+            "type": "string"
           }
         }
       },

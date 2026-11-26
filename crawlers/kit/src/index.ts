@@ -1,4 +1,5 @@
 export * from './schema.js';
+export * from './external-reviews.js';
 export * from './schools.js';
 export * from './http.js';
 export * from './cli.js';

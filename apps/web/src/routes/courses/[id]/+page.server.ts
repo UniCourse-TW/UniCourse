@@ -2,6 +2,7 @@ import { error, fail } from '@sveltejs/kit';
 import { UNAVAILABLE, apiMessage } from '$lib/community-messages';
 import { historyRows } from '$lib/course-history';
 import { catalog } from '$lib/server/catalog';
+import { loadCourseExternalReviews } from '$lib/server/course-external-reviews';
 import { field, requireUser } from '$lib/server/community-forms';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
 
@@ -58,14 +59,16 @@ async function loadPosts(fetch: typeof globalThis.fetch, school: string, courseC
 
 export const load: PageServerLoad = async ({ fetch, params, locals }) => {
   const course = await loadCourse(fetch, params.id);
-  const [ratings, history, posts] = await Promise.all([
+  const [ratings, history, posts, externalReviews] = await Promise.all([
     loadRatings(fetch, course.school, course.courseCode, locals.user != null),
     loadHistory(fetch, course.school, course.courseCode),
-    loadPosts(fetch, course.school, course.courseCode)
+    loadPosts(fetch, course.school, course.courseCode),
+    loadCourseExternalReviews(fetch, course.school, course.courseCode)
   ]);
   return {
     course,
     ratings,
+    externalReviews,
     // The API returns every section of every term (megabytes for big general courses); only the
     // trimmed rows and totals go to the page.
     history: {
