@@ -63,8 +63,8 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(ratings.getByRole('button', { name: '更新評價' })).toBeVisible();
   await expect(ratings.getByRole('radio', { name: '4 分', exact: true })).toBeChecked();
 
-  // Post a question linked to the course from its 相關討論 link.
-  await page.getByRole('link', { name: '相關討論' }).click();
+  // Post a question linked to the course from its 站內討論 section.
+  await page.getByRole('region', { name: /站內討論/ }).getByRole('link', { name: '在論壇查看' }).click();
   await expect(page).toHaveURL(/\/forum\?school=nthu&courseCode=DEMO201/);
   await expect(page.getByRole('group', { name: '已套用的篩選' })).toContainText('DEMO201');
   // The compose drawer opens from the page head and is prefilled with the course.
