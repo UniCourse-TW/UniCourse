@@ -1,4 +1,5 @@
-# Runs all school crawlers and writes snapshots to /snapshots. Context: repository root.
+# Runs all school crawlers and writes snapshots to /snapshots (the national-platform crawler
+# crawlers/tvc runs from the same image, see compose.yaml). Context: repository root.
 FROM docker.io/library/node:24-bookworm-slim
 WORKDIR /src
 # python3 (stdlib only) is used by crawlers/nthu to read the school's XLSX archive for past terms.
@@ -8,6 +9,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
 COPY apps/web/package.json apps/web/
 COPY packages/api-client/package.json packages/api-client/
 COPY crawlers ./crawlers
+# The crawler kit reads the school registry (slugs, names) at runtime.
+COPY data/institutions.json ./data/
 COPY scripts/crawl-all.sh ./scripts/crawl-all.sh
 RUN pnpm install --frozen-lockfile && chown -R unicourse /src
 USER unicourse

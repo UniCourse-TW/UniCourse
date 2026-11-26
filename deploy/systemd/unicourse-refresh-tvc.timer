@@ -1,0 +1,12 @@
+[Unit]
+Description=Weekly UniCourse refresh from the national course platform
+
+[Timer]
+# Schools upload to the platform once or twice per term, so weekly is enough; Sunday, after the
+# nightly per-school refresh.
+OnCalendar=Sun *-*-* 06:10:00 Asia/Taipei
+RandomizedDelaySec=20m
+Persistent=true
+
+[Install]
+WantedBy=timers.target

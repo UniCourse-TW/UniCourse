@@ -19,11 +19,6 @@
     "note": "每日更新；修課人數取自課務組公布的選課人數檔，不含校際合作課程",
     "issue": null
   },
-  "ncku": {
-    "status": "blocked",
-    "note": "查詢約 5 個系所後要求驗證碼，無法完整抓取一學期",
-    "issue": 1
-  },
   "nccu": {
     "status": "live",
     "note": "每日更新；尚未回溯歷史學期",
@@ -39,11 +34,6 @@
     "note": "每日更新；eCourse2 未刊登名額與修課人數",
     "issue": null
   },
-  "ncu": {
-    "status": "blocked",
-    "note": "課程查詢系統的 robots.txt 禁止爬取",
-    "issue": 2
-  },
   "fcu": {
     "status": "live",
     "note": "每日更新",
@@ -58,5 +48,827 @@
     "status": "partial",
     "note": "僅收錄推廣教育學分班；全校課表需登入且 robots.txt 禁止",
     "issue": 3
+  },
+  "ncku": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；官網查詢約 5 個系所後要求驗證碼",
+    "issue": 1,
+    "source": "tvc"
+  },
+  "ncu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；官網課程查詢系統的 robots.txt 禁止爬取",
+    "issue": 2,
+    "source": "tvc"
+  },
+  "nsysu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntou": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nknu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ncue": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntpu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ncyu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nuk": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ndhu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ncnu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntust": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "yuntech": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "npust": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntut": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nttu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "niu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nuu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nfu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tnnua": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nutn": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntue": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntcu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "npu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ncut": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntsu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntunhs": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nkuht": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nqu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntus": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nutc": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntub": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nptu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nkust": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tcpa": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntin": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ntc": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "thu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "fju": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "scu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cycu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tku": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "pccu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "pu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cgu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "yzu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "chu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "dyu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "hfu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "isu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "shu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "mcu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "usc": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cyut": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "kmu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nhu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "au": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ttu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "stust": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ksu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cnu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "stu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tcu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tmu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "csmu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "lhu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "fy": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "must": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cjcu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "hk": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cmu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "uch": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "csu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "vnu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "hcu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ctu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "mcut": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "kyu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tajen": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "sju": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ltu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cute": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ctust": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "asia": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "knu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "fgu": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tut": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "feu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ypu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "just": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "hwai": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tnu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "takming": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nkut": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cust": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ocu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ydu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "meiho": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "wfu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "hust": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cgust": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tpcu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "mitust": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "hwu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "wzu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "hwh": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "chihlee": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ukn": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "hdut": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cufa": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tumt": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "aeust": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "mmc": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ctbc": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "nanya": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "lit": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "dyhu": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "dila": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "mkc": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "jente": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "szmc": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tzuhui": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ctcn": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "mhchcm": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "yuhing": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "smc": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "hsc": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cjc": {
+    "status": "live",
+    "note": "資料來源：技職校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tbts": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "cct": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "tgst": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "iktcds": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ttcs": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "ces": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "wxsjc": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "bwbc": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
+  },
+  "utaipei": {
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；無上課時間、教室與名額",
+    "issue": null,
+    "source": "tvc"
   }
 }

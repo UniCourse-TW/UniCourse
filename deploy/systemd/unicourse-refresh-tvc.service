@@ -1,0 +1,11 @@
+[Unit]
+Description=UniCourse: crawl the national course platform (crawlers/tvc) and import its snapshots
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/sky/Projects/UniCourse/deploy
+EnvironmentFile=/srv/unicourse/secrets/compose.env
+# The crawl exits non-zero when one school fails; import whatever was written anyway.
+ExecStart=/bin/bash -c 'docker compose --env-file /srv/unicourse/secrets/compose.env run --rm crawl-tvc; docker compose --env-file /srv/unicourse/secrets/compose.env run --rm ingest-tvc'
+TimeoutStartSec=4h

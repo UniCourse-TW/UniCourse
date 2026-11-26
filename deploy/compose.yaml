@@ -69,6 +69,25 @@ services:
       - /srv/unicourse/snapshots:/snapshots:ro
     command: ['unicourse-ingest', '/snapshots']
 
+  # National 大學校院 / 技職校院課程資源網 for every school without its own crawler; weekly
+  # (deploy/systemd/unicourse-refresh-tvc.timer), ~1 hour per term at two sessions.
+  crawl-tvc:
+    image: unicourse-crawl:${UNICOURSE_TAG:-latest}
+    profiles: [jobs]
+    volumes:
+      - /srv/unicourse/snapshots:/snapshots
+    command: ['pnpm', '--silent', '--filter', '@unicourse/crawler-tvc', 'crawl', '--', '--out-dir', '/snapshots/tvc', '--report', '/snapshots/tvc-report.json']
+
+  ingest-tvc:
+    image: unicourse-api:${UNICOURSE_TAG:-latest}
+    profiles: [jobs]
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      DATABASE_URL: postgres://unicourse:${UNICOURSE_DB_PASSWORD}@db:5432/unicourse
+    volumes:
+      - /srv/unicourse/snapshots:/snapshots:ro
+    command: ['unicourse-ingest', '/snapshots/tvc']
+
 secrets:
   db_password:
     file: /srv/unicourse/secrets/db_password

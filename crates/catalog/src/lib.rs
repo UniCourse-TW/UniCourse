@@ -1,4 +1,7 @@
-use std::collections::BTreeMap;
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::LazyLock,
+};
 
 use serde::{Deserialize, Deserializer, Serialize};
 use sqlx::{FromRow, PgConnection, PgPool};
@@ -12,10 +15,14 @@ pub use browse::*;
 pub use history::*;
 pub use institutions::*;
 
-/// School slugs accepted in snapshots. Keep in sync with `crawlers/kit/src/schools.ts`.
-pub const SCHOOL_SLUGS: [&str; 12] = [
-    "ntu", "ntnu", "nycu", "nthu", "ncku", "nccu", "nchu", "ccu", "ncu", "fcu", "tnua", "ntua",
-];
+/// School slugs accepted in snapshots: every `slug` in `data/institutions.json`, the single source
+/// of truth shared with `crawlers/kit/src/schools.ts`.
+pub static SCHOOL_SLUGS: LazyLock<BTreeSet<&'static str>> = LazyLock::new(|| {
+    INSTITUTION_RECORDS
+        .iter()
+        .map(|record| record.slug.as_str())
+        .collect()
+});
 
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 

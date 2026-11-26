@@ -19,9 +19,13 @@ docker compose --env-file /srv/unicourse/secrets/compose.env up -d db api web
 docker compose --env-file /srv/unicourse/secrets/compose.env run --rm crawl
 docker compose --env-file /srv/unicourse/secrets/compose.env run --rm ingest
 
-# nightly refresh
-mkdir -p ~/.config/systemd/user && cp systemd/unicourse-refresh.* ~/.config/systemd/user/
-systemctl --user daemon-reload && systemctl --user enable --now unicourse-refresh.timer
+# national course platform (every school without its own crawler; ~1 h per term)
+docker compose --env-file /srv/unicourse/secrets/compose.env run --rm crawl-tvc
+docker compose --env-file /srv/unicourse/secrets/compose.env run --rm ingest-tvc
+
+# nightly refresh (own crawlers) and weekly refresh (national platform)
+mkdir -p ~/.config/systemd/user && cp systemd/unicourse-refresh*.{service,timer} ~/.config/systemd/user/
+systemctl --user daemon-reload && systemctl --user enable --now unicourse-refresh.timer unicourse-refresh-tvc.timer
 ```
 
 Verify without DNS: `curl -s -H 'Host: unicourse.observe.tw' http://127.0.0.1/` on the host.

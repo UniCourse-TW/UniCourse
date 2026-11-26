@@ -1,7 +1,10 @@
 import iconvLite from 'iconv-lite';
 
 // iconv-lite ships CommonJS with a `declare namespace` typing that hides `decode` under NodeNext.
-const iconv = iconvLite as unknown as { decode(buffer: Buffer, encoding: string): string };
+const iconv = iconvLite as unknown as {
+  decode(buffer: Buffer, encoding: string): string;
+  encode(text: string, encoding: string): Buffer;
+};
 
 export interface HttpOptions {
   /** Max concurrent requests per client (default 2). */
@@ -24,6 +27,27 @@ export interface RequestOptions {
 }
 
 export const USER_AGENT = 'UniCourseBot/0.1 (+https://unicourse.observe.tw; course catalog indexer)';
+
+/**
+ * `application/x-www-form-urlencoded` body in a legacy charset such as Big5 (URLSearchParams always
+ * encodes UTF-8). Send it with `content-type: application/x-www-form-urlencoded`.
+ */
+export function encodeForm(fields: Record<string, string>, charset = 'utf-8'): string {
+  const encoding = charset.toLowerCase() === 'big5' ? 'big5-hkscs' : charset;
+  const escape = (text: string) =>
+    [...iconv.encode(text, encoding)]
+      .map((byte) =>
+        /[A-Za-z0-9*\-._]/.test(String.fromCharCode(byte))
+          ? String.fromCharCode(byte)
+          : byte === 0x20
+            ? '+'
+            : `%${byte.toString(16).toUpperCase().padStart(2, '0')}`
+      )
+      .join('');
+  return Object.entries(fields)
+    .map(([key, value]) => `${escape(key)}=${escape(value)}`)
+    .join('&');
+}
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

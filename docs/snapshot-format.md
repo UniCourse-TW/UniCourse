@@ -17,7 +17,7 @@ package where a reasonable equivalent exists (`code`, `credit`, `teachers` → `
 
 | field | type | required | meaning |
 | --- | --- | --- | --- |
-| `school` | string | yes | School slug from the fixed list in `crawlers/kit/src/schools.ts` (mirrored in `crates/ingest`); other slugs are rejected. |
+| `school` | string | yes | School slug from `data/institutions.json` (read by `crawlers/kit/src/schools.ts` and `unicourse_catalog::SCHOOL_SLUGS`); other slugs are rejected. |
 | `schoolName` | string | yes | Official Chinese name, e.g. `國立臺灣大學`. |
 | `schoolNameEn` | string | no | Official English name. |
 | `term` | string | yes | Taiwanese academic year and term as `YYY-N`, e.g. `115-1`. `N` is 1, 2 or 3 (summer). |

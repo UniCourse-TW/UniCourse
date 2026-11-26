@@ -115,9 +115,11 @@ test('derives directory coverage from crawler status and imported offerings', as
   await expect(rows).toHaveCount(Math.min(24, institutions.length));
   await expect(table.getByRole('rowheader', { name: /^一般大學/ })).toBeVisible();
 
+  // NCKU's own site asks for a CAPTCHA, so its data comes from the national platform. The e2e fixtures
+  // hold no NCKU offerings, so it is waiting for import and has no school page link yet.
   const ncku = rows.filter({ hasText: '國立成功大學' });
   await expect(ncku.getByText('0005', { exact: true })).toBeVisible();
-  await expect(ncku.getByText('受阻', { exact: true })).toBeVisible();
+  await expect(ncku.getByText(/資料來源：大學校院課程資源網/)).toBeVisible();
   await expect(ncku.getByRole('link', { name: '#1' })).toHaveAttribute(
     'href',
     'https://github.com/UniCourse-TW/UniCourse/issues/1'
@@ -139,14 +141,14 @@ test('derives directory coverage from crawler status and imported offerings', as
 
   await page.getByText('更多篩選', { exact: true }).click();
   const status = page.getByRole('combobox', { name: '收錄狀態' });
-  await status.selectOption('blocked');
+  await status.selectOption('live');
   await page.getByRole('button', { name: '套用篩選' }).click();
-  await expect(page).toHaveURL(/\/schools\?.*status=blocked/);
-  await expect(status).toHaveValue('blocked');
-  await expect(rows).toHaveCount(blockedCount);
-  await expect(rows.filter({ hasText: '國立成功大學' })).toHaveCount(1);
-  await expect(rows.filter({ hasText: '國立清華大學' })).toHaveCount(0);
-  await expect(chips.filter({ hasText: '受阻' })).toHaveAttribute('aria-current', 'true');
+  await expect(page).toHaveURL(/\/schools\?.*status=live/);
+  await expect(status).toHaveValue('live');
+  await expect(rows).toHaveCount(Math.min(24, liveCount));
+  await expect(rows.filter({ hasText: '國立清華大學' })).toHaveCount(1);
+  await expect(rows.filter({ hasText: '國立成功大學' })).toHaveCount(0);
+  await expect(chips.filter({ hasText: '已收錄' })).toHaveAttribute('aria-current', 'true');
 
   await chips.filter({ hasText: '待匯入' }).click();
   await expect(page).toHaveURL(/status=pending_import/);

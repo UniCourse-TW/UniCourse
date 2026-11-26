@@ -250,8 +250,8 @@ pub struct ValidSnapshot(Snapshot);
 pub fn parse_snapshot(bytes: &[u8]) -> Result<ValidSnapshot> {
     let snapshot: Snapshot = serde_json::from_slice(bytes)?;
     ensure!(
-        SCHOOL_SLUGS.contains(&snapshot.school.as_str()),
-        "unknown school slug {:?} (see crawlers/kit/src/schools.ts)",
+        SCHOOL_SLUGS.contains(snapshot.school.as_str()),
+        "unknown school slug {:?} (see data/institutions.json)",
         snapshot.school
     );
     ensure_text(&snapshot.school_name, "schoolName")?;
