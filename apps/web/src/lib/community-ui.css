@@ -1,0 +1,191 @@
+/*
+ * Shared styles for the community pages (forum, thread, auth, settings, profile).
+ * Everything is scoped under `.cm` and drawn from the tokens in `ui/tokens.css`, so both themes
+ * follow `data-theme` / `prefers-color-scheme` without page-specific overrides.
+ */
+
+.cm {
+  color: var(--ink);
+  font: var(--t-md) / var(--leading-body) var(--font-sans);
+  overflow-wrap: anywhere;
+}
+.cm a { color: var(--brand-ink); text-underline-offset: 0.15em; }
+.cm a:hover { text-decoration-thickness: 2px; }
+.cm :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+.cm :is(h1, h2, h3) {
+  margin: 0;
+  color: var(--ink);
+  font-weight: 650;
+  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-heading);
+  text-wrap: balance;
+}
+.cm h1 { font-size: var(--t-2xl); }
+.cm h2 { font-size: var(--t-xl); }
+.cm h3 { font-size: var(--t-lg); }
+.cm p { margin: 0; }
+.cm .num { font-variant-numeric: tabular-nums; }
+.cm .mono { font-family: var(--font-mono); font-size: 0.92em; }
+
+.cm-sr {
+  position: absolute !important;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Page head: h1 + one-line dek on the left, actions on the right. */
+.cm-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 var(--space-4);
+  align-items: center;
+  margin-block-end: var(--space-5);
+}
+.cm-head > :is(h1, .cm-title) { grid-column: 1; grid-row: 1; min-inline-size: 0; }
+.cm-head > .cm-actions { grid-column: 2; grid-row: 1; }
+.cm-head > .cm-dek { grid-column: 1 / -1; grid-row: 2; }
+.cm-dek { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; }
+.cm-dek .sep { margin-inline: 0.35em; color: var(--axis); }
+.cm-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+
+/* Buttons. Primary is solid brand; secondary is outlined; quiet is text-like. */
+.cm-btn {
+  display: inline-flex;
+  gap: var(--space-1);
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--target-min);
+  min-inline-size: var(--target-min);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--brand);
+  border-radius: var(--radius-control);
+  color: var(--on-brand) !important;
+  background: var(--brand);
+  font: 600 var(--t-base) / 1 var(--font-sans);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: opacity 120ms ease;
+}
+.cm-btn:hover { text-decoration: none; filter: brightness(1.08); }
+.cm-btn.secondary { color: var(--brand-ink) !important; background: var(--panel-raised); border-color: var(--brand); }
+.cm-btn.secondary:hover { background: var(--brand-wash); filter: none; }
+.cm-btn.quiet { color: var(--ink-2) !important; background: transparent; border-color: transparent; padding-inline: var(--space-2); }
+.cm-btn.quiet:hover { background: var(--hover-row); filter: none; }
+.cm-btn.danger { color: var(--on-brand) !important; background: var(--down); border-color: var(--down); }
+.cm-btn.block { inline-size: 100%; }
+.cm-btn[aria-busy='true'], .cm-btn:disabled { opacity: 0.6; cursor: default; filter: none; }
+
+/* Form fields: label row (label + hint/counter on the right) above a 44 px control. */
+.cm-form { display: grid; gap: var(--space-3); }
+.cm-field { display: grid; gap: var(--space-1); min-inline-size: 0; }
+.cm-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-2);
+  align-items: baseline;
+  justify-content: space-between;
+  color: var(--ink-2);
+  font-size: var(--t-base);
+  font-weight: 600;
+}
+.cm-label label { cursor: pointer; }
+.cm-hint { color: var(--muted); font-size: var(--t-sm); font-weight: 400; }
+.cm-count { color: var(--muted); font-size: var(--t-sm); font-weight: 400; font-variant-numeric: tabular-nums; }
+.cm-count.over { color: var(--down); font-weight: 600; }
+.cm-input {
+  inline-size: 100%;
+  min-block-size: var(--target-min);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--control-line);
+  border-radius: var(--radius-control);
+  color: var(--ink);
+  background: var(--panel-raised);
+  color-scheme: var(--ui-color-scheme);
+  font: var(--t-md) / 1.5 var(--font-sans);
+}
+.cm-input::placeholder { color: var(--muted); opacity: 0.85; }
+textarea.cm-input { resize: vertical; line-height: var(--leading-body); }
+select.cm-input { block-size: var(--target-min); padding-block: 0; }
+.cm-input:focus-visible { border-color: var(--brand); }
+.cm-input[aria-invalid='true'] { border-color: var(--down); }
+
+/* Messages. */
+.cm-alert, .cm-ok {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  border-inline-start: 3px solid var(--down);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--down) var(--status-tint), var(--panel-raised));
+  font-size: var(--t-base);
+}
+.cm-ok { border-color: var(--up); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); }
+
+/* Post type badge: 提問 info, 文章 brand, 公告 warn. */
+.cm-type {
+  --tone: var(--brand);
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  color: color-mix(in srgb, var(--tone) 82%, var(--ink));
+  background: color-mix(in srgb, var(--tone) var(--status-tint), var(--panel-raised));
+  font: 600 var(--t-sm) / 1.5 var(--font-sans);
+  white-space: nowrap;
+}
+.cm-type[data-type='question'] { --tone: var(--info); }
+.cm-type[data-type='announcement'] { --tone: var(--warn); }
+
+/* Score colour: positive up, negative down, zero muted. */
+.cm-score { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--muted); }
+.cm-score[data-sign='up'] { color: var(--up); }
+.cm-score[data-sign='down'] { color: var(--down); }
+
+/* Panels. */
+.cm-panel {
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--panel);
+}
+
+/* Category chip row (links) and removable filter chips. */
+.cm-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.cm-chip {
+  display: inline-flex;
+  gap: 0.35em;
+  align-items: center;
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  color: var(--ink-2) !important;
+  background: var(--chip);
+  font: 600 var(--t-sm) / 1 var(--font-sans);
+  text-decoration: none;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+.cm-chip:hover { background: var(--brand-wash); }
+.cm-chip .n { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+.cm-chip[aria-current='true'] { color: var(--on-brand) !important; background: var(--brand); }
+.cm-chip[aria-current='true'] .n { color: inherit; opacity: 0.85; }
+.cm-chip.remove { color: var(--brand-ink) !important; background: var(--brand-wash); }
+.cm-chip.remove span[aria-hidden] { font-size: var(--t-md); }
+
+@media (max-width: 40rem) {
+  .cm-chip { min-block-size: var(--target-min); }
+  .cm-panel { padding: var(--space-4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cm *, .cm *::before, .cm *::after { transition: none !important; animation: none !important; }
+}

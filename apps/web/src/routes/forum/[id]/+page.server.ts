@@ -17,8 +17,37 @@ export const load: PageServerLoad = async ({ fetch, params }) => {
   if (post.response.status === 404) error(404, NOT_FOUND);
   if (!post.data) error(503, UNAVAILABLE);
   const schoolNames = Object.fromEntries((schools.data ?? []).map((school) => [school.slug, school.name]));
-  return { post: post.data, schoolNames };
+  return { post: post.data, schoolNames, course: await courseContext(client, post.data) };
 };
+
+/**
+ * The 這門課 card: the newest offering of the thread's course, its rating summary and other
+ * threads about it. `null` when the thread names no course; `offering: null` when the code is
+ * not in the catalog (the page then shows the code as text only). Failures degrade quietly.
+ */
+async function courseContext(client: ReturnType<typeof catalog>, post: { id: number; school?: string | null; courseCode?: string | null }) {
+  const { school, courseCode } = post;
+  if (!school || !courseCode) return null;
+  const [offerings, stats, threads] = await Promise.all([
+    client.GET('/api/courses', { params: { query: { school, q: courseCode } } }).then((r) => r.data).catch(() => undefined),
+    client
+      .GET('/api/courses/{school}/{courseCode}/ratings/stats', { params: { path: { school, courseCode } } })
+      .then((r) => r.data)
+      .catch(() => undefined),
+    client.GET('/api/posts', { params: { query: { school, courseCode } } }).then((r) => r.data).catch(() => undefined)
+  ]);
+  const matches = (offerings ?? [])
+    .filter((offering) => offering.courseCode.toLowerCase() === courseCode.toLowerCase())
+    .sort((a, b) => b.term.localeCompare(a.term, 'en', { numeric: true }));
+  const others = (threads?.posts ?? []).filter((other) => other.id !== post.id);
+  return {
+    offering: matches[0] ?? null,
+    terms: new Set(matches.map((offering) => offering.term)).size,
+    rating: stats ?? null,
+    others: others.slice(0, 4).map(({ id, title, type, replyCount }) => ({ id, title, type, replyCount })),
+    otherCount: threads ? Math.max(0, threads.total - 1) : others.length
+  };
+}
 
 /** The post or reply a form acts on (`target`), defaulting to the thread itself. */
 function target(form: FormData, threadId: string) {
