@@ -83,9 +83,9 @@ test('lists every institution with its crawl status and filters by status', asyn
   const ncku = rows.filter({ hasText: '國立成功大學' });
   await expect(ncku.getByText('（0005）')).toBeVisible();
   await expect(ncku.getByText('受阻', { exact: true })).toBeVisible();
-  await expect(ncku.getByRole('link', { name: '#40' })).toHaveAttribute(
+  await expect(ncku.getByRole('link', { name: '#1' })).toHaveAttribute(
     'href',
-    'https://github.com/UniCourse-TW/UniCourse/issues/40'
+    'https://github.com/UniCourse-TW/UniCourse/issues/1'
   );
   await expect(ncku.getByRole('link', { name: '國立成功大學', exact: true })).toHaveCount(0);
 
