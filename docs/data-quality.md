@@ -26,7 +26,7 @@ Counts are offerings (or, for `extra` keys, key occurrences) across all 189 file
 | NYCU | raw timetable columns in `extra` (`dep_limit`, `degree`, `depType`, `cos_type_e`, …) | 678,796 | 0 | labels or dropped |
 | NYCU | JSON blobs in `extra` (`costype`, `brief`) | 38,959 | 0 | `課程類別` / `通識向度` lists |
 | NYCU | `null` in `extra` (`crsoutline_type`, `dep_ename`) | 12,323 | 0 | dropped |
-| NYCU | HTML entities / DEL in titles (`Mentor&#39;s Hours`, `Experimental Brain Science\x7f`) | 104 | 0 | decoded / stripped |
+| NYCU | HTML entities / DEL in titles and `extra` (`Mentor&#39;s Hours`, `Experimental Brain Science\x7f`) | 104 | 1 | decoded / stripped; one 112-2 note is double-encoded at the source |
 | NYCU | `capacity` 0 with students | 889 | 0 | omitted |
 | NYCU | doubled spaces in titles | 4 | 0 | collapsed |
 | NTHU | HTML in `extra.擋修說明` | 333 | 0 | plain text lines |
@@ -80,6 +80,16 @@ parsers now apply. Each affected crawler has `src/tidy.ts` (`tidyOffering`, idem
 samples) called at the end of its parser, and `src/retidy.ts`, which rewrites snapshot files in place through
 `retidySnapshots` (`crawlers/kit/src/tidy.ts`): every file is validated with the kit `Snapshot` schema before it is
 written, and `source.fetchedAt` is kept. 115-1 was re-crawled for all nine schools.
+
+Files regenerated on 2026-11-27 (git-ignored, main checkout `snapshots/`; originals backed up to
+`~/.cache/unicourse-dev/snapshots-before-dq-20261127/`):
+
+- Re-crawled: `snapshots/{ccu,fcu,nccu,nchu,nthu,ntnu,ntu,nycu,tnua}-115-1.json` (NYCU 115-1 also re-tidied after a
+  late fix, same code path).
+- Re-parsed with `retidy`: every `snapshots/history/{fcu,nccu,nchu,nthu,ntu,nycu,tnua}-*.json` (147 files, all
+  changed); `history/ntnu-*.json` (13 of 20 changed: placeholder instructors, 0 limits) and `history/ccu-109-2.json`
+  (one staff number); the other CCU/NTNU history files were checked and left byte-identical.
+- Not touched: `ntua-115-1.json`, `ncku-115-1-smoke.json` (not in production).
 
 ## Rules for the UI / API
 

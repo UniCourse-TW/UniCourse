@@ -73,6 +73,11 @@ export function tidyOffering(offering: Offering): Offering {
   else next.titleEn = titleEn;
   if (next.capacity === 0 && next.enrolled) delete next.capacity;
   const extra = remapExtra(offering.extra as ExtraRecord | undefined, EXTRA_RULES);
-  if (extra) for (const key of Object.keys(extra)) if (/^[A-Za-z0-9_]+$/.test(key)) delete extra[key];
+  if (extra) {
+    for (const [key, value] of Object.entries(extra)) {
+      if (/^[A-Za-z0-9_]+$/.test(key) || value === null) delete extra[key];
+      else if (typeof value === 'string') extra[key] = decodeEntities(value);
+    }
+  }
   return withExtra(next, extra);
 }

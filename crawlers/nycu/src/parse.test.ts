@@ -141,6 +141,11 @@ test('tidyOffering repairs old snapshots and is idempotent', () => {
   assert.equal(once.titleEn, "Mentor's Hours (I)");
   assert.equal(once.title, '導師時間 -職涯學院');
   assert.equal(tidyOffering({ ...old, extra: { dep_ename: null } }).extra, undefined);
+  // Values already relabelled by an earlier retidy: nulls dropped, entities decoded.
+  assert.deepEqual(
+    tidyOffering({ ...old, extra: { 開課單位英文名稱: null, 課程網頁: 'https://x.test/', 通識向度: 'Science &amp; Technology' } }).extra,
+    { 課程網頁: 'https://x.test/', 通識向度: 'Science & Technology' }
+  );
   assert.equal(once.capacity, undefined);
   assert.equal(once.enrolled, 30);
   assert.deepEqual(once.extra, { 開課單位英文名稱: 'Department of Computer Science', 課程網頁: 'https://example.nycu.edu.tw/course' });
