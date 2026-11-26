@@ -1,9 +1,18 @@
-// zh-TW wording for the API's `{message}` errors, kept in one place for later i18n.
+import type { ErrorCode } from '@unicourse/api-client';
+
+export const UNAVAILABLE = '暫時無法完成，請稍後再試。';
+
+const codeMessages: Partial<Record<ErrorCode, string>> = {
+  unauthorized: '請先登入。',
+  invalid_credentials: '帳號或密碼錯誤。',
+  rate_limited: '登入失敗次數過多，請一分鐘後再試。',
+  username_taken: '這個帳號名稱已有人使用。',
+  invalid_body: '送出的內容有誤。',
+  invalid_path: '網址格式有誤。',
+  internal_error: UNAVAILABLE
+};
+
 const messages: Record<string, string> = {
-  'Sign in required': '請先登入。',
-  'Wrong username or password': '帳號或密碼錯誤。',
-  'Too many failed sign-in attempts; try again in a minute': '登入失敗次數過多，請一分鐘後再試。',
-  'Username is taken': '這個帳號名稱已有人使用。',
   'Username must be 3-32 characters of a-z, 0-9 and underscore': '帳號名稱需為 3–32 個英文字母、數字或底線。',
   'Password must be 8-128 characters': '密碼需為 8–128 個字元。',
   'Display name must be 1-50 characters on one line': '顯示名稱需為 1–50 字的單行文字。',
@@ -33,14 +42,12 @@ const messages: Record<string, string> = {
   'Invalid request body': '送出的內容有誤。'
 };
 
-export const UNAVAILABLE = '暫時無法完成，請稍後再試。';
-
 /** The zh-TW text for an API error body, falling back to its own message. */
 export function apiMessage(body: unknown, fallback = UNAVAILABLE) {
-  const message =
-    body && typeof body === 'object' && 'message' in body && typeof body.message === 'string'
-      ? body.message
-      : undefined;
-  if (!message) return fallback;
-  return messages[message] ?? message;
+  if (!body || typeof body !== 'object') return fallback;
+  if ('code' in body && typeof body.code === 'string' && Object.hasOwn(codeMessages, body.code)) {
+    return codeMessages[body.code as ErrorCode] ?? fallback;
+  }
+  if (!('message' in body) || typeof body.message !== 'string') return fallback;
+  return Object.hasOwn(messages, body.message) ? messages[body.message] : body.message;
 }

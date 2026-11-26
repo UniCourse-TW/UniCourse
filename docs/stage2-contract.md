@@ -29,9 +29,42 @@ Also show: total offerings / courses / schools / terms indexed, per-school offer
 latest import time per school. The search form stays at the top.
 
 Rankings API: `GET /api/rankings/courses?school=&limit=` returns
-`{ school, schoolName, courseCode, title, titleEn?, terms: number, offerings: number, enrolledTotal: number|null, capacityTotal: number|null, latestOfferingId }`
-ordered by `enrolledTotal DESC NULLS LAST, capacityTotal DESC`. Implement with a materialized view or
-a plain aggregate query with an index; refresh on ingest if materialized.
+`{ school, schoolName, courseCode, title, titleEn, terms, offerings, enrolledTotal, capacityTotal, latestOfferingId, latestActiveOfferingId, trend, isDemo }[]`
+ordered by `enrolledTotal DESC NULLS LAST, capacityTotal DESC NULLS LAST`. `trend` contains up to
+ten `{ term, enrolled, capacity }` entries, newest first, including withdrawn offerings. The view is
+materialized and refreshed on ingest. `latestActiveOfferingId` is `null` if every offering is withdrawn;
+`latestOfferingId` still links to the latest withdrawn offering in that case. Offering IDs are strings.
+
+## Catalog history and trends
+
+- `GET /api/courses` retains its array response. `GET /api/courses/search` accepts the same filters
+  plus `offset` (non-negative, default 0) and `sort` (`relevance`, `enrolled`, `title`), and returns
+  `{ total, offset, courses: Offering[] }`. Each page contains at most 50 active offerings. `total`
+  is the unpaginated count, including when `offset` is beyond the last match. Enrollment sorts descending, unpublished values last; titles sort ascending.
+- `GET /api/schools/{school}/departments/{department}?term=` accepts an optional exact term.
+  `total` and `offerings` match the filter, while `terms` always lists all available terms, newest
+  first. A known department with no matches in the selected term returns 200 with an empty list.
+- `GET /api/courses/{id}` serves both active and withdrawn offerings (`active: boolean`); search
+  and ordinary listings still exclude withdrawn offerings.
+- `GET /api/courses/{school}/{courseCode}` returns
+  `{ school, schoolName, courseCode, title, titleEn?, department?, terms, totals, latestActiveOfferingId }`.
+  The title and department come from the newest term (prefer an active offering within that term).
+  Each term is `{ term, offerings: Offering[], enrolled, capacity }`, newest first. `totals` is
+  `{ terms, offerings, enrolledTotal, capacityTotal }`. Both aggregate over active and withdrawn rows.
+- Append `/trends` to `/api/schools/{school}`, `/api/schools/{school}/departments/{department}` or
+  `/api/instructors/{school}/{name}` for `{ term, offerings, courses, enrolled, capacity }[]`, newest
+  first. These count active offerings, with distinct cross-term course codes counted once per term.
+  A known school without active offerings returns `[]`; unknown schools or scopes return 404.
+- Enrollment and capacity sums are `null` when every contributing value is unpublished; reported
+  zero values remain zero.
+
+## API conventions
+
+Errors have a stable `code` and a human-readable `message`. Signed-in users who have not rated a
+known course get `200 null` from `GET .../ratings/me`; an unknown course returns `404 not_found`.
+Profile ratings include `latestOfferingId`, or `null` if the course has no offering. Forum list
+filters accept only `announcement`, `article`, and `question`. Post, reply, and rating timestamps
+include fractional seconds so clients can detect edits made within the same second.
 
 ## Data additions
 

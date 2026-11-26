@@ -38,7 +38,7 @@
         <li>
           <div class="rank-row">
             <div class="course">
-              <a href={`/courses/${course.latestOfferingId}`}>{course.title}</a>
+              <a href={`/courses/${course.latestActiveOfferingId ?? course.latestOfferingId}`}>{course.title}</a>
               {#if course.titleEn}<small lang="en">{course.titleEn}</small>{/if}
               <div class="metadata">
                 {course.schoolName} · {course.courseCode}

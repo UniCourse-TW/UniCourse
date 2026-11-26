@@ -55,6 +55,9 @@ pub(crate) struct UserRating {
     course_code: String,
     /// Title of the course's newest offering.
     title: Option<String>,
+    /// ID of the course's newest offering, if any.
+    #[schema(required = true)]
+    latest_offering_id: Option<String>,
     score: i16,
     review: Option<String>,
     created_at: String,
@@ -105,8 +108,8 @@ pub(crate) async fn list(
     let (school, code) = course(&pool, segments).await?;
     sqlx::query_as(
         "SELECT account.username, account.display_name, rating.score, rating.review,
-             unicourse_iso(rating.created_at) AS created_at,
-             unicourse_iso(rating.updated_at) AS updated_at
+             unicourse_iso_precise(rating.created_at) AS created_at,
+             unicourse_iso_precise(rating.updated_at) AS updated_at
          FROM ratings AS rating JOIN users AS account ON account.id = rating.user_id
          WHERE rating.school = $1 AND rating.course_code = $2
          ORDER BY rating.updated_at DESC, rating.user_id
@@ -152,23 +155,24 @@ pub(crate) async fn stats(
     }))
 }
 
-const MY_RATING: &str = "SELECT score, review, unicourse_iso(created_at) AS created_at,
-    unicourse_iso(updated_at) AS updated_at FROM ratings";
+const MY_RATING: &str = "SELECT score, review, unicourse_iso_precise(created_at) AS created_at,
+    unicourse_iso_precise(updated_at) AS updated_at FROM ratings";
 
 #[utoipa::path(get, operation_id = "getMyRating", path = "/api/courses/{school}/{courseCode}/ratings/me", params(
     ("school" = String, Path, description = "School slug"),
     ("courseCode" = String, Path, description = "Cross-term course code (URL-encoded)")
 ), responses(
-    (status = 200, description = "The signed-in user's rating", body = MyRating),
+    (status = 200, description = "The signed-in user's rating, or null if unrated", body = Option<MyRating>),
+    (status = 400, body = ErrorBody),
     (status = 401, body = ErrorBody),
-    (status = 404, description = "Unknown course, or not rated yet", body = ErrorBody),
+    (status = 404, description = "Unknown course", body = ErrorBody),
     (status = 500, body = ErrorBody)
 ), security(("session" = [])))]
 pub(crate) async fn mine(
     State(state): State<AppState>,
     CurrentUser(me): CurrentUser,
     segments: Result<Path<(String, String)>, PathRejection>,
-) -> Result<Json<MyRating>, ApiError> {
+) -> Result<Json<Option<MyRating>>, ApiError> {
     let (school, code) = course(&state.pool, segments).await?;
     sqlx::query_as(&format!(
         "{MY_RATING} WHERE user_id = $1 AND school = $2 AND course_code = $3"
@@ -178,9 +182,8 @@ pub(crate) async fn mine(
     .bind(&code)
     .fetch_optional(&state.pool)
     .await
-    .map_err(database_error)?
     .map(Json)
-    .ok_or_else(|| error(StatusCode::NOT_FOUND, "Not rated yet"))
+    .map_err(database_error)
 }
 
 #[utoipa::path(put, operation_id = "putMyRating", path = "/api/courses/{school}/{courseCode}/ratings/me", params(
@@ -211,8 +214,8 @@ pub(crate) async fn put_mine(
          VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (user_id, school, course_code) DO UPDATE
              SET score = EXCLUDED.score, review = EXCLUDED.review, updated_at = now()
-         RETURNING score, review, unicourse_iso(created_at) AS created_at,
-             unicourse_iso(updated_at) AS updated_at",
+         RETURNING score, review, unicourse_iso_precise(created_at) AS created_at,
+             unicourse_iso_precise(updated_at) AS updated_at",
     )
     .bind(me.id)
     .bind(&school)
@@ -252,12 +255,13 @@ pub(crate) async fn delete_mine(
 
 pub(crate) async fn by_user(pool: &PgPool, user_id: i64) -> Result<Vec<UserRating>, ApiError> {
     sqlx::query_as(
-        "SELECT rating.school, rating.course_code, latest.title, rating.score, rating.review,
-             unicourse_iso(rating.created_at) AS created_at,
-             unicourse_iso(rating.updated_at) AS updated_at
+        "SELECT rating.school, rating.course_code, latest.title, latest.id::text AS latest_offering_id,
+             rating.score, rating.review,
+             unicourse_iso_precise(rating.created_at) AS created_at,
+             unicourse_iso_precise(rating.updated_at) AS updated_at
          FROM ratings AS rating
          LEFT JOIN LATERAL (
-             SELECT title FROM offerings
+             SELECT id, title FROM offerings
              WHERE school = rating.school AND course_code = rating.course_code
              ORDER BY term DESC, active DESC, id DESC LIMIT 1
          ) AS latest ON true

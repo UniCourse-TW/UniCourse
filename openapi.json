@@ -355,6 +355,102 @@
         }
       }
     },
+    "/api/courses/search": {
+      "get": {
+        "tags": [],
+        "operationId": "search_page",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Matches title, English title, department and instructors, or a course code prefix.\nLeading and trailing whitespace is trimmed; the trimmed value may be at most 100\ncharacters and must not contain line breaks or NUL.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "description": "School slug (exact).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "description": "Term such as `115-1` (exact); omit for all terms.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "department",
+            "in": "query",
+            "description": "Offering unit name (exact).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Skip this many matches (default 0).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort by relevance (default), published enrollment descending, or title ascending.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SearchSort"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching active offerings (up to 50 per page) and the total before pagination",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/courses/{id}": {
       "get": {
         "tags": [],
@@ -372,11 +468,81 @@
         ],
         "responses": {
           "200": {
-            "description": "Course offering",
+            "description": "Course offering, including withdrawn offerings",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Offering"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/courses/{school}/{courseCode}": {
+      "get": {
+        "tags": [
+          "history"
+        ],
+        "operationId": "course_history",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "courseCode",
+            "in": "path",
+            "description": "Cross-term course code (URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course history across all terms, including withdrawn offerings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseHistory"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -495,11 +661,28 @@
         ],
         "responses": {
           "200": {
-            "description": "The signed-in user's rating",
+            "description": "The signed-in user's rating, or null if unrated",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/MyRating"
+                  "oneOf": [
+                    {
+                      "type": "null"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MyRating"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
                 }
               }
             }
@@ -515,7 +698,7 @@
             }
           },
           "404": {
-            "description": "Unknown course, or not rated yet",
+            "description": "Unknown course",
             "content": {
               "application/json": {
                 "schema": {
@@ -909,6 +1092,79 @@
         }
       }
     },
+    "/api/instructors/{school}/{name}/trends": {
+      "get": {
+        "tags": [
+          "history"
+        ],
+        "operationId": "instructor_trends",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Exact instructor name (URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Per-term active catalog totals, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TermTrend"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/posts": {
       "get": {
         "tags": [
@@ -922,7 +1178,7 @@
             "description": "`announcement`, `article` or `question`.",
             "required": false,
             "schema": {
-              "$ref": "#/components/schemas/PostType"
+              "$ref": "#/components/schemas/TopLevelPostType"
             }
           },
           {
@@ -1641,15 +1897,161 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "description": "Exact term such as `115-1`; omit for all terms.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Up to 200 active offerings of the unit, newest term first",
+            "description": "Up to 200 active offerings matching the term filter, and all available terms, newest first",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DepartmentOfferings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schools/{school}/departments/{department}/trends": {
+      "get": {
+        "tags": [
+          "history"
+        ],
+        "operationId": "department_trends",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "department",
+            "in": "path",
+            "description": "Published offering unit name (URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Per-term active catalog totals, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TermTrend"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schools/{school}/trends": {
+      "get": {
+        "tags": [
+          "history"
+        ],
+        "operationId": "school_trends",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Per-term active catalog totals, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/TermTrend"
+                  }
                 }
               }
             }
@@ -1817,6 +2219,60 @@
           }
         }
       },
+      "CourseHistory": {
+        "type": "object",
+        "required": [
+          "school",
+          "schoolName",
+          "courseCode",
+          "title",
+          "terms",
+          "totals",
+          "latestActiveOfferingId"
+        ],
+        "properties": {
+          "courseCode": {
+            "type": "string"
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latestActiveOfferingId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "school": {
+            "type": "string"
+          },
+          "schoolName": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CourseTerm"
+            },
+            "description": "Newest term first, including withdrawn offerings."
+          },
+          "title": {
+            "type": "string"
+          },
+          "titleEn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "totals": {
+            "$ref": "#/components/schemas/CourseTotals"
+          }
+        }
+      },
       "CourseRanking": {
         "type": "object",
         "description": "Cumulative totals for one cross-term course `(school, courseCode)` over every imported term.",
@@ -1828,6 +2284,8 @@
           "terms",
           "offerings",
           "latestOfferingId",
+          "latestActiveOfferingId",
+          "trend",
           "isDemo"
         ],
         "properties": {
@@ -1853,6 +2311,13 @@
           "isDemo": {
             "type": "boolean",
             "description": "Whether the newest offering comes from a synthetic demo snapshot."
+          },
+          "latestActiveOfferingId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Newest active offering, if any."
           },
           "latestOfferingId": {
             "type": "string",
@@ -1883,6 +2348,80 @@
               "string",
               "null"
             ]
+          },
+          "trend": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentPoint"
+            },
+            "description": "Up to ten terms with offerings, newest first, including withdrawn offerings."
+          }
+        }
+      },
+      "CourseTerm": {
+        "type": "object",
+        "required": [
+          "term",
+          "offerings",
+          "enrolled",
+          "capacity"
+        ],
+        "properties": {
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "enrolled": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "offerings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Offering"
+            }
+          },
+          "term": {
+            "type": "string"
+          }
+        }
+      },
+      "CourseTotals": {
+        "type": "object",
+        "required": [
+          "terms",
+          "offerings",
+          "enrolledTotal",
+          "capacityTotal"
+        ],
+        "properties": {
+          "capacityTotal": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "enrolledTotal": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "offerings": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "terms": {
+            "type": "integer",
+            "minimum": 0
           }
         }
       },
@@ -1927,6 +2466,7 @@
           "school",
           "schoolName",
           "department",
+          "terms",
           "total",
           "offerings"
         ],
@@ -1947,10 +2487,17 @@
           "schoolName": {
             "type": "string"
           },
+          "terms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Terms with active offerings in the department, newest first, regardless of the filter."
+          },
           "total": {
             "type": "integer",
             "format": "int64",
-            "description": "All active offerings of the department; `offerings` holds at most 200 of them."
+            "description": "Active offerings matching the term filter; `offerings` holds at most 200 of them."
           }
         }
       },
@@ -1965,16 +2512,64 @@
           "open"
         ]
       },
+      "EnrollmentPoint": {
+        "type": "object",
+        "required": [
+          "term",
+          "enrolled",
+          "capacity"
+        ],
+        "properties": {
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "enrolled": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "term": {
+            "type": "string"
+          }
+        }
+      },
       "ErrorBody": {
         "type": "object",
         "required": [
+          "code",
           "message"
         ],
         "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ErrorCode"
+          },
           "message": {
             "type": "string"
           }
         }
+      },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "invalid_input",
+          "invalid_query",
+          "invalid_path",
+          "invalid_body",
+          "unauthorized",
+          "invalid_credentials",
+          "forbidden",
+          "not_found",
+          "method_not_allowed",
+          "username_taken",
+          "rate_limited",
+          "internal_error"
+        ]
       },
       "ExtraValue": {
         "oneOf": [
@@ -2373,9 +2968,13 @@
           "instructors",
           "sourceUrl",
           "importedAt",
-          "isDemo"
+          "isDemo",
+          "active"
         ],
         "properties": {
+          "active": {
+            "type": "boolean"
+          },
           "campus": {
             "type": [
               "string",
@@ -3158,12 +3757,90 @@
           }
         }
       },
+      "SearchPage": {
+        "type": "object",
+        "required": [
+          "total",
+          "offset",
+          "courses"
+        ],
+        "properties": {
+          "courses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Offering"
+            }
+          },
+          "offset": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "SearchSort": {
+        "type": "string",
+        "enum": [
+          "relevance",
+          "enrolled",
+          "title"
+        ]
+      },
+      "TermTrend": {
+        "type": "object",
+        "required": [
+          "term",
+          "offerings",
+          "courses",
+          "enrolled",
+          "capacity"
+        ],
+        "properties": {
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "courses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "enrolled": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64"
+          },
+          "offerings": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "term": {
+            "type": "string"
+          }
+        }
+      },
+      "TopLevelPostType": {
+        "type": "string",
+        "enum": [
+          "announcement",
+          "article",
+          "question"
+        ]
+      },
       "UserRating": {
         "type": "object",
         "description": "A rating on a user's public profile.",
         "required": [
           "school",
           "courseCode",
+          "latestOfferingId",
           "score",
           "createdAt",
           "updatedAt"
@@ -3174,6 +3851,13 @@
           },
           "createdAt": {
             "type": "string"
+          },
+          "latestOfferingId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "ID of the course's newest offering, if any."
           },
           "review": {
             "type": [

@@ -23,6 +23,7 @@
   <h1>{course.title}</h1>
   {#if course.titleEn}<p class="subtitle" lang="en">{course.titleEn}</p>{/if}
   {#if course.isDemo}<p class="note">示範資料，非校方實際開課紀錄。</p>{/if}
+  {#if !course.active}<p class="note">已下架：此頁保留歷史開課資訊。</p>{/if}
   <dl>
     <dt>學校</dt><dd>{course.schoolName}</dd>
     <dt>學期</dt><dd>{course.term}</dd>

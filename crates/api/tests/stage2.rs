@@ -15,6 +15,8 @@ const NTNU: &[u8] = include_bytes!("../../../fixtures/ntnu-115-1.json");
 const NYCU: &[u8] = include_bytes!("../../../fixtures/nycu-115-1.json");
 const NTHU: &[u8] = include_bytes!("../../../fixtures/nthu-115-1.json");
 const NTHU_OLDER: &[u8] = include_bytes!("../../../fixtures/nthu-114-2.json");
+const NTHU_DEPARTMENT: &str =
+    "/api/schools/nthu/departments/%E7%A4%BA%E7%AF%84%E6%95%B8%E5%AD%B8%E7%B3%BB";
 
 async fn seed(pool: &PgPool) {
     for fixture in [NTNU, NYCU, NTHU, NTHU_OLDER] {
@@ -56,6 +58,7 @@ async fn call(
         .map(|value| value.to_str().unwrap().to_owned());
     let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
     let body = if bytes.is_empty() {
+        assert_eq!(status, StatusCode::NO_CONTENT);
         Value::Null
     } else {
         serde_json::from_slice(&bytes).unwrap()
@@ -121,6 +124,7 @@ async fn register_login_me_logout(pool: PgPool) {
     )
     .await;
     assert_eq!(taken.status, StatusCode::CONFLICT);
+    assert_eq!(taken.body["code"], "username_taken");
     assert_eq!(taken.body["message"], "Username is taken");
 
     for body in [
@@ -143,6 +147,7 @@ async fn register_login_me_logout(pool: PgPool) {
     assert_eq!(me.body["username"], "alice_1");
     let anonymous = call(&app, "GET", "/api/auth/me", None, None).await;
     assert_eq!(anonymous.status, StatusCode::UNAUTHORIZED);
+    assert_eq!(anonymous.body["code"], "unauthorized");
     let forged = call(
         &app,
         "GET",
@@ -257,6 +262,7 @@ async fn login_failures_are_rate_limited(pool: PgPool) {
     )
     .await;
     assert_eq!(limited.status, StatusCode::TOO_MANY_REQUESTS);
+    assert_eq!(limited.body["code"], "rate_limited");
     sqlx::query("UPDATE login_attempts SET attempted_at = now() - interval '2 minutes'")
         .execute(&pool)
         .await
@@ -291,7 +297,7 @@ async fn login_failures_are_rate_limited(pool: PgPool) {
 #[sqlx::test(migrator = "MIGRATOR")]
 async fn ratings_upsert_and_stats(pool: PgPool) {
     seed(&pool).await;
-    let app = unicourse_api::router(pool);
+    let app = unicourse_api::router(pool.clone());
     let alice = register(&app, "alice").await;
     let bob = register(&app, "bob").await;
     let base = "/api/courses/nthu/DEMO201/ratings";
@@ -308,12 +314,9 @@ async fn ratings_upsert_and_stats(pool: PgPool) {
             .status,
         StatusCode::UNAUTHORIZED
     );
-    assert_eq!(
-        call(&app, "GET", &format!("{base}/me"), Some(&alice), None)
-            .await
-            .status,
-        StatusCode::NOT_FOUND
-    );
+    let unrated = call(&app, "GET", &format!("{base}/me"), Some(&alice), None).await;
+    assert_eq!(unrated.status, StatusCode::OK);
+    assert_eq!(unrated.body, Value::Null);
 
     let put = |cookie: String, body: Value| {
         let app = app.clone();
@@ -380,6 +383,19 @@ async fn ratings_upsert_and_stats(pool: PgPool) {
     )
     .await;
     assert_eq!(unknown.status, StatusCode::NOT_FOUND);
+    let unknown = call(
+        &app,
+        "GET",
+        "/api/courses/nthu/NOPE/ratings/me",
+        Some(&alice),
+        None,
+    )
+    .await;
+    assert_eq!(unknown.status, StatusCode::NOT_FOUND);
+    assert_eq!(
+        unknown.body,
+        json!({"code": "not_found", "message": "Course not found"})
+    );
     assert_eq!(
         call(&app, "GET", "/api/courses/ntu/DEMO201/ratings", None, None)
             .await
@@ -397,6 +413,11 @@ async fn ratings_upsert_and_stats(pool: PgPool) {
     assert_eq!(profile.status, StatusCode::OK);
     assert_eq!(profile.body["ratings"][0]["courseCode"], "DEMO201");
     assert_eq!(profile.body["ratings"][0]["title"], "線性代數");
+    let latest: String = sqlx::query_scalar("SELECT id::text FROM offerings WHERE school = 'nthu' AND course_code = 'DEMO201' AND term = '115-1'")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(profile.body["ratings"][0]["latestOfferingId"], latest);
     assert_eq!(
         call(&app, "GET", "/api/users/nobody", None, None)
             .await
@@ -409,6 +430,14 @@ async fn ratings_upsert_and_stats(pool: PgPool) {
     let stats = call(&app, "GET", &format!("{base}/stats"), None, None).await;
     assert_eq!(stats.body["count"], 1);
     assert_eq!(stats.body["average"], 2.0);
+
+    sqlx::query("DELETE FROM offerings WHERE school = 'nthu' AND course_code = 'DEMO201'")
+        .execute(&pool)
+        .await
+        .unwrap();
+    unicourse_catalog::refresh_rankings(&pool).await.unwrap();
+    let profile = call(&app, "GET", "/api/users/bob", None, None).await;
+    assert_eq!(profile.body["ratings"][0]["latestOfferingId"], Value::Null);
 }
 
 #[sqlx::test(migrator = "MIGRATOR")]
@@ -673,6 +702,17 @@ async fn posts_replies_votes_and_soft_delete(pool: PgPool) {
     let thread = call(&app, "GET", &format!("/api/posts/{id}"), None, None).await;
     assert_eq!(thread.body["title"], "線代期中考範圍");
     assert_eq!(thread.body["replies"][0]["content"], "第一到五章");
+    sqlx::query("UPDATE posts SET created_at = '2026-11-27 08:00:00.000100+00', updated_at = '2026-11-27 08:00:00.000200+00' WHERE id = $1")
+        .bind(id)
+        .execute(&pool)
+        .await
+        .unwrap();
+    let thread = call(&app, "GET", &format!("/api/posts/{id}"), None, None).await;
+    assert_eq!(thread.body["createdAt"], "2026-11-27T08:00:00.000100Z");
+    assert_eq!(thread.body["updatedAt"], "2026-11-27T08:00:00.000200Z");
+    let invalid = call(&app, "GET", "/api/posts?type=reply", None, None).await;
+    assert_eq!(invalid.status, StatusCode::BAD_REQUEST);
+    assert_eq!(invalid.body["code"], "invalid_query");
 
     // Soft delete: author or admin.
     let remove = |cookie: String, target: i64| {
@@ -768,6 +808,14 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     .await
     .unwrap();
     assert_eq!(linear["latestOfferingId"], latest);
+    assert_eq!(linear["latestActiveOfferingId"], latest);
+    assert_eq!(
+        linear["trend"],
+        json!([
+            {"term": "115-1", "enrolled": 58, "capacity": 60},
+            {"term": "114-2", "enrolled": 55, "capacity": null}
+        ])
+    );
     assert_eq!(rows[1]["capacityTotal"], Value::Null);
     assert_eq!(rows[3]["enrolledTotal"], Value::Null);
     assert_eq!(rows[3]["capacityTotal"], Value::Null);
@@ -802,6 +850,26 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     .unwrap();
     let ranking = call(&app, "GET", "/api/rankings/courses?school=nthu", None, None).await;
     assert_eq!(ranking.body.as_array().unwrap().len(), 4);
+    let withdrawn = &ranking.body[2];
+    assert_eq!(withdrawn["courseCode"], "DEMO202");
+    assert_eq!(withdrawn["latestActiveOfferingId"], Value::Null);
+    assert_eq!(
+        withdrawn["trend"],
+        json!([{"term": "115-1", "enrolled": 72, "capacity": 0}])
+    );
+    let detail = call(
+        &app,
+        "GET",
+        &format!(
+            "/api/courses/{}",
+            withdrawn["latestOfferingId"].as_str().unwrap()
+        ),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(detail.status, StatusCode::OK);
+    assert_eq!(detail.body["active"], false);
 
     let overview = call(&app, "GET", "/api/stats/overview", None, None).await;
     assert_eq!(overview.status, StatusCode::OK);
@@ -872,6 +940,23 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     .await;
     assert_eq!(department.status, StatusCode::OK);
     assert_eq!(department.body["total"], 3);
+    assert_eq!(department.body["terms"], json!(["115-1", "114-2"]));
+    for (term, total) in [("114-2", 2), ("113-1", 0)] {
+        let filtered = call(
+            &app,
+            "GET",
+            &format!("{NTHU_DEPARTMENT}?term={term}"),
+            None,
+            None,
+        )
+        .await;
+        assert_eq!(filtered.status, StatusCode::OK);
+        assert_eq!(filtered.body["total"], total);
+        assert_eq!(filtered.body["terms"], department.body["terms"]);
+        let offerings = filtered.body["offerings"].as_array().unwrap();
+        assert_eq!(offerings.len(), total);
+        assert!(offerings.iter().all(|offering| offering["term"] == term));
+    }
     let terms: Vec<_> = department.body["offerings"]
         .as_array()
         .unwrap()
@@ -927,4 +1012,224 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
         .status,
         StatusCode::NOT_FOUND
     );
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn course_history_keeps_withdrawn_offerings(pool: PgPool) {
+    seed(&pool).await;
+    let app = unicourse_api::router(pool.clone());
+    let url = "/api/courses/nthu/DEMO201";
+    let history = call(&app, "GET", url, None, None).await;
+    assert_eq!(history.status, StatusCode::OK);
+    let terms = history.body["terms"].as_array().unwrap();
+    let newest = terms[0]["offerings"][0].clone();
+    let older = terms[1]["offerings"][0].clone();
+    assert_eq!(newest["active"], true);
+    assert_eq!(older["active"], true);
+    assert_eq!(
+        history.body,
+        json!({
+            "school": "nthu", "schoolName": "國立清華大學", "courseCode": "DEMO201",
+            "title": "線性代數", "titleEn": "Linear Algebra (Demo)", "department": "示範數學系",
+            "terms": [
+                {"term": "115-1", "offerings": [newest], "enrolled": 58, "capacity": 60},
+                {"term": "114-2", "offerings": [older], "enrolled": 55, "capacity": null}
+            ],
+            "totals": {"terms": 2, "offerings": 2, "enrolledTotal": 113, "capacityTotal": 60},
+            "latestActiveOfferingId": newest["id"]
+        })
+    );
+    let mut snapshot: Value = serde_json::from_slice(NTHU).unwrap();
+    snapshot["offerings"].as_array_mut().unwrap().remove(0);
+    import(
+        &pool,
+        &parse_snapshot(&serde_json::to_vec(&snapshot).unwrap()).unwrap(),
+    )
+    .await
+    .unwrap();
+    let history = call(&app, "GET", url, None, None).await;
+    assert_eq!(history.body["latestActiveOfferingId"], older["id"]);
+    assert_eq!(history.body["terms"][0]["offerings"][0]["active"], false);
+    assert_eq!(history.body["totals"]["enrolledTotal"], 113);
+
+    let unknown = call(&app, "GET", "/api/courses/nthu/unknown", None, None).await;
+    assert_eq!(unknown.status, StatusCode::NOT_FOUND);
+    assert_eq!(unknown.body["code"], "not_found");
+    let unpublished = call(&app, "GET", "/api/courses/nthu/DEMO203", None, None).await;
+    assert_eq!(unpublished.status, StatusCode::OK);
+    assert!(unpublished.body.get("titleEn").is_none());
+    assert_eq!(
+        unpublished.body["totals"],
+        json!({"terms": 1, "offerings": 1, "enrolledTotal": null, "capacityTotal": null})
+    );
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn trends_aggregate_the_active_catalog(pool: PgPool) {
+    seed(&pool).await;
+    let app = unicourse_api::router(pool.clone());
+    let school_url = "/api/schools/nthu/trends";
+    let department_url = &format!("{NTHU_DEPARTMENT}/trends");
+    let instructor_url = "/api/instructors/nthu/%E7%8E%8B%E7%A4%BA%E7%AF%84/trends";
+    for (url, expected) in [
+        (
+            school_url,
+            json!([
+                {"term": "115-1", "offerings": 3, "courses": 3, "enrolled": 130, "capacity": 60},
+                {"term": "114-2", "offerings": 2, "courses": 2, "enrolled": 135, "capacity": null}
+            ]),
+        ),
+        (
+            department_url,
+            json!([
+                {"term": "115-1", "offerings": 1, "courses": 1, "enrolled": 58, "capacity": 60},
+                {"term": "114-2", "offerings": 2, "courses": 2, "enrolled": 135, "capacity": null}
+            ]),
+        ),
+        (
+            instructor_url,
+            json!([
+                {"term": "115-1", "offerings": 1, "courses": 1, "enrolled": 58, "capacity": 60},
+                {"term": "114-2", "offerings": 1, "courses": 1, "enrolled": 55, "capacity": null}
+            ]),
+        ),
+    ] {
+        let response = call(&app, "GET", url, None, None).await;
+        assert_eq!(response.status, StatusCode::OK, "{url}");
+        assert_eq!(response.body, expected, "{url}");
+    }
+    for url in [
+        "/api/schools/unknown/trends",
+        "/api/schools/nthu/departments/unknown/trends",
+        "/api/instructors/nthu/%E7%8E%8B/trends",
+    ] {
+        let response = call(&app, "GET", url, None, None).await;
+        assert_eq!(response.status, StatusCode::NOT_FOUND, "{url}");
+        assert_eq!(response.body["code"], "not_found");
+    }
+
+    let mut snapshot: Value = serde_json::from_slice(NTHU).unwrap();
+    let offerings = snapshot["offerings"].as_array_mut().unwrap();
+    offerings.truncate(1);
+    let mut duplicate = offerings[0].clone();
+    duplicate["sourceId"] = json!("second-section");
+    duplicate.as_object_mut().unwrap().remove("enrolled");
+    offerings.push(duplicate);
+    import(
+        &pool,
+        &parse_snapshot(&serde_json::to_vec(&snapshot).unwrap()).unwrap(),
+    )
+    .await
+    .unwrap();
+    let response = call(&app, "GET", school_url, None, None).await;
+    assert_eq!(
+        response.body[0],
+        json!({"term": "115-1", "offerings": 2, "courses": 1, "enrolled": 58, "capacity": 120})
+    );
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn ranking_trends_are_limited_to_ten_terms(pool: PgPool) {
+    seed(&pool).await;
+    let mut snapshot: Value = serde_json::from_slice(NTHU_OLDER).unwrap();
+    snapshot["offerings"].as_array_mut().unwrap().truncate(1);
+    for year in 105..=114 {
+        snapshot["term"] = json!(format!("{year}-1"));
+        import(
+            &pool,
+            &parse_snapshot(&serde_json::to_vec(&snapshot).unwrap()).unwrap(),
+        )
+        .await
+        .unwrap();
+    }
+    let app = unicourse_api::router(pool);
+    let response = call(
+        &app,
+        "GET",
+        "/api/rankings/courses?school=nthu&limit=1",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(response.status, StatusCode::OK);
+    let ranking = &response.body[0];
+    assert_eq!(ranking["terms"], 12);
+    assert_eq!(ranking["enrolledTotal"], 58 + 55 * 11);
+    let trend = ranking["trend"].as_array().unwrap();
+    assert_eq!(trend.len(), 10);
+    assert_eq!(trend[0]["term"], "115-1");
+    assert_eq!(trend[9]["term"], "107-1");
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn search_pages_sort_and_keep_totals(pool: PgPool) {
+    seed(&pool).await;
+    let mut snapshot: Value = serde_json::from_slice(NTHU).unwrap();
+    let offerings = snapshot["offerings"].as_array_mut().unwrap();
+    let template = offerings[0].clone();
+    for section in 1..=50 {
+        let mut offering = template.clone();
+        offering["sourceId"] = json!(format!("class-{section}"));
+        offering["enrolled"] = json!(section);
+        offerings.push(offering);
+    }
+    import(
+        &pool,
+        &parse_snapshot(&serde_json::to_vec(&snapshot).unwrap()).unwrap(),
+    )
+    .await
+    .unwrap();
+    let app = unicourse_api::router(pool);
+    let query = "school=nthu&term=115-1&q=DEMO201";
+    let legacy = call(&app, "GET", &format!("/api/courses?{query}"), None, None).await;
+    let path = &format!("/api/courses/search?{query}");
+    let first = call(&app, "GET", path, None, None).await;
+    assert_eq!(first.status, StatusCode::OK);
+    assert_eq!(first.body["offset"], 0);
+    assert_eq!(first.body["total"], 51);
+    assert_eq!(first.body["courses"].as_array().unwrap().len(), 50);
+    assert_eq!(legacy.body, first.body["courses"]);
+    let last = call(
+        &app,
+        "GET",
+        &format!("{path}&offset=50&sort=enrolled"),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(last.body["total"], 51);
+    assert_eq!(last.body["offset"], 50);
+    assert_eq!(last.body["courses"][0]["enrolled"], 1);
+    let empty = call(&app, "GET", &format!("{path}&offset=90"), None, None).await;
+    assert_eq!(
+        empty.body,
+        json!({"total": 51, "offset": 90, "courses": []})
+    );
+    let titles = call(
+        &app,
+        "GET",
+        "/api/courses/search?school=nthu&sort=title",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(titles.status, StatusCode::OK);
+    let titles = titles.body["courses"].as_array().unwrap();
+    assert!(
+        titles
+            .windows(2)
+            .all(|rows| rows[0]["title"].as_str() <= rows[1]["title"].as_str())
+    );
+    for extra in ["offset=-1", "sort=unknown", "term=%00"] {
+        let response = call(
+            &app,
+            "GET",
+            &format!("/api/courses/search?{extra}"),
+            None,
+            None,
+        )
+        .await;
+        assert_eq!(response.status, StatusCode::BAD_REQUEST);
+        assert_eq!(response.body["code"], "invalid_query");
+    }
 }

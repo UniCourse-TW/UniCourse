@@ -14,7 +14,7 @@ use utoipa::{IntoParams, ToSchema};
 use crate::{
     ApiError, AppState, Body, ErrorBody,
     auth::{CurrentUser, MaybeUser},
-    bad_request, database_error, error, query, text,
+    bad_request, database_error, error, invalid_query, query, text,
 };
 
 const PAGE_SIZE: i64 = 20;
@@ -31,6 +31,15 @@ pub(crate) enum PostType {
     Question,
     /// Only replies have this type; it cannot be created or filtered on directly.
     Reply,
+}
+
+#[derive(Clone, Copy, Deserialize, ToSchema, sqlx::Type)]
+#[serde(rename_all = "lowercase")]
+#[sqlx(type_name = "text", rename_all = "lowercase")]
+pub(crate) enum TopLevelPostType {
+    Announcement,
+    Article,
+    Question,
 }
 
 #[derive(FromRow, Serialize, ToSchema)]
@@ -126,7 +135,7 @@ pub(crate) struct ListFilters {
     /// `announcement`, `article` or `question`.
     #[serde(rename = "type")]
     #[param(rename = "type")]
-    kind: Option<PostType>,
+    kind: Option<TopLevelPostType>,
     /// School slug (exact).
     school: Option<String>,
     /// Course code (exact); requires `school`.
@@ -151,7 +160,7 @@ fn columns(viewer: &str) -> String {
         coalesce((SELECT sum(value) FROM post_votes WHERE post_id = post.id), 0)::bigint AS score,
         coalesce((SELECT value FROM post_votes WHERE post_id = post.id AND user_id = {viewer}),
             0)::smallint AS my_vote,
-        unicourse_iso(post.created_at) AS created_at, unicourse_iso(post.updated_at) AS updated_at"
+        unicourse_iso_precise(post.created_at) AS created_at, unicourse_iso_precise(post.updated_at) AS updated_at"
     )
 }
 
@@ -185,7 +194,7 @@ async fn visible(pool: &PgPool, id: i64) -> Result<(i64, Option<i64>), ApiError>
 fn filter_text(value: Option<&str>) -> Result<Option<&str>, ApiError> {
     match value.map(str::trim) {
         None | Some("") => Ok(None),
-        Some(value) if value.contains('\0') => Err(bad_request("Invalid query")),
+        Some(value) if value.contains('\0') => Err(invalid_query("Invalid query")),
         Some(value) => Ok(Some(value)),
     }
 }
@@ -200,24 +209,19 @@ pub(crate) async fn list(
     filters: Result<Query<ListFilters>, QueryRejection>,
 ) -> Result<Json<PostPage>, ApiError> {
     let filters = query(filters)?;
-    if filters.kind == Some(PostType::Reply) {
-        return Err(bad_request(
-            "type must be announcement, article or question",
-        ));
-    }
     let page = filters.page.unwrap_or(1);
     if !(1..=MAX_PAGE).contains(&page) {
-        return Err(bad_request("page must be between 1 and 10000"));
+        return Err(invalid_query("page must be between 1 and 10000"));
     }
     let school = filter_text(filters.school.as_deref())?;
     let course_code = filter_text(filters.course_code.as_deref())?;
     if course_code.is_some() && school.is_none() {
-        return Err(bad_request("courseCode requires school"));
+        return Err(invalid_query("courseCode requires school"));
     }
     let tag = filter_text(filters.tag.as_deref())?;
     let search = filter_text(filters.q.as_deref())?;
     if search.is_some_and(|search| search.chars().count() > 100) {
-        return Err(bad_request("Search must be at most 100 characters"));
+        return Err(invalid_query("Search must be at most 100 characters"));
     }
     let search = search.map(like_literal);
 
