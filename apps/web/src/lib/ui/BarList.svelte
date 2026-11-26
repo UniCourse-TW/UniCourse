@@ -38,7 +38,7 @@
               <span class="fill" class:muted={ranked && item.index >= 3} style:inline-size={`${barPercent(item.value, ceiling)}%`}></span>
             {/if}
           </span>
-          <span class="value ui-tabular">{displayValue(item.value)}{#if item.value !== null && unit} {unit}{/if}</span>
+          <span class="value ui-tabular">{displayValue(item.value)}{#if item.value !== null && unit}{` ${unit}`}{/if}</span>
         </div>
       </li>
     {/each}
