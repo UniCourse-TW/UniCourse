@@ -918,12 +918,13 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     assert_eq!(institution["offerings"], 5);
     assert_eq!(institution["courses"], 4);
     assert_eq!(institution["latestImportedAt"], nthu["latestImportedAt"]);
-    let partial = by_slug("ntua");
-    assert_eq!(partial["status"], "partial");
-    assert_eq!(partial["issue"], 3);
-    assert_eq!(partial["terms"], json!([]));
-    assert_eq!(partial["offerings"], 0);
-    assert_eq!(partial["latestImportedAt"], Value::Null);
+    // Crawled but not imported in this database: live status with no terms or offerings yet.
+    let pending = by_slug("ntua");
+    assert_eq!(pending["status"], "live");
+    assert_eq!(pending["issue"], 3);
+    assert_eq!(pending["terms"], json!([]));
+    assert_eq!(pending["offerings"], 0);
+    assert_eq!(pending["latestImportedAt"], Value::Null);
     // Served by the national platform (`source: "tvc"` in status.json); the note says so.
     let national = by_slug("ncku");
     assert_eq!(national["status"], "live");
