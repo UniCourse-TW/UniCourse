@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "unicourse-api",
-    "description": "",
+    "description": "HTTP API for the UniCourse catalog and student community.",
     "license": {
       "name": ""
     },
