@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { EXCERPT_MAX } from '@unicourse/crawler-kit';
-import { parseArticle, parseListPage, parsePushScore, parsePttTime, parseReviewTitle, timeFromArticleId } from './parse.ts';
+import { cleanExcerpt, parseArticle, parseListPage, parsePushScore, parsePttTime, parseReviewTitle, timeFromArticleId } from './parse.ts';
 
 // Trimmed real pages (2026-11-27); author IDs, IPs and push texts replaced with placeholders.
 const sample = (name: string) => readFile(new URL(`./samples/${name}`, import.meta.url), 'utf8');
@@ -59,6 +59,15 @@ test('articles: header fields, exact push tally and a short excerpt without comm
   assert.ok(nchu.excerpt);
   assert.ok(!/imgur|https?:/.test(nchu.excerpt), nchu.excerpt);
   assert.ok(!nchu.excerpt.includes('發信站'));
+});
+
+test('the NTUcourse consent answer never leads an excerpt, and 否 removes it', () => {
+  assert.equal(cleanExcerpt('（是／否／其他條件）：是 哪一學年度修課：111-1'), '哪一學年度修課：111-1');
+  assert.equal(cleanExcerpt('（是／否／其他條件）： 是 哪一學年度修課：111-1'), '哪一學年度修課：111-1');
+  assert.equal(cleanExcerpt('（是／否／其他條件）：否 哪一學年度修課：111-1'), undefined);
+  assert.equal(cleanExcerpt('（是／否／其他條件）：不同意'), undefined);
+  assert.equal(cleanExcerpt('課名：應用機率模型'), '課名：應用機率模型');
+  assert.equal(cleanExcerpt(undefined), undefined);
 });
 
 test('review titles: term, course title and teachers', () => {

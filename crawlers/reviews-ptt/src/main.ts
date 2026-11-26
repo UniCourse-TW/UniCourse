@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { ExternalReviewSnapshot, HttpClient, type ExternalReviewPost } from '@unicourse/crawler-kit';
 import { BOARDS, REVIEW_TAGS, type Board } from './boards.ts';
-import { PTT_ORIGIN, parseArticle, parseListPage, parseReviewTitle, type Article, type ListEntry } from './parse.ts';
+import { PTT_ORIGIN, cleanExcerpt, parseArticle, parseListPage, parseReviewTitle, type Article, type ListEntry } from './parse.ts';
 
 // docs/external-reviews.md: PTT's robots.txt allows search indexing (Content-Signal: search=yes). One request
 // per second per host, identified as UniCourseBot.
@@ -119,7 +119,7 @@ async function crawlBoard(board: Board) {
       author: article?.author ?? entry.author,
       postedAt: article?.postedAt ?? entry.postedAt,
       pushScore: article ? article.pushScore : entry.pushScore,
-      excerpt: article?.excerpt,
+      excerpt: cleanExcerpt(article?.excerpt),
       ...parsed
     });
   }

@@ -135,9 +135,23 @@ export function parseArticle(html: string): Article {
   return {
     author: author || undefined,
     postedAt: parsePttTime(meta.get('時間') ?? ''),
-    excerpt: refused || !text ? undefined : truncateCodePoints(text, EXCERPT_MAX).trim(),
+    excerpt: refused ? undefined : cleanExcerpt(truncateCodePoints(text, EXCERPT_MAX).trim()),
     pushScore
   };
+}
+
+/**
+ * Drop the NTUcourse reuse-consent answer when it leads the excerpt (`（是／否／其他條件）：是 …`, the form used
+ * when the answer follows on its own line). A 否 answer means no excerpt at all. Applied to cached excerpts too.
+ */
+export function cleanExcerpt(excerpt: string | undefined): string | undefined {
+  if (!excerpt) return undefined;
+  const prefix = /^[（(]是[／/]否[／/]其他條件[）)][：:]?\s*/.exec(excerpt);
+  if (!prefix) return excerpt;
+  const answer = excerpt.slice(prefix[0].length);
+  if (/^(否|不)/.test(answer)) return undefined;
+  const rest = answer.replace(/^(是|其他)\s*/, '').trim();
+  return rest || undefined;
 }
 
 export interface ParsedTitle {
