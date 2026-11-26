@@ -2,36 +2,32 @@ import { expect, test } from '@playwright/test';
 
 const API = 'http://127.0.0.1:3001';
 
-test('shows historical enrollment, filters the ranking and browses a school and its department', async ({ page, request }) => {
-  await page.goto('/');
+test('shows historical enrollment, filters the ranking and browses a school and its department', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' });
 
   const ranking = page.getByRole('region', { name: '歷史累計修課人數排行' });
   const linearAlgebra = ranking.getByRole('listitem').filter({ hasText: 'DEMO201' });
   await expect(linearAlgebra.getByRole('link', { name: '線性代數' })).toHaveAttribute('href', /^\/courses\/\d+$/);
   await expect(linearAlgebra.getByText('Linear Algebra (Demo)')).toBeVisible();
-  await expect(linearAlgebra.getByText('國立清華大學 · DEMO201')).toBeVisible();
+  await expect(linearAlgebra.getByText(/國立清華大學 · DEMO201/)).toBeVisible();
   await expect(linearAlgebra.getByText('示範', { exact: true })).toBeVisible();
-  await expect(linearAlgebra.getByText('開課學期數 2')).toBeVisible();
-  await expect(linearAlgebra.getByText('累計修課人數 113')).toBeVisible();
-  await expect(ranking.getByText(/若校方未公布修課人數，則以累計名額替代/)).toBeVisible();
-  await expect(ranking.getByText('人數與名額未公布').first()).toBeVisible();
+  await expect(linearAlgebra.getByText(/2 學期/)).toBeVisible();
+  await expect(linearAlgebra.getByText('113', { exact: true })).toBeVisible();
+  await expect(linearAlgebra.getByRole('img', { name: /各學期修課人數/ })).toBeVisible();
+  await expect(ranking.getByText(/另以累計名額/)).toBeVisible();
+  await expect(ranking.getByRole('list').getByText('人數與名額未公布').first()).toBeVisible();
 
   const rankSchool = ranking.getByLabel('排行範圍');
   await rankSchool.selectOption('nthu');
-  await ranking.getByRole('button', { name: '套用' }).click();
-  await expect(page).toHaveURL(/[?&]rank_school=nthu(&|$)/);
+  await expect(page).toHaveURL(/[?&]rank_school=nthu([&#]|$)/);
   await expect(rankSchool).toHaveValue('nthu');
   await expect(ranking.getByRole('listitem')).toHaveCount(4);
   await expect(ranking.getByRole('link', { name: '資料結構' })).toHaveCount(0);
 
-  await expect(page.getByRole('region', { name: '資料總覽' })).toHaveCount(0);
-
-  // The coverage line counts live schools and their distinct terms, straight from the API.
-  const { institutions } = await (await request.get(`${API}/api/institutions`)).json();
-  const live = institutions.filter((school: { status: string }) => school.status === 'live');
-  const terms = new Set(live.flatMap((school: { terms: string[] }) => school.terms));
-  await expect(ranking.getByText(`目前收錄 ${live.length} 校、${terms.size} 個學期 · 查看各校收錄狀態`)).toBeVisible();
-  await ranking.getByRole('link', { name: '查看各校收錄狀態' }).click();
+  await expect(page.getByRole('region', { name: '目前收錄' }).getByText('開課班次')).toBeVisible();
+  const coverage = page.getByRole('region', { name: '各校收錄狀態' });
+  await expect(coverage.getByRole('img', { name: /國立清華大學收錄範圍/ })).toBeVisible();
+  await coverage.getByRole('link', { name: /全部 \d+ 所/ }).click();
   await expect(page).toHaveURL('/schools');
 
   const school = page.getByRole('table').getByRole('row').filter({ hasText: '國立清華大學' });

@@ -33,7 +33,8 @@ test('registers, rates a course, posts a linked question, replies, votes and log
 
   await expect(page).toHaveURL(new RegExp(`/courses/${course.id}`));
   const nav = page.getByRole('navigation', { name: '主要導覽' });
-  await expect(nav.getByRole('link', { name: `@${username}` })).toBeVisible();
+  const account = nav.getByLabel('帳號選單');
+  await expect(account).toContainText(`@${username}`);
 
   // Rate it; the stats count goes up by one and the review is listed.
   const before = await ratingCount(page);
@@ -91,7 +92,8 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(page.getByRole('link', { name: title })).toBeVisible();
 
   // Both show up on the public profile.
-  await nav.getByRole('link', { name: `@${username}` }).click();
+  await account.click();
+  await nav.getByRole('link', { name: '個人頁面' }).click();
   await expect(page.getByRole('heading', { name: '測試同學' })).toBeVisible();
   await expect(page.getByRole('link', { name: '線性代數' })).toHaveAttribute('href', `/courses/${course.id}`);
   await expect(page.getByText(`作業偏多 ${username}`)).toBeVisible();
@@ -107,6 +109,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   expect((await page.goto(threadUrl))?.status()).toBe(404);
 
   // Logging out is a POST; afterwards the nav offers sign-in again and rating needs a login.
+  await account.click();
   await nav.getByRole('button', { name: '登出' }).click();
   await expect(nav.getByRole('link', { name: '登入／註冊' })).toBeVisible();
   await page.goto(`/courses/${course.id}`);
@@ -147,6 +150,7 @@ test.describe('without JavaScript', () => {
     expect(await page.locator('.bio').innerText()).toBe('第一行\n第二行');
 
     const nav = page.getByRole('navigation', { name: '主要導覽' });
+    await nav.getByLabel('帳號選單').click();
     await nav.getByRole('button', { name: '登出' }).click();
     await expect(nav.getByRole('link', { name: '登入／註冊' })).toBeVisible();
     await page.goto('/settings');

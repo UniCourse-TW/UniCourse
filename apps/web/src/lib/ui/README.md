@@ -1,6 +1,6 @@
 # UI foundation
 
-Load `tokens.css` once at the root layout. The primitives inherit the zinc and UniCourse purple palette from the document. Set `data-theme="light"` or `data-theme="dark"` on `<html>` to override the system preference. The temporary `--shell-*` colors preserve the original layout and pages until their individual redesigns. The local dev server exposes examples at `/_ui`; the production server returns 404 there.
+Load `tokens.css` once at the root layout. The primitives inherit the zinc and UniCourse purple palette from the document. The shell renders its cookie-backed `data-shell-theme` preference on the server; without it, the palette follows the system preference. An explicit `data-theme` on `<html>` also overrides the palette. The local dev server exposes examples at `/_ui`; the production server returns 404 there.
 
 | Component | Main props and snippets |
 | --- | --- |

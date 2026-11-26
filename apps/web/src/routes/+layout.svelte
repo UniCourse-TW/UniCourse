@@ -1,101 +1,148 @@
 <script lang="ts">
-  import { page } from '$app/state';
+  import { afterNavigate } from '$app/navigation';
+  import { navigating, page } from '$app/state';
   import { loginHref, profileHref } from '$lib/community-paths';
   import '$lib/ui/tokens.css';
   import type { LayoutProps } from './$types';
 
   let { data, children }: LayoutProps = $props();
   let here = $derived(page.url.pathname + page.url.search);
+  let query = $derived(page.url.pathname === '/' ? page.url.searchParams.get('q') ?? '' : '');
+  let accountOpen = $state(false);
+
+  afterNavigate(() => { accountOpen = false; });
+
+  const tabs = [
+    { href: '/', label: '首頁' },
+    { href: '/schools', label: '學校' },
+    { href: '/forum', label: '論壇' },
+    { href: '/landscape.html', label: '網站總覽' }
+  ];
 </script>
 
-<header class="site-header">
-  <div class="bar">
-    <a href="/" class="wordmark">
-      <img src="/unicourse.png" alt="" width="40" height="40" />
+{#snippet searchIcon()}
+  <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true">
+    <circle cx="10.5" cy="10.5" r="5.75" /><path d="m15 15 4 4" />
+  </svg>
+{/snippet}
+
+<a class="skip" href="#main-content">跳至主要內容</a>
+<header class="site-header" data-shell-theme={data.theme}>
+  <nav class="bar" aria-label="主要導覽">
+    <a href="/" class="wordmark" aria-label="UniCourse 首頁">
+      <img src="/unicourse.png" alt="" width="28" height="28" />
       UniCourse
     </a>
-    <!-- Plain links (no list items) so page-level list and text queries stay unambiguous. -->
-    <nav class="site-nav" aria-label="主要導覽">
-      <a href="/" aria-current={page.url.pathname === '/' ? 'page' : undefined}>首頁</a>
-      <a href="/schools" aria-current={page.url.pathname === '/schools' ? 'page' : undefined}>學校</a>
-      <a href="/forum"aria-current={page.url.pathname.startsWith('/forum') ? 'page' : undefined}>論壇</a>
+
+    <div class="tabs">
+      {#each tabs as tab (tab.href)}
+        <a href={tab.href} aria-current={page.url.pathname === tab.href || page.url.pathname.startsWith(`${tab.href}/`) ? 'page' : undefined}>{tab.label}</a>
+      {/each}
+    </div>
+
+    <div class="tools">
+      <form method="GET" action="/" role="search" aria-label="全站查課" class="nav-search">
+        <input type="search" name="q" value={query} maxlength="100" placeholder="課名、教師或課號" aria-label="全站搜尋關鍵字" />
+        <button aria-label="全站搜尋">{@render searchIcon()}</button>
+      </form>
+      <a href={page.url.pathname === '/' ? '#course-search' : '/#course-search'} class="mobile-search icon-action" aria-label="前往查課">{@render searchIcon()}</a>
+      <form method="POST" action="/?/theme" class="theme-form">
+        <input type="hidden" name="returnTo" value={here} />
+        {#if data.theme !== 'dark'}
+          <button name="theme" value="dark" class="icon-action set-dark" aria-label="切換為深色主題" title="切換為深色主題">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14a8.25 8.25 0 0 1-10.45-10.5A8.5 8.5 0 1 0 20.5 14Z" /></svg>
+          </button>
+        {/if}
+        {#if data.theme !== 'light'}
+          <button name="theme" value="light" class="icon-action set-light" aria-label="切換為淺色主題" title="切換為淺色主題">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></svg>
+          </button>
+        {/if}
+      </form>
       {#if data.user}
-        <a href={profileHref(data.user.username)} class="me">@{data.user.username}</a>
-        <a href="/settings" aria-current={page.url.pathname === '/settings' ? 'page' : undefined}>設定</a>
-        <form method="POST" action="/auth?/logout" class="logout">
-          <button>登出</button>
-        </form>
+        <details class="account" bind:open={accountOpen}>
+          <summary aria-label="帳號選單"><span>@{data.user.username}</span><span aria-hidden="true">▾</span></summary>
+          <div class="account-links">
+            <a href={profileHref(data.user.username)}>個人頁面</a>
+            <a href="/settings">設定</a>
+            <form method="POST" action="/auth?/logout"><button>登出</button></form>
+          </div>
+        </details>
       {:else}
-        <a href={loginHref(here)} class="login">登入／註冊</a>
+        <a href={loginHref(here)} class="login" aria-label="登入／註冊">登入</a>
       {/if}
-    </nav>
-  </div>
+    </div>
+  </nav>
+  {#if navigating.to}<div class="progress" aria-hidden="true"></div>{/if}
 </header>
 
-<main class="page">
+<main class="page" id="main-content" tabindex="-1">
   {@render children()}
 </main>
 
 <footer class="site-footer">
-  <a href="/terms">使用條款</a>
-  <a href="/privacy">隱私權政策</a>
+  <div class="footer-inner">
+    <div><a href="/" class="footer-mark">UniCourse</a><p>跨校查課，看十年修課人數。</p></div>
+    <nav aria-label="頁尾導覽">
+      <a href="/schools">收錄狀態</a>
+      <a href="/terms">使用條款</a>
+      <a href="/privacy">隱私權政策</a>
+    </nav>
+  </div>
 </footer>
 
 <style>
   :global(*) { box-sizing: border-box; }
-  :global(body) {
-    margin: 0;
-    background: var(--shell-bg);
-    color: var(--shell-ink);
-    font-family: system-ui, sans-serif;
-    line-height: 1.55;
+  :global(html) { scroll-padding-top: 8rem; color-scheme: var(--ui-color-scheme); }
+  :global(body) { display: flex; flex-direction: column; min-height: 100vh; margin: 0; background: var(--bg); color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
+  :global(a) { color: var(--brand-ink); text-underline-offset: 0.18em; }
+  :global(:is(a, button, input, select, summary):focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .skip { position: fixed; z-index: 12; top: var(--space-2); left: var(--space-2); padding: var(--space-2) var(--space-4); background: var(--bg); transform: translateY(-150%); }
+  .skip:focus { transform: none; }
+  .site-header { position: sticky; inset-block-start: 0; z-index: 10; border-block-end: 1px solid var(--line); background: var(--bg); }
+  .bar, .page, .footer-inner { width: min(100% - 2 * clamp(1rem, 3vw, 2.5rem), 73rem); margin-inline: auto; }
+  .bar, .tools, .tabs, .wordmark { display: flex; align-items: center; }
+  .bar { gap: clamp(0.75rem, 2vw, 2rem); min-block-size: 3.75rem; }
+  .wordmark { gap: var(--space-2); min-block-size: var(--target-min); font-size: var(--t-lg); font-weight: 750; letter-spacing: -0.025em; color: var(--ink); text-decoration: none; }
+  .wordmark img { flex: none; }
+  .tabs { align-self: stretch; gap: var(--space-2); }
+  .tabs a { display: flex; align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-2); border-block-end: 2px solid transparent; color: var(--ink-2); font-weight: 650; white-space: nowrap; text-decoration: none; }
+  .tabs a[aria-current='page'] { border-block-end-color: var(--brand); color: var(--brand-ink); }
+  .tools { min-width: 0; gap: var(--space-1); margin-inline-start: auto; }
+  .nav-search { display: flex; min-width: 0; align-items: center; padding-inline-start: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); }
+  .nav-search:focus-within { border-color: var(--brand-ring); }
+  .nav-search input { min-width: 0; width: clamp(7.25rem, 14vw, 11rem); min-height: 2.625rem; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: var(--t-base); }
+  .nav-search input::placeholder { color: var(--muted); }
+  .nav-search button, .icon-action, .account summary { display: inline-grid; place-items: center; min-width: var(--target-min); min-height: var(--target-min); padding: 0; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink-2); cursor: pointer; }
+  .nav-search button { min-height: 2.625rem; }
+  .mobile-search, .set-light { display: none; }
+  [data-shell-theme='dark'] .set-light { display: inline-grid; }
+  @media (prefers-color-scheme: dark) {
+    .site-header:not([data-shell-theme]) .set-dark { display: none; }
+    .site-header:not([data-shell-theme]) .set-light { display: inline-grid; }
   }
-  :global(a) { color: var(--shell-brand); }
-  .site-header { border-bottom: 1px solid var(--shell-line); background: var(--shell-panel); }
-  .bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1rem;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 66rem;
-    margin: auto;
-    padding: 0.6rem 1.25rem;
-  }
-  .wordmark {
-    display: flex;
-    gap: 0.65rem;
-    align-items: center;
-    padding: 0.2rem 0;
-    text-decoration: none;
-    color: var(--shell-ink);
-    font-weight: 750;
-    font-size: 1.125rem;
-  }
-  .site-nav { display: flex; flex-wrap: wrap; gap: 0.15rem 0.35rem; align-items: center; }
-  .site-nav a, .logout button {
-    display: inline-flex;
-    align-items: center;
-    min-height: 2.5rem;
-    padding: 0.3rem 0.55rem;
-    border-radius: 0.45rem;
-    color: var(--shell-ink-2);
-    text-decoration: none;
-    font: inherit;
-    font-weight: 600;
-  }
-  .site-nav a[aria-current='page'] { color: var(--shell-brand); background: var(--shell-brand-wash); }
-  .site-nav .me { max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; line-height: 1.9rem; }
-  .site-nav .login { border: 1px solid var(--shell-brand); color: var(--shell-brand); }
-  .logout { margin: 0; }
-  .logout button { border: 1px solid var(--shell-control-line); background: var(--shell-panel); cursor: pointer; }
-  .page { max-width: 66rem; margin: auto; padding: clamp(1rem, 4vw, 3rem) 1.25rem; }
-  .site-footer {
-    display: flex;
-    gap: 1.25rem;
-    justify-content: center;
-    padding: 1.5rem 1.25rem 2rem;
-    color: var(--shell-muted);
-    font-size: 0.9rem;
+  .login { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target-min); min-width: var(--target-min); padding-inline: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); font-size: var(--t-base); font-weight: 650; white-space: nowrap; text-decoration: none; }
+  .account { position: relative; }
+  .account summary { display: flex; gap: var(--space-1); padding-inline: var(--space-2); list-style: none; font-weight: 650; }
+  .account summary::-webkit-details-marker { display: none; }
+  .account summary span:first-child { max-width: clamp(5rem, 12vw, 9rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .account-links { position: absolute; inset-inline-end: 0; margin-top: var(--space-1); min-width: 9rem; padding: var(--space-1); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); box-shadow: 0 5px 16px rgb(0 0 0 / 0.12); }
+  .account-links :is(a, button) { display: flex; align-items: center; width: 100%; min-height: var(--target-min); padding: 0 var(--space-3); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink); font: inherit; text-decoration: none; cursor: pointer; }
+  .tools :is(a, button, summary):hover { background: var(--hover-row); }
+  .progress { position: absolute; bottom: -1px; height: 2px; width: 35%; background: var(--brand); animation: progress 1s ease-in-out infinite alternate; }
+  @keyframes progress { from { transform: translateX(0); } to { transform: translateX(185%); } }
+  @media (prefers-reduced-motion: reduce) { .progress { width: 100%; animation: none; } }
+  .page { flex: 1; padding-block: clamp(1.5rem, 4vw, 3rem) var(--space-12); }
+  .site-footer { border-block-start: 1px solid var(--line); color: var(--muted); background: var(--panel); font-size: var(--t-base); }
+  .footer-inner { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-6); padding-block: var(--space-5); }
+  .footer-inner p { margin: 0; }
+  .footer-mark { font-weight: 750; color: var(--ink); text-decoration: none; }
+  .footer-inner nav { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); }
+  .footer-inner nav a { display: grid; align-items: center; min-height: var(--target-min); color: var(--ink-2); }
+  @media (max-width: 55rem) { .nav-search { display: none; } .mobile-search { display: inline-grid; } }
+  @media (max-width: 39rem) {
+    .bar { flex-wrap: wrap; gap: 0; padding-block-start: var(--space-1); }
+    .tabs { order: 1; flex: 1 0 100%; }
+    .tabs a { padding-inline: var(--space-2); }
   }
 </style>
