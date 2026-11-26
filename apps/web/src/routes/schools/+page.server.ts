@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { coverageYears, groupBySystem, matches, parseFilters, schoolSorts, sortInstitutions, statuses, systems } from '$lib/institutions';
+import { coverageYears, directoryStatus, groupBySystem, matches, parseFilters, schoolSorts, sortInstitutions, statuses, systems } from '$lib/institutions';
 import { catalog } from '$lib/server/catalog';
 import type { PageServerLoad } from './$types';
 
@@ -37,7 +37,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     offerings: institutions.reduce((total, institution) => total + institution.offerings, 0),
     counts: statuses.map((status) => ({
       status,
-      count: institutions.filter((institution) => institution.status === status).length
+      count: institutions.filter((institution) => directoryStatus(institution) === status).length
     })),
     systems: systems.filter((system) => institutions.some((institution) => institution.system === system)),
     shown: shown.length,

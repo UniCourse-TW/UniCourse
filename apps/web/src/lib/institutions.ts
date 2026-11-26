@@ -9,7 +9,20 @@ export const statusLabels: Record<CrawlStatus, string> = {
   planned: '規劃中',
   none: '尚未開始'
 };
-export const statuses = Object.keys(statusLabels) as CrawlStatus[];
+export const statuses = ['live', 'partial', 'pending_import', 'blocked', 'planned', 'none'] as const;
+export type DirectoryStatus = (typeof statuses)[number];
+export const directoryStatusLabels: Record<DirectoryStatus, string> = { ...statusLabels, pending_import: '待匯入' };
+
+export function hasImportedOfferings(institution: Institution) {
+  return institution.terms.length > 0 && institution.offerings > 0;
+}
+
+export function directoryStatus(institution: Institution): DirectoryStatus {
+  if ((institution.status === 'live' || institution.status === 'partial') && !hasImportedOfferings(institution)) {
+    return 'pending_import';
+  }
+  return institution.status;
+}
 
 export const systemLabels: Record<EducationSystem, string> = {
   general: '一般大學',
@@ -43,13 +56,13 @@ export function hasSchoolPage(institution: Institution): institution is Institut
   return (
     !!institution.slug &&
     (institution.status === 'live' || institution.status === 'partial') &&
-    institution.terms.length > 0
+    hasImportedOfferings(institution)
   );
 }
 
-/** Schools in the nightly refresh and the distinct terms they cover. */
+/** Schools with fully connected crawlers and active imported offerings. */
 export function coverage(institutions: Institution[]) {
-  const live = institutions.filter((institution) => institution.status === 'live');
+  const live = institutions.filter((institution) => directoryStatus(institution) === 'live');
   return { schools: live.length, terms: new Set(live.flatMap((institution) => institution.terms)).size };
 }
 
@@ -73,7 +86,7 @@ export type Filters = ReturnType<typeof parseFilters>;
 export function matches(institution: Institution, filters: Filters) {
   if (filters.system && institution.system !== filters.system) return false;
   if (filters.ownership && institution.ownership !== filters.ownership) return false;
-  if (filters.status && institution.status !== filters.status) return false;
+  if (filters.status && directoryStatus(institution) !== filters.status) return false;
   if (!filters.q) return true;
   const needle = normalize(filters.q);
   return [institution.name, institution.code, institution.nameEn, institution.slug].some(
@@ -87,7 +100,7 @@ const schoolNames = new Intl.Collator('zh-TW-u-co-stroke');
 
 export function sortInstitutions(institutions: Institution[], sort: SchoolSort, direction: 'asc' | 'desc') {
   const compare: Record<SchoolSort, (left: Institution, right: Institution) => number> = {
-    status: (left, right) => statuses.indexOf(left.status) - statuses.indexOf(right.status),
+    status: (left, right) => statuses.indexOf(directoryStatus(left)) - statuses.indexOf(directoryStatus(right)),
     name: (left, right) => schoolNames.compare(left.name, right.name),
     terms: (left, right) => left.terms.length - right.terms.length,
     offerings: (left, right) => left.offerings - right.offerings,

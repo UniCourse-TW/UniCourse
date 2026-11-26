@@ -35,7 +35,15 @@ html:has(.browse-page) {
 .browse-inline { display: flex; flex-wrap: wrap; gap: .25rem .55rem; align-items: baseline; }
 .browse-course-cell { display: grid; justify-items: start; min-inline-size: 0; gap: .13rem; padding-block: .4rem; overflow-wrap: anywhere; }
 @media (max-width: 800px) { .browse-columns { grid-template-columns: minmax(0, 1fr); } }
-@media (350px <= width <= 640px) {
+.browse-wide-stat > .tile { height: 100%; }
+@media (max-width: 640px) {
   .browse-compact-stats > .stat-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .browse-compact-stats > .stat-row > .tile { padding-inline: .6rem; }
+  .browse-compact-stats .tile { padding-inline: .6rem; }
+  .browse-compact-stats .tile dd { display: flex; flex-wrap: wrap; align-items: baseline; gap: .1rem .25rem; font-size: clamp(1.15rem, 5vw, 1.5rem); }
+  .browse-compact-stats .tile dd > * { white-space: nowrap; }
+  .browse-compact-stats .tile dd small { margin-inline-start: 0; }
+  .browse-wide-stat { grid-column: span 2; min-inline-size: 0; }
+}
+@media (max-width: 359px) {
+  .browse-compact-stats > .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

@@ -11,7 +11,7 @@ export function publishedEnrollment(trends: TermTrend[] | null) {
 }
 
 export function buildTeachingMatrix(offerings: Offering[]) {
-  const courses = new Map<string, { row: MatrixRow; points: Record<string, MatrixPoint>; total: number }>();
+  const courses = new Map<string, { row: MatrixRow; points: Record<string, MatrixPoint>; total: number; latestYear: number }>();
   const years = new Set<number>();
 
   for (const course of offerings) {
@@ -22,7 +22,7 @@ export function buildTeachingMatrix(offerings: Offering[]) {
     let entry = courses.get(course.courseCode);
     if (!entry) {
       const points: Record<string, MatrixPoint> = {};
-      entry = { row: { id: course.courseCode, label: `${course.title} · ${course.courseCode}`, points }, points, total: 0 };
+      entry = { row: { id: course.courseCode, label: `${course.title} · ${course.courseCode}`, points }, points, total: 0, latestYear: year };
       courses.set(course.courseCode, entry);
     }
     const point = entry.points[year] ?? { offerings: 0, enrolled: null, href: `/courses/${course.id}` };
@@ -30,13 +30,16 @@ export function buildTeachingMatrix(offerings: Offering[]) {
     if (course.enrolled != null) point.enrolled = (point.enrolled ?? 0) + course.enrolled;
     entry.points[year] = point;
     entry.total += 1;
+    entry.latestYear = Math.max(entry.latestYear, year);
   }
 
   const orderedYears = [...years].sort((left, right) => left - right);
   const first = orderedYears[0];
   const last = orderedYears.at(-1);
   const periods = last != null ? Array.from({ length: last - first + 1 }, (_, index) => String(first + index)) : [];
-  const rows = [...courses.values()].sort((left, right) => right.total - left.total).map(({ row }) => row);
+  const rows = [...courses.values()]
+    .sort((left, right) => right.latestYear - left.latestYear || right.total - left.total || left.row.id.localeCompare(right.row.id))
+    .map(({ row }) => row);
   return { rows, periods };
 }
 
