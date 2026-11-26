@@ -258,8 +258,13 @@ mod tests {
         for entry in std::fs::read_dir(&crawlers).unwrap() {
             let path = entry.unwrap().path();
             let name = path.file_name().unwrap().to_str().unwrap().to_owned();
-            // `tvc` (national platform) is a multi-school source, referenced by `source`.
-            if name == "kit" || name == "tvc" || !path.join("package.json").is_file() {
+            // `tvc` (national platform) is a multi-school source, referenced by `source`;
+            // `reviews-ptt` builds the external review index (docs/external-reviews.md).
+            if name == "kit"
+                || name == "tvc"
+                || name == "reviews-ptt"
+                || !path.join("package.json").is_file()
+            {
                 continue;
             }
             packages += 1;
