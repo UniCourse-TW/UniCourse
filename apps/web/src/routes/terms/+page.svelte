@@ -28,12 +28,12 @@
   <section aria-labelledby="sources">
     <h2 id="sources">資料來源與授權</h2>
     <p>本站的資料有三種來源，每一筆課程都保留原始連結，可回到校方頁面核對：</p>
-    <table>
-      <thead><tr><th>資料</th><th>來源</th><th>授權與使用方式</th></tr></thead>
-      <tbody>
-        <tr><td data-label="資料">學校名錄</td><td data-label="來源">教育部大專校院名錄等開放資料</td><td data-label="授權與使用方式">政府資料開放授權條款；依原始檔重新產生，不手動修改。</td></tr>
-        <tr><td data-label="資料">課程與修課人數</td><td data-label="來源">各校公開課程查詢系統、教育部課程資源網</td><td data-label="授權與使用方式">只抓取無需登入的公開頁面，遵守各站 robots 規則，夜間低頻更新。</td></tr>
-        <tr><td data-label="資料">課程網站總覽</td><td data-label="來源">UniCourse 逐校盤點</td><td data-label="授權與使用方式">列在<a href="/landscape">課程網站總覽</a>，資料檔隨原始碼公開。</td></tr>
+    <table role="table">
+      <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">資料</th><th role="columnheader" scope="col">來源</th><th role="columnheader" scope="col">授權與使用方式</th></tr></thead>
+      <tbody role="rowgroup">
+        <tr role="row"><td role="cell" data-label="資料">學校名錄</td><td role="cell" data-label="來源">教育部大專校院名錄等開放資料</td><td role="cell" data-label="授權與使用方式">政府資料開放授權條款；依原始檔重新產生，不手動修改。</td></tr>
+        <tr role="row"><td role="cell" data-label="資料">課程與修課人數</td><td role="cell" data-label="來源">各校公開課程查詢系統、教育部課程資源網</td><td role="cell" data-label="授權與使用方式">只抓取無需登入的公開頁面，遵守各站 robots 規則，夜間低頻更新。</td></tr>
+        <tr role="row"><td role="cell" data-label="資料">課程網站總覽</td><td role="cell" data-label="來源">UniCourse 逐校盤點</td><td role="cell" data-label="授權與使用方式">列在<a href="/landscape">課程網站總覽</a>，資料檔隨原始碼公開。</td></tr>
       </tbody>
     </table>
     <p>校方系統要求登入、使用驗證碼或以 robots 規則拒絕抓取時，本站不會收錄該校資料，並在各校收錄狀態頁標示「受阻」。本站的程式碼與資料檔以開源方式公開於 GitHub。</p>

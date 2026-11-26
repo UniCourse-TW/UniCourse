@@ -69,7 +69,7 @@
       <input type="hidden" name="term" value="all" />
       <label class="search-field">
         <span class="field-label">課名、課號或教師</span>
-        <input type="search" name="q" value={query} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" />
+        <input type="search" name="q" defaultValue={query} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" />
       </label>
       <button type="submit">搜尋課程</button>
     </form>

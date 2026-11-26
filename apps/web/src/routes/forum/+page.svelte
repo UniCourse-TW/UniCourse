@@ -301,6 +301,8 @@
     .code-field { flex: 1 1 100%; }
     .code-field input { flex: 1; inline-size: auto; }
     .toolbar > .cm-btn { flex: 1 1 auto; }
+    /* The removable chips below already clear each filter; the text link only adds a wrapped row here. */
+    .toolbar > .clear { display: none; }
     .scope-hint { display: none; }
     /* Category chips scroll sideways rather than wrapping into a tall block. */
     .types {

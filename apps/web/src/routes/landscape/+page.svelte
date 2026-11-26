@@ -120,7 +120,7 @@
       </div>
     </div>
     <p class="dek">
-      全國 {number.format(data.totalSchools)} 所大專校院，已盤點其中 {number.format(data.stats.schools)} 所的官方課程系統與第三方查課工具，共 {number.format(data.totalSites)} 個
+      全國 {number.format(data.totalSchools)} 所大專校院，已盤點其中 {number.format(data.surveyedSchools)} 所的官方課程系統與第三方查課工具，共 {number.format(data.totalSites)} 個
       · 查核於 <time datetime={data.checkedAt}>{data.checkedAt.replaceAll('-', '/')}</time>
       · 狀態為當日探測結果
       {#if !data.crawl}· <span class="warn">各校收錄狀態暫時無法取得</span>{/if}
@@ -185,7 +185,8 @@
   </div>
 
   <StatRow label="網站統計">
-    <StatTile label="已盤點到網站的學校" value={data.stats.schools} unit="所" note={`全國 ${number.format(data.totalSchools)} 所，其餘 ${number.format(data.totalSchools - data.stats.schools)} 所尚未盤點到`} />
+    <StatTile label={filtered ? '符合的學校' : '已盤點到網站的學校'} value={data.stats.schools} unit="所"
+      note={filtered ? `全國 ${number.format(data.totalSchools)} 所，已盤點 ${number.format(data.surveyedSchools)} 所` : `全國 ${number.format(data.totalSchools)} 所，其餘 ${number.format(data.totalSchools - data.surveyedSchools)} 所尚未盤點到`} />
     <StatTile label="官方系統" value={data.stats.official} unit="個" note="校方與政府營運" />
     <StatTile label="第三方服務" value={data.stats.third} unit="個" note="學生、社群與公司" />
     <StatTile label="運作中" value={data.stats.active} unit="個"
@@ -235,7 +236,7 @@
       </section>
     </div>
 
-    <section aria-labelledby="third-party">
+    <section aria-labelledby="third-party" class="third">
       <SectionHeader id="third-party" level={2} title="第三方查課網站"
         description="學生、社群與公司做的評價、排課、成績分布與彙整服務。「收錄策略」是 UniCourse 對該站內容的處理方式：只提供連結，或依站方 robots 允許索引不超過 120 字的摘要。">
         {#snippet actions()}<a class="action" href="/terms#reviews">收錄原則</a>{/snippet}
@@ -528,7 +529,13 @@
     .more[open] summary::after { content: '▴'; }
     .more summary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
     .badge-count { display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 5px; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); }
+    /* Search, 篩選 and 套用 share one row; the fields open beneath them. */
+    .search { flex: 1 1 7rem; }
+    .more summary, .apply { flex: none; }
     .fields { flex-basis: 100%; padding-block-start: var(--space-2); }
+    /* Table cells ignore max-width, so the sticky first column is pinned to the family's 9.5 rem here. */
+    .third :global(th.sticky), .third :global(td.sticky) { inline-size: 9.5rem !important; }
+    .third .site-cell small { display: none; }
     .fields > :global(.field) { flex: 1 1 45%; }
     .stack li { grid-template-columns: minmax(0, 1fr) auto; }
     .stack li .track { grid-column: 1 / -1; }

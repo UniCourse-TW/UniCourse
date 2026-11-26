@@ -88,7 +88,7 @@
     {#if ratingCount && average !== null}
       <div class="dist">
         <h2 class="eyebrow" id="dist-title">
-          給分分布<span class="sep">·</span>平均 <span class="num avg">{average.toFixed(1)}</span><span class="cm-hint">／5，{ratingCount} 則</span>
+          給分分布<span class="sep">·</span>平均 <span class="num avg">{average.toFixed(1)}</span><span class="cm-hint">（滿分 5）<span class="sep">·</span>{ratingCount} 則</span>
         </h2>
         <BarList label="給分分布" items={histogram} unit="則" showValues={false} />
       </div>
@@ -197,9 +197,11 @@
   }
   .summary:not(:has(.dist)) { grid-template-columns: minmax(0, 1fr); }
   .summary :global(.stat-row) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* The fourth tile holds a school name, not a count: keep it readable but smaller than the numbers. */
+  .summary :global(.stat-row > :nth-child(4) dd) { font-size: var(--t-xl); line-height: 1.3; min-block-size: 2.1rem; display: flex; align-items: center; }
   .dist { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; margin-block-end: var(--space-2) !important; color: var(--ink-2) !important; font-size: var(--t-sm) !important; letter-spacing: 0 !important; }
-  .eyebrow .avg { font-size: var(--t-lg); font-weight: 650; color: var(--ink); }
+  .eyebrow .avg { margin-inline-start: 0.3em; font-size: var(--t-lg); font-weight: 650; color: var(--ink); }
   .eyebrow .cm-hint { margin-inline-start: var(--space-1); }
   .dist :global(.bar-row) { grid-template-columns: 2.5rem minmax(0, 1fr) 3rem; min-block-size: 1.625rem; padding-block: 0; }
   .dist :global(.track) { grid-row: auto; grid-column: auto; }

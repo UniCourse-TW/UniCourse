@@ -125,7 +125,8 @@
   /* Two- and three-column text tables stack on phones; the column name comes from data-label. */
   @media (max-width: 40rem) {
     .prose :global(table), .prose :global(tbody), .prose :global(tr), .prose :global(td) { display: block; }
-    .prose :global(thead) { display: none; }
+    /* The header row stays in the accessibility tree; only its pixels go. */
+    .prose :global(thead) { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     .prose :global(tr) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); }
     .prose :global(tr:last-child) { border-block-end: 0; }
     .prose :global(td) { padding: 2px 0; border: 0; }
