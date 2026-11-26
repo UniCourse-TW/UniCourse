@@ -1,6 +1,16 @@
 {
   "name": "@unicourse/crawler-ntua",
+  "description": "Imports National Taiwan University of Arts course listings into UniCourse snapshots.",
   "private": true,
+  "homepage": "https://unicourse.observe.tw/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UniCourse-TW/UniCourse.git",
+    "directory": "crawlers/ntua"
+  },
+  "bugs": {
+    "url": "https://github.com/UniCourse-TW/UniCourse/issues"
+  },
   "type": "module",
   "scripts": {
     "crawl": "tsx src/main.ts",

@@ -1,6 +1,16 @@
 {
   "name": "@unicourse/crawler-nycu",
+  "description": "Imports National Yang Ming Chiao Tung University course listings into UniCourse snapshots.",
   "private": true,
+  "homepage": "https://unicourse.observe.tw/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UniCourse-TW/UniCourse.git",
+    "directory": "crawlers/nycu"
+  },
+  "bugs": {
+    "url": "https://github.com/UniCourse-TW/UniCourse/issues"
+  },
   "type": "module",
   "scripts": {
     "crawl": "tsx src/main.ts",

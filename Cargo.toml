@@ -5,6 +5,10 @@ resolver = "3"
 [workspace.package]
 edition = "2024"
 version = "0.1.0"
+homepage = "https://unicourse.observe.tw/"
+repository = "https://github.com/UniCourse-TW/UniCourse"
+readme = "README.md"
+keywords = ["taiwan", "higher-education", "course-catalog", "course-search"]
 
 [workspace.dependencies]
 anyhow = "1"

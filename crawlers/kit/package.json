@@ -1,6 +1,16 @@
 {
   "name": "@unicourse/crawler-kit",
+  "description": "Shared crawler utilities and snapshot validation for UniCourse.",
   "private": true,
+  "homepage": "https://unicourse.observe.tw/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UniCourse-TW/UniCourse.git",
+    "directory": "crawlers/kit"
+  },
+  "bugs": {
+    "url": "https://github.com/UniCourse-TW/UniCourse/issues"
+  },
   "type": "module",
   "exports": "./src/index.ts",
   "scripts": {

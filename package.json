@@ -1,6 +1,16 @@
 {
   "name": "unicourse",
+  "description": "Cross-university course search, reviews, and student discussions for Taiwan.",
   "private": true,
+  "homepage": "https://unicourse.observe.tw/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UniCourse-TW/UniCourse.git"
+  },
+  "bugs": {
+    "url": "https://github.com/UniCourse-TW/UniCourse/issues"
+  },
+  "keywords": ["taiwan", "higher-education", "course-catalog", "course-search", "course-reviews"],
   "packageManager": "pnpm@10.30.0",
   "devDependencies": {
     "openapi-typescript": "7.13.0"

@@ -1,7 +1,12 @@
 [package]
 name = "unicourse-catalog"
+description = "PostgreSQL schema and read queries for the UniCourse course catalog."
 version.workspace = true
 edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
 
 [dependencies]
 serde.workspace = true

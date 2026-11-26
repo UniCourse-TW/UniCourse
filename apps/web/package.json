@@ -1,6 +1,16 @@
 {
   "name": "@unicourse/web",
+  "description": "SvelteKit web app for UniCourse cross-university course search and community.",
   "private": true,
+  "homepage": "https://unicourse.observe.tw/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UniCourse-TW/UniCourse.git",
+    "directory": "apps/web"
+  },
+  "bugs": {
+    "url": "https://github.com/UniCourse-TW/UniCourse/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite dev",

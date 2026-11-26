@@ -1,6 +1,16 @@
 {
   "name": "@unicourse/api-client",
+  "description": "Generated OpenAPI types and typed HTTP client for UniCourse.",
   "private": true,
+  "homepage": "https://unicourse.observe.tw/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UniCourse-TW/UniCourse.git",
+    "directory": "packages/api-client"
+  },
+  "bugs": {
+    "url": "https://github.com/UniCourse-TW/UniCourse/issues"
+  },
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {

@@ -1,7 +1,12 @@
 [package]
 name = "unicourse-api"
+description = "HTTP API for the UniCourse catalog and student community."
 version.workspace = true
 edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+readme.workspace = true
+keywords.workspace = true
 default-run = "unicourse-api"
 
 [dependencies]

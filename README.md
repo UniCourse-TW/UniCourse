@@ -1,6 +1,10 @@
 # UniCourse
 
-跨校大學課程搜尋。新版放在原 UniCourse repo；[舊 roadmap](docs/roadmap.md) 和 issues 保留。規劃中的正式網址是 `unicourse.observe.tw`。
+UniCourse 查課是臺灣大學跨校課程搜尋平台，可依課名、教師或課號查詢，並瀏覽課程評價與學生討論。
+
+- [正式網站](https://unicourse.observe.tw/)
+- [回報問題或提出建議](https://github.com/UniCourse-TW/UniCourse/issues)
+- [舊 roadmap](docs/roadmap.md)
 
 ## 開發
 
