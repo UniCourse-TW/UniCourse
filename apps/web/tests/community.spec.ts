@@ -39,7 +39,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await page.goto(`/courses/${course.id}`);
   const ratings = page.locator('#ratings');
   await expect(ratings.getByRole('heading', { name: '課程評價' })).toBeVisible();
-  await ratings.getByRole('link', { name: '登入' }).click();
+  await ratings.getByRole('link', { name: '登入', exact: true }).click();
   await expect(page).toHaveURL(/\/auth\?next=/);
 
   await page.getByRole('link', { name: '註冊', exact: true }).click();
@@ -150,7 +150,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await nav.getByRole('button', { name: '登出' }).click();
   await expect(nav.getByRole('link', { name: '登入／註冊' })).toBeVisible();
   await page.goto(`/courses/${course.id}`);
-  await expect(ratings.getByRole('link', { name: '登入' })).toBeVisible();
+  await expect(ratings.getByRole('link', { name: '登入', exact: true })).toBeVisible();
   await expect(ratings.getByRole('button', { name: '送出評價' })).toHaveCount(0);
 });
 
