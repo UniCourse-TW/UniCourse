@@ -9,14 +9,14 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   const params = url.searchParams;
   const query = params.get('q')?.trim() ?? '';
   const school = params.get('school')?.trim() ?? '';
-  const department = params.get('department')?.trim() ?? '';
+  const requestedDepartment = params.get('department')?.trim() ?? '';
   const requestedTerm = params.get('term');
   const requestedSort = params.get('sort');
   const sort = searchSorts.find((option) => option.value === requestedSort)?.value ?? 'relevance';
   const requestedPage = Number(params.get('page'));
   const page = Number.isSafeInteger(requestedPage * searchPageSize) && requestedPage > 0 && Number.isInteger(requestedPage)
     ? requestedPage : 1;
-  const isSearch = Boolean(query || school || requestedTerm || department || requestedSort || page > 1);
+  const isSearch = Boolean(query || school || requestedTerm || requestedDepartment || requestedSort || page > 1);
 
   const base = Promise.all([
     client.GET('/api/schools').catch(() => null),
@@ -50,6 +50,10 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     school ? client.GET('/api/departments', { params: { query: { school } } }).catch(() => null) : null
   ]);
   const term = requestedTerm || terms?.data?.[0] || 'all';
+  const knownDepartments = departments?.data ?? [];
+  const departmentMatches = requestedDepartment && requestedDepartment.length <= 100 && !knownDepartments.includes(requestedDepartment)
+    ? knownDepartments.filter((name) => name.toLowerCase().includes(requestedDepartment.toLowerCase())) : [];
+  const department = departmentMatches.length === 1 ? departmentMatches[0] : requestedDepartment;
   const filters = { query, school, department, term, sort };
   const options = terms?.data ?? [];
   const result = await client.GET('/api/courses/search', {
@@ -68,7 +72,8 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     terms: term !== 'all' && !options.includes(term) ? [term, ...options] : options,
     content: {
       kind: 'search' as const, filters, page, totalPages, result: result?.data ?? null,
-      invalid: result?.response.status === 400, departments: departments?.data ?? null
+      invalid: result?.response.status === 400,
+      departments: departments?.data ?? [...new Set((result?.data?.courses ?? []).flatMap((course) => course.department ? [course.department] : []))].sort()
     }
   };
 };

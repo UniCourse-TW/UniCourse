@@ -13,7 +13,11 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(linearAlgebra.getByText('示範', { exact: true })).toBeVisible();
   await expect(linearAlgebra.getByText(/2 學期/)).toBeVisible();
   await expect(linearAlgebra.getByText('113', { exact: true })).toBeVisible();
-  await expect(linearAlgebra.getByRole('img', { name: /各學期修課人數/ })).toBeVisible();
+  await expect(linearAlgebra.getByRole('img', { name: /各學期修課人數/ }).locator('path.line')).toHaveCount(1);
+  const singleTerm = ranking.getByRole('listitem').filter({ hasText: 'DEMO202' }).getByRole('img', { name: /單期有資料/ });
+  await expect(singleTerm).toHaveText('115-1 · 72');
+  await expect(singleTerm.locator('svg')).toHaveCount(0);
+  await ranking.getByText('計算方式', { exact: true }).click();
   await expect(ranking.getByText(/另以累計名額/)).toBeVisible();
   await expect(ranking.getByRole('list').getByText('人數與名額未公布').first()).toBeVisible();
 
@@ -24,9 +28,11 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(ranking.getByRole('listitem')).toHaveCount(4);
   await expect(ranking.getByRole('link', { name: '資料結構' })).toHaveCount(0);
 
-  await expect(page.getByRole('region', { name: '目前收錄' }).getByText('開課班次')).toBeVisible();
+  const snapshot = page.getByRole('region', { name: '目前收錄' });
+  await expect(snapshot.getByText('開課班次')).toBeVisible();
+  await expect(snapshot.getByText('114-2 至 115-1')).toBeVisible();
   const coverage = page.getByRole('region', { name: '各校收錄狀態' });
-  await expect(coverage.getByRole('img', { name: /國立清華大學收錄範圍/ })).toBeVisible();
+  await expect(coverage.getByRole('img', { name: /國立清華大學收錄範圍.*114 學年：1 學期.*115 學年：1 學期/ })).toBeVisible();
   await coverage.getByRole('link', { name: /全部 \d+ 所/ }).click();
   await expect(page).toHaveURL('/schools');
 
@@ -36,7 +42,11 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await school.getByRole('link', { name: '國立清華大學' }).click();
   await expect(page).toHaveURL('/schools/nthu');
   await expect(page.getByRole('heading', { name: '國立清華大學' })).toBeVisible();
-  await expect(page.getByRole('img', { name: /每學期開課班次/ })).toBeVisible();
+  const termValues = page.getByLabel('每學期開課班次', { exact: true });
+  await expect(termValues).toBeVisible();
+  await expect(termValues.getByText('114-2')).toBeVisible();
+  await expect(termValues.getByText('115-1')).toBeVisible();
+  await expect(termValues.locator('svg')).toHaveCount(0);
   await expect(page.getByRole('table', { name: '校內累計修課人次排行' })).toBeVisible();
   await expect(page.getByText('已匯入學期：115-1、114-2')).toBeVisible();
 

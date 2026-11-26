@@ -1,6 +1,7 @@
 import type { SearchSort } from '@unicourse/api-client';
 
 export const searchPageSize = 50;
+export const popularSearches = ['資料結構', '微積分', '普通心理學', '日文'] as const;
 export const searchSorts = [
   { value: 'relevance', label: '最相關' },
   { value: 'enrolled', label: '修課人數高到低' },

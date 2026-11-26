@@ -4,7 +4,7 @@
   import type { PageData } from '../routes/$types';
   import { importedAt } from './format';
   import { hasSchoolPage } from './institutions';
-  import { overviewSearchHref, schoolHref } from './overview-paths';
+  import { overviewSearchHref, popularSearches, schoolHref } from './overview-paths';
   import OverviewSearchForm from './overview-search-form.svelte';
   import Badge from './ui/Badge.svelte';
   import BarCell from './ui/BarCell.svelte';
@@ -22,7 +22,6 @@
 
   let { schools, terms, overview }: { schools: School[]; terms: string[]; overview: Extract<PageData['content'], { kind: 'overview' }> } = $props();
 
-  const popular = ['資料結構', '微積分', '普通心理學', '日文'];
   type RankedCourse = CourseRanking & { rank: number | null };
   const columns: TableColumn<RankedCourse>[] = [
     { id: 'rank', label: '名次', numeric: true, width: '4.5rem' },
@@ -40,6 +39,8 @@
   let maximum = $derived(Math.max(0, ...rows.map((course) => metricValue(course) ?? 0)));
   let trendMax = $derived(Math.max(0, ...rows.flatMap((course) => course.trend.map((point) => point.enrolled ?? 0))));
   let latest = $derived(overview.schoolStats.map((school) => school.latestImportedAt).flatMap((date) => date ? [date] : []).sort().at(-1));
+  let period = $derived(terms.length <= 1 ? terms[0] : `${terms.at(-1)} 至 ${terms[0]}`);
+  let hasDemo = $derived(rows.some((course) => course.isDemo));
   let coveredSchools = $derived((overview.institutions ?? []).filter(hasSchoolPage)
     .sort((left, right) => right.terms.length - left.terms.length || right.offerings - left.offerings));
   let years = $derived.by(() => {
@@ -53,7 +54,7 @@
     ...(overview.rankSchool ? { rank_school: overview.rankSchool } : {}), rank_limit: overview.expanded ? '10' : '50'
   })}#ranking`);
   let rankRetry = $derived(`/${overview.rankSchool ? `?${new URLSearchParams({ rank_school: overview.rankSchool, ...(overview.expanded ? { rank_limit: '50' } : {}) })}` : overview.expanded ? '?rank_limit=50' : ''}#ranking`);
-  let rankingPending = $derived(navigating.to?.url.searchParams.has('rank_school') ?? false);
+  let rankingPending = $derived(navigating.to?.url.pathname === '/' && navigating.to.url.hash === '#ranking');
 
   function href(course: CourseRanking) { return `/courses/${course.latestOfferingId}`; }
   function metricValue(course: CourseRanking) { return course.enrolledTotal ?? course.capacityTotal ?? null; }
@@ -87,12 +88,15 @@
   <OverviewSearchForm {schools} {terms} />
   <div class="popular" aria-label="熱門搜尋">
     <span>熱門搜尋</span>
-    {#each popular as query (query)}<a href={overviewSearchHref({ query, term: 'all' })}><span>{query}</span></a>{/each}
+    {#each popularSearches as query (query)}<a href={overviewSearchHref({ query, term: 'all' })}>{query}</a>{/each}
   </div>
 </section>
 
 <section class="home-section snapshot" aria-labelledby="snapshot-title">
-  <SectionHeader id="snapshot-title" title="目前收錄" />
+  <div class="snapshot-heading">
+    <SectionHeader id="snapshot-title" title="目前收錄" />
+    {#if period}<p class="snapshot-period"><span class="ui-tabular">{period}</span> 學期{#if hasDemo} <Badge label="含示範資料" tone="demo" />{/if}</p>{/if}
+  </div>
   <StatRow>
     <StatTile label="開課班次" value={overview.totals?.offerings ?? null} note="可搜尋的班次" />
     <StatTile label="跨學期課程" value={overview.totals?.courses ?? null} note="同校同課號合併計算" />
@@ -120,27 +124,34 @@
 {/snippet}
 
 {#snippet trend(course: RankedCourse)}
-  {#if course.trend.some((point) => point.enrolled !== null)}
-    {@const points = trendPoints(course)}
-    <Sparkline values={points.map((point) => point.enrolled)} min={0} max={trendMax}
-      label={`各學期修課人數：${points.map((point) => `${point.term}：${point.enrolled == null ? '無資料' : displayValue(point.enrolled)}`).join('、')}`} />
-  {:else}<span class="unpublished" aria-label="沒有公布各學期修課人數">—</span>{/if}
+  {@const points = trendPoints(course)}
+  {@const measured = points.filter((point) => point.enrolled !== null)}
+  {@const label = measured.length > 1 ? `各學期修課人數：${measured.map((point) => `${point.term}：${displayValue(point.enrolled)}`).join('、')}` : '各學期修課人數'}
+  <Sparkline values={points.map((point) => point.enrolled)} labels={points.map((point) => point.term)} min={0} max={trendMax}
+    {label} />
 {/snippet}
 
-<section class="home-section" id="ranking" aria-labelledby="ranking-title">
-  <SectionHeader id="ranking-title" title="歷史累計修課人數排行" description="同校同課號跨學期加總；未公布修課人數時，另以累計名額列在已公布人數的課程之後。兩者皆未公布不列名次。">
+<section class="home-section" id="ranking" aria-labelledby="ranking-title" aria-busy={rankingPending}>
+  <SectionHeader id="ranking-title" title="歷史累計修課人數排行" description="同校同課號跨學期加總，走勢由左至右為舊到新。">
     {#snippet actions()}
       <form method="GET" action="/#ranking" class="rank-form" onchange={applySchool}>
         {#if overview.expanded}<input type="hidden" name="rank_limit" value="50" />{/if}
         <FilterSelect name="rank_school" label="排行範圍" allLabel="所有學校" value={overview.rankSchool}
           options={schools.map((school) => ({ value: school.slug, label: school.name }))} />
-        <button class="button secondary" aria-busy={rankingPending}>{rankingPending ? '套用中…' : '套用'}</button>
+        <noscript><button class="button secondary">套用</button></noscript>
       </form>
-      {#if rows.length >= 10 || overview.expanded}
-        <a class="button text-action expand-ranking" href={rankHref}>{overview.expanded ? '顯示前 10 筆' : '查看前 50 筆'} <span aria-hidden="true">→</span></a>
-      {/if}
     {/snippet}
   </SectionHeader>
+  <div class="ranking-tools">
+    <details class="ranking-method">
+      <summary>計算方式</summary>
+      <p>以校方已公布的修課人數加總；未公布修課人數時，另以累計名額排列在後，並以斜紋標示。兩者皆未公布不列名次。人數條與名額條使用相同尺度。</p>
+    </details>
+    {#if rows.length >= 10 || overview.expanded}
+      <a class="button text-action expand-ranking" href={rankHref}>{overview.expanded ? '顯示前 10 筆' : '查看前 50 筆'} <span aria-hidden="true">→</span></a>
+    {/if}
+    <span class="visually-hidden" role="status">{rankingPending ? '更新排行中…' : ''}</span>
+  </div>
 
   {#if overview.rankings === null}
     <ErrorState title="暫時無法取得排行" retryHref={rankRetry} />
@@ -171,7 +182,10 @@
             <span class="rank-meta">{course.schoolName} · {course.courseCode} · {course.terms} 學期 {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}</span>
             <div class="rank-metric">
               {#if metricValue(course) === null}<span class="unpublished">人數與名額未公布</span>
-              {:else}{@render metric(course)}{@render trend(course)}{/if}
+              {:else}
+                {@render metric(course)}
+                <span class="mobile-trend"><span aria-hidden="true">逐期人數</span> {@render trend(course)}</span>
+              {/if}
             </div>
           </div>
         </li>
@@ -180,31 +194,35 @@
     {#if rows.length >= 10 || overview.expanded}
       <a class="button text-action expand-mobile" href={rankHref}>{overview.expanded ? '顯示前 10 筆' : '查看前 50 筆'} <span aria-hidden="true">→</span></a>
     {/if}
-    {#if rows.some((course) => course.isDemo)}<p class="metadata">「示範」不是校方實際開課資料。</p>{/if}
+    {#if hasDemo}<p class="metadata">「示範」為合成資料，並非校方實際開課紀錄。</p>{/if}
   {/if}
 </section>
 
 <section class="home-section" id="coverage" aria-labelledby="coverage-title">
-  <SectionHeader id="coverage-title" title="各校收錄狀態" description="課程資料來自各校公開課程網站；以匯入的學期計算，每格代表一個學年。">
+  <SectionHeader id="coverage-title" title="各校收錄狀態" description="資料來自各校公開課程網站，方格數字是最近十個學年的收錄學期數。">
     {#snippet actions()}<a class="button text-action" href="/schools">{overview.institutions ? `全部 ${displayValue(overview.institutions.length)} 所` : '查看各校收錄狀態'} <span aria-hidden="true">→</span></a>{/snippet}
   </SectionHeader>
   {#if overview.institutions === null}
     <ErrorState title="暫時無法取得收錄狀態" retryHref="/#coverage" />
   {:else if coveredSchools.length}
-    <div class="coverage-panel">
-      <p class="coverage-key">
-        {#if years.length}<span>{years[0]}{#if years.length > 1}–{years.at(-1)}{/if} 學年</span>{/if}
-        <span><i></i> 尚未收錄</span><span><i class="partial"></i> 1 學期</span><span><i class="full"></i> 2 學期</span>
-      </p>
-      <ul role="list">
-        {#each coveredSchools.slice(0, 4) as school (school.slug)}
-          <li>
-            <a href={schoolHref(school.slug)}>{school.name}</a>
-            <Heatstrip label={`${school.name}收錄範圍`} cells={years.map((year) => ({ period: String(year), value: school.terms.filter((term) => term.startsWith(`${year}-`)).length }))} />
-            <span class="ui-tabular">{displayValue(school.terms.length)} 學期</span>
-          </li>
-        {/each}
-      </ul>
+    <div class="coverage-panel" style:--coverage-years={years.length}>
+      <table>
+        <caption class="visually-hidden">各校最近十個學年收錄學期與累計班次</caption>
+        <thead><tr>
+          <th scope="col">學校</th>
+          <th scope="col"><span class="visually-hidden">學年</span><div class="coverage-years" aria-hidden="true">{#each years as year (year)}<span>{year}</span>{/each}</div></th>
+          <th scope="col" class="coverage-count">累計班次</th>
+        </tr></thead>
+        <tbody>
+          {#each coveredSchools as school (school.slug)}
+            <tr>
+              <th scope="row"><a href={schoolHref(school.slug)}>{school.name}</a></th>
+              <td><Heatstrip label={`${school.name}收錄範圍`} showCounts cells={years.map((year) => ({ period: String(year), value: school.terms.filter((term) => term.startsWith(`${year}-`)).length }))} /></td>
+              <td class="coverage-count ui-tabular">{displayValue(school.offerings)}</td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
     </div>
   {:else}
     <EmptyState title="尚未收錄學校課程" />
@@ -222,12 +240,17 @@
   .search-panel { margin-block-start: var(--space-5); padding: var(--space-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-panel); }
   .search-panel h2 { margin: 0 0 var(--space-2); font-size: var(--t-lg); line-height: var(--leading-tight); }
   .popular { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; margin-block-start: var(--space-2); color: var(--muted); font-size: var(--t-sm); }
-  .popular a { display: inline-flex; align-items: center; min-height: var(--target-min); border-radius: var(--radius-control); color: var(--brand-ink); font-weight: 630; text-decoration: none; }
-  .popular a span { padding: 2px var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--panel-raised); }
-  .popular a:hover span { background: var(--brand-wash); }
+  .popular a { display: inline-flex; align-items: center; min-height: var(--target-min); padding-inline: var(--space-3); border-radius: var(--radius-control); background: var(--panel-raised); border: 1px solid var(--line); color: var(--brand-ink); font-weight: 630; text-decoration: none; }
+  .popular a:hover { background: var(--brand-wash); }
   .home-section { display: grid; gap: var(--space-3); margin-block-start: clamp(1.5rem, 4vw, 2.5rem); }
   .snapshot { margin-block-start: var(--space-5); }
+  .snapshot-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
+  .snapshot-period { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1); margin: 0; color: var(--muted); font-size: var(--t-sm); }
   .rank-form { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
+  #ranking[aria-busy='true'] .rank-form { opacity: 0.7; }
+  .ranking-tools { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); }
+  .ranking-method summary { width: fit-content; align-content: center; min-height: var(--target-min); color: var(--brand-ink); cursor: pointer; font-size: var(--t-base); }
+  .ranking-method p { max-width: 46rem; margin: 0; color: var(--muted); font-size: var(--t-base); }
   .button { display: inline-flex; justify-content: center; align-items: center; gap: var(--space-1); min-height: var(--target-min); padding-inline: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--brand-ink); font: 650 var(--t-base) / var(--leading-table) var(--font-sans); text-decoration: none; cursor: pointer; }
   .secondary { border-color: var(--control-line); }
   .button:hover { background: var(--brand-wash); }
@@ -245,16 +268,17 @@
   .metric[data-estimate='true'] :global(.fill) { background: repeating-linear-gradient(125deg, var(--brand) 0 2px, transparent 2px 4px); }
   .unpublished { color: var(--muted); }
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .coverage-panel { background: var(--panel-raised); border: 1px solid var(--line); border-radius: var(--radius-panel); }
-  .coverage-key { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); margin: 0; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--line); background: var(--table-head); color: var(--muted); font-size: var(--t-sm); }
-  .coverage-key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; background: var(--seq-0); }
-  .coverage-key i.partial { background: var(--seq-2); }
-  .coverage-key i.full { background: var(--seq-4); }
-  .coverage-panel ul { list-style: none; margin: 0; padding: 0; }
-  .coverage-panel li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(1rem, 7.5rem) 4rem; gap: var(--space-2); align-items: center; padding: 0 var(--space-3); font-size: var(--t-base); }
-  .coverage-panel li + li { border-top: 1px solid var(--line); }
-  .coverage-panel li a { display: flex; align-items: center; min-height: var(--target-min); }
-  .coverage-panel li > span { justify-self: end; color: var(--muted); }
+  .coverage-panel { --heatstrip-cell-size: clamp(1.15rem, 3vw, 2.5rem); --heatstrip-gap: clamp(2px, 0.5vw, 0.45rem); background: var(--panel-raised); border: 1px solid var(--line); border-radius: var(--radius-panel); }
+  .coverage-panel table { width: 100%; border-spacing: 0; font-size: var(--t-base); }
+  .coverage-panel th, .coverage-panel td { padding-inline: var(--space-3); text-align: start; overflow-wrap: anywhere; }
+  .coverage-panel thead th { padding-block: var(--space-2); background: var(--table-head); color: var(--muted); font-size: var(--t-sm); }
+  .coverage-panel thead th:first-child { border-start-start-radius: var(--radius-panel); }
+  .coverage-panel thead th:last-child { border-start-end-radius: var(--radius-panel); }
+  .coverage-panel tbody :is(th, td) { border-top: 1px solid var(--line); }
+  .coverage-panel tbody th { font-weight: 550; }
+  .coverage-panel a { display: flex; align-items: center; min-height: var(--target-min); }
+  .coverage-years { display: grid; grid-template-columns: repeat(var(--coverage-years), var(--heatstrip-cell-size)); gap: var(--heatstrip-gap); justify-items: center; font: var(--t-xs) var(--font-mono); white-space: nowrap; }
+  .coverage-panel .coverage-count { text-align: end; white-space: nowrap; }
   @media (max-width: 45rem) {
     .desktop-ranking, .expand-ranking { display: none; }
     .expand-mobile { display: inline-flex; justify-self: start; }
@@ -267,12 +291,20 @@
     .rank-metric { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); font-size: var(--t-base); }
     .rank-metric .unpublished { font-size: var(--t-sm); }
     .rank-metric .metric :global(.bar-cell) { --bar-cell-track-size: 3.5rem; width: auto; }
+    .mobile-trend { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--muted); font-size: var(--t-xs); }
   }
   @media (max-width: 37rem) {
     .hero { gap: var(--space-2); }
     .hero img { width: 36px; height: 36px; }
     h1 { font-size: var(--t-2xl); text-wrap: initial; }
     .search-panel { padding: var(--space-3); }
-    .popular { gap: 0 var(--space-1); }
+    .popular { gap: var(--space-1); }
+    .popular a { padding-inline: var(--space-2); }
+    .coverage-panel { --heatstrip-cell-size: clamp(0.9rem, 4.6vw, 1.15rem); }
+    .coverage-panel th, .coverage-panel td { padding-inline: var(--space-1); }
+    .coverage-panel th:first-child { padding-inline-start: var(--space-2); }
+    .coverage-panel td:last-child { padding-inline-end: var(--space-2); }
+    .coverage-panel .coverage-count { font-size: var(--t-xs); }
+    .coverage-years { font-size: 0.625rem; }
   }
 </style>

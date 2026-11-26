@@ -16,6 +16,8 @@
 
   let { label, periods, rows, periodLabel = '學期', thresholds = [50, 100], initialRows = 8 }: Props = $props();
   const courseId = 'course';
+  let records = $derived(rows.flatMap((row) => periods.flatMap((period) => row.points[period] ?? [])));
+  let compact = $derived(periods.length <= 3 || records.every((point) => point.enrolled === null));
   let columns: TableColumn<MatrixRow>[] = $derived([
     { id: courseId, label: '課程', value: (row) => row.label },
     ...periods.map((period) => ({
@@ -25,7 +27,7 @@
       value: (row: MatrixRow) => row.points[period] ? totals(row.points[period]) : null
     }))
   ]);
-  let minWidth = $derived(`${9.5 + periods.length * 3.75}rem`);
+  let minWidth = $derived(compact && periods.length <= 3 ? '100%' : `${9.5 + periods.length * 3.75}rem`);
 
   function totals(point: MatrixPoint) {
     return `${displayValue(point.offerings)} 班，${point.enrolled === null ? '人數未公布' : `${displayValue(point.enrolled)} 人`}`;
@@ -46,7 +48,10 @@
     {@const point = row.points[column.id]}
     {#if point}
       {@const hint = `${column.id} ${periodLabel}：${totals(point)}`}
-      {#if point.href}
+      {#if compact}
+        {#if point.href}<a class="marker value" href={point.href} aria-label={`${row.label}，${hint}`}>{totals(point)}</a>
+        {:else}<span class="value">{totals(point)}</span>{/if}
+      {:else if point.href}
         <a class="marker" href={point.href} aria-label={`${row.label}，${hint}`} title={hint}>
           <span class="dot" data-size={bin(point.enrolled)} aria-hidden="true"></span>
         </a>
@@ -56,19 +61,22 @@
         </span>
       {/if}
     {:else}
-      <span class="missing">無開課紀錄</span>
+      {#if compact}<span class="missing-value" title="無開課紀錄">—<span class="missing"> 無開課紀錄</span></span>
+      {:else}<span class="missing">無開課紀錄</span>{/if}
     {/if}
   {/if}
 {/snippet}
 
-{#if rows.length && periods.length}
+{#if records.length}
   <div class="matrix">
-    <ul class="legend" role="list" aria-label="修課人數圖例">
-      <li><span class="dot" data-size="small" aria-hidden="true"></span>少於 {displayValue(thresholds[0])} 人</li>
-      <li><span class="dot" data-size="medium" aria-hidden="true"></span>{displayValue(thresholds[0])} 至未滿 {displayValue(thresholds[1])} 人</li>
-      <li><span class="dot" data-size="large" aria-hidden="true"></span>{displayValue(thresholds[1])} 人以上</li>
-      <li><span class="dot" data-size="unknown" aria-hidden="true"></span>人數未公布</li>
-    </ul>
+    {#if !compact}
+      <ul class="legend" role="list" aria-label="修課人數圖例">
+        <li><span class="dot" data-size="small" aria-hidden="true"></span>少於 {displayValue(thresholds[0])} 人</li>
+        <li><span class="dot" data-size="medium" aria-hidden="true"></span>{displayValue(thresholds[0])} 至未滿 {displayValue(thresholds[1])} 人</li>
+        <li><span class="dot" data-size="large" aria-hidden="true"></span>{displayValue(thresholds[1])} 人以上</li>
+        <li><span class="dot" data-size="unknown" aria-hidden="true"></span>人數未公布</li>
+      </ul>
+    {/if}
     <DataTable caption={label} {columns} rows={rows.slice(0, initialRows)} rowKey={(row) => row.id} {minWidth} cell={matrixCell} />
     {#if rows.length > initialRows}
       <details>
@@ -76,7 +84,7 @@
         <DataTable caption={`${label}：其他課程`} {columns} rows={rows.slice(initialRows)} rowKey={(row) => row.id} {minWidth} cell={matrixCell} />
       </details>
     {/if}
-    <ChartValues {label} {columns} {rows} rowKey={(row) => row.id} />
+    {#if !compact}<ChartValues {label} {columns} {rows} rowKey={(row) => row.id} />{/if}
   </div>
 {:else}
   <EmptyState title="沒有開課紀錄" />
@@ -95,6 +103,8 @@
     touch-action: manipulation;
   }
   a.marker:hover { background: var(--brand-wash); }
+  .value { font-size: var(--t-sm); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .missing-value { color: var(--muted); }
   .dot { display: inline-block; inline-size: 6px; block-size: 6px; border-radius: 50%; background: var(--seq-2); }
   [data-size='medium'] { inline-size: 10px; block-size: 10px; background: var(--seq-3); }
   [data-size='large'] { inline-size: 14px; block-size: 14px; background: var(--seq-4); }
