@@ -50,14 +50,23 @@ export function exportState(html: string): string | undefined {
 }
 
 /**
- * Comparable school name: the platform writes some private schools with their foundation,
- * e.g. `淡江大學學校財團法人淡江大學`, and mixes 台/臺.
+ * Comparable school name: the platform writes some private schools with their foundation, before
+ * or after `財團法人` (`淡江大學學校財團法人淡江大學`, `學校財團法人中華浸信會基督教台灣浸會神學院`), and
+ * mixes 台/臺.
  */
 export function normalizeSchoolName(name: string): string {
   return name
     .replace(/\s+/g, '')
     .replace(/^.*財團法人/, '')
     .replaceAll('台', '臺');
+}
+
+/** Whether a platform 校名 is the school with this MOE (or former) name. */
+export function sameSchool(platformName: string, name: string): boolean {
+  const platform = normalizeSchoolName(platformName);
+  const wanted = normalizeSchoolName(name);
+  // A foundation name may sit between 財團法人 and the school name; the school name then ends it.
+  return platform === wanted || (platformName.includes('財團法人') && platform.endsWith(wanted));
 }
 
 export type Row = Record<string, string>;
@@ -157,12 +166,12 @@ export function parseRows(
   rows: Row[],
   options: { schoolNames: string[]; year: number; semester: number; site: Site }
 ): ParseResult {
-  const want = new Set(options.schoolNames.map(normalizeSchoolName));
+
   const skipped = { otherSchool: 0, otherTerm: 0, untitled: 0 };
   const otherSchools = new Set<string>();
   const kept: { row: Row; offering: Omit<Offering, 'sourceId'> }[] = [];
   for (const row of rows) {
-    if (!want.has(normalizeSchoolName(row['校名'] ?? ''))) {
+    if (!options.schoolNames.some((name) => sameSchool(row['校名'] ?? '', name))) {
       skipped.otherSchool += 1;
       otherSchools.add(row['校名'] ?? '');
       continue;

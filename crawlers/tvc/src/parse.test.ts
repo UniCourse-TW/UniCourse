@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { Snapshot, buildSnapshot, type Institution } from '@unicourse/crawler-kit';
-import { SITES, exportState, hiddenFields, normalizeSchoolName, parseRows, querySummary, sheetRows } from './parse.ts';
+import { SITES, exportState, hiddenFields, normalizeSchoolName, parseRows, querySummary, sameSchool, sheetRows } from './parse.ts';
 import { eligibleSchools, sitesFor } from './schools.ts';
 import { readXlsx, xmlText } from './xlsx.ts';
 
@@ -102,6 +102,10 @@ test('placeholders are not data', () => {
 test('school names and eligibility', () => {
   assert.equal(normalizeSchoolName('淡江大學學校財團法人淡江大學'), '淡江大學');
   assert.equal(normalizeSchoolName('台北海洋科技大學'), '臺北海洋科技大學');
+  assert.ok(sameSchool('學校財團法人中華浸信會基督教台灣浸會神學院', '基督教台灣浸會神學院'));
+  assert.ok(sameSchool('淡江大學學校財團法人淡江大學', '淡江大學'));
+  assert.ok(!sameSchool('國立臺灣科技大學附設進修學院', '國立臺灣科技大學'));
+  assert.ok(!sameSchool('中山醫學大學', '國立中山大學'));
   const school = (slug: string, system: Institution['system'] = 'general') =>
     ({ slug, name: slug, code: '0000', nameEn: null, kind: 'university', ownership: 'public', city: null, website: null, system }) as Institution;
   const status = {
