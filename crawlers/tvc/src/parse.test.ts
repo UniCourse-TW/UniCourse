@@ -119,7 +119,7 @@ test('school names and eligibility', () => {
   assert.deepEqual(sitesFor(school('nsysu')), ['web_nu', 'web_nt']);
   // The real registry never hands a directly crawled school to this crawler.
   const real = eligibleSchools().map((item) => item.slug);
-  for (const slug of ['ntu', 'ntnu', 'nycu', 'nthu', 'nccu', 'nchu', 'ccu', 'fcu', 'tnua', 'ntua']) {
+  for (const slug of ['ntu', 'ntnu', 'nycu', 'nthu', 'nccu', 'nchu', 'ccu', 'fcu', 'tnua']) {
     assert.ok(!real.includes(slug), slug);
   }
 });

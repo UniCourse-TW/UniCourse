@@ -45,9 +45,10 @@
     "issue": null
   },
   "ntua": {
-    "status": "partial",
-    "note": "僅收錄推廣教育學分班；全校課表需登入且 robots.txt 禁止",
-    "issue": 3
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；全校課表需登入且 robots.txt 禁止，官網只公開推廣教育學分班（不納入）",
+    "issue": 3,
+    "source": "tvc"
   },
   "ncku": {
     "status": "live",
