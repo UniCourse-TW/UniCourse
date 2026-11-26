@@ -59,13 +59,13 @@ To preview course descriptions in a separate, limited output, set `UNICOURSE_NYC
 | `cos_id`, `cos_code` | `sourceId`, `courseCode` | Per-term course number and permanent course number, respectively. Distinct sections can share the latter. |
 | `cos_cname`, `cos_ename`, `teacher` | `title`, `titleEn`, `instructors` | Trim names and split staff on the roster's `、` separator. |
 | `dep_cname`, `dep_id` | `department`, `departmentCode` | Use the department from the primary course row when available; a query department UUID is not substituted for the row code. |
-| `cos_type`, `cos_credit`, `num_limit` | `requirementText`, `requirement`, `credits`, `capacity` | Map select labels with the shared helper; accept leading-dot credits such as `.30` and `.00`. Limits above 999 are the timetable's unlimited sentinel and are omitted. |
+| `cos_type`, `cos_credit`, `num_limit` | `requirementText`, `requirement`, `credits`, `capacity` | Map select labels with the shared helper; accept leading-dot credits such as `.30` and `.00`. Limits above 999 are the timetable's unlimited sentinel and are omitted; a limit of 0 on a course with registered students is omitted too. |
 | `reg_num` 修課人數 | `enrolled` | Use the public registered count, including zero. The timetable hides it during add/drop; omit blank or negative placeholders such as `-999`. |
 | `cos_time` | `scheduleText`, `schedule`, `campus` | Retain the raw line; parse weekday codes with compact periods and rooms; map the campus suffix when exactly one recognized campus is present. |
 | `language.授課語言代碼`, `memo` | `language`, `notes`, `grade` | Keep the published language code and remarks; redact email addresses. Populate grade only from an explicit `主開…年級` label. |
 | `crsoutline_type`, `acy`, `sem`, `cos_id` | `syllabusUrl`, `sourceUrl` | Use the timetable's `crsoutline` or `crsoutlinefile` link when present; otherwise point to the timetable. |
 | `crs_outline` | `description` | Only in explicitly limited description runs; render the outline as plain text. |
-| Remaining course columns, `URL`, nested `costype` and `brief` | `extra` | Keep original names. Serialize nonempty taxonomy metadata as JSON strings. Exclude teacher profile links (`TURL`). |
+| `cos_hours`, `dep_ename`, `URL`, nested `costype` and `brief` | `extra.上課時數`, `開課單位英文名稱`, `課程網頁`, `課程類別`, `通識向度` | `src/tidy.ts`: `costype` becomes the `、`-joined category names (`程式相關_程式相關` → `程式相關`), `brief` the `、`-joined labels. Internal codes (`degree`, `depType`, `dep_primary`, `dep_limit`), the English requirement copy (`cos_type_e`) and `crsoutline_type` are dropped, as is any other ASCII-named column, so raw API names never reach the course page. Teacher profile links (`TURL`) are excluded. HTML entities and DEL bytes in titles are decoded/removed. |
 
 ## Known gaps
 

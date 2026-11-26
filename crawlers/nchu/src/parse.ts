@@ -1,4 +1,5 @@
 import { compact, loadHtml, requirementFromText, type Meeting, type Offering } from '@unicourse/crawler-kit';
+import { tidyOffering } from './tidy.ts';
 
 export const sourceUrl = 'https://onepiece.nchu.edu.tw/cofsys/plsql/crseqry_all';
 
@@ -142,7 +143,7 @@ export function parseList(html: string, yearTerm: string): Offering[] {
       }));
     }
   }
-  return [...offerings.values()];
+  return [...offerings.values()].map(tidyOffering);
 }
 
 export function parseDescription(html: string) {
@@ -165,7 +166,7 @@ export function parseSyllabusOffering(html: string, url: URL, selectionNumber: s
     throw new Error(`NCHU: syllabus does not identify class ${sourceId} / ${selectionNumber} in ${yearTerm}`);
   }
   const requirementText = read('課程類別');
-  return compact({
+  return tidyOffering(compact({
     sourceId,
     courseCode: `${selectionNumber}@${yearTerm}`,
     title: title.slice(0, -titleSuffix.length).replace(/^\(中\)\s*/, '').trim(),
@@ -179,5 +180,5 @@ export function parseSyllabusOffering(html: string, url: URL, selectionNumber: s
     syllabusUrl: url.href,
     sourceUrl: url.href,
     extra: { 選課號碼: selectionNumber }
-  });
+  }));
 }

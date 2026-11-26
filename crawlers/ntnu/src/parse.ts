@@ -1,4 +1,5 @@
 import { compact, requirementFromText, type Meeting, type Offering } from '@unicourse/crawler-kit';
+import { tidyOffering } from './tidy.ts';
 
 /** Parsers for 臺師大課程查詢系統 (courseap2.itc.ntnu.edu.tw/acadmOpenCourse). */
 
@@ -167,7 +168,7 @@ export function toOffering(raw: RawCourse, detail?: { description?: string }): O
     授權碼名額: /^\d+$/.test((raw.authorize_p ?? '').trim()) ? Number(raw.authorize_p) : undefined,
     密集課程: raw.intensive === 'Y' ? true : undefined
   }) as Record<string, string | number | boolean>;
-  return compact({
+  return tidyOffering(compact({
     sourceId: raw.serial_no.trim(),
     courseCode: raw.course_code.trim(),
     classCode: clean(raw.course_group),
@@ -192,7 +193,7 @@ export function toOffering(raw: RawCourse, detail?: { description?: string }): O
     sourceUrl: url,
     notes: clean(raw.comment),
     extra: Object.keys(extra).length ? extra : undefined
-  }) as Offering;
+  }) as Offering);
 }
 
 /** 課程簡介 from SyllabusCtrl: the page embeds `var cof_outline = {...,"brief":"..."};`. */

@@ -76,9 +76,9 @@ Quirks across the years:
 | 科目名稱 | `title`, `titleEn` | Chinese and English lines, when present. |
 | 上課教師、實習教師 | `instructors` | Split the listed names, preferring the full roster from the hover text; merge and deduplicate. |
 | 開課單位 | `department` | The offering unit, not the enrollment cohort. |
-| 選課系所、年級、班別 | `extra.選課系所`, `grade`, `classCode` | From the cohort header. Grade `0` has no target year. |
+| 選課系所、年級、班別 | `extra.選課系所`, `grade`, `classCode` | From the cohort header (NBSP padding collapsed: `B02 循環經濟研究學院(研究所)`). Grade `0` has no target year. |
 | 必選別、學分數、開課人數、授課語言 | `requirementText`, `requirement`, `credits`, `capacity`, `language` | Keep published labels; normalize only the requirement enum and numeric fields. |
-| 開課人數 − 可加選餘額 | `enrolled` | No direct enrolled count is published in the list. Subtract only when both fields are published as nonnegative integers and the remaining balance does not exceed capacity. Keep the source balance in `extra`. |
+| 開課人數 − 可加選餘額 | `enrolled` | No direct enrolled count is published in the list. Subtract only when both fields are published as nonnegative integers and the remaining balance does not exceed capacity. Keep the source balance in `extra`. 開課人數 9999 (操行 and similar) means unlimited: neither `capacity` nor the derived `enrolled` is kept. |
 | 上課時間、上課教室、實習時間、實習教室 | `scheduleText`, `schedule` | Keep text in display order. Decode weekdays, periods (`1`–`9`, `A`–`D`, noon `M`), and aligned rooms; `*` does not identify a set time or room. |
 | 課程大綱、課程簡述 | `sourceUrl`, `syllabusUrl`, `description` | Keep the per-offering link; description is smoke-only opt-in. |
 | 備註 | `notes` | Omit clauses containing contact details. |

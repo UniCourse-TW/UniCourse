@@ -1,4 +1,5 @@
 import { compact, loadHtml, requirementFromText, type Meeting, type Offering } from '@unicourse/crawler-kit';
+import { tidyOffering } from './tidy.ts';
 
 export const sourceUrl = 'https://ecourse2.ccu.edu.tw/local/syllabus/syllabus_dep.php';
 
@@ -75,7 +76,7 @@ export function parseDepartment(html: string, listUrl: URL, year: number, semest
       遠距教學: rawText('遠距教學'),
       核心能力: headers.includes('核心能力') ? cell('核心能力').find('a').attr('href') ?? '' : ''
     });
-    return compact({
+    return tidyOffering(compact({
       sourceId,
       courseCode,
       classCode,
@@ -91,7 +92,7 @@ export function parseDepartment(html: string, listUrl: URL, year: number, semest
       syllabusUrl: detail?.href,
       sourceUrl: detail?.href ?? listUrl.href,
       extra: Object.keys(extra).length ? extra : undefined
-    });
+    }));
   }).get();
 }
 

@@ -6,6 +6,7 @@ import {
   addArchivedEnrollment, addArchivedRequirements, catalogArchives, normalizeArchiveRows, requirementArchives, selectTermRows
 } from './archive.ts';
 import { parseDepartments, parseOfferings } from './parse.ts';
+import { tidyOffering } from './tidy.ts';
 
 const sample = JSON.parse(readFileSync(new URL('./samples/courses.json', import.meta.url), 'utf8'));
 const departments = parseDepartments(readFileSync(new URL('./samples/departments.html', import.meta.url), 'utf8'));
@@ -139,4 +140,30 @@ test('reads the 104 sheet with its English title and the 108–112 layouts', () 
   const [first] = parseOfferings(normalizeArchiveRows(later), '112-1', new Map());
   assert.equal(first.department, '分析與環境科學研究所');
   assert.ok(first.enrolled !== undefined);
+});
+
+test('tidyOffering turns HTML and tab-separated extra values into text and drops a 0 limit with students', () => {
+  const old = {
+    sourceId: '11510AIA 400100',
+    courseCode: 'AIA 400100',
+    title: '深度學習',
+    instructors: [],
+    capacity: 0,
+    enrolled: 4,
+    sourceUrl: 'https://curricul.site.nthu.edu.tw/p/404-1208-111356.php?Lang=zh-tw#json',
+    extra: {
+      擋修說明: '<div>\n  擋修對象 : 全校 <br>\n  先修科目 : <BR><BR>未修過人工智慧導論<BR><br>上述條件一定要有，則不擋修。</div>',
+      第一二專長對應: '環境科技學程(第二專長)\t能源與環境(第一專長)',
+      新生保留人數: '0'
+    }
+  } as Offering;
+  const once = tidyOffering(old);
+  assert.equal(once.capacity, undefined);
+  assert.deepEqual(once.extra, {
+    擋修說明: '擋修對象 : 全校\n先修科目 :\n未修過人工智慧導論\n上述條件一定要有，則不擋修。',
+    第一二專長對應: '環境科技學程(第二專長)、能源與環境(第一專長)',
+    新生保留人數: '0'
+  });
+  assert.deepEqual(tidyOffering(once), once);
+  assert.equal(tidyOffering({ ...old, enrolled: 0 }).capacity, 0);
 });

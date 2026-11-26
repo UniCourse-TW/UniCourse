@@ -1,0 +1,185 @@
+{
+ "_comment": "GetUnitList degree 1 deptId NM and trimmed GetType1Result rows (115-1, fetched 2026-11-27): 13-character unit names, 開放名額 below 實收名額, one 選課代碼 under two programs.",
+ "units": [
+  {
+   "name": "澳洲墨爾本皇家理工大學商學",
+   "id": "NM02"
+  },
+  {
+   "name": "電機資訊雙學士學位學程",
+   "id": "NM03"
+  },
+  {
+   "name": "商學大數據分析雙學士學位學",
+   "id": "NM04"
+  },
+  {
+   "name": "美國加州聖荷西州立大學電機",
+   "id": "NM06"
+  },
+  {
+   "name": "美國加州舊金山州立大學資訊",
+   "id": "NM07"
+  },
+  {
+   "name": "國際雙學士學位學程",
+   "id": "NM08"
+  },
+  {
+   "name": "澳洲昆士蘭大學商學雙學士學",
+   "id": "NM09"
+  },
+  {
+   "name": "澳洲蒙納許大學資訊工程雙學",
+   "id": "NM10"
+  },
+  {
+   "name": "澳洲昆士蘭大學電機工程雙學",
+   "id": "NM12"
+  },
+  {
+   "name": "澳洲新南威爾斯大學設計雙學",
+   "id": "NM13"
+  }
+ ],
+ "items": [
+  {
+   "scr_selcode": "2823",
+   "sub_id3": "ISTM114",
+   "sub_name": "解析幾何與微積分I",
+   "scr_credit": 4.0,
+   "scj_scr_mso": "必修",
+   "scr_examid": "否",
+   "scr_examfn": "否",
+   "scr_exambf": "否",
+   "cls_name": "電機一(SJSU)",
+   "scr_period": "(一)09-10 V003教室(共善樓) (二)09-10 V003教室(共善樓) 許佳璵",
+   "scr_precnt": 30.0,
+   "scr_acptcnt": 51.0,
+   "scr_remarks": " ",
+   "unt_ls": 4905,
+   "cls_id": "NM06110",
+   "sub_id": "68701",
+   "scr_dup": "001",
+   "scr_ldl": "課堂教學",
+   "scr_english": "Y",
+   "scr_teacher": "許佳璵",
+   "scr_date": "全學期"
+  },
+  {
+   "scr_selcode": "2832",
+   "sub_id3": "ISTM115",
+   "sub_name": "力學",
+   "scr_credit": 4.0,
+   "scj_scr_mso": "必修",
+   "scr_examid": "否",
+   "scr_examfn": "否",
+   "scr_exambf": "否",
+   "cls_name": "電機一(SJSU)",
+   "scr_period": "(一)07-08 V008教室(共善樓) (二)06-08 科航104(物實驗室四) (四)09     V008教室(共善樓) 林中一",
+   "scr_precnt": 20.0,
+   "scr_acptcnt": 46.0,
+   "scr_remarks": " ",
+   "unt_ls": 4905,
+   "cls_id": "NM06110",
+   "sub_id": "00732",
+   "scr_dup": "001",
+   "scr_ldl": "課堂教學",
+   "scr_english": "Y",
+   "scr_teacher": "林中一",
+   "scr_date": "全學期"
+  },
+  {
+   "scr_selcode": "2832",
+   "sub_id3": "ISTM115",
+   "sub_name": "力學",
+   "scr_credit": 4.0,
+   "scj_scr_mso": "必修",
+   "scr_examid": "否",
+   "scr_examfn": "否",
+   "scr_exambf": "否",
+   "cls_name": "資工一(SFSU)",
+   "scr_period": "(一)07-08 V008教室(共善樓) (二)06-08 科航104(物實驗室四) (四)09     V008教室(共善樓) 林中一",
+   "scr_precnt": 20.0,
+   "scr_acptcnt": 46.0,
+   "scr_remarks": " ",
+   "unt_ls": 4906,
+   "cls_id": "NM07110",
+   "sub_id": "00732",
+   "scr_dup": "001",
+   "scr_ldl": "課堂教學",
+   "scr_english": "Y",
+   "scr_teacher": "林中一",
+   "scr_date": "全學期"
+  },
+  {
+   "scr_selcode": "2836",
+   "sub_id3": "ISTM114",
+   "sub_name": "解析幾何與微積分I",
+   "scr_credit": 4.0,
+   "scj_scr_mso": "必修",
+   "scr_examid": "否",
+   "scr_examfn": "否",
+   "scr_exambf": "否",
+   "cls_name": "資工一(SFSU)",
+   "scr_period": "(一)03-04 V013教室(共善樓) (二)03-04 V013教室(共善樓) 林育德",
+   "scr_precnt": 0.0,
+   "scr_acptcnt": 18.0,
+   "scr_remarks": " ",
+   "unt_ls": 4906,
+   "cls_id": "NM07110",
+   "sub_id": "68701",
+   "scr_dup": "001",
+   "scr_ldl": "課堂教學",
+   "scr_english": "Y",
+   "scr_teacher": "林育德",
+   "scr_date": "全學期"
+  },
+  {
+   "scr_selcode": "2838",
+   "sub_id3": "GEID0010",
+   "sub_name": "班級活動",
+   "scr_credit": 0.0,
+   "scj_scr_mso": "必修",
+   "scr_examid": "否",
+   "scr_examfn": "否",
+   "scr_exambf": "否",
+   "cls_name": "資工二(SFSU)",
+   "scr_period": "(二)05     商201 林育德",
+   "scr_precnt": 30.0,
+   "scr_acptcnt": 6.0,
+   "scr_remarks": null,
+   "unt_ls": 4906,
+   "cls_id": "NM07120",
+   "sub_id": "00001",
+   "scr_dup": "001",
+   "scr_ldl": "課堂教學",
+   "scr_english": "N",
+   "scr_teacher": "林育德",
+   "scr_date": "全學期"
+  },
+  {
+   "scr_selcode": "2823",
+   "sub_id3": "ISTM114",
+   "sub_name": "解析幾何與微積分I",
+   "scr_credit": 4.0,
+   "scj_scr_mso": "必修",
+   "scr_examid": "否",
+   "scr_examfn": "否",
+   "scr_exambf": "否",
+   "cls_name": "電機一(UQ)",
+   "scr_period": "(一)09-10 V003教室(共善樓) (二)09-10 V003教室(共善樓) 許佳璵",
+   "scr_precnt": 30.0,
+   "scr_acptcnt": 51.0,
+   "scr_remarks": " ",
+   "unt_ls": 4911,
+   "cls_id": "NM12110",
+   "sub_id": "68701",
+   "scr_dup": "001",
+   "scr_ldl": "課堂教學",
+   "scr_english": "Y",
+   "scr_teacher": "許佳璵",
+   "scr_date": "全學期"
+  }
+ ]
+}

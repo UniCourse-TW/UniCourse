@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { Offering } from '@unicourse/crawler-kit';
 import { parseDescription, parseOfferings, parseSchedule, preferredCourse } from './parse.ts';
+import { briefs, courseCategories, tidyOffering } from './tidy.ts';
 
 const sample = JSON.parse(readFileSync(new URL('./samples/department.json', import.meta.url), 'utf8'));
 const candidates = parseOfferings(sample, '115', '1');
@@ -94,4 +95,61 @@ test('parses a pre-merger term (105-1, former National Yang-Ming University rows
   assert.deepEqual(psychology?.schedule, [{ day: 2, periods: ['3', '4'], location: 'YT206' }]);
   assert.deepEqual(rows.find(({ sourceId }) => sourceId === 'A024')?.instructors, []);
   assert.throws(() => parseOfferings(legacy, '109', '1'), /unexpected term/);
+});
+
+test('tidyOffering replaces raw timetable columns with readable labels', () => {
+  const offerings = candidates.filter(({ primary }) => primary).map(({ offering }) => tidyOffering(offering));
+  Offering.array().parse(offerings);
+  for (const offering of offerings) {
+    for (const key of Object.keys(offering.extra ?? {})) assert.doesNotMatch(key, /^[A-Za-z0-9_]+$/, key);
+  }
+  const course = offerings.find(({ sourceId }) => sourceId === '515611')!;
+  assert.equal(course.extra?.上課時數, 3);
+  assert.equal(course.extra?.cos_hours, undefined);
+  const withCategories = offerings.find(({ extra }) => extra?.課程類別);
+  assert.ok(withCategories, 'sample has a costype course');
+  assert.doesNotMatch(String(withCategories.extra?.課程類別), /[{}_]/);
+});
+
+test('costype and brief JSON become short label lists', () => {
+  assert.equal(
+    courseCategories('{"大學導師_大學導師":{"course_category_cname":"大學導師_大學導師"},"x":{"course_category_cname":"通識校基本素養_通識校基本"}}'),
+    '大學導師、通識校基本素養'
+  );
+  assert.equal(briefs('{"Z1":{"brief_code":"Z1","brief":"其它(87),語言與溝通-第二外語(111)"}}'), '其它(87)、語言與溝通-第二外語(111)');
+  assert.equal(briefs('{"A":{"brief":"中級以上 Intermediate &amp; Up(98)"}}'), '中級以上 Intermediate & Up(98)');
+  // Already-converted values (a second retidy) are left as they are, apart from entity decoding.
+  assert.equal(briefs('中級以上 Intermediate &amp; Up(98)、華語(100)'), '中級以上 Intermediate & Up(98)、華語(100)');
+});
+
+test('tidyOffering repairs old snapshots and is idempotent', () => {
+  const old = {
+    sourceId: '517301',
+    courseCode: 'X',
+    title: '導師時間  -職涯學院',
+    titleEn: 'Mentor&#39;s Hours (I)\u007f',
+    instructors: [],
+    capacity: 0,
+    enrolled: 30,
+    sourceUrl: 'https://timetable.nycu.edu.tw/',
+    extra: {
+      dep_limit: 'N', cos_hours: '.00', degree: '1', dep_primary: '1', cos_type_e: 'Required', crsoutline_type: null,
+      depType: 'U', dep_ename: 'Department of Computer Science', URL: 'https://example.nycu.edu.tw/course'
+    }
+  } as Offering;
+  const once = tidyOffering(old);
+  assert.equal(once.titleEn, "Mentor's Hours (I)");
+  assert.equal(once.title, '導師時間 -職涯學院');
+  assert.equal(tidyOffering({ ...old, extra: { dep_ename: null } }).extra, undefined);
+  // Values already relabelled by an earlier retidy: nulls dropped, entities decoded.
+  assert.deepEqual(
+    tidyOffering({ ...old, extra: { 開課單位英文名稱: null, 課程網頁: 'https://x.test/', 通識向度: 'Science &amp; Technology' } }).extra,
+    { 課程網頁: 'https://x.test/', 通識向度: 'Science & Technology' }
+  );
+  assert.equal(once.capacity, undefined);
+  assert.equal(once.enrolled, 30);
+  assert.deepEqual(once.extra, { 開課單位英文名稱: 'Department of Computer Science', 課程網頁: 'https://example.nycu.edu.tw/course' });
+  assert.deepEqual(tidyOffering(once), once);
+  // A real zero-seat course without students keeps capacity 0.
+  assert.equal(tidyOffering({ ...old, enrolled: 0 }).capacity, 0);
 });

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { Offering } from '@unicourse/crawler-kit';
 import { parseDescription, parseList, parseSchedule, parseSyllabusOffering } from './parse.ts';
+import { tidyOffering } from './tidy.ts';
 
 const sample = (name: string) => readFileSync(new URL(`./samples/${name}`, import.meta.url), 'utf8');
 const list = sample('list-115-1.html');
@@ -107,4 +108,27 @@ test('does not group different subjects under a recycled selection number', () =
 test('keeps course notes while discarding contact clauses', () => {
   const html = list.replace('本課程為循環學院碩、博班核心課程，必修。', '必修。請洽 course@example.org。');
   assert.equal(parseList(html, '1151').find((row) => row.sourceId === '5412')?.notes, '必修。');
+});
+
+test('tidyOffering cleans NBSP context, doubled spaces and the 9999 no-limit value', () => {
+  const old = {
+    sourceId: '5069',
+    courseCode: '5069@1052',
+    title: '專題研究:  分子生物農業科學之動物學研究',
+    instructors: [],
+    capacity: 9999,
+    enrolled: 9999,
+    sourceUrl: 'https://onepiece.nchu.edu.tw/cofsys/plsql/Syllabus_main_q?v_strm=1052&v_class_nbr=5069',
+    extra: { 選課號碼: '5069', 選課系所: 'B02   循環經濟研究學院(研究所)', 可加選餘額: '0' }
+  } as Offering;
+  const once = tidyOffering(old);
+  assert.equal(once.title, '專題研究: 分子生物農業科學之動物學研究');
+  assert.equal(once.capacity, undefined);
+  assert.equal(once.enrolled, undefined);
+  assert.equal(once.extra?.選課系所, 'B02 循環經濟研究學院(研究所)');
+  assert.equal(once.extra?.可加選餘額, '0');
+  assert.deepEqual(tidyOffering(once), once);
+  const normal = tidyOffering({ ...old, capacity: 60, enrolled: 59 });
+  assert.equal(normal.capacity, 60);
+  assert.equal(normal.enrolled, 59);
 });

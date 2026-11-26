@@ -1,4 +1,5 @@
 import { compact, loadHtml, requirementFromText, type Meeting, type Offering } from '@unicourse/crawler-kit';
+import { tidyOffering } from './tidy.ts';
 
 export const sourceUrl = 'https://curricul.site.nthu.edu.tw/p/404-1208-111356.php?Lang=zh-tw#json';
 
@@ -109,7 +110,7 @@ export function parseOfferings(payload: unknown, term: string, departments: Read
         (typeof scalar === 'number' && Number.isFinite(scalar)) || scalar === null ? [[key, scalar]] : [];
     }));
 
-    return compact({
+    return tidyOffering(compact({
       sourceId,
       courseCode: `${departmentCode}${subject}`,
       classCode,
@@ -130,6 +131,6 @@ export function parseOfferings(payload: unknown, term: string, departments: Read
       sourceUrl: listingUrl,
       notes: withoutContactDetails(decodedText(row['備註'])),
       extra: Object.keys(extra).length ? extra : undefined
-    });
+    }));
   });
 }

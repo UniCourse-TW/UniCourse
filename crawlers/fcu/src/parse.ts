@@ -1,4 +1,5 @@
 import { compact, requirementFromText, type Meeting, type Offering } from '@unicourse/crawler-kit';
+import { tidyOffering } from './tidy.ts';
 
 export const SITE = 'https://coursesearch02.fcu.edu.tw';
 
@@ -213,11 +214,10 @@ export function buildOfferings(input: BuildInput): Offering[] {
       提前考: yesNo(item.scr_exambf),
       上課方式: placeholderToUndefined(oneLine(item.scr_ldl)),
       開課期程: placeholderToUndefined(oneLine(item.scr_date)),
-      'EMI課程': yesNo(item.scr_english),
-      unt_ls: unique(rows.map((r) => (r.item.unt_ls === null || r.item.unt_ls === undefined ? undefined : String(r.item.unt_ls)))).join(',')
+      'EMI課程': yesNo(item.scr_english)
     }) as Record<string, string | number | boolean>;
     offerings.push(
-      compact({
+      tidyOffering(compact({
         sourceId,
         courseCode,
         classCode: cleanText(item.scr_dup),
@@ -245,7 +245,7 @@ export function buildOfferings(input: BuildInput): Offering[] {
         sourceUrl: url,
         notes: cleanText(item.scr_remarks),
         extra: Object.keys(extra).length ? extra : undefined
-      }) as Offering
+      }) as Offering)
     );
   }
   return offerings.sort((a, b) => Number(a.sourceId) - Number(b.sourceId) || a.sourceId.localeCompare(b.sourceId));

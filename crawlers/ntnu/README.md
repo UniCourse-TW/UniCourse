@@ -112,7 +112,7 @@ ten-year target); note that 95-1 sample rows show `counter_exceptAuth = 0`, so e
 | `option_code` | `requirementText`, `requirement` | `必`/`選`/`通` (raw), mapped with `requirementFromText` (`通` → `general`) |
 | `time_inf` | `scheduleText`, `schedule` | `二 6-7 公館 Ｓ102, 四 3-4 …`: day, period range (0–10, A–D, expanded), room text as `location`. `請洽系所辦` is not kept as a location; `◎面授/同步`-style segments are kept only in `scheduleText` |
 | first token of `time_inf` room | `campus` | `和平` / `公館` / `林口`, only when all meetings agree |
-| `limit_count_h` (限修人數) | `capacity` | |
+| `limit_count_h` (限修人數) | `capacity` | Omitted when it is 0 and students are enrolled (not a real limit). |
 | `counter_exceptAuth` (選課人數，不含授權碼) | `enrolled` | The count displayed under 課程名額. Includes numeric zero, excludes enrollment through authorization codes as stated by the school; not substituted with the unlabeled `counter`. |
 | `eng_teach` = `是` | `language` = `英語` | omitted otherwise (not assumed to be 中文) |
 | `form_s` | `grade` | 年級 when the course targets one year |

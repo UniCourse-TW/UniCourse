@@ -60,7 +60,7 @@ that did not exist yet show no option for the term and contribute nothing (depar
 | 課程代碼 | `sourceId`, `courseCode`, `classCode` | For `1101620_01`, use the full code as the term's identity, `1101620` as the catalog code, and `01` as the class. |
 | 課程名稱及介紹 | `title`, `syllabusUrl`, `sourceUrl` | Keep the displayed title and link, if provided. |
 | 開課單位、系所查詢 `cd` | `department`, `departmentCode` | Use the published unit and its directory code. |
-| 授課教師 | `instructors` | Split the names, including team teaching. |
+| 授課教師 | `instructors` | Split the names, including team teaching. Bare staff numbers printed when a name is missing (`589142538`) are dropped. |
 | 學分數、必/選修 | `credits`, `requirementText`, `requirement` | Numeric credits and raw/normalized requirement. |
 | 上課時間 | `scheduleText`, `schedule` | Preserve the display text; parse weekdays and numeric or lettered periods. |
 | — | `enrolled` (omitted) | The public eCourse2 listing does not publish enrollment, capacity, or remaining seats. |

@@ -4,6 +4,7 @@ import {
   requirementArchives, selectTermRows, type CourseArchive
 } from './archive.ts';
 import { parseDepartments, parseOfferings, sourceUrl } from './parse.ts';
+import { tidyOffering } from './tidy.ts';
 
 const downloadUrl = 'https://nthu-courses-proxy.philosophysis.workers.dev/';
 const departmentUrl = 'https://curricul.site.nthu.edu.tw/p/406-1208-290466,r7880.php?Lang=zh-tw';
@@ -54,6 +55,8 @@ export const crawler = defineCrawler({
       requests += 1;
       addArchivedEnrollment(offerings, await fetchArchive(http, enrollment, term, log), enrollment.url);
     }
+    // Archived counts are joined after parsing, so run the cleanup again now that `enrolled` is known.
+    offerings = offerings.map(tidyOffering);
     log(`read ${offerings.length} offerings in ${requests} requests before retries`);
     const missingDepartments = new Set(offerings.filter(({ department }) => !department).map(({ departmentCode }) => departmentCode));
     if (missingDepartments.size) log(`unmapped department codes: ${[...missingDepartments].sort().join(', ')}`);

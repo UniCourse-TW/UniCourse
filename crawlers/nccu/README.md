@@ -93,8 +93,8 @@ corepack pnpm --filter @unicourse/crawler-nccu crawl -- --term 105-1 --out ../..
 | `note` | `notes` | `＠備註:` prefix removed; `無` / `N/A` dropped. |
 | syllabus `課程簡介` | `description` | Only with `NCCU_SYLLABUS=1`. |
 | syllabus `預收人數` | `capacity` | Only with `NCCU_SYLLABUS=1`. |
-| `info` | `extra.info` | 異動資訊 (e.g. `教室異動於2026/09/02;`), prefix removed, `無` dropped. |
-| `lmtKind`, `core`, `emiType`, `far`, `gdeType`, `gdeTpe`, `gdeTpeMsg`, `pay`, `smtQty`, `tranTpe`, `subOdr` | `extra.*` | Original API names: 通識類別, 是否核心通識, EMI 課程, 遠距, 開課層級 (學士班/碩士班…), 是否可抵免通識, 收費, 全學年/單學期, 選課方式 (必修灌檔/分派/…), 系所排序碼. `far` dropped when `無資料`. |
+| `info` | `extra.異動資訊` | e.g. `教室異動於2026/09/02;`, prefix removed, `無` dropped. |
+| `lmtKind`, `core`, `emiType`, `far`, `gdeType`, `gdeTpe`, `gdeTpeMsg`, `pay`, `smtQty`, `tranTpe` | `extra.通識類別`, `核心通識`, `EMI課程`, `遠距教學`, `開課層級`, `可抵免通識`, `可抵免通識說明`, `收費`, `全/半年`, `選課方式` | Labels from `src/tidy.ts` (the API names are not shown to students). `far` dropped when `無資料`; `subOdr` (系所排序碼) is dropped. Stray DEL bytes in text are removed. |
 
 ## Known gaps
 

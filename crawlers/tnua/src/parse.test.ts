@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { Offering } from '@unicourse/crawler-kit';
 import { parseFilters, parseIntroduction, parseSearch, toOffering } from './parse.ts';
+import { fieldList, tidyOffering } from './tidy.ts';
 
 const sample = (name: string) => readFileSync(new URL(`samples/${name}`, import.meta.url), 'utf8');
 
@@ -30,7 +31,9 @@ test('maps real music department rows and keeps official offering IDs', () => {
   assert.equal(forum.extra?.上限, '無');
   assert.deepEqual(forum.schedule, [{ day: 1, periods: ['5', '6'], location: 'M2601' }]);
   assert.equal(lecture.credits, 0.5);
-  assert.equal(lecture.capacity, 0);
+  // 選課上限 0 with students enrolled by the department is not a capacity (see tidy.ts).
+  assert.equal(lecture.capacity, undefined);
+  assert.ok(lecture.enrolled! > 0);
   assert.equal(lecture.schedule, undefined);
   assert.equal(lecture.scheduleText, '師生商定');
   assert.deepEqual(ensemble.schedule, [{ day: 2, periods: ['5', '6', 'N'] }, { day: 3, periods: ['7', '8'] }]);
@@ -64,4 +67,26 @@ test('maps old-term rows from a unit that is absent from the department dropdown
     assert.equal(offering.department, undefined);
     assert.equal(typeof offering.enrolled, 'number');
   }
+});
+
+test('tidyOffering decodes 領域 and drops a 0 limit with students', () => {
+  assert.equal(
+    fieldList('輔系理論組-藝術創作理論&amp;基礎課程,輔系理論組-藝術創作理論&amp;基礎課程,輔系創作組-理論課程,'),
+    '輔系理論組-藝術創作理論&基礎課程、輔系創作組-理論課程'
+  );
+  const old = {
+    sourceId: '1151-1110002',
+    courseCode: '1151-1110002',
+    title: '室內樂',
+    instructors: [],
+    capacity: 0,
+    enrolled: 1,
+    sourceUrl: 'https://selcrs1.tnua.edu.tw/CourseSearch/AdvancedSearch.aspx',
+    extra: { 領域: '合唱或管絃樂合奏,', 選課對象: '不開放', 學期別: '學期' }
+  } as Offering;
+  const once = tidyOffering(old);
+  assert.equal(once.capacity, undefined);
+  assert.deepEqual(once.extra, { 領域: '合唱或管絃樂合奏', 選課對象: '不開放', 學期別: '學期' });
+  assert.deepEqual(tidyOffering(once), once);
+  assert.equal(tidyOffering({ ...old, enrolled: 0 }).capacity, 0);
 });

@@ -1,4 +1,5 @@
 import { compact, loadHtml, requirementFromText, type Meeting, type Offering } from '@unicourse/crawler-kit';
+import { tidyOffering } from './tidy.ts';
 
 export const ENTRY_URL = 'https://qrysub.nccu.edu.tw/';
 export const API_BASE = 'https://es.nccu.edu.tw/course';
@@ -146,7 +147,7 @@ export function toOffering(row: NccuCourse, titleEn?: string): Offering {
     subOdr: nonEmpty(row.subOdr)
   } as Record<string, string | undefined>);
   const en = nonEmpty(titleEn);
-  return compact({
+  return tidyOffering(compact({
     sourceId: row.subNum.trim(),
     courseCode: row.subNum.trim(),
     title: row.subNam.trim(),
@@ -163,7 +164,7 @@ export function toOffering(row: NccuCourse, titleEn?: string): Offering {
     sourceUrl: syllabus ?? ENTRY_URL,
     notes: cleanLabelled(row.note),
     extra: Object.keys(extra).length ? extra : undefined
-  }) as Offering;
+  }) as Offering);
 }
 
 export interface SyllabusDetail {

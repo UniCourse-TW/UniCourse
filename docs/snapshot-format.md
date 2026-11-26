@@ -56,7 +56,7 @@ If a school only provides a code that is stable across terms, use it as both `co
 | `syllabusUrl` | string | no | URL of the official syllabus page for this offering. |
 | `sourceUrl` | string | yes | HTTP(S) URL of the official page this record came from (a detail page when available, otherwise the query system entry). No credentials in the URL. |
 | `notes` | string | no | Remarks (備註). |
-| `extra` | object | no | School-specific fields that do not fit above, as `{ string: string | number | boolean | null }`. Keep original field names; keys are non-empty, not `__proto__`, and contain no NUL. |
+| `extra` | object | no | School-specific fields that do not fit above, as `{ string: string | number | boolean | null }`. Keys are shown to students as labels: use the school's own UI label (Chinese), not API field names such as `unt_ls` or `gdeTpe`, and drop internal codes, sort keys and JSON blobs. Keys are non-empty, not `__proto__`, and contain no NUL. |
 
 Rules
 

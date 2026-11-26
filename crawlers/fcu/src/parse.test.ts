@@ -14,6 +14,7 @@ import {
   type FcuResult,
   type IdName
 } from './parse.ts';
+import { fullUnitName, tidyOffering } from './tidy.ts';
 
 const sample = async <T>(name: string): Promise<T> =>
   JSON.parse(await readFile(new URL(`./samples/${name}`, import.meta.url), 'utf8')) as T;
@@ -111,8 +112,7 @@ test('buildOfferings maps the sample rows into valid offerings', async () => {
       提前考: false,
       上課方式: '課堂教學',
       開課期程: '全學期',
-      EMI課程: false,
-      unt_ls: '4500'
+      EMI課程: false
     }
   });
 
@@ -178,4 +178,72 @@ test('ASMX helpers', async () => {
   assert.equal(syllabusToken('https://ilearntools.fcu.edu.tw/W320104/W320104_SyllabusFullVer.aspx?token=abc.def#!/fullVer/cht'), 'abc.def');
   const detail = await sample('syllabus-detail-2107.json');
   assert.match(descriptionFromDetail(detail)!, /^本課程主要設計給大學部工程與科學科系初級學生/);
+});
+
+test('dual-degree programs get their full name, not the 13-character unit column', async () => {
+  const nm = await sample<{ units: IdName[]; items: FcuResult['items'] }>('nm-dual-degree-115-1.json');
+  const rows: CollectedRow[] = nm.items!.map((item) => ({ degree: DEGREES[0], college: { id: 'NM', name: '國際科技與管理學院' }, item }));
+  const units = new Map(nm.units.map((u) => [u.id, u.name] as const));
+  const offerings = buildOfferings({ year: 115, sms: 1, rows, units, languages: new Map(), englishTitles: new Map() });
+  for (const offering of offerings) Offering.parse(offering);
+
+  // The judges saw 「美國加州舊金山州立大學資訊」 on 班級活動 of 資工二(SFSU): the right program, cut at 13 characters.
+  const homeroom = offerings.find((o) => o.sourceId === '2838')!;
+  assert.equal(homeroom.title, '班級活動');
+  assert.equal(homeroom.departmentCode, 'NM07');
+  assert.equal(homeroom.department, '美國加州舊金山州立大學資訊工程雙學士學位學程');
+  assert.equal(homeroom.capacity, 30);
+  assert.equal(homeroom.enrolled, 6);
+  assert.equal(homeroom.extra?.開放名額, undefined);
+  for (const offering of offerings) assert.equal(offering.extra && 'unt_ls' in offering.extra, false);
+
+  // 開放名額 0 / 30 with 18 and 51 students: the class is pre-registered, so it is not a capacity.
+  const calculus = offerings.find((o) => o.sourceId === '2836')!;
+  assert.equal(calculus.capacity, undefined);
+  assert.equal(calculus.enrolled, 18);
+  assert.equal(calculus.extra?.開放名額, 0);
+  assert.equal(offerings.find((o) => o.sourceId === '2823')!.extra?.開放名額, 30);
+
+  // One 選課代碼 under the SJSU and SFSU classes keeps the first program and lists both classes.
+  const mechanics = offerings.find((o) => o.sourceId === '2832')!;
+  assert.equal(mechanics.department, '美國加州聖荷西州立大學電機工程雙學士學位學程');
+  assert.equal(mechanics.extra?.開課班級, '電機一(SJSU)、資工一(SFSU)');
+});
+
+test('fullUnitName completes known truncations and marks unknown ones', () => {
+  assert.equal(fullUnitName('澳洲新南威爾斯大學設計雙學'), '澳洲新南威爾斯大學設計雙學士學位學程');
+  assert.equal(fullUnitName('智能製造與工程管理碩士在職'), '智能製造與工程管理碩士在職學位學程');
+  // 13 characters with a complete ending stay as they are.
+  assert.equal(fullUnitName('合作經濟暨社會事業經營學系'), '合作經濟暨社會事業經營學系');
+  assert.equal(fullUnitName('AI智慧城市與生活學分學程'), 'AI智慧城市與生活學分學程');
+  // Unknown cut names are marked instead of shown as whole.
+  assert.equal(fullUnitName('公共事務與社會創新碩士在職'), '公共事務與社會創新碩士在職…');
+  assert.equal(fullUnitName('資訊系'), '資訊系');
+});
+
+test('tidyOffering repairs old snapshots and is idempotent', () => {
+  const old = {
+    sourceId: '0095',
+    courseCode: 'MATH1001',
+    title: '微積分(一)實習',
+    instructors: [],
+    capacity: 5,
+    enrolled: 59,
+    sourceUrl: 'https://coursesearch02.fcu.edu.tw/CourseOutline.aspx?lang=cht&courseid=11510095',
+    extra: { 開課班級: '通識選修', 班級代碼: 'XC07111', 開課學院: '通識中心', unt_ls: '8888' }
+  } as Offering;
+  const once = tidyOffering(old);
+  assert.deepEqual(once, {
+    sourceId: '0095',
+    courseCode: 'MATH1001',
+    title: '微積分(一)實習',
+    instructors: [],
+    department: '通識中心',
+    enrolled: 59,
+    sourceUrl: old.sourceUrl,
+    extra: { 開課班級: '通識選修', 班級代碼: 'XC07111', 開課學院: '通識中心', 開放名額: 5 }
+  });
+  assert.deepEqual(tidyOffering(once), once);
+  // Several colleges: no guess.
+  assert.equal(tidyOffering({ ...old, extra: { 開課學院: '工科學院、資電學院' } }).department, undefined);
 });

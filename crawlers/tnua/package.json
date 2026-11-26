@@ -15,7 +15,8 @@
   "scripts": {
     "crawl": "tsx src/main.ts",
     "check": "tsc -p tsconfig.json",
-    "test": "node --import tsx --test src/*.test.ts"
+    "test": "node --import tsx --test src/*.test.ts",
+    "retidy": "tsx src/retidy.ts"
   },
   "dependencies": {
     "@unicourse/crawler-kit": "workspace:*"
