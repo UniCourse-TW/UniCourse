@@ -68,11 +68,15 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(page).toHaveURL(/\/forum\?school=nthu&courseCode=DEMO201/);
   await expect(page.getByRole('group', { name: '已套用的篩選' })).toContainText('DEMO201');
   // The compose drawer opens from the page head and is prefilled with the course.
-  await page.locator('summary', { hasText: '發表文章' }).click();
   const compose = page.getByRole('region', { name: '發表文章' });
-  await expect(compose.getByLabel('相關課號')).toHaveValue('DEMO201');
-  // The lookup is a server action round trip; allow for a cold dev server when the suite runs in parallel.
-  await expect(compose.getByText('✓ 線性代數')).toBeVisible({ timeout: 15_000 });
+  // A cold dev server can reload the page right after navigation, which closes the drawer, so open it
+  // and wait for the course lookup as one retried step.
+  await expect(async () => {
+    const drawer = page.locator('summary', { hasText: '發表文章' });
+    if (!(await compose.getByLabel('標題').isVisible())) await drawer.click();
+    await expect(compose.getByLabel('相關課號')).toHaveValue('DEMO201', { timeout: 1000 });
+    await expect(compose.getByText('✓ 線性代數')).toBeVisible({ timeout: 3000 });
+  }).toPass({ timeout: 30_000 });
   await compose.getByRole('radio', { name: '提問' }).check();
   await compose.getByLabel('標題').fill(title);
   await compose.getByLabel('內容', { exact: true }).fill('第一行\n<b>不是粗體</b>');
