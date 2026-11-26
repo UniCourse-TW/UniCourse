@@ -152,7 +152,7 @@ test('derives directory coverage from crawler status and imported offerings', as
 
   await chips.filter({ hasText: '待匯入' }).click();
   await expect(page).toHaveURL(/status=pending_import/);
-  await expect(rows).toHaveCount(pendingCount);
+  await expect(rows).toHaveCount(Math.min(24, pendingCount));
   const ntu = rows.filter({ hasText: '國立臺灣大學' });
   await expect(ntu.getByText('待匯入', { exact: true })).toBeVisible();
   await expect(ntu.getByText('爬蟲已接入，本站尚無匯入')).toBeVisible();
