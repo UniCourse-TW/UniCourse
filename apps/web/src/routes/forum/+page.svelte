@@ -3,7 +3,7 @@
   import '$lib/community-ui.css';
   import CommunityCompose from '$lib/community-compose.svelte';
   import CommunityPostList from '$lib/community-post-list.svelte';
-  import { shortDateTime } from '$lib/community-format';
+  import { postTypeLabels, shortDateTime } from '$lib/community-format';
   import { forumHref, loginHref } from '$lib/community-paths';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import FilterSelect from '$lib/ui/FilterSelect.svelte';
@@ -20,11 +20,14 @@
   let last = $derived(first + data.posts.posts.length - 1);
   let filtered = $derived(Boolean(filters.type || filters.school || filters.q || filters.tag));
   let narrowed = $derived(Boolean(filters.school || filters.q || filters.tag));
+  /** Only a category chip is active: the empty state can speak about that category. */
+  let onlyType = $derived(Boolean(filters.type) && !narrowed && !filters.courseCode);
+  let scopeCount = $derived(Number(Boolean(filters.school)) + Number(Boolean(filters.courseCode)));
   // `form` is a failed create (it carries `title`); course checks never land here.
   let created = $derived(form && 'title' in form && typeof form.title === 'string' ? form : undefined);
   let draft = $derived(
     created ?? {
-      type: 'question',
+      type: filters.type || 'question',
       title: '',
       content: '',
       school: filters.school,
@@ -35,14 +38,15 @@
   let composeOpen = $derived(data.compose || Boolean(created));
   let closeHref = $derived(forumHref(filters));
   let composeHref = $derived(`${forumHref(filters)}${forumHref(filters).includes('?') ? '&' : '?'}compose=1`);
+  let composeOrLogin = $derived(data.user ? composeHref : loginHref(composeHref));
 
   const fmt = new Intl.NumberFormat('zh-TW');
   const count = (value: number | null) => (value === null ? '' : fmt.format(value));
   const typeChips = [
     { type: '', label: '全部', key: 'all' },
-    { type: 'question', label: '提問', key: 'question' },
-    { type: 'article', label: '文章', key: 'article' },
-    { type: 'announcement', label: '公告', key: 'announcement' }
+    { type: 'question', label: postTypeLabels.question, key: 'question' },
+    { type: 'article', label: postTypeLabels.article, key: 'article' },
+    { type: 'announcement', label: postTypeLabels.announcement, key: 'announcement' }
   ] as const;
 </script>
 
@@ -53,13 +57,13 @@
 
 <div class="cm forum">
   <header class="cm-head">
-      <h1>論壇</h1>
-      <p class="cm-dek">
-        修課心得、選課提問與公告
-        {#if data.counts.all !== null}<span class="sep">·</span>{narrowed || filters.courseCode ? '符合' : '共'} <span class="num">{fmt.format(data.counts.all)}</span> 篇{/if}
-        {#if data.latest}<span class="sep">·</span>最新 <time class="num" datetime={data.latest}>{shortDateTime(data.latest)}</time>{/if}
-        <span class="sep">·</span><a href="/terms">發文規則</a>
-      </p>
+    <h1>論壇</h1>
+    <p class="cm-dek">
+      修課心得、選課提問與公告
+      {#if data.counts.all !== null}<span class="sep">·</span>{narrowed || filters.courseCode ? '符合' : '共'} <span class="num">{fmt.format(data.counts.all)}</span> 篇{/if}
+      {#if data.latest}<span class="sep">·</span>最新 <time class="num" datetime={data.latest}>{shortDateTime(data.latest)}</time>{/if}
+      <span class="sep">·</span><a href="/terms#account">發文規則</a>
+    </p>
     <div class="cm-actions">
       {#if data.user}
         <CommunityCompose
@@ -76,26 +80,38 @@
     </div>
   </header>
 
+  <!-- Search covers title and body; the course scope (school + code) is a separate, visible control. -->
   <form method="GET" action="/forum" class="toolbar" aria-label="篩選文章">
     <label class="search">
       <span class="cm-sr">關鍵字</span>
       <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" /><path d="m13 13 4 4" /></svg>
-      <input name="q" type="search" maxlength="100" defaultValue={filters.q} placeholder="搜尋標題或內容" />
+      <input name="q" type="search" maxlength="100" defaultValue={filters.q} placeholder="搜尋標題或內文" aria-describedby="search-scope" />
     </label>
-    <FilterSelect name="school" label="學校" options={schoolOptions} value={filters.school} allLabel="全部學校" />
+    <details class="scope" open={scopeCount > 0 || undefined}>
+      <summary>課程範圍{#if scopeCount}<span class="badge-count">{scopeCount}</span>{/if}</summary>
+      <div class="scope-fields">
+        <FilterSelect name="school" label="學校" options={schoolOptions} value={filters.school} allLabel="全部學校" />
+        <label class="code-field">
+          <span>課號</span>
+          <input name="courseCode" maxlength="100" defaultValue={filters.courseCode} placeholder="例如 CS2001"
+            autocapitalize="characters" spellcheck="false" aria-describedby="code-hint" />
+        </label>
+      </div>
+    </details>
     {#if filters.type}<input type="hidden" name="type" value={filters.type} />{/if}
-    {#if filters.courseCode}<input type="hidden" name="courseCode" value={filters.courseCode} />{/if}
     {#if filters.tag}<input type="hidden" name="tag" value={filters.tag} />{/if}
     <button class="cm-btn">套用</button>
     {#if filtered || filters.courseCode}<a class="clear" href="/forum">清除</a>{/if}
+    <p class="scope-hint" id="search-scope"><span id="code-hint">關鍵字比對標題與內文；要找特定班次，請在「課程範圍」選學校並填課號。</span></p>
   </form>
 
   <div class="chip-bar">
     <nav class="cm-chips types" aria-label="文章分類">
       {#each typeChips as chip (chip.key)}
-        <a class="cm-chip" href={forumHref({ ...filters, type: chip.type, page: 1 })}
+        {@const n = data.counts[chip.key]}
+        <a class="cm-chip" class:zero={n === 0} href={forumHref({ ...filters, type: chip.type, page: 1 })}
           aria-current={filters.type === chip.type ? 'true' : undefined}>
-          {chip.label}{#if data.counts[chip.key] !== null}<span class="n">{count(data.counts[chip.key])}</span>{/if}
+          {chip.label}{#if n !== null}<span class="n">{count(n)}</span>{/if}
         </a>
       {/each}
     </nav>
@@ -124,28 +140,42 @@
   <section aria-labelledby="results" class="results">
     <h2 id="results" class="cm-sr">{filtered ? '符合的文章' : '最新文章'}（{total}）</h2>
     {#if data.posts.posts.length === 0}
-      {#if filtered || filters.courseCode}
+      {#if onlyType}
+        <EmptyState title="還沒有{postTypeLabels[filters.type || 'question']}" description={filters.type === 'announcement' ? '公告由管理員發布；有新公告時會出現在這裡。' : `第一篇${postTypeLabels[filters.type || 'question']}就從你開始，發文時選「${postTypeLabels[filters.type || 'question']}」即可。`}>
+          {#snippet action()}
+            <div class="state-actions">
+              {#if filters.type !== 'announcement'}<a class="cm-btn" href={composeOrLogin}>發表第一篇{postTypeLabels[filters.type || 'question']}</a>{/if}
+              <a class="cm-btn secondary" href="/forum">看全部文章</a>
+            </div>
+          {/snippet}
+        </EmptyState>
+      {:else if filtered || filters.courseCode}
         <EmptyState title="沒有符合的文章" description={filters.courseCode ? `${schoolNames[filters.school] ?? filters.school} ${filters.courseCode} 還沒有人發文，你可以發表第一篇。` : '換個關鍵字或分類，或清除篩選看全部文章。'}>
           {#snippet action()}
             <div class="state-actions">
               {#if filters.courseCode}
-                <a class="cm-btn" href={data.user ? composeHref : loginHref(composeHref)}>發表這門課的第一篇</a>
+                <a class="cm-btn" href={composeOrLogin}>發表這門課的第一篇</a>
               {/if}
               <a class="cm-btn secondary" href="/forum">清除篩選</a>
             </div>
           {/snippet}
         </EmptyState>
       {:else}
-        <EmptyState title="還沒有文章，來發表第一篇吧。" description="修課心得、選課提問都歡迎。">
+        <EmptyState title="還沒有文章，來發表第一篇吧。" description="修課心得、選課提問都歡迎；從課程頁的「相關討論」進來會自動帶上課號。">
           {#snippet action()}
-            <a class="cm-btn secondary" href={data.user ? '/forum?compose=1' : loginHref('/forum?compose=1')}>發表文章</a>
+            <div class="state-actions">
+              <a class="cm-btn" href={data.user ? '/forum?compose=1' : loginHref('/forum?compose=1')}>發表文章</a>
+              <a class="cm-btn secondary" href="/">先去查課</a>
+            </div>
           {/snippet}
         </EmptyState>
       {/if}
     {:else}
       <CommunityPostList posts={data.posts.posts} {schoolNames} label={filtered ? '符合的文章' : '最新文章'} />
       <footer class="pager">
-        <p class="num">第 {fmt.format(first)}–{fmt.format(last)} 篇<span class="sep">·</span>共 {fmt.format(total)} 篇</p>
+        <p class="num">
+          {#if pages > 1}第 {fmt.format(first)}–{fmt.format(last)} 篇<span class="sep">·</span>{/if}共 {fmt.format(total)} 篇
+        </p>
         <Pagination url={page.url} page={filters.page} totalPages={pages} label="文章分頁" />
       </footer>
     {/if}
@@ -174,7 +204,7 @@
     stroke-linecap: round;
     pointer-events: none;
   }
-  .search input {
+  .search input, .code-field input {
     inline-size: 100%;
     min-block-size: var(--target-min);
     padding: 0 0.75rem 0 2.25rem;
@@ -185,9 +215,28 @@
     color-scheme: var(--ui-color-scheme);
     font: var(--t-base) / 1.4 var(--font-sans);
   }
-  .search input::placeholder { color: var(--muted); }
-  .search input:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-color: var(--brand); }
+  .search input::placeholder, .code-field input::placeholder { color: var(--muted); }
+  .search input:focus-visible, .code-field input:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-color: var(--brand); }
   .toolbar :global(.field) { min-block-size: var(--target-min); }
+  /* Desktop: the scope fields sit inline in the toolbar; phones collapse them behind 課程範圍. */
+  .scope { display: contents; }
+  .scope summary { display: none; }
+  .scope::details-content { display: contents; content-visibility: visible; }
+  .scope-fields { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+  .code-field {
+    display: inline-flex;
+    align-items: center;
+    min-block-size: var(--target-min);
+    border: 1px solid var(--control-line);
+    border-radius: var(--radius-control);
+    background: var(--panel-raised);
+    color: var(--muted);
+    font: 600 var(--t-sm) / var(--leading-tight) var(--font-sans);
+  }
+  .code-field span { padding-inline-start: var(--space-2); white-space: nowrap; }
+  .code-field input { inline-size: 8.5rem; padding-inline: var(--space-2); border: 0; background: transparent; font-family: var(--font-mono); }
+  .code-field:has(input:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .code-field input:focus-visible { outline: none; }
   .clear {
     display: inline-flex;
     align-items: center;
@@ -196,6 +245,7 @@
     font-size: var(--t-base);
     font-weight: 600;
   }
+  .scope-hint { flex-basis: 100%; margin: 0 !important; color: var(--muted); font-size: var(--t-sm); }
   .chip-bar {
     display: flex;
     flex-wrap: wrap;
@@ -204,6 +254,8 @@
     justify-content: space-between;
     margin-block: var(--space-3) var(--space-4);
   }
+  .cm-chip.zero:not([aria-current]) { color: var(--muted) !important; }
+  .cm-chip.zero:not([aria-current]) .n { opacity: 0.7; }
   .results { min-inline-size: 0; }
   .pager {
     display: flex;
@@ -219,9 +271,37 @@
   .state-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }
 
   @media (max-width: 40rem) {
-    .search { flex-basis: 100%; }
-    .toolbar :global(.field) { flex: 1 1 0; }
-    .toolbar :global(.field select) { flex: 1; max-inline-size: none; }
+    .search { flex: 1 1 10rem; }
+    .scope { display: block; }
+    .scope::details-content { display: block; content-visibility: auto; }
+    .scope:not([open])::details-content { content-visibility: hidden; }
+    .scope summary {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      min-block-size: var(--target-min);
+      padding: 0 var(--space-3);
+      border: 1px solid var(--control-line);
+      border-radius: var(--radius-control);
+      background: var(--panel-raised);
+      color: var(--ink-2);
+      font-size: var(--t-base);
+      font-weight: 600;
+      cursor: pointer;
+      list-style: none;
+      white-space: nowrap;
+    }
+    .scope summary::-webkit-details-marker { display: none; }
+    .scope summary::after { content: '▾'; color: var(--muted); }
+    .scope[open] summary::after { content: '▴'; }
+    .badge-count { display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 5px; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); }
+    .scope-fields { flex-basis: 100%; padding-block-start: var(--space-2); }
+    .scope-fields :global(.field) { flex: 1 1 100%; }
+    .scope-fields :global(.field select) { flex: 1; max-inline-size: none; }
+    .code-field { flex: 1 1 100%; }
+    .code-field input { flex: 1; inline-size: auto; }
+    .toolbar > .cm-btn { flex: 1 1 auto; }
+    .scope-hint { display: none; }
     /* Category chips scroll sideways rather than wrapping into a tall block. */
     .types {
       flex-wrap: nowrap;
@@ -230,6 +310,10 @@
       margin-inline: calc(-1 * var(--space-4));
       padding-inline: var(--space-4);
       inline-size: calc(100% + 2 * var(--space-4));
+      mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
     }
+  }
+  @media (min-width: 40.01rem) {
+    .badge-count { display: none; }
   }
 </style>

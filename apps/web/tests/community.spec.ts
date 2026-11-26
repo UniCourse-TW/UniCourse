@@ -44,7 +44,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(page.getByRole('heading', { name: '建立帳號' })).toBeVisible();
   await page.getByLabel('帳號').fill(username);
   await page.getByLabel('密碼').fill('correct horse battery');
-  await page.getByLabel('顯示名稱（選填）').fill('測試同學');
+  await page.getByLabel('顯示名稱').fill('測試同學');
   await page.getByRole('button', { name: '註冊' }).click();
 
   await expect(page).toHaveURL(new RegExp(`/courses/${course.id}`));

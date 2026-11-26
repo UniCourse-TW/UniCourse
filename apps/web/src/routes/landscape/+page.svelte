@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { page } from '$app/state';
+  import { navigating, page } from '$app/state';
   import { ISSUES_URL, statusLabels as crawlLabels, systemLabels, systems } from '$lib/institutions';
   import {
     categories, categoryLabels, indexPolicy, indexPolicyLabels, institutionsByCode, kindLabels, loginLabel,
@@ -18,6 +18,7 @@
   import StatRow from '$lib/ui/StatRow.svelte';
   import StatTile from '$lib/ui/StatTile.svelte';
   import StatusPill from '$lib/ui/StatusPill.svelte';
+  import ChartValues from '$lib/ui/ChartValues.svelte';
   import type { BadgeTone } from '$lib/ui/types';
   import type { TableColumn } from '$lib/ui/types';
   import type { PageProps } from './$types';
@@ -33,8 +34,21 @@
   const number = new Intl.NumberFormat('zh-TW');
   const DATA_URL = 'https://github.com/UniCourse-TW/UniCourse/blob/main/data/course-sites.json';
 
-  // With JavaScript the toolbar applies itself on change; without it the 套用 button does the job.
+  // The toolbar looks the same with or without JavaScript: 套用 always submits. With JavaScript,
+  // changes also apply themselves after a short pause, and the result line says so while loading.
   let hydrated = $state(false);
+  let updating = $derived(Boolean(navigating.to?.url.pathname === '/landscape'));
+  /** The third-party table is a summary: the per-school sections below hold every site. */
+  const THIRD_PREVIEW = 25;
+  let showAllThird = $state(false);
+  let thirdRows = $derived(showAllThird || data.thirdParty.length <= THIRD_PREVIEW ? data.thirdParty : data.thirdParty.slice(0, THIRD_PREVIEW));
+  let schoolJump: HTMLSelectElement | undefined = $state();
+  function jumpToSchool(event: Event) {
+    const id = (event.currentTarget as HTMLSelectElement).value;
+    if (!id) return;
+    location.hash = id;
+    (event.currentTarget as HTMLSelectElement).value = '';
+  }
   let form: HTMLFormElement | undefined = $state();
   let debounce: ReturnType<typeof setTimeout> | undefined;
   onMount(() => {
@@ -67,7 +81,7 @@
   }
 
   const thirdColumns: TableColumn<Site>[] = [
-    { id: 'site', label: '網站', value: (site) => site.name, sortable: true, width: '17rem' },
+    { id: 'site', label: '網站', value: (site) => site.name, sortable: true, width: '15rem' },
     { id: 'schools', label: '學校', value: schoolsOf, sortable: true, width: '11rem' },
     { id: 'category', label: '功能', value: (site) => site.category.map((c) => categoryLabels[c]).join('、') },
     { id: 'operator', label: '營運者', value: (site) => operatorLabels[site.operator], sortable: true, width: '5rem' },
@@ -78,6 +92,14 @@
 
   let totalBySystem = $derived(data.bySystem.map((row) => row.active + row.inactive + row.unknown));
   const pct = (part: number, total: number) => (total ? (part / total) * 100 : 0);
+  const pctLabel = (part: number, total: number) => `${Math.round(pct(part, total))}%`;
+  const statusColumns: TableColumn<(typeof data.bySystem)[number]>[] = [
+    { id: 'system', label: '體系', value: (row) => row.label },
+    { id: 'active', label: '運作中', numeric: true, value: (row) => row.active },
+    { id: 'inactive', label: '停止', numeric: true, value: (row) => row.inactive },
+    { id: 'unknown', label: '不明', numeric: true, value: (row) => row.unknown },
+    { id: 'total', label: '合計', numeric: true, value: (row) => row.active + row.inactive + row.unknown }
+  ];
 </script>
 
 <svelte:head>
@@ -98,7 +120,7 @@
       </div>
     </div>
     <p class="dek">
-      全國 {number.format(data.totalSchools)} 所學校的官方課程系統與第三方查課工具，共 {number.format(data.totalSites)} 個
+      全國 {number.format(data.totalSchools)} 所大專校院，已盤點其中 {number.format(data.stats.schools)} 所的官方課程系統與第三方查課工具，共 {number.format(data.totalSites)} 個
       · 查核於 <time datetime={data.checkedAt}>{data.checkedAt.replaceAll('-', '/')}</time>
       · 狀態為當日探測結果
       {#if !data.crawl}· <span class="warn">各校收錄狀態暫時無法取得</span>{/if}
@@ -142,11 +164,13 @@
           </label>
         </div>
       </details>
-      <button type="submit" class="apply">套用</button>
+      <button type="submit" class="apply" aria-busy={updating || undefined}>套用</button>
       {#if filtered}<a class="clear" href="/landscape">清除</a>{/if}
     </form>
-    <p class="result" role="status">
-      {#if filtered}符合 <strong class="ui-tabular">{number.format(data.shownSites)}</strong> / {number.format(data.totalSites)} 個系統{:else}已盤點 {number.format(data.totalSites)} 個系統{/if}
+    <p class="result" role="status" aria-live="polite">
+      {#if updating}<span class="dot" aria-hidden="true"></span>更新中…
+      {:else if filtered}符合 <strong class="ui-tabular">{number.format(data.shownSites)}</strong> / {number.format(data.totalSites)} 個系統{#if hydrated} · 改變條件會自動套用{/if}
+      {:else}已盤點 {number.format(data.totalSites)} 個系統{#if hydrated} · 改變條件會自動套用{/if}{/if}
     </p>
     {#if filtered}
       <div class="chips" role="group" aria-label="已套用的篩選">
@@ -161,7 +185,7 @@
   </div>
 
   <StatRow label="網站統計">
-    <StatTile label="涉及學校" value={data.stats.schools} unit="所" note={`全國 ${number.format(data.totalSchools)} 所`} />
+    <StatTile label="已盤點到網站的學校" value={data.stats.schools} unit="所" note={`全國 ${number.format(data.totalSchools)} 所，其餘 ${number.format(data.totalSchools - data.stats.schools)} 所尚未盤點到`} />
     <StatTile label="官方系統" value={data.stats.official} unit="個" note="校方與政府營運" />
     <StatTile label="第三方服務" value={data.stats.third} unit="個" note="學生、社群與公司" />
     <StatTile label="運作中" value={data.stats.active} unit="個"
@@ -177,26 +201,29 @@
       <section class="panel" aria-labelledby="by-system">
         <SectionHeader id="by-system" level={2} title="各體系網站狀態" description="每條以該體系的網站總數為 100%；跨校平台計入每個涵蓋的學校體系。" />
         {#if data.bySystem.length}
+          <p class="legend" aria-hidden="true">
+            <span><i class="active"></i>運作中</span><span><i class="inactive"></i>停止</span><span><i class="unknown"></i>不明</span>
+          </p>
           <ul class="stack" aria-label="各體系網站狀態">
             {#each data.bySystem as row, index (row.system)}
               {@const total = totalBySystem[index]}
               <li>
-                <span class="stack-label">{row.label}</span>
+                <span class="stack-label">{row.label} <small class="ui-tabular">{number.format(total)} 個</small></span>
                 <span class="track" role="img"
                   aria-label={`${row.label}：運作中 ${row.active}、停止 ${row.inactive}、不明 ${row.unknown}，共 ${total} 個`}>
-                  <span class="seg active" style:inline-size={`${pct(row.active, total)}%`}></span>
-                  <span class="seg inactive" style:inline-size={`${pct(row.inactive, total)}%`}></span>
-                  <span class="seg unknown" style:inline-size={`${pct(row.unknown, total)}%`}></span>
+                  <span class="seg active" style:inline-size={`${pct(row.active, total)}%`}>{#if pct(row.active, total) >= 14}{pctLabel(row.active, total)}{/if}</span>
+                  <span class="seg inactive" style:inline-size={`${pct(row.inactive, total)}%`}>{#if pct(row.inactive, total) >= 14}{pctLabel(row.inactive, total)}{/if}</span>
+                  <span class="seg unknown" style:inline-size={`${pct(row.unknown, total)}%`}>{#if pct(row.unknown, total) >= 14}{pctLabel(row.unknown, total)}{/if}</span>
                 </span>
                 <span class="stack-values ui-tabular" aria-hidden="true">
-                  <b>{row.active}</b> / {row.inactive} / {row.unknown}
+                  <span class="v active"><i></i>{row.active}</span>
+                  <span class="v inactive"><i></i>{row.inactive}</span>
+                  <span class="v unknown"><i></i>{row.unknown}</span>
                 </span>
               </li>
             {/each}
           </ul>
-          <p class="legend" aria-hidden="true">
-            <span><i class="active"></i>運作中</span><span><i class="inactive"></i>停止</span><span><i class="unknown"></i>不明</span>
-          </p>
+          <ChartValues label="各體系網站狀態" columns={statusColumns} rows={data.bySystem} rowKey={(row) => row.system} />
         {:else}
           <p class="quiet">目前的篩選沒有歸屬任何體系的網站。</p>
         {/if}
@@ -213,9 +240,9 @@
         description="學生、社群與公司做的評價、排課、成績分布與彙整服務。「收錄策略」是 UniCourse 對該站內容的處理方式：只提供連結，或依站方 robots 允許索引不超過 120 字的摘要。">
         {#snippet actions()}<a class="action" href="/terms#reviews">收錄原則</a>{/snippet}
       </SectionHeader>
-      <DataTable caption={`第三方查課網站，共 ${number.format(data.thirdParty.length)} 個`} columns={thirdColumns}
-        rows={data.thirdParty} rowKey={(site) => site.url} rowHeaderColumn="site" stickyColumn="site"
-        rowHref={(site) => site.url} clientSort minWidth="58rem" maxHeight="32rem">
+      <DataTable caption={thirdRows.length < data.thirdParty.length ? `第三方查課網站，共 ${number.format(data.thirdParty.length)} 個，先列出運作中的前 ${THIRD_PREVIEW} 個` : `第三方查課網站，共 ${number.format(data.thirdParty.length)} 個`} columns={thirdColumns}
+        rows={thirdRows} rowKey={(site) => site.url} rowHeaderColumn="site" stickyColumn="site"
+        rowHref={(site) => site.url} clientSort minWidth="58rem" maxHeight="none">
         {#snippet cell(site, column)}
           {#if column.id === 'site'}
             <span class="site-cell">{site.name}<span class="ext" aria-hidden="true"> ↗</span>{#if site.operatorName}<small>{site.operatorName}</small>{/if}</span>
@@ -235,6 +262,15 @@
           <span>這組篩選沒有第三方網站。</span>
         {/snippet}
       </DataTable>
+      {#if thirdRows.length < data.thirdParty.length}
+        <p class="table-foot">
+          {#if hydrated}
+            <button type="button" class="action" onclick={() => (showAllThird = true)}>顯示全部 {number.format(data.thirdParty.length)} 個第三方網站</button>
+          {:else}
+            其餘 {number.format(data.thirdParty.length - thirdRows.length)} 個列在下方各校段落，或<a class="action" href="/landscape?kind=third">只看第三方網站</a>。
+          {/if}
+        </p>
+      {/if}
     </section>
 
     {#if data.cross.length}
@@ -243,14 +279,27 @@
           <h2 id="cross-title">跨校與全國平台 <small class="ui-tabular">{number.format(data.cross.length)} 個</small></h2>
           <p class="school-meta">教育部與聯盟平台、跨校 LMS，以及涵蓋多校的第三方服務。</p>
         </div>
-        <SitesList label="跨校與全國平台" sites={data.cross} showOperator />
+        <SitesList label="跨校與全國平台" sites={data.cross} showOperator collapseAfter={8} />
       </section>
     {/if}
 
     <section aria-labelledby="schools-title" class="schools">
       <SectionHeader id="schools-title" level={2} title="各校"
         description={`依教育部學校代碼排序，${filtered ? '只列出符合篩選的學校' : '沒有盤點到網站的學校也列出'}；收錄狀態與「各校收錄狀態」頁一致。`}>
-        {#snippet actions()}<a class="action" href="/schools">各校收錄狀態</a>{/snippet}
+        {#snippet actions()}
+          <!-- With JavaScript the select jumps to the school's anchor; without it, the form filters by the name. -->
+          <form method="GET" action="/landscape" class="jump" onsubmit={(event) => { if (hydrated) event.preventDefault(); }}>
+            <label class="jump-field">
+              <span>找我的學校</span>
+              <select name="q" bind:this={schoolJump} onchange={jumpToSchool}>
+                <option value="">選擇學校…</option>
+                {#each data.schools as school (school.code)}<option value={hydrated ? school.id : school.name}>{school.name}</option>{/each}
+              </select>
+            </label>
+            {#if !hydrated}<button type="submit" class="apply small">前往</button>{/if}
+          </form>
+          <a class="action" href="/schools">各校收錄狀態</a>
+        {/snippet}
       </SectionHeader>
       {#if data.schools.length === 0}
         <EmptyState title="沒有符合的學校" description="換個校名，或取消「只看有第三方站的學校」。">
@@ -387,10 +436,12 @@
     touch-action: manipulation;
   }
   .apply { color: var(--on-brand); background: var(--brand); cursor: pointer; }
-  .hydrated .apply { display: none; }
+  .apply[aria-busy='true'] { opacity: 0.6; cursor: progress; }
+  .apply.small { min-block-size: 2.25rem; }
   .clear:hover { background: var(--brand-wash); }
   :is(.apply, .clear, .action):focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .result { margin: 0; color: var(--muted); font-size: var(--t-sm); }
+  .result { display: flex; align-items: center; gap: var(--space-2); margin: 0; min-block-size: 1.25rem; color: var(--muted); font-size: var(--t-sm); }
+  .result .dot { inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--brand); }
   .result strong { color: var(--ink); font-weight: 600; }
   .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
@@ -398,17 +449,29 @@
   .viz { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--space-3); }
   .panel { display: grid; gap: var(--space-3); align-content: start; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); min-inline-size: 0; }
   .stack { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; font-size: var(--t-base); }
-  .stack li { display: grid; grid-template-columns: 6.5rem 1fr 7rem; gap: var(--space-2); align-items: center; }
+  .stack li { display: grid; grid-template-columns: 7.5rem 1fr 9.5rem; gap: var(--space-2); align-items: center; }
   .stack-label { color: var(--ink-2); font-size: var(--t-sm); }
-  .track { display: flex; block-size: 14px; overflow: hidden; border-radius: 3px; background: var(--chip); }
-  .seg { display: block; block-size: 100%; }
-  .seg.active, .legend i.active { background: var(--up); }
-  .seg.inactive, .legend i.inactive { background: var(--down); }
-  .seg.unknown, .legend i.unknown { background: var(--axis); }
-  .stack-values { color: var(--muted); font-size: var(--t-sm); text-align: end; white-space: nowrap; }
-  .stack-values b { color: var(--ink); font-weight: 600; }
+  .stack-label small { color: var(--muted); font-size: var(--t-xs); }
+  .track { display: flex; block-size: 18px; overflow: hidden; border-radius: 3px; background: var(--chip); }
+  .seg { display: flex; align-items: center; justify-content: center; block-size: 100%; overflow: hidden; color: #fff; font-size: var(--t-xs); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .seg.active, .legend i.active, .v.active i { background: var(--up); }
+  .seg.inactive, .legend i.inactive, .v.inactive i { background: var(--down); }
+  /* Unknown is a pale hatched fill, so it neither dominates nor competes with the red. */
+  .seg.unknown, .legend i.unknown, .v.unknown i { color: var(--ink-2); background: repeating-linear-gradient(135deg, var(--axis) 0 3px, var(--chip) 3px 7px); }
+  .stack-values { display: flex; gap: var(--space-2); justify-content: flex-end; color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
+  .v { display: inline-flex; align-items: center; gap: 4px; }
+  .v i { display: inline-block; inline-size: 8px; block-size: 8px; border-radius: 2px; }
+  .v.active { color: var(--ink); font-weight: 600; }
   .legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; color: var(--muted); font-size: var(--t-sm); }
   .legend i { display: inline-block; inline-size: 10px; block-size: 10px; margin-inline-end: 6px; border-radius: 2px; vertical-align: -1px; }
+  .table-foot { margin: 0; color: var(--muted); font-size: var(--t-base); }
+  .table-foot button.action { border: 0; background: transparent; cursor: pointer; font: inherit; font-weight: 600; color: var(--brand-ink); }
+  .jump { display: inline-flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+  .jump-field { display: inline-flex; align-items: center; min-block-size: 2.25rem; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--muted); font: 600 var(--t-sm) / var(--leading-tight) var(--font-sans); }
+  .jump-field span { padding-inline-start: var(--space-2); white-space: nowrap; }
+  .jump-field select { max-inline-size: 12rem; min-block-size: 2.25rem; padding: 0 var(--space-1); border: 0; background: transparent; color: var(--ink); color-scheme: var(--ui-color-scheme); font: var(--t-base) / var(--leading-table) var(--font-sans); }
+  .jump-field:has(select:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .jump-field select:focus-visible { outline: none; }
   .quiet { margin: 0; color: var(--muted); font-size: var(--t-base); }
 
   section { display: grid; gap: var(--space-3); min-inline-size: 0; }
@@ -467,7 +530,10 @@
     .badge-count { display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 5px; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); }
     .fields { flex-basis: 100%; padding-block-start: var(--space-2); }
     .fields > :global(.field) { flex: 1 1 45%; }
-    .stack li { grid-template-columns: 5rem 1fr 6rem; }
+    .stack li { grid-template-columns: minmax(0, 1fr) auto; }
+    .stack li .track { grid-column: 1 / -1; }
+    .jump-field { flex: 1 1 100%; }
+    .jump-field select { flex: 1; max-inline-size: none; }
     .school { scroll-margin-block-start: 8rem; }
   }
   @media (min-width: 40.01rem) {

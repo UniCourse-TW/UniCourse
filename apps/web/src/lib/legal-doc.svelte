@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+  import { onMount, type Snippet } from 'svelte';
 
   export interface DocSection {
     id: string;
@@ -18,12 +18,43 @@
 
   let { title, updated, sections, sibling, children }: Props = $props();
   let updatedLabel = $derived(updated.replaceAll('-', '/'));
+  let contact = $derived(sections.find((section) => section.id === 'removal' || section.id === 'contact'));
+
+  // Scroll-spy for the desktop table of contents: the section nearest the top is marked current.
+  let currentId = $state('');
+  onMount(() => {
+    const headings = sections.map((section) => document.getElementById(section.id)).filter((node): node is HTMLElement => Boolean(node));
+    if (!headings.length || !('IntersectionObserver' in window)) return;
+    const visible = new Map<string, number>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) visible.set(entry.target.id, entry.boundingClientRect.top);
+          else visible.delete(entry.target.id);
+        }
+        const [first] = [...visible.entries()].sort((a, b) => a[1] - b[1]);
+        if (first) currentId = first[0];
+        else {
+          // Nothing in the band: keep the last heading that scrolled above it.
+          const above = headings.filter((heading) => heading.getBoundingClientRect().top < 120).at(-1);
+          if (above) currentId = above.id;
+        }
+      },
+      { rootMargin: '-96px 0px -60% 0px', threshold: 0 }
+    );
+    headings.forEach((heading) => observer.observe(heading));
+    return () => observer.disconnect();
+  });
 </script>
 
-<article class="doc">
+<article class="doc" id="top-of-doc">
   <header class="doc-head">
     <h1>{title}</h1>
-    <p class="meta">更新於 <time datetime={updated}>{updatedLabel}</time> · 另請參閱 <a href={sibling.href}>{sibling.label}</a></p>
+    <p class="meta">
+      更新於 <time datetime={updated}>{updatedLabel}</time>
+      {#if contact}<span class="sep" aria-hidden="true">·</span><a href={`#${contact.id}`}>{contact.title}</a>{/if}
+      <span class="sep" aria-hidden="true">·</span><a href={sibling.href}>{sibling.label} <span aria-hidden="true">→</span></a>
+    </p>
   </header>
   <div class="doc-layout">
     <nav class="doc-toc" aria-label="目錄">
@@ -32,7 +63,7 @@
         <summary>目錄</summary>
         <ol>
           {#each sections as section (section.id)}
-            <li><a href={`#${section.id}`}>{section.title}</a></li>
+            <li><a href={`#${section.id}`} aria-current={currentId === section.id ? 'true' : undefined}>{section.title}</a></li>
           {/each}
           <li class="sibling"><a href={sibling.href}>{sibling.label} <span aria-hidden="true">→</span></a></li>
         </ol>
@@ -40,7 +71,10 @@
     </nav>
     <div class="prose">
       {@render children()}
-      <p class="next"><a href={sibling.href}>另請參閱{sibling.label} <span aria-hidden="true">→</span></a></p>
+      <p class="next">
+        <a href="#top-of-doc" class="back"><span aria-hidden="true">↑</span> 回目錄</a>
+        <a href={sibling.href}>另請參閱{sibling.label} <span aria-hidden="true">→</span></a>
+      </p>
     </div>
   </div>
 </article>
@@ -50,23 +84,25 @@
   .doc-head { display: grid; gap: var(--space-1); }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .meta { margin: 0; color: var(--muted); font-size: var(--t-base); }
+  .meta .sep { margin-inline: 0.4em; color: var(--axis); }
   .meta a, .doc-toc a, .next a, .prose :global(a) { color: var(--brand-ink); text-underline-offset: 0.15em; }
   :is(.meta, .doc-toc, .next, .prose) :global(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: 2px; }
 
-  .doc-layout { display: grid; grid-template-columns: 14rem minmax(0, 52em); gap: var(--space-8); align-items: start; }
-  .doc-toc { position: sticky; inset-block-start: var(--space-4); font-size: var(--t-base); }
+  .doc-layout { display: grid; grid-template-columns: 14rem minmax(0, 1fr); gap: var(--space-8); align-items: start; }
+  .doc-toc { position: sticky; inset-block-start: 5rem; font-size: var(--t-base); }
   .doc-toc details { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .doc-toc summary { padding: var(--space-2) var(--space-3); color: var(--muted); font-size: var(--t-sm); font-weight: 600; list-style: none; pointer-events: none; }
   .doc-toc summary::-webkit-details-marker { display: none; }
   .doc-toc details::details-content { display: block; content-visibility: visible; }
   .doc-toc ol { display: grid; margin: 0; padding: 0 var(--space-2) var(--space-2); list-style: none; }
-  .doc-toc li a { display: flex; align-items: center; min-block-size: 2.25rem; padding: 0 var(--space-2); border-radius: var(--radius-control); color: var(--ink-2); text-decoration: none; }
+  .doc-toc li a { display: flex; align-items: center; min-block-size: 2.25rem; padding: 0 var(--space-2); border-inline-start: 2px solid transparent; border-radius: 0 var(--radius-control) var(--radius-control) 0; color: var(--ink-2); text-decoration: none; }
   .doc-toc li a:hover { background: var(--brand-wash); color: var(--brand-ink); }
+  .doc-toc li a[aria-current='true'] { border-inline-start-color: var(--brand); color: var(--brand-ink); font-weight: 600; background: var(--brand-wash); }
   .doc-toc .sibling { margin-block-start: var(--space-1); padding-block-start: var(--space-1); border-block-start: 1px solid var(--line); }
   .doc-toc .sibling a { color: var(--brand-ink); font-weight: 600; }
 
   /* Long-form text: 15 px on 1.8, 52 em measure, h2 20 px with 28 px above. */
-  .prose { min-inline-size: 0; font-size: var(--t-md); line-height: var(--leading-prose); overflow-wrap: anywhere; hanging-punctuation: none; }
+  .prose { min-inline-size: 0; max-inline-size: 58em; font-size: var(--t-md); line-height: var(--leading-prose); overflow-wrap: anywhere; hanging-punctuation: none; }
   .prose :global(h2) { margin: var(--space-8) 0 var(--space-2); font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); scroll-margin-block-start: var(--space-4); }
   .prose :global(section:first-of-type h2) { margin-block-start: 0; }
   .prose :global(h3) { margin: var(--space-5) 0 var(--space-1); font-size: var(--t-lg); font-weight: 650; line-height: var(--leading-tight); }
@@ -79,9 +115,24 @@
   .prose :global(tr:last-child td) { border-block-end: 0; }
   .prose :global(code) { font-family: var(--font-mono); font-size: 0.9em; }
   .prose :global(.callout) { margin: 0 0 var(--space-3); padding: var(--space-3) var(--space-4); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); }
-  .next { margin: var(--space-6) 0 0; padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); font-weight: 600; }
+  .prose :global(.callout .note) { display: block; margin-block-start: var(--space-1); color: var(--muted); font-size: var(--t-sm); line-height: 1.6; }
+  .prose :global(.status) { display: inline-block; margin-inline-end: var(--space-1); padding: 0 7px; border-radius: var(--radius-pill); background: var(--warn-wash); color: var(--warn); font-size: var(--t-sm); font-weight: 600; line-height: 1.6; }
+  .next { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-6) 0 0; padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); font-weight: 600; }
   .next a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
+  .next .back { color: var(--ink-2); }
+  .next .back:hover { color: var(--brand-ink); }
 
+  /* Two- and three-column text tables stack on phones; the column name comes from data-label. */
+  @media (max-width: 40rem) {
+    .prose :global(table), .prose :global(tbody), .prose :global(tr), .prose :global(td) { display: block; }
+    .prose :global(thead) { display: none; }
+    .prose :global(tr) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); }
+    .prose :global(tr:last-child) { border-block-end: 0; }
+    .prose :global(td) { padding: 2px 0; border: 0; }
+    .prose :global(td[data-label])::before { content: attr(data-label); display: block; color: var(--muted); font-size: var(--t-xs); font-weight: 600; }
+    .prose :global(td:first-child) { font-weight: 600; }
+    .prose :global(td:first-child)::before { display: none; }
+  }
   @media (max-width: 56rem) {
     .doc-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
     .doc-toc { position: static; }

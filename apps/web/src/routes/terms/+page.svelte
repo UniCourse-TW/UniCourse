@@ -31,9 +31,9 @@
     <table>
       <thead><tr><th>資料</th><th>來源</th><th>授權與使用方式</th></tr></thead>
       <tbody>
-        <tr><td>學校名錄</td><td>教育部大專校院名錄等開放資料</td><td>政府資料開放授權條款；依原始檔重新產生，不手動修改。</td></tr>
-        <tr><td>課程與修課人數</td><td>各校公開課程查詢系統、教育部課程資源網</td><td>只抓取無需登入的公開頁面，遵守各站 robots 規則，夜間低頻更新。</td></tr>
-        <tr><td>課程網站總覽</td><td>UniCourse 逐校盤點</td><td>列在<a href="/landscape">課程網站總覽</a>，資料檔隨原始碼公開。</td></tr>
+        <tr><td data-label="資料">學校名錄</td><td data-label="來源">教育部大專校院名錄等開放資料</td><td data-label="授權與使用方式">政府資料開放授權條款；依原始檔重新產生，不手動修改。</td></tr>
+        <tr><td data-label="資料">課程與修課人數</td><td data-label="來源">各校公開課程查詢系統、教育部課程資源網</td><td data-label="授權與使用方式">只抓取無需登入的公開頁面，遵守各站 robots 規則，夜間低頻更新。</td></tr>
+        <tr><td data-label="資料">課程網站總覽</td><td data-label="來源">UniCourse 逐校盤點</td><td data-label="授權與使用方式">列在<a href="/landscape">課程網站總覽</a>，資料檔隨原始碼公開。</td></tr>
       </tbody>
     </table>
     <p>校方系統要求登入、使用驗證碼或以 robots 規則拒絕抓取時，本站不會收錄該校資料，並在各校收錄狀態頁標示「受阻」。本站的程式碼與資料檔以開源方式公開於 GitHub。</p>
@@ -52,7 +52,8 @@
 
   <section aria-labelledby="reviews">
     <h2 id="reviews">外部評論索引</h2>
-    <p>課程頁會列出其他網站上與該課程相關的公開文章，例如 PTT 各校課程板。本站只做搜尋索引，不轉載全文，收錄原則如下：</p>
+    <p><span class="status">目前狀態</span>課程頁的「網路上的討論」區目前只提供站外搜尋連結，索引功能尚未上線，也還沒有儲存任何外站內容。下面是功能上線後會遵守的收錄原則：</p>
+    <p>上線後，課程頁會列出其他網站上與該課程相關的公開文章，例如 PTT 各校課程板。本站只做搜尋索引，不轉載全文：</p>
     <ul>
       <li>只儲存連結、標題、發文日期、作者帳號（handle）與不超過 120 字的摘要，以及比對出的學校、課程與教師。</li>
       <li>只收錄明確允許搜尋索引的網站，依站方 robots 檔的 <code>Content-Signal</code> 判斷；未明確允許的網站（例如歐趴糖、NCKU HUB、NTU Rating）只提供外部連結，不複製任何內容。</li>
@@ -64,8 +65,12 @@
 
   <section aria-labelledby="removal">
     <h2 id="removal">聯絡與移除</h2>
-    <p>若你是文章作者、被提及的教師或當事人，想移除外部索引中的某一筆，或認為課程資料、評分與文章有誤，請到 GitHub 建立 issue 並附上該頁面的連結：</p>
-    <p class="callout"><a href={ISSUES_URL} rel="noopener external">UniCourse-TW/UniCourse issues <span aria-hidden="true">↗</span></a><br />移除請求通常在七天內處理；處理結果會回覆在同一則 issue。</p>
+    <p>若你是文章作者、被提及的教師或當事人，想移除外部索引中的某一筆，或認為課程資料、評分與文章有誤，請附上該頁面的連結，用下面任一方式告訴我們：</p>
+    <p class="callout">
+      <a href={ISSUES_URL} rel="noopener external">在 GitHub 建立移除或更正請求（UniCourse-TW/UniCourse issues） <span aria-hidden="true">↗</span></a>
+      <span class="note">issue 是公開頁面，請不要在裡面張貼學號、聯絡方式等個人資料。不方便公開時，可改用 GitHub 的私密回報（Security advisory）或<a href="https://github.com/UniCourse-TW" rel="noopener external">UniCourse-TW 組織頁</a>上列出的維護者信箱，私下聯絡。</span>
+      <span class="note">請求通常在七天內處理；處理結果會回覆在同一則 issue 或原信件。</span>
+    </p>
     <p>移除索引不影響原網站上的文章；要刪除原文請聯絡該網站。</p>
   </section>
 

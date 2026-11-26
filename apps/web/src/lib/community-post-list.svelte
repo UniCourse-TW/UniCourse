@@ -33,10 +33,12 @@
                   {schoolNames[post.school] ?? post.school}{#if post.courseCode}&nbsp;<span class="mono">{post.courseCode}</span>{/if}
                 </a>
               {/if}
-              {#if showAuthor}
-                <a class="over author" href={profileHref(post.author.username)}>{authorName(post.author)}</a>
+              {#if showAuthor || post.tags.length}
+                <span class="by">
+                  {#if showAuthor}<a class="over author" href={profileHref(post.author.username)}>{authorName(post.author)}</a>{/if}
+                  {#each post.tags as tag (tag)}<a class="over tag" href={forumHref({ tag })}>#{tag}</a>{/each}
+                </span>
               {/if}
-              {#each post.tags as tag (tag)}<a class="over tag" href={forumHref({ tag })}>#{tag}</a>{/each}
             </p>
             <h3 id="{id}-{post.id}"><a class="title" href={postHref(post.id)}>{post.title}</a></h3>
             {#if post.excerpt.trim()}<p class="excerpt">{oneLine(post.excerpt)}</p>{/if}
@@ -90,19 +92,23 @@
   }
   .kicker a { color: var(--ink-2); text-decoration: none; }
   .kicker a:hover { color: var(--brand-ink); text-decoration: underline; }
+  /* Author and tags form one group after a separator dot, so the context link stands on its own. */
+  .by { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; }
+  .by::before { content: '·'; color: var(--axis); }
   .kicker .author::before { content: '@'; color: var(--muted); }
   .kicker .tag { color: var(--muted); }
   /* Links above the stretched title link stay clickable on their own. */
   .over { position: relative; z-index: 1; }
   h3 { margin-block: 0.125rem 0 !important; font-size: var(--t-md) !important; font-weight: 600 !important; letter-spacing: 0 !important; line-height: 1.45 !important; }
-  .title { color: var(--ink) !important; text-decoration: none; }
+  /* Titles read as links: brand colour, underline on hover, a full-row focus ring. */
+  .title { color: var(--brand-ink) !important; text-decoration: none; }
   .title::after { content: ''; position: absolute; inset: 0; z-index: 0; }
-  .title:hover { color: var(--brand-ink) !important; text-decoration: underline; }
+  .title:hover { text-decoration: underline; text-decoration-thickness: 2px; }
   .title:focus-visible { outline: none !important; }
   .title:focus-visible::after { outline: var(--focus-ring); outline-offset: -3px; border-radius: var(--radius-control); }
   .excerpt {
     margin-block-start: 0.125rem !important;
-    color: var(--muted);
+    color: var(--ink-2);
     font-size: 0.8125rem;
     line-height: 1.55;
     display: -webkit-box;
