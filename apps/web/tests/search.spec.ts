@@ -35,9 +35,10 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
   await expect(term).toHaveValue('115-1');
   await expect(page.getByRole('link', { name: '線性代數' })).toHaveCount(1);
   const card = page.getByRole('article');
-  for (const detail of ['示範數學系', '3 學分', '必修', 'T3T4R3 示範館101', '王示範', '國立清華大學', '115-1']) {
+  for (const detail of ['示範數學系', '3 學分', '必修', '王示範', '國立清華大學', '115-1']) {
     await expect(card.getByText(detail, { exact: true })).toBeVisible();
   }
+  await expect(card.getByText(/週二 第 3、4 節 · 示範館 101/)).toBeVisible();
   await expect(card.getByText(/班次 01/)).toBeVisible();
   await expect(card.getByText('58 / 60', { exact: true })).toBeVisible();
 
@@ -95,6 +96,7 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
 test('uses a desktop table and keeps all parts inside the phone viewport', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/?q=線性&school=nthu&term=all');
+  await expect(page.getByText(/排序：關聯性/)).toBeVisible();
   const table = page.getByRole('table', { name: /開課班次/ });
   await expect(table.getByRole('columnheader', { name: '修課人數／名額' })).toBeVisible();
   await expect(table.getByRole('rowheader').first()).toContainText('線性代數');
@@ -112,6 +114,7 @@ test('keeps global filters on pagination redirects and offers applicable empty-s
   await expect(page).toHaveURL('/?q=%E7%B7%9A%E6%80%A7&school=nthu&term=all&sort=title');
   await expect(page.getByText('顯示 1–2 筆 · 共 2 筆')).toBeVisible();
   await page.goto('/?q=zzzz&term=all');
+  await expect(page.getByText('共 0 班次')).toBeVisible();
   const results = page.getByRole('region', { name: '搜尋結果' });
   await expect(results.getByText('找不到符合條件的課程')).toBeVisible();
   await expect(results.getByRole('link', { name: '查全部學期' })).toHaveCount(0);
@@ -119,9 +122,8 @@ test('keeps global filters on pagination redirects and offers applicable empty-s
   await page.goto('/?q=zzzz&school=nthu&term=115-1');
   await expect(results.getByRole('link', { name: '查全部學期' })).toHaveAttribute('href', '/?q=zzzz&school=nthu&term=all');
   await expect(results.getByRole('link', { name: '改搜所有學校' })).toHaveAttribute('href', '/?q=zzzz&term=115-1');
-  await results.getByRole('link', { name: '瀏覽全部班次' }).click();
-  await expect(page).toHaveURL('/?term=all');
-  await expect(results.getByRole('article').first()).toBeVisible();
+  await results.getByRole('link', { name: '修改關鍵字' }).click();
+  await expect(page.getByRole('searchbox', { name: '關鍵字' })).toBeFocused();
 });
 
 test('submits a search and persists the SSR theme without JavaScript', async ({ browser }) => {

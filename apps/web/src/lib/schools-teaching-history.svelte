@@ -56,7 +56,9 @@
         <li><span class="dot" data-bin="medium" aria-hidden="true"></span>50–99 人</li>
         <li><span class="dot" data-bin="large" aria-hidden="true"></span>100 人以上</li>
         <li><span class="dot" data-bin="unknown" aria-hidden="true"></span>未公布</li>
+        <li><span aria-hidden="true">—</span>未開課</li>
       </ul>
+      <p class="browse-note matrix-range">最近開課的 {Math.min(5, rows.length)} 門 · {periods[0]}–{periods.at(-1)} 學年（新到舊） · 左右滑動看早期學年</p>
     {/if}
     <DataTable caption={compact ? '課程與學年授課紀錄' : '課程與學年點陣'} {columns} rows={rows.slice(0, 5)} rowKey={(row) => row.id} minWidth={width} maxHeight="none" scrollHint={!compact}>
       {#snippet cell(row, column)}{@render historyCell(row, column, compact)}{/snippet}
@@ -65,14 +67,14 @@
 {:else}<EmptyState title="尚無歷年授課紀錄" />{/if}
 
 <details class="history-values">
-  <summary>查看完整授課數值{rows.length > 5 ? `（${displayValue(rows.length)} 門課）` : ''}</summary>
+  <summary>查看授課數值{rows.length > 5 ? `（本表 ${displayValue(rows.length)} 門課）` : ''}</summary>
   {#if rows.length && (!compact || rows.length > 5)}
-    <DataTable caption="各課程的學年數值" {columns} {rows} rowKey={(row) => row.id} minWidth={compact ? '0' : `${9 + 6 * periods.length}rem`} scrollHint={!compact}>
+    <DataTable caption="各課程的學年數值" {columns} {rows} rowKey={(row) => row.id} minWidth={compact ? '0' : `${9 + 6 * periods.length}rem`} maxHeight="none" scrollHint={!compact}>
       {#snippet cell(row, column)}{@render historyCell(row, column, true)}{/snippet}
     </DataTable>
   {/if}
   {#if trends?.length}
-    <DataTable caption="各學期授課數值（所有開課班次）" columns={trendColumns} rows={trends} rowKey={(row) => row.term} minWidth="0" scrollHint={false} />
+    <DataTable caption="各學期授課數值（所有開課班次）" columns={trendColumns} rows={trends} rowKey={(row) => row.term} minWidth="0" maxHeight="none" scrollHint={false} />
   {:else}<p class="browse-note">{trends === null ? '目前無法取得各學期的完整數值。' : '尚無各學期統計。'}</p>{/if}
 </details>
 
@@ -81,6 +83,7 @@
   .teaching-matrix.compact { max-inline-size: 34rem; }
   .teaching-matrix :global(.sticky) { max-inline-size: 9rem; overflow-wrap: anywhere; }
   .matrix-legend { display: flex; flex-wrap: wrap; gap: .25rem .85rem; margin: 0 0 var(--space-2); padding: 0; list-style: none; color: var(--muted); font-size: var(--t-sm); }
+  .matrix-range { margin-block-end: var(--space-2); }
   .matrix-legend li, .year-cell { display: flex; align-items: center; gap: .3rem; }
   .year-cell { min-block-size: var(--target-min); min-inline-size: 2rem; justify-content: center; border-radius: var(--radius-control); padding-inline: .15rem; }
   .year-cell[href] { text-decoration: none; background: var(--brand-wash); }

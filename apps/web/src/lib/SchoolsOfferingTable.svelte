@@ -3,6 +3,7 @@
   import { requirement } from '$lib/format';
   import { departmentHref, instructorHref } from '$lib/overview-paths';
   import { scheduleLines } from '$lib/schedule';
+  import { reportedCapacity } from '$lib/schools-offerings';
   import Badge from '$lib/ui/Badge.svelte';
   import DataTable from '$lib/ui/DataTable.svelte';
   import { displayValue } from '$lib/ui/format';
@@ -25,7 +26,7 @@
     { id: 'course', label: '課程', value: (row) => row.title, sortable: true, width: '11rem' },
     ...(showTerm ? [termColumn] : []),
     mode === 'department' ? { id: 'teachers', label: '授課教師' } : { id: 'unit', label: '開課單位' },
-    ...(mode === 'department' ? [gradeColumn] : []),
+    ...(mode === 'department' && offerings.some(({ grade }) => grade) ? [gradeColumn] : []),
     { id: 'category', label: '學分／類別', value: category, width: '7rem' },
     { id: 'enrollment', label: '人數／名額', sortable: true, sortValue: (row) => row.enrolled, numeric: true, width: '6.5rem' },
     { id: 'schedule', label: '時間地點', width: '15rem' },
@@ -34,7 +35,7 @@
 </script>
 
 {#snippet code(row: Offering)}
-  <span class="browse-code">{row.courseCode}{row.classCode ? ` · ${row.classCode} 班` : ''}</span>
+  <span class="browse-code">{row.courseCode}{row.classCode ? ` · ${row.classCode} 班` : ''}{#if mode === 'instructor' && row.school === 'fcu' && row.sourceId} · 選課代碼 {row.sourceId}{/if}</span>
 {/snippet}
 
 {#snippet teachers(row: Offering)}
@@ -46,13 +47,22 @@
 {/snippet}
 
 {#snippet enrollment(row: Offering)}
+  {@const capacity = reportedCapacity(row)}
   <span class="enrollment">
-    <span class="ui-tabular">{displayValue(row.enrolled)}{#if row.capacity != null} / {displayValue(row.capacity)}{/if}</span>
-    {#if row.enrolled != null && row.capacity != null && row.capacity > 0}
-      <span class="track" aria-hidden="true"><span class="fill" class:exceeded={row.enrolled > row.capacity} style:inline-size={`${Math.min(100, 100 * row.enrolled / row.capacity)}%`}></span></span>
-      {#if row.enrolled >= row.capacity * .9}
+    {#if row.enrolled != null && capacity != null}
+      <span class="ui-tabular">{displayValue(row.enrolled)} / {displayValue(capacity)}</span>
+    {:else if row.enrolled != null}
+      <span class="ui-tabular">{displayValue(row.enrolled)} 人</span><small class="publication-note">名額未公布</small>
+    {:else if capacity != null}
+      <span class="ui-tabular">名額 {displayValue(capacity)}</span><small class="publication-note">人數未公布</small>
+    {:else}
+      <span title="人數與名額未公布">—</span>
+    {/if}
+    {#if row.enrolled != null && capacity != null && capacity > 0}
+      <span class="track" aria-hidden="true"><span class="fill" class:exceeded={row.enrolled > capacity} style:inline-size={`${Math.min(100, 100 * row.enrolled / capacity)}%`}></span></span>
+      {#if row.enrolled >= capacity * .9}
         <small class="capacity-note" title={`資料更新於 ${new Date(row.importedAt).toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' })}`}>
-          {row.enrolled > row.capacity ? '已超過名額' : row.enrolled === row.capacity ? '人數達名額' : `匯入時餘 ${displayValue(row.capacity - row.enrolled)} 名`}
+          {row.enrolled > capacity ? '已超過公布名額' : row.enrolled === capacity ? '人數達名額' : `匯入時餘 ${displayValue(capacity - row.enrolled)} 名`}
         </small>
       {/if}
     {/if}
@@ -62,9 +72,12 @@
 {#snippet rating(row: Offering)}
   {@const stats = ratings.get(row.courseCode)}
   {#if stats?.average != null}
-    <span class="ui-tabular" aria-label={`${stats.average.toFixed(1)} 分，共 ${stats.count} 則評價`}>{stats.average.toFixed(1)} <small>（{displayValue(stats.count)}）</small></span>
+    <span class="ui-tabular">{stats.average.toFixed(1)} 分 · {displayValue(stats.count)} 則</span>
+    {#if stats.count === 1}<small class="rating-note"><a href={`${courseHref(row)}#ratings`}>新增你的評價</a></small>{/if}
+  {:else if stats}
+    <small class="rating-note">尚無評價 · <a href={`${courseHref(row)}#ratings`}>留下首則</a></small>
   {:else}
-    <span aria-label={stats ? '尚無評價' : '未取得評價'}>—</span>
+    <a class="rating-note" href={`${courseHref(row)}#ratings`}>查看課程評價</a>
   {/if}
 {/snippet}
 
@@ -73,7 +86,7 @@
 {/snippet}
 
 <div class="table-view">
-  <DataTable {caption} rows={offerings} {columns} rowKey={(row) => row.id} rowHref={courseHref} clientSort minWidth="47rem">
+  <DataTable {caption} rows={offerings} {columns} rowKey={(row) => row.id} rowHref={courseHref} clientSort minWidth="47rem" maxHeight="none">
     {#snippet cell(row, column)}
       {#if column.id === 'course'}
         <span class="browse-course-cell">
@@ -114,6 +127,7 @@
 </ul>
 
 <style>
+  .rating-note { display: block; color: var(--muted); font-size: var(--t-sm); }
   .card-view { display: none; }
   .enrollment { display: grid; min-inline-size: 3rem; gap: .25rem; }
   .track { inline-size: 100%; max-inline-size: 5rem; block-size: .375rem; margin-inline-start: auto; background: var(--line); border-radius: var(--radius-pill); }
@@ -121,6 +135,7 @@
   .fill.exceeded { background: var(--warn); }
   small { color: var(--muted); }
   .capacity-note { color: var(--warn); font-size: var(--t-sm); }
+  .publication-note { color: var(--muted); font-size: var(--t-sm); }
   .slot { display: block; overflow-wrap: anywhere; }
   @media (max-width: 40rem) {
     .table-view { display: none; }

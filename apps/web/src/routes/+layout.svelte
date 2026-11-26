@@ -47,9 +47,9 @@
           <button aria-label="全站搜尋">{@render searchIcon()}</button>
         </form>
       {:else}
-        <a href="#course-search" class="desktop-search" aria-current="location">{@render searchIcon()} 查課</a>
+        <a href="#course-keyword" class="desktop-search" aria-current="location">{@render searchIcon()} 查課</a>
       {/if}
-      <a href={page.url.pathname === '/' ? '#course-search' : '/#course-search'} class="mobile-search icon-action" aria-label="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}</a>
+      <a href={page.url.pathname === '/' ? '#course-keyword' : '/#course-keyword'} class="mobile-search icon-action" aria-label="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}</a>
       <form method="POST" action="/?/theme" class="theme-form">
         <input type="hidden" name="returnTo" value={here} />
         {#if data.theme !== 'dark'}

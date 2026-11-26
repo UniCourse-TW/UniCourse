@@ -1,9 +1,9 @@
 import type { SearchSort } from '@unicourse/api-client';
 
-export const searchPageSize = 50;
+export const searchPageSize = 20;
 export const popularSearches = ['資料結構', '微積分', '普通心理學', '日文'] as const;
 export const searchSorts = [
-  { value: 'relevance', label: '最相關' },
+  { value: 'relevance', label: '關聯性（最相關）' },
   { value: 'enrolled', label: '修課人數高到低' },
   { value: 'title', label: '依課名排序' }
 ] as const satisfies readonly { value: SearchSort; label: string }[];
@@ -30,6 +30,14 @@ export function overviewSearchHref(filters: Partial<OverviewSearchFilters> & { p
 
 export function schoolHref(school: string) {
   return `/schools/${encodeURIComponent(school)}`;
+}
+
+export function rankingHref(school: string, expanded: boolean, includeNonAcademic: boolean) {
+  const params = new URLSearchParams();
+  if (school) params.set('rank_school', school);
+  if (expanded) params.set('rank_limit', '50');
+  if (includeNonAcademic) params.set('include_non_academic', 'true');
+  return `/${params.size ? `?${params}` : ''}#ranking`;
 }
 
 export function departmentHref(school: string, department: string) {

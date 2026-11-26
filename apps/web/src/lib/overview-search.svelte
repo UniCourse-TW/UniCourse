@@ -2,9 +2,11 @@
   import { navigating, page } from '$app/state';
   import type { Offering, School } from '@unicourse/api-client';
   import type { PageData } from '../routes/$types';
-  import { credits, meeting, requirement } from './format';
-  import { departmentHref, instructorHref, overviewSearchHref, popularSearches } from './overview-paths';
+  import { credits, requirement } from './format';
+  import { departmentHref, instructorHref, overviewSearchHref, popularSearches, searchSorts } from './overview-paths';
   import OverviewSearchForm from './overview-search-form.svelte';
+  import { scheduleLines } from './schedule';
+  import { reportedCapacity } from './schools-offerings';
   import Badge from './ui/Badge.svelte';
   import DataTable from './ui/DataTable.svelte';
   import EmptyState from './ui/EmptyState.svelte';
@@ -23,7 +25,7 @@
   let relaxed = $derived(overviewSearchHref({ ...filters, school: '', department: '', term: 'all' }));
   let allTerms = $derived(overviewSearchHref({ ...filters, term: 'all' }));
   let allSchools = $derived(overviewSearchHref({ ...filters, school: '', department: '' }));
-  let allOfferings = $derived(overviewSearchHref({ term: 'all' }));
+  let sortLabel = $derived(searchSorts.find(({ value }) => value === filters.sort)?.label);
   let hasFilters = $derived(Boolean(filters.school || filters.department || filters.term !== 'all'));
   let courses = $derived(result?.courses ?? []);
   let hasDemo = $derived(courses.some((course) => course.isDemo));
@@ -50,12 +52,12 @@
     credits: courses.some((course) => course.credits != null),
     requirement: courses.some((course) => requirement(course)),
     schedule: courses.some((course) => schedule(course)),
-    enrollment: courses.some((course) => course.enrolled != null || course.capacity != null)
+    enrollment: courses.some((course) => course.enrolled != null || reportedCapacity(course) != null)
   });
   let columns = $derived(allColumns.filter(({ id }) => available[id as keyof typeof available] ?? true));
 
   function courseHref(course: Offering) { return `/courses/${course.id}`; }
-  function schedule(course: Offering) { return course.scheduleText || course.schedule?.map(meeting).join('、') || undefined; }
+  function schedule(course: Offering) { return scheduleLines(course).join('；') || undefined; }
   function tally(offerings: Offering[], group: (course: Offering) => string) {
     const counts = new Map<string, number>();
     for (const offering of offerings) {
@@ -72,10 +74,11 @@
   <p class="dek">
     <span role="status">
       {#if pending}<strong>正在搜尋班次…</strong><span aria-hidden="true"> · </span>
-      {:else if result?.total}<strong class="ui-tabular">共 {displayValue(result.total)} 班次</strong><span aria-hidden="true"> · </span>{/if}
+      {:else if result}<strong class="ui-tabular">共 {displayValue(result.total)} 班次</strong><span aria-hidden="true"> · </span>{/if}
     </span>
     {schoolName || '所有學校'}<span aria-hidden="true"> · </span>{filters.term === 'all' ? '全部學期' : `${filters.term} 學期`}
     {#if filters.department}<span aria-hidden="true"> · </span>{filters.department}{/if}
+    {#if result?.total && sortLabel}<span aria-hidden="true"> · </span>排序：{sortLabel}{/if}
     <span aria-hidden="true"> · </span><a href="/#coverage">資料來源</a>
   </p>
 </header>
@@ -133,15 +136,15 @@
 
 {#snippet enrollment(course: Offering, mobile: boolean)}
   {@const enrolled = course.enrolled}
-  {@const capacity = course.capacity}
+  {@const capacity = reportedCapacity(course)}
   <span class="enrollment ui-tabular">
     {#if enrolled != null && capacity != null}
       {#if mobile}<span class="muted">修課／名額</span>{/if}
       {#if capacity > 0}<span class="meter" class:over={enrolled > capacity} aria-hidden="true"><i style:width={`${Math.min(100, Math.max(0, enrolled / capacity * 100))}%`}></i></span>{/if}
-      <span title={enrolled > capacity ? '修課人數已超過公布名額' : undefined}>{displayValue(enrolled)} / {displayValue(capacity)}</span>
-    {:else if enrolled != null}<span>{#if mobile}修課人數 {/if}{displayValue(enrolled)} 人</span>
+      <span title={enrolled > capacity ? '修課人數超過校方公布名額；兩欄可能採不同口徑' : undefined}>{displayValue(enrolled)} / {displayValue(capacity)}</span>
+    {:else if enrolled != null}<span title="名額未公布">{#if mobile}修課 {/if}{displayValue(enrolled)} 人</span>
     {:else if capacity != null}<span class="muted">名額 {displayValue(capacity)}</span>
-    {:else}<span class="muted">{mobile ? '修課人數／名額未公布' : '—'}</span>{/if}
+    {:else}<span class="muted" title="修課人數與名額未公布">{mobile ? '修課人數／名額未公布' : '—'}</span>{/if}
   </span>
 {/snippet}
 
@@ -153,27 +156,27 @@
       description={invalid ? '關鍵字最多 100 字，不可包含換行；也可清除條件後再查一次。' : '目前無法連線到課程資料庫，搜尋條件已保留。'}
       retryHref={invalid ? undefined : overviewSearchHref({ ...filters, page: search.page })} action={invalid ? returnHome : undefined} />
   {:else if !result.total}
-    <EmptyState title="找不到符合條件的課程"
+    <div class="empty-recovery"><EmptyState title="找不到符合條件的課程"
       description={hasFilters ? '保留關鍵字、放寬篩選，或試試課號、較短的課名或教師全名。' : '試試課號、較短的課名或教師全名，也可以從下方主題開始查課。'}>
       {#snippet action()}
         <div class="empty-actions">
           {#if filters.term !== 'all'}<a class="button primary" href={allTerms}>查全部學期</a>{/if}
           {#if filters.school}<a class="button" class:primary={filters.term === 'all'} class:secondary={filters.term !== 'all'} href={allSchools}>改搜所有學校</a>
           {:else if filters.department}<a class="button" class:primary={filters.term === 'all'} class:secondary={filters.term !== 'all'} href={overviewSearchHref({ ...filters, department: '' })}>改搜所有開課單位</a>{/if}
-          <a class="button" class:primary={!hasFilters} class:secondary={hasFilters} href={allOfferings}>瀏覽全部班次</a>
+          <a class="button" class:primary={!hasFilters} class:secondary={hasFilters} href="#course-keyword">修改關鍵字</a>
         </div>
+        <nav class="recovery" aria-label="熱門搜尋">
+          <strong>換個主題試試</strong>
+          {#each popularSearches.slice(0, 3) as query (query)}
+            <a class="quick-chip" href={overviewSearchHref({ query, term: 'all' })}>{query}</a>
+          {/each}
+          <a class="button secondary" href="/schools">從學校瀏覽 <span aria-hidden="true">→</span></a>
+        </nav>
       {/snippet}
-    </EmptyState>
-    <div class="recovery">
-      <h2>換個主題試試</h2>
-      <nav aria-label="熱門搜尋">
-        {#each popularSearches.slice(0, 3) as query (query)}
-          <a class="quick-chip" href={overviewSearchHref({ query, term: 'all' })}>{query}</a>
-        {/each}
-        <a class="button secondary" href="/schools">從學校瀏覽 <span aria-hidden="true">→</span></a>
-      </nav>
-    </div>
+    </EmptyState></div>
   {:else}
+    {#if !available.enrollment}<p class="result-note">本頁班次未公布修課人數或名額。</p>
+    {:else if courses.some((course) => course.enrolled != null && (reportedCapacity(course) ?? Infinity) < course.enrolled)}<p class="result-note">若人數超過公布名額，以校方原始數字為準；兩欄可能採不同口徑。</p>{/if}
     {#if totalPages > 1 || quickTerms.length > 1 || quickSchools.length > 1}
       <div class="result-top">
         {#if quickTerms.length > 1 || quickSchools.length > 1}
@@ -202,7 +205,8 @@
           {:else if column.id === 'instructors'}{@render teachers(course)}
           {:else if column.id === 'credits'}{displayValue(course.credits)}
           {:else if column.id === 'requirement'}{requirement(course) ?? '—'}
-          {:else if column.id === 'schedule'}{schedule(course) ?? '—'}
+          {:else if column.id === 'schedule'}
+            {@const time = schedule(course)}<span class="schedule-text" title={time ?? '時間未公布'}>{time ?? '—'}</span>
           {:else if column.id === 'enrollment'}{@render enrollment(course, false)}{/if}
         {/snippet}
       </DataTable>
@@ -215,18 +219,15 @@
           <div class="card-heading">
             <h2><a href={courseHref(course)}>{@render title(course)}</a></h2>
           </div>
-          <div class="school-line"><strong>{course.schoolName}</strong>{#if course.department}<span aria-hidden="true"> · </span>{@render unit(course)}{/if}</div>
-          <div class="card-line">
+          <div class="card-line school-line">
+            <strong>{course.schoolName}</strong>
+            {#if course.department}<span>{@render unit(course)}</span>{/if}
             {#if course.instructors.length}<span>{@render teachers(course)}</span>{/if}
             {#if course.credits != null}<span>{credits(course.credits)}</span>{/if}
             {#if requirement(course)}<span>{requirement(course)}</span>{/if}
           </div>
-          <div class="card-line card-schedule">
-            {#if meetingTime}<span>{meetingTime}</span>{#if !course.instructors.length}<span class="muted">教師未公布</span>{/if}
-            {:else}<span class="muted">{course.instructors.length ? '時間未公布' : '教師、時間未公布'}</span>{/if}
-          </div>
           <div class="card-bottom">
-            <div class="card-code"><span class="term">{course.term}</span>{@render code(course)}</div>
+            <div class="card-code"><span class="term">{course.term}</span>{@render code(course)}{#if meetingTime}<span class="schedule-text" title={meetingTime}>{meetingTime}</span>{/if}</div>
             {@render enrollment(course, true)}
           </div>
         </article>
@@ -255,7 +256,7 @@
   .distribution summary { width: fit-content; min-height: var(--target-min); padding-inline: var(--space-2); align-content: center; cursor: pointer; color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; }
   .distribution p { margin: 0 var(--space-2) var(--space-2); color: var(--muted); font-size: var(--t-sm); }
   .quick-filters { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1) var(--space-2); margin-block-start: var(--space-1); padding-inline: var(--space-2); font-size: var(--t-sm); }
-  .quick-chip { max-width: 100%; background: var(--chip); color: var(--ink-2); font-size: var(--t-sm); overflow-wrap: anywhere; text-decoration: none; }
+  .quick-chip { max-width: 100%; background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-sm); overflow-wrap: anywhere; text-decoration: none; }
   .quick-chip span { min-width: 1.4rem; border-radius: var(--radius-pill); background: var(--panel-raised); text-align: center; }
   .quick-chip:hover { background: var(--brand-wash); color: var(--brand-ink); text-decoration: underline; }
   .results { min-width: 0; margin-block-start: var(--space-3); }
@@ -269,12 +270,14 @@
   .desktop-results :global(.scroll) { overflow: visible; }
   .desktop-results :global(thead th) { inset-block-start: 3.75rem; }
   .desktop-results :global(.row-link) { display: flex; justify-content: center; flex-direction: column; align-items: start; gap: 0; }
+  .desktop-results :global(td a:not(:hover, :focus-visible)) { text-decoration: none; }
   .title-line { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: center; min-width: 0; max-width: 100%; }
   .title-line .course-title { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
   .code, .term { font-family: var(--font-mono); color: var(--muted); font-weight: 450; font-size: var(--t-sm); }
   .code span { font-family: var(--font-sans); }
   .school-name, .unit { display: block; }
   .unit { color: var(--muted); font-size: var(--t-sm); }
+  .schedule-text { display: block; min-inline-size: 0; max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-2); }
   .enrollment { display: inline-flex; align-items: center; justify-content: end; gap: var(--space-2); white-space: nowrap; }
   .meter { display: inline-flex; width: 2.25rem; height: 6px; border-radius: var(--radius-pill); background: var(--line); }
   .meter i { height: 100%; border-radius: inherit; background: var(--brand); }
@@ -282,12 +285,13 @@
   .muted { color: var(--muted); }
   .mobile-results { display: none; }
   .result-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-4); margin-block-start: var(--space-3); }
-  .result-footer p, .demo-note { margin: 0; color: var(--muted); font-size: var(--t-base); }
+  .result-footer p, .demo-note, .result-note { margin: 0; color: var(--muted); font-size: var(--t-base); }
+  .result-note { margin-block-end: var(--space-2); }
   .demo-note { margin-block-start: var(--space-1); font-size: var(--t-sm); }
   .empty-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--space-2); }
-  .recovery { margin-block-start: var(--space-4); padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
-  .recovery h2 { margin: 0 0 var(--space-2); font-size: var(--t-md); }
-  .recovery nav { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .empty-recovery :global(.state) { padding-block: var(--space-4); }
+  .recovery { margin-block-start: var(--space-3); display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: var(--space-2); }
+  .recovery .button { gap: var(--space-1); }
   .button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target-min); padding-inline: var(--space-3); border: 1px solid transparent; border-radius: var(--radius-control); text-decoration: none; font-weight: 650; }
   .button:hover { text-decoration: underline; }
   .primary { background: var(--brand); color: var(--on-brand); }
@@ -303,10 +307,11 @@
     .card-heading a { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-1); min-height: var(--target-min); }
     .term { flex: none; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); }
     .card-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); color: var(--ink-2); }
-    .card-line > span + span::before { content: '·'; color: var(--muted); margin-inline-end: var(--space-2); }
+    .card-line > span::before { content: '·'; color: var(--muted); margin-inline-end: var(--space-2); }
     .school-line strong { color: var(--ink); }
     .card-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-1) var(--space-2); margin-block-start: var(--space-2); padding-block-start: var(--space-1); border-block-start: 1px solid var(--line); }
     .card-code { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1); }
+    .card-code .schedule-text { flex: 1 1 5rem; font-size: var(--t-sm); }
     .enrollment { font-size: var(--t-sm); }
   }
   @media (max-width: 37rem) {

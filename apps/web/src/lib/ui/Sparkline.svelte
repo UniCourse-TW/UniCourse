@@ -12,9 +12,10 @@
     max?: number;
     decorative?: boolean;
     showValues?: boolean;
+    showArea?: boolean;
   }
 
-  let { values, label, labels, min, max, decorative = false, showValues = false }: Props = $props();
+  let { values, label, labels, min, max, decorative = false, showValues = false, showArea = true }: Props = $props();
 
   let samples = $derived(values.map(finiteValue));
   let segments = $derived.by(() => {
@@ -51,7 +52,7 @@
         <ellipse cx={segment[0].x} cy={segment[0].y} rx="3" ry="2.67" />
       {:else}
         {@const path = linePath(segment)}
-        <path class="area" d={`${path} V32 H${segment[0].x} Z`} />
+        {#if showArea}<path class="area" d={`${path} V32 H${segment[0].x} Z`} />{/if}
         <path class="line" d={path} vector-effect="non-scaling-stroke" />
       {/if}
     {/each}

@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { safeNext } from '$lib/community-paths';
+import { coverage } from '$lib/institutions';
 import { overviewSearchHref, searchPageSize, searchSorts } from '$lib/overview-paths';
 import { catalog } from '$lib/server/catalog';
 import type { Actions, PageServerLoad } from './$types';
@@ -26,21 +27,22 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   if (!isSearch) {
     const rankSchool = params.get('rank_school') || '';
     const expanded = params.get('rank_limit') === '50';
-    const [[schools, terms], rankings, overview, institutions] = await Promise.all([
+    const includeNonAcademic = params.get('include_non_academic') === 'true';
+    const rankingQuery = { school: rankSchool || undefined, limit: expanded ? 50 : 10, academic: !includeNonAcademic };
+    const [[schools, terms], rankings, directory] = await Promise.all([
       base,
       client.GET('/api/rankings/courses', {
-        params: { query: { school: rankSchool || undefined, limit: expanded ? 50 : 10 } }
+        params: { query: rankingQuery }
       }).catch(() => null),
-      client.GET('/api/stats/overview').catch(() => null),
       client.GET('/api/institutions').catch(() => null)
     ]);
+    const institutions = directory?.data?.institutions ?? null;
 
     return {
       schools: schools?.data ?? [], terms: terms?.data ?? [],
       content: {
-        kind: 'overview' as const, rankSchool, expanded, rankings: rankings?.data ?? null,
-        totals: overview?.data?.totals ?? null, schoolStats: overview?.data?.schools ?? [],
-        institutions: institutions?.data?.institutions ?? null
+        kind: 'overview' as const, rankSchool, expanded, includeNonAcademic, rankings: rankings?.data ?? null,
+        totals: institutions ? coverage(institutions) : null, latest: directory?.data?.updatedAt ?? null, institutions
       }
     };
   }
@@ -71,7 +73,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     schools: schools?.data ?? [],
     terms: term !== 'all' && !options.includes(term) ? [term, ...options] : options,
     content: {
-      kind: 'search' as const, filters, page, totalPages, result: result?.data ?? null,
+      kind: 'search' as const, filters, page, totalPages, result: result?.data ? { ...result.data, courses: result.data.courses.slice(0, searchPageSize) } : null,
       invalid: result?.response.status === 400,
       departments: departments?.data ?? [...new Set((result?.data?.courses ?? []).flatMap((course) => course.department ? [course.department] : []))].sort()
     }

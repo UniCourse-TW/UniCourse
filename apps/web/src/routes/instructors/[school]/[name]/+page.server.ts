@@ -35,6 +35,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
 
   return {
     instructor, courses: courseOptions, term, courseCode, rows, matched: matches.length, page, totalPages,
+    listedTerms: [...new Set(offerings.map(({ term }) => term))].sort().reverse(), firstRow: (page - 1) * pageSize + 1,
     matrix: buildTeachingMatrix(offerings), trends: trendResult?.data ?? null, summaryRatings,
     ratings: ratings ?? summaryRatings,
     listed: offerings.length,

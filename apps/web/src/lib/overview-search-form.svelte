@@ -33,7 +33,7 @@
       <span>關鍵字</span>
       <span class="search-input">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.75" /><path d="m15 15 4 4" /></svg>
-        <input name="q" type="search" value={filters?.query ?? ''} maxlength="100" placeholder="課名、教師或課號" />
+        <input id="course-keyword" name="q" type="search" value={filters?.query ?? ''} maxlength="100" placeholder="課名、教師或課號" />
       </span>
     </label>
     <label>
