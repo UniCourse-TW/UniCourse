@@ -410,7 +410,7 @@
           {
             "name": "sort",
             "in": "query",
-            "description": "Sort by relevance (default), published enrollment descending, or title ascending.",
+            "description": "Sort by relevance (default), published enrollment descending, or title ascending.\nRelevance prefers exact code, exact title, title prefix, title substring, then other matches.",
             "required": false,
             "schema": {
               "$ref": "#/components/schemas/SearchSort"
@@ -944,6 +944,34 @@
         }
       }
     },
+    "/api/coverage": {
+      "get": {
+        "tags": [],
+        "operationId": "coverage",
+        "responses": {
+          "200": {
+            "description": "Coverage of all imported terms and offerings, including withdrawn offerings; cached for five minutes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Coverage"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/departments": {
       "get": {
         "tags": [],
@@ -1002,7 +1030,7 @@
         "operationId": "institutions",
         "responses": {
           "200": {
-            "description": "Every Taiwanese higher-education institution in the MOE list, by code, with crawl status and indexed (active) catalog stats",
+            "description": "Every Taiwanese higher-education institution in the MOE list, by code, with crawl status and coverage of all imported offerings",
             "content": {
               "application/json": {
                 "schema": {
@@ -1746,6 +1774,16 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "academic",
+            "in": "query",
+            "description": "Exclude zero-credit and administrative offerings from the ranking (default true).",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
           }
         ],
         "responses": {
@@ -2095,7 +2133,7 @@
         "operationId": "overview",
         "responses": {
           "200": {
-            "description": "Per-school and total counts of indexed (active) offerings, courses and terms",
+            "description": "Per-school and total counts of all imported offerings, courses and terms",
             "content": {
               "application/json": {
                 "schema": {
@@ -2425,6 +2463,48 @@
           }
         }
       },
+      "Coverage": {
+        "type": "object",
+        "description": "Catalog coverage counts all imported terms and offerings, including withdrawn offerings.\nA course is one distinct (school, course code) with at least one offering. School counts\ninclude only schools with a snapshot, and global terms are the union across those schools.",
+        "required": [
+          "earliestTerm",
+          "latestTerm",
+          "terms",
+          "schools",
+          "totals"
+        ],
+        "properties": {
+          "earliestTerm": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "latestTerm": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "schools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchoolCoverage"
+            },
+            "description": "Schools by imported offerings, most first."
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Distinct imported terms, newest first."
+          },
+          "totals": {
+            "$ref": "#/components/schemas/OverviewTotals"
+          }
+        }
+      },
       "CrawlStatus": {
         "type": "string",
         "description": "`live`: in the nightly refresh; `partial`: crawler exists but is not scheduled or covers a\nsubset; `blocked`: the official source forbids or prevents crawling; `planned`: no crawler yet;\n`none`: the institution has no crawler slug.",
@@ -2617,7 +2697,7 @@
           "courses": {
             "type": "integer",
             "format": "int64",
-            "description": "Distinct courses with an active offering."
+            "description": "Distinct courses with any imported offering."
           },
           "issue": {
             "type": [
@@ -2658,7 +2738,7 @@
           "offerings": {
             "type": "integer",
             "format": "int64",
-            "description": "Active (searchable) offerings across all terms."
+            "description": "All imported offerings, including withdrawn offerings; zero before the first import."
           },
           "ownership": {
             "$ref": "#/components/schemas/Ownership"
@@ -3150,7 +3230,7 @@
             "items": {
               "$ref": "#/components/schemas/SchoolOverview"
             },
-            "description": "Schools by active offerings, most first."
+            "description": "Schools with at least one import, by imported offerings, most first."
           },
           "totals": {
             "$ref": "#/components/schemas/OverviewTotals"
@@ -3664,6 +3744,51 @@
           }
         }
       },
+      "SchoolCoverage": {
+        "type": "object",
+        "required": [
+          "slug",
+          "name",
+          "earliestTerm",
+          "latestTerm",
+          "terms",
+          "offerings",
+          "courses",
+          "latestImportedAt"
+        ],
+        "properties": {
+          "courses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "earliestTerm": {
+            "type": "string"
+          },
+          "latestImportedAt": {
+            "type": "string"
+          },
+          "latestTerm": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "offerings": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Imported terms at this school, newest first."
+          }
+        }
+      },
       "SchoolDetail": {
         "type": "object",
         "required": [
@@ -3677,7 +3802,8 @@
         "properties": {
           "courses": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "description": "Distinct courses with any imported offering."
           },
           "departments": {
             "type": "array",
@@ -3697,7 +3823,8 @@
           },
           "offerings": {
             "type": "integer",
-            "format": "int64"
+            "format": "int64",
+            "description": "All imported offerings, including withdrawn offerings."
           },
           "slug": {
             "type": "string"
@@ -3724,14 +3851,14 @@
           "courses": {
             "type": "integer",
             "format": "int64",
-            "description": "Distinct courses with an active offering."
+            "description": "Distinct courses with any imported offering."
           },
           "latestImportedAt": {
             "type": [
               "string",
               "null"
             ],
-            "description": "Latest import time (ISO-8601 UTC), `null` before the first import."
+            "description": "Latest import time (ISO-8601 UTC)."
           },
           "name": {
             "type": "string"
@@ -3745,7 +3872,7 @@
           "offerings": {
             "type": "integer",
             "format": "int64",
-            "description": "Active (searchable) offerings across all terms."
+            "description": "All imported offerings across all terms, including withdrawn offerings."
           },
           "slug": {
             "type": "string"

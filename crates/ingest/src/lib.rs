@@ -367,9 +367,9 @@ pub async fn import(pool: &PgPool, snapshot: &ValidSnapshot) -> Result<usize> {
             "INSERT INTO offerings (school, term, source_id, course_code, class_code, title, title_en,
                  instructors, department, department_code, credits, requirement, requirement_text,
                  schedule, schedule_text, capacity, enrolled, language, campus, grade, description,
-                 syllabus_url, source_url, notes, extra)
+                 syllabus_url, source_url, notes, extra, is_academic)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::float8::numeric, $12, $13, $14,
-                 $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+                 $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26)
              ON CONFLICT (school, term, source_id) DO UPDATE SET
                  course_code = EXCLUDED.course_code, class_code = EXCLUDED.class_code,
                  title = EXCLUDED.title, title_en = EXCLUDED.title_en,
@@ -382,7 +382,7 @@ pub async fn import(pool: &PgPool, snapshot: &ValidSnapshot) -> Result<usize> {
                  campus = EXCLUDED.campus, grade = EXCLUDED.grade,
                  description = EXCLUDED.description, syllabus_url = EXCLUDED.syllabus_url,
                  source_url = EXCLUDED.source_url, notes = EXCLUDED.notes, extra = EXCLUDED.extra,
-                 active = true",
+                 is_academic = EXCLUDED.is_academic, active = true",
         )
         .bind(&snapshot.school)
         .bind(&snapshot.term)
@@ -409,6 +409,10 @@ pub async fn import(pool: &PgPool, snapshot: &ValidSnapshot) -> Result<usize> {
         .bind(&offering.source_url)
         .bind(&offering.notes)
         .bind(offering.extra.as_ref().map(Json))
+        .bind(unicourse_catalog::is_academic_offering(
+            &offering.title,
+            offering.credits,
+        ))
         .execute(&mut *transaction)
         .await?;
     }

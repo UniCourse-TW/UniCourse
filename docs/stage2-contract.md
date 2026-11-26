@@ -28,19 +28,38 @@ school never publishes `enrolled`, fall back to summing `capacity` and label it 
 Also show: total offerings / courses / schools / terms indexed, per-school offering counts, and the
 latest import time per school. The search form stays at the top.
 
-Rankings API: `GET /api/rankings/courses?school=&limit=` returns
+Rankings API: `GET /api/rankings/courses?school=&limit=&academic=` returns
 `{ school, schoolName, courseCode, title, titleEn, terms, offerings, enrolledTotal, capacityTotal, latestOfferingId, latestActiveOfferingId, trend, isDemo }[]`
 ordered by `enrolledTotal DESC NULLS LAST, capacityTotal DESC NULLS LAST`. `trend` contains up to
 ten `{ term, enrolled, capacity }` entries, newest first, including withdrawn offerings. The view is
 materialized and refreshed on ingest. `latestActiveOfferingId` is `null` if every offering is withdrawn;
 `latestOfferingId` still links to the latest withdrawn offering in that case. Offering IDs are strings.
+`academic=true` (default) excludes a course if that displayed offering has zero credits or its title
+contains 班級活動、班會、導師時間、導師輔導、操行、週會、勞作教育、新生定向、新生導航 or 新生訓練.
+Missing credits are not zero; credit-bearing courses such as 服務學習 or 全民國防教育 remain in the
+ranking. `academic=false` disables the filter. Totals for included courses still span their full history.
+Writers outside the ingest must set `offerings.is_academic` with `is_academic_offering` and refresh
+the ranking view after the write commits.
+
+`GET /api/coverage` returns `{ earliestTerm, latestTerm, terms, schools, totals }`. The top-level
+term list is the union of imported terms, newest first; its bounds are `null` when no data is imported.
+Each school row is `{ slug, name, earliestTerm, latestTerm, terms, offerings, courses, latestImportedAt }`.
+Coverage includes only schools with an imported snapshot, all imported terms (including empty snapshots)
+and all offerings (including withdrawn offerings). A course is a distinct `(school, courseCode)` with
+at least one offering. The same five-minute per-process cache feeds `/api/stats/overview`,
+`/api/institutions`, and the school detail totals. Search, department listings, and trends still count
+active offerings only. Institutions without data remain in the directory with empty terms and zero counts.
 
 ## Catalog history and trends
 
 - `GET /api/courses` retains its array response. `GET /api/courses/search` accepts the same filters
   plus `offset` (non-negative, default 0) and `sort` (`relevance`, `enrolled`, `title`), and returns
   `{ total, offset, courses: Offering[] }`. Each page contains at most 50 active offerings. `total`
-  is the unpaginated count, including when `offset` is beyond the last match. Enrollment sorts descending, unpublished values last; titles sort ascending.
+  is the unpaginated count, including when `offset` is beyond the last match. Relevance prefers an
+  exact code, an exact title, a title prefix, a title substring (ordered by trigram word similarity),
+  a partial code, then instructor or department matches. It breaks ties by term and published
+  enrollment, newest and largest first. Both Chinese and English titles participate. Explicit
+  enrollment sort puts unpublished values last; explicit title sort is ascending.
 - `GET /api/schools/{school}/departments/{department}?term=` accepts an optional exact term.
   `total` and `offerings` match the filter, while `terms` always lists all available terms, newest
   first. A known department with no matches in the selected term returns 200 with an empty list.

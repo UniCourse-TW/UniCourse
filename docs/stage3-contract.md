@@ -41,6 +41,7 @@ master list with live catalog stats:
 ```
 
 `status` is `none` for institutions without a crawler slug. Stats are 0/empty for schools with no data.
+Counts use the same imported terms and offerings as `/api/coverage`, including withdrawn offerings.
 Both JSON files are embedded into the API binary at build time (`include_str!`) so the deploy image
 needs no extra files; a unit test checks every slug in `status.json` exists in `institutions.json`
 and in the Rust slug list, and that every crawler package under `crawlers/` has a status entry.

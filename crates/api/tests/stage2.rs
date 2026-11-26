@@ -26,6 +26,24 @@ async fn seed(pool: &PgPool) {
     }
 }
 
+async fn import_offerings(pool: &PgPool, base: &[u8], offerings: Vec<Value>) {
+    let mut snapshot: Value = serde_json::from_slice(base).unwrap();
+    snapshot["offerings"] = json!(offerings);
+    import(
+        pool,
+        &parse_snapshot(&serde_json::to_vec(&snapshot).unwrap()).unwrap(),
+    )
+    .await
+    .unwrap();
+}
+
+fn synthetic_offering(code: &str, title: &str, enrolled: i32) -> Value {
+    json!({
+        "sourceId": code, "courseCode": code, "title": title, "enrolled": enrolled,
+        "instructors": [], "sourceUrl": "https://www.nthu.edu.tw/"
+    })
+}
+
 struct Response {
     status: StatusCode,
     cookie: Option<String>,
@@ -881,8 +899,8 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
         .unwrap()
         .clone();
     assert_eq!(nthu["terms"], 2);
-    assert_eq!(nthu["offerings"], 3); // 115-1 shrunk to one + two in 114-2
-    assert_eq!(nthu["courses"], 2);
+    assert_eq!(nthu["offerings"], 5);
+    assert_eq!(nthu["courses"], 4);
     assert!(nthu["latestImportedAt"].as_str().unwrap().ends_with('Z'));
     assert_eq!(overview.body["totals"]["schools"], 3);
     assert_eq!(overview.body["totals"]["terms"], 2);
@@ -897,8 +915,8 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     assert_eq!(institution["name"], "國立清華大學");
     assert_eq!(institution["status"], "live");
     assert_eq!(institution["terms"], json!(["115-1", "114-2"]));
-    assert_eq!(institution["offerings"], 3);
-    assert_eq!(institution["courses"], 2);
+    assert_eq!(institution["offerings"], 5);
+    assert_eq!(institution["courses"], 4);
     assert_eq!(institution["latestImportedAt"], nthu["latestImportedAt"]);
     let blocked = by_slug("ncku");
     assert_eq!(blocked["status"], "blocked");
@@ -919,6 +937,8 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     let school = call(&app, "GET", "/api/schools/nthu", None, None).await;
     assert_eq!(school.status, StatusCode::OK);
     assert_eq!(school.body["terms"], json!(["115-1", "114-2"]));
+    assert_eq!(school.body["offerings"], nthu["offerings"]);
+    assert_eq!(school.body["courses"], nthu["courses"]);
     assert_eq!(
         school.body["departments"],
         json!([{ "name": "示範數學系", "offerings": 3, "courses": 2 }])
@@ -1232,4 +1252,177 @@ async fn search_pages_sort_and_keep_totals(pool: PgPool) {
         assert_eq!(response.status, StatusCode::BAD_REQUEST);
         assert_eq!(response.body["code"], "invalid_query");
     }
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn search_relevance_prefers_codes_and_titles_over_metadata(pool: PgPool) {
+    let mut metadata = synthetic_offering("META", "方法與實務", 999);
+    metadata["instructors"] = json!(["資料教師"]);
+    metadata["department"] = json!("資料中心");
+    let mut english = synthetic_offering("ENGLISH", "其他主題", 100);
+    english["titleEn"] = json!("資料 Introduction");
+    import_offerings(
+        &pool,
+        NTHU,
+        vec![
+            metadata,
+            english,
+            synthetic_offering("FUZZY", "甲資料乙", 250),
+            synthetic_offering("CONTAINS", "甲 資料 乙", 5),
+            synthetic_offering("LOW", "資料探勘", 10),
+            synthetic_offering("EXACT", "資料", 2),
+            synthetic_offering("資料-I", "專題研討", 999),
+            synthetic_offering("資料", "獨立研究", 1),
+            synthetic_offering("X資料", "無關主題", 100),
+            synthetic_offering("SYMBOL", "符號%_測試", 1),
+        ],
+    )
+    .await;
+    import_offerings(
+        &pool,
+        NTHU_OLDER,
+        vec![synthetic_offering("OLDER", "資料結構", 300)],
+    )
+    .await;
+    let app = unicourse_api::router(pool);
+    let query = "q=%E8%B3%87%E6%96%99";
+    let page = call(
+        &app,
+        "GET",
+        &format!("/api/courses/search?{query}"),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(page.status, StatusCode::OK, "{}", page.body);
+    assert_eq!(page.body["total"], 9);
+    let courses = &page.body["courses"];
+    assert_eq!(
+        courses
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| row["courseCode"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        [
+            "資料", "EXACT", "ENGLISH", "LOW", "OLDER", "CONTAINS", "FUZZY", "資料-I", "META"
+        ]
+    );
+    let legacy = call(&app, "GET", &format!("/api/courses?{query}"), None, None).await;
+    assert_eq!(&legacy.body, courses);
+    let percent = call(&app, "GET", "/api/courses/search?q=%25%5F", None, None).await;
+    assert_eq!(percent.body["total"], 1);
+    assert_eq!(percent.body["courses"][0]["courseCode"], "SYMBOL");
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn rankings_default_to_academic_courses(pool: PgPool) {
+    let mut zero_credit = synthetic_offering("ZERO", "服務學習", 500);
+    zero_credit["credits"] = json!(0);
+    let mut credit = synthetic_offering("CREDIT", "服務學習", 20);
+    credit["credits"] = json!(1);
+    import_offerings(
+        &pool,
+        NTHU,
+        vec![
+            synthetic_offering("CLASS", "大一班會", 999),
+            zero_credit,
+            credit,
+        ],
+    )
+    .await;
+    let app = unicourse_api::router(pool);
+    let url = "/api/rankings/courses?school=nthu&limit=1";
+    let default = call(&app, "GET", url, None, None).await;
+    assert_eq!(default.status, StatusCode::OK);
+    assert_eq!(default.body[0]["courseCode"], "CREDIT");
+    let explicit = call(&app, "GET", &format!("{url}&academic=true"), None, None).await;
+    assert_eq!(default.body, explicit.body);
+    let all = call(
+        &app,
+        "GET",
+        "/api/rankings/courses?academic=false",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(all.status, StatusCode::OK);
+    assert_eq!(all.body[0]["courseCode"], "CLASS");
+    assert_eq!(all.body[1]["courseCode"], "ZERO");
+    assert_eq!(all.body[2]["courseCode"], "CREDIT");
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn coverage_endpoints_share_all_imported_data_and_cache(pool: PgPool) {
+    let empty_app = unicourse_api::router(pool.clone());
+    let empty = call(&empty_app, "GET", "/api/coverage", None, None).await;
+    assert_eq!(empty.status, StatusCode::OK);
+    assert_eq!(
+        empty.body,
+        json!({
+            "earliestTerm": null, "latestTerm": null, "terms": [], "schools": [],
+            "totals": {"terms": 0, "schools": 0, "offerings": 0, "courses": 0}
+        })
+    );
+    seed(&pool).await;
+    import_offerings(
+        &pool,
+        NTHU,
+        vec![synthetic_offering("DEMO2", "取代後的課程", 5)],
+    )
+    .await;
+    sqlx::query("INSERT INTO schools (slug, name) VALUES ('ncku', '國立成功大學')")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let app = unicourse_api::router(pool.clone());
+    let coverage = call(&app, "GET", "/api/coverage", None, None).await;
+    assert_eq!(coverage.status, StatusCode::OK);
+    assert_eq!(coverage.body["earliestTerm"], "114-2");
+    assert_eq!(coverage.body["latestTerm"], "115-1");
+    assert_eq!(coverage.body["terms"], json!(["115-1", "114-2"]));
+    assert_eq!(
+        coverage.body["totals"],
+        json!({"terms": 2, "schools": 3, "offerings": 9, "courses": 8})
+    );
+    let nthu = &coverage.body["schools"][0];
+    assert_eq!(nthu["slug"], "nthu");
+    assert_eq!(nthu["earliestTerm"], "114-2");
+    assert_eq!(nthu["latestTerm"], "115-1");
+    assert_eq!(nthu["offerings"], 6);
+    assert_eq!(nthu["courses"], 5);
+
+    import_offerings(
+        &pool,
+        NTHU,
+        vec![synthetic_offering("NEW", "又一門新課", 6)],
+    )
+    .await;
+    let overview = call(&app, "GET", "/api/stats/overview", None, None).await;
+    let institutions = call(&app, "GET", "/api/institutions", None, None).await;
+    assert_eq!(overview.body["totals"], coverage.body["totals"]);
+    let institution_rows = institutions.body["institutions"].as_array().unwrap();
+    for (school, row) in coverage.body["schools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(overview.body["schools"].as_array().unwrap())
+    {
+        let institution = institution_rows
+            .iter()
+            .find(|item| item["slug"] == school["slug"])
+            .unwrap();
+        for field in ["slug", "offerings", "courses", "latestImportedAt"] {
+            assert_eq!(school[field], row[field], "overview {field}");
+            assert_eq!(school[field], institution[field], "institution {field}");
+        }
+        assert_eq!(school["terms"], institution["terms"]);
+        assert_eq!(
+            school["terms"].as_array().unwrap().len(),
+            row["terms"].as_u64().unwrap() as usize
+        );
+    }
+    let fresh_app = unicourse_api::router(pool);
+    let fresh = call(&fresh_app, "GET", "/api/coverage", None, None).await;
+    assert_eq!(fresh.body["totals"]["offerings"], 10);
 }

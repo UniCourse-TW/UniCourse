@@ -1,3 +1,8 @@
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
+
 use axum::{
     Json, Router,
     extract::{
@@ -5,15 +10,17 @@ use axum::{
         rejection::{JsonRejection, PathRejection, QueryRejection},
     },
     http::StatusCode,
+    response::{IntoResponse, Response},
     routing::{get, post, put},
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use sqlx::PgPool;
+use tokio::sync::Mutex;
 use unicourse_catalog::{
-    self as catalog, CourseRanking, CrawlStatus, DepartmentCount, DepartmentOfferings,
+    self as catalog, CourseRanking, Coverage, CrawlStatus, DepartmentCount, DepartmentOfferings,
     EducationSystem, ExtraValue, Institution, InstitutionKind, Institutions, InstructorOfferings,
     InstructorSummary, Meeting, Offering, Overview, OverviewTotals, Ownership, Requirement, School,
-    SchoolDetail, SchoolOverview, SearchPage, SearchSort,
+    SchoolCoverage, SchoolDetail, SchoolOverview, SearchPage, SearchSort,
 };
 use utoipa::{
     IntoParams, Modify, OpenApi, ToSchema,
@@ -30,7 +37,7 @@ mod text;
 #[openapi(
     paths(
         schools, terms, departments, search, search_page, detail, rankings, overview, school_detail,
-        department_detail, instructor, institutions,
+        department_detail, instructor, institutions, coverage,
         history::course_history, history::school_trends, history::department_trends,
         history::instructor_trends,
         auth::register, auth::login, auth::logout, auth::me, auth::update_me, auth::profile,
@@ -42,7 +49,8 @@ mod text;
         School, Offering, Meeting, Requirement, ExtraValue, ErrorBody, CourseRanking, Overview,
         SchoolOverview, OverviewTotals, SchoolDetail, DepartmentCount, DepartmentOfferings,
         InstructorOfferings, InstructorSummary, Institutions, Institution, InstitutionKind,
-        Ownership, EducationSystem, CrawlStatus, SearchSort, forum::TopLevelPostType,
+        Ownership, EducationSystem, CrawlStatus, SearchSort, Coverage, SchoolCoverage,
+        forum::TopLevelPostType,
     )),
     modifiers(&SessionCookie)
 )]
@@ -77,6 +85,34 @@ pub struct Config {
 struct AppState {
     pool: PgPool,
     config: Config,
+    coverage: Arc<Mutex<Option<CachedCoverage>>>,
+}
+
+struct CachedCoverage {
+    fetched_at: Instant,
+    value: Arc<Coverage>,
+}
+
+impl AppState {
+    async fn coverage(&self) -> Result<Arc<Coverage>, ApiError> {
+        const TTL: Duration = Duration::from_secs(5 * 60);
+        let mut cache = self.coverage.lock().await;
+        if let Some(cached) = &*cache
+            && cached.fetched_at.elapsed() < TTL
+        {
+            return Ok(Arc::clone(&cached.value));
+        }
+        let value = Arc::new(
+            catalog::coverage(&self.pool)
+                .await
+                .map_err(database_error)?,
+        );
+        *cache = Some(CachedCoverage {
+            fetched_at: Instant::now(),
+            value: Arc::clone(&value),
+        });
+        Ok(value)
+    }
 }
 
 impl FromRef<AppState> for PgPool {
@@ -124,6 +160,7 @@ struct SearchOptions {
     #[param(minimum = 0)]
     offset: Option<i64>,
     /// Sort by relevance (default), published enrollment descending, or title ascending.
+    /// Relevance prefers exact code, exact title, title prefix, title substring, then other matches.
     sort: Option<SearchSort>,
 }
 
@@ -148,6 +185,9 @@ struct RankingFilters {
     school: Option<String>,
     /// Number of courses, 1 to 100 (default 20).
     limit: Option<i64>,
+    /// Exclude zero-credit and administrative offerings from the ranking (default true).
+    #[param(default = true)]
+    academic: Option<bool>,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -308,6 +348,7 @@ pub fn router_with(pool: PgPool, config: Config) -> Router {
             get(history::course_history),
         )
         .route("/api/rankings/courses", get(rankings))
+        .route("/api/coverage", get(coverage))
         .route("/api/stats/overview", get(overview))
         .route("/api/institutions", get(institutions))
         .route("/api/auth/register", post(auth::register))
@@ -342,7 +383,11 @@ pub fn router_with(pool: PgPool, config: Config) -> Router {
         .method_not_allowed_fallback(|| async {
             error(StatusCode::METHOD_NOT_ALLOWED, "Method not allowed")
         })
-        .with_state(AppState { pool, config })
+        .with_state(AppState {
+            pool,
+            config,
+            coverage: Arc::default(),
+        })
 }
 
 #[utoipa::path(get, path = "/api/schools", responses(
@@ -466,32 +511,37 @@ async fn rankings(
         return Err(invalid_query("limit must be between 1 and 100"));
     }
     let school = filters.school.as_deref().filter(|value| !value.is_empty());
-    catalog::rankings(&pool, school, limit)
+    catalog::rankings(&pool, school, limit, filters.academic.unwrap_or(true))
         .await
         .map(Json)
         .map_err(database_error)
+}
+
+#[utoipa::path(get, path = "/api/coverage", responses(
+    (status = 200, description = "Coverage of all imported terms and offerings, including withdrawn offerings; cached for five minutes", body = Coverage),
+    (status = 500, body = ErrorBody)
+))]
+async fn coverage(State(state): State<AppState>) -> Result<Response, ApiError> {
+    let coverage = state.coverage().await?;
+    Ok(Json(&*coverage).into_response())
 }
 
 #[utoipa::path(get, path = "/api/stats/overview", responses(
-    (status = 200, description = "Per-school and total counts of indexed (active) offerings, courses and terms", body = Overview),
+    (status = 200, description = "Per-school and total counts of all imported offerings, courses and terms", body = Overview),
     (status = 500, body = ErrorBody)
 ))]
-async fn overview(State(pool): State<PgPool>) -> Result<Json<Overview>, ApiError> {
-    catalog::overview(&pool)
-        .await
-        .map(Json)
-        .map_err(database_error)
+async fn overview(State(state): State<AppState>) -> Result<Json<Overview>, ApiError> {
+    let coverage = state.coverage().await?;
+    Ok(Json(Overview::from(&*coverage)))
 }
 
 #[utoipa::path(get, path = "/api/institutions", responses(
-    (status = 200, description = "Every Taiwanese higher-education institution in the MOE list, by code, with crawl status and indexed (active) catalog stats", body = Institutions),
+    (status = 200, description = "Every Taiwanese higher-education institution in the MOE list, by code, with crawl status and coverage of all imported offerings", body = Institutions),
     (status = 500, body = ErrorBody)
 ))]
-async fn institutions(State(pool): State<PgPool>) -> Result<Json<Institutions>, ApiError> {
-    catalog::institutions(&pool)
-        .await
-        .map(Json)
-        .map_err(database_error)
+async fn institutions(State(state): State<AppState>) -> Result<Json<Institutions>, ApiError> {
+    let coverage = state.coverage().await?;
+    Ok(Json(catalog::institutions(&coverage)))
 }
 
 #[utoipa::path(get, path = "/api/schools/{school}", params(("school" = String, Path, description = "School slug")), responses(
@@ -501,11 +551,12 @@ async fn institutions(State(pool): State<PgPool>) -> Result<Json<Institutions>, 
     (status = 500, body = ErrorBody)
 ))]
 async fn school_detail(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     school: Result<Path<String>, PathRejection>,
 ) -> Result<Json<SchoolDetail>, ApiError> {
     let school = path(school, "School not found", |school| vec![school.as_str()])?;
-    catalog::school_detail(&pool, &school)
+    let coverage = state.coverage().await?;
+    catalog::school_detail(&state.pool, &school, &coverage)
         .await
         .map_err(database_error)?
         .map(Json)
