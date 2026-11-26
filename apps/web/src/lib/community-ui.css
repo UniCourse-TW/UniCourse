@@ -55,6 +55,7 @@
 .cm-head > .cm-dek { grid-column: 1 / -1; grid-row: 2; }
 .cm-dek { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; }
 .cm-dek .sep { margin-inline: 0.35em; color: var(--axis); }
+.cm-dek a { white-space: nowrap; }
 .cm-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 
 /* Buttons. Primary is solid brand; secondary is outlined; quiet is text-like. */
@@ -84,7 +85,8 @@
 .cm-btn.quiet:hover { background: var(--hover-row); filter: none; }
 .cm-btn.danger { color: var(--on-brand) !important; background: var(--down); border-color: var(--down); }
 .cm-btn.block { inline-size: 100%; }
-.cm-btn[aria-busy='true'], .cm-btn:disabled { opacity: 0.6; cursor: default; filter: none; }
+.cm-btn[aria-busy='true'] { opacity: 0.6; cursor: progress; filter: none; }
+.cm-btn:disabled:not([aria-busy='true']) { color: var(--muted) !important; background: var(--chip); border-color: var(--line); cursor: default; filter: none; }
 
 /* Form fields: label row (label + hint/counter on the right) above a 44 px control. */
 .cm-form { display: grid; gap: var(--space-3); }

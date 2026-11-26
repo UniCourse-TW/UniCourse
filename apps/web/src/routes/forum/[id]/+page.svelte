@@ -330,7 +330,7 @@
   .vote button[aria-pressed='true']:last-of-type { color: var(--down); background: color-mix(in srgb, var(--down) var(--status-tint), var(--panel-raised)); box-shadow: inset 0 0 0 1px var(--down); }
   .vote button:disabled { opacity: 0.6; cursor: progress; }
   .vote .cm-score { min-inline-size: 2.5rem; padding-inline: var(--space-1); text-align: center; font-size: var(--t-base); }
-  .vote.static { gap: var(--space-1); padding: 0 var(--space-3); min-block-size: 2.375rem; }
+  .vote.static { gap: var(--space-1); padding: 0 var(--space-2) 0 0; min-block-size: 2.375rem; border-color: transparent; background: transparent; }
   .vote.static .label { color: var(--muted); font-size: var(--t-sm); }
   .vote.static .cm-score { min-inline-size: 0; }
 

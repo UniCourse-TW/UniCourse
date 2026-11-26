@@ -56,7 +56,7 @@
       <h1>論壇</h1>
       <p class="cm-dek">
         修課心得、選課提問與公告
-        {#if data.counts.all !== null}<span class="sep">·</span>共 <span class="num">{fmt.format(data.counts.all)}</span> 篇{/if}
+        {#if data.counts.all !== null}<span class="sep">·</span>{narrowed || filters.courseCode ? '符合' : '共'} <span class="num">{fmt.format(data.counts.all)}</span> 篇{/if}
         {#if data.latest}<span class="sep">·</span>最新 <time class="num" datetime={data.latest}>{shortDateTime(data.latest)}</time>{/if}
         <span class="sep">·</span><a href="/terms">發文規則</a>
       </p>
@@ -129,9 +129,9 @@
           {#snippet action()}
             <div class="state-actions">
               {#if filters.courseCode}
-                <a class="cm-btn secondary" href={data.user ? composeHref : loginHref(composeHref)}>發表這門課的第一篇</a>
+                <a class="cm-btn" href={data.user ? composeHref : loginHref(composeHref)}>發表這門課的第一篇</a>
               {/if}
-              <a class="cm-btn quiet" href="/forum">清除篩選</a>
+              <a class="cm-btn secondary" href="/forum">清除篩選</a>
             </div>
           {/snippet}
         </EmptyState>
