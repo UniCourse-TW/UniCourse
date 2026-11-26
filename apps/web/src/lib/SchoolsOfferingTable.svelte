@@ -19,16 +19,16 @@
   let { offerings, mode, caption, ratings, showTerm }: Props = $props();
   const courseHref = (row: Offering) => `/courses/${row.id}`;
   const termColumn: TableColumn<Offering> = { id: 'term', label: '學期', value: (row) => row.term, sortable: true };
-  const gradeColumn: TableColumn<Offering> = { id: 'grade', label: '年級', value: (row) => row.grade, align: 'center' };
+  const gradeColumn: TableColumn<Offering> = { id: 'grade', label: '年級', value: (row) => row.grade, align: 'center', width: '3.5rem' };
+  const category = (row: Offering) => [row.credits == null ? null : `${row.credits} 學分`, requirement(row)].filter(Boolean).join(' · ');
   let columns = $derived<TableColumn<Offering>[]>([
     { id: 'course', label: '課程', value: (row) => row.title, sortable: true, width: '11rem' },
     ...(showTerm ? [termColumn] : []),
     mode === 'department' ? { id: 'teachers', label: '授課教師' } : { id: 'unit', label: '開課單位' },
     ...(mode === 'department' ? [gradeColumn] : []),
-    { id: 'credits', label: '學分', value: (row) => row.credits, numeric: true },
-    { id: 'requirement', label: '必選修', value: requirement },
+    { id: 'category', label: '學分／類別', value: category, width: '7rem' },
     { id: 'enrollment', label: '人數／名額', sortable: true, sortValue: (row) => row.enrolled, numeric: true, width: '6.5rem' },
-    { id: 'schedule', label: '時間地點', width: '12rem' },
+    { id: 'schedule', label: '時間地點', width: '15rem' },
     { id: 'rating', label: '課程評價', align: 'center' }
   ]);
 </script>
@@ -50,6 +50,11 @@
     <span class="ui-tabular">{displayValue(row.enrolled)}{#if row.capacity != null} / {displayValue(row.capacity)}{/if}</span>
     {#if row.enrolled != null && row.capacity != null && row.capacity > 0}
       <span class="track" aria-hidden="true"><span class="fill" class:exceeded={row.enrolled > row.capacity} style:inline-size={`${Math.min(100, 100 * row.enrolled / row.capacity)}%`}></span></span>
+      {#if row.enrolled >= row.capacity * .9}
+        <small class="capacity-note" title={`資料更新於 ${new Date(row.importedAt).toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' })}`}>
+          {row.enrolled > row.capacity ? '已超過名額' : row.enrolled === row.capacity ? '人數達名額' : `匯入時餘 ${displayValue(row.capacity - row.enrolled)} 名`}
+        </small>
+      {/if}
     {/if}
   </span>
 {/snippet}
@@ -99,7 +104,7 @@
           <div><dt>教師</dt><dd>{@render teachers(row)}</dd></div>
           {#if row.grade}<div><dt>年級</dt><dd>{row.grade}</dd></div>{/if}
         {:else}<div><dt>單位</dt><dd>{@render unit(row)}</dd></div>{/if}
-        <div><dt>類別</dt><dd>{[requirement(row), row.credits != null && `${row.credits} 學分`].filter(Boolean).join(' · ') || '—'}</dd></div>
+        <div><dt>類別</dt><dd>{category(row) || '—'}</dd></div>
         <div><dt>時間</dt><dd>{@render schedule(row)}</dd></div>
         <div><dt>人數</dt><dd>{@render enrollment(row)}</dd></div>
         <div><dt>評價</dt><dd>{@render rating(row)}</dd></div>
@@ -115,6 +120,7 @@
   .fill { display: block; block-size: 100%; background: var(--brand); border-radius: inherit; }
   .fill.exceeded { background: var(--warn); }
   small { color: var(--muted); }
+  .capacity-note { color: var(--warn); font-size: var(--t-sm); }
   .slot { display: block; overflow-wrap: anywhere; }
   @media (max-width: 40rem) {
     .table-view { display: none; }
