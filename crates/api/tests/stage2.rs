@@ -849,8 +849,9 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     );
     // Every institution has a slug; one without a status entry has status `none`.
     assert!(rows.iter().all(|row| row["slug"].is_string()));
-    let other = by_slug("nsysu");
-    assert_eq!(other["name"], "國立中山大學");
+    // 國立空中大學 has no data on the national platform, so no status entry.
+    let other = by_slug("nou");
+    assert_eq!(other["name"], "國立空中大學");
     assert_eq!(other["status"], "none");
     assert_eq!(other["note"], Value::Null);
     let newest = rows
