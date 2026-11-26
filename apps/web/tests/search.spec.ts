@@ -60,11 +60,21 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '線性代數' })).toBeVisible();
   await expect(page.getByText('Linear Algebra (Demo)')).toBeVisible();
   await expect(page.getByText('週二 第 3、4 節 · 示範館 101')).toBeVisible();
-  await expect(page.getByText('60 人')).toBeVisible();
-  await expect(page.getByRole('row', { name: '授課方式 講授' })).toBeVisible();
+  // Key facts sit in the tiles above the fold; school fields are a definition list further down.
+  const facts = page.getByRole('group', { name: '課程重點' });
+  await expect(facts).toContainText('3學分');
+  await expect(facts).toContainText('必修');
+  await expect(facts.getByText('/ 60 人')).toBeVisible();
+  await expect(page.locator('#extra').locator('xpath=ancestor::details')).toContainText('授課方式講授');
   await expect(page.getByRole('link', { name: '課綱' })).toBeVisible();
+  // Cross-term history: 115-1 is this page, 114-2 links to its own offering.
+  const history = page.getByRole('table', { name: /各學期開課與修課人數/ });
+  await expect(history.getByRole('row', { name: /115-1/ })).toContainText('本頁');
+  await expect(history.getByRole('row', { name: /114-2/ }).getByRole('link', { name: /114-2/ })).toHaveAttribute('href', /^\/courses\/\d+$/);
 
-  await page.getByRole('link', { name: '示範數學系' }).click();
+  await page.getByRole('navigation', { name: '所在位置' }).getByRole('link', { name: '示範數學系' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: '示範數學系' })).toBeVisible();
+  await page.goto('/?school=nthu&term=115-1&department=示範數學系');
   await expect(page.getByRole('combobox', { name: '開課單位' })).toHaveValue('示範數學系');
   await expect(page.getByRole('link', { name: '移除篩選：示範數學系' })).toBeVisible();
   await expect(page.getByRole('article')).toHaveCount(1);

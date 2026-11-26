@@ -1,125 +1,369 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import CommunityPostList from '$lib/community-post-list.svelte';
   import CommunityRatings from '$lib/community-ratings.svelte';
-  import { departmentHref, forumHref, instructorHref } from '$lib/community-paths';
-  import { credits, extraValue, importedAt, isHttpUrl, meeting, requirement } from '$lib/format';
+  import { forumHref, loginHref } from '$lib/community-paths';
+  import CourseExternalReviews from '$lib/course-external-reviews.svelte';
+  import CourseHistory from '$lib/course-history.svelte';
+  import { fillRatio, nearlyFull, publishedCapacity } from '$lib/course-history';
+  import { averageScore, stars } from '$lib/community-format';
+  import { extraValue, importedAt, isHttpUrl, meeting, requirement } from '$lib/format';
+  import { departmentHref, instructorHref, schoolHref } from '$lib/overview-paths';
+  import Badge from '$lib/ui/Badge.svelte';
+  import EmptyState from '$lib/ui/EmptyState.svelte';
+  import { displayValue } from '$lib/ui/format';
+  import '$lib/community-ui.css';
   import type { PageProps } from './$types';
 
   let { data, form }: PageProps = $props();
   let course = $derived(data.course);
+  let history = $derived(data.history);
   let extra = $derived(Object.entries(course.extra ?? {}));
-  let departmentSearch = $derived.by(() => {
-    if (!course.department) return undefined;
-    const params = new URLSearchParams({ school: course.school, term: course.term, department: course.department });
-    return `/?${params}`;
+  let capacity = $derived(publishedCapacity(course.capacity));
+  let ratio = $derived(fillRatio(course.enrolled, capacity));
+  let full = $derived(ratio != null && ratio >= nearlyFull);
+  let totals = $derived(history.totals);
+  let stats = $derived(data.ratings?.stats);
+  // Some schools list 必選修 per class and program (「資工系114BA 必修 …」); the tile shows the category
+  // and the school's own wording goes to the facts panel.
+  let requirementText = $derived(course.requirementText?.trim() || undefined);
+  let requirementLabel = $derived(
+    course.requirement ? requirement({ requirement: course.requirement, requirementText: null })
+      : requirementText && requirementText.length <= 8 ? requirementText : undefined
+  );
+  let requirementDetail = $derived(requirementText && requirementText !== requirementLabel ? requirementText : undefined);
+  let sourceLabel = $derived(course.isDemo ? '校方網站' : '校方課程頁');
+  let syllabus = $derived(course.syllabusUrl && isHttpUrl(course.syllabusUrl) ? course.syllabusUrl : undefined);
+  let forumList = $derived(forumHref({ school: course.school, courseCode: course.courseCode }));
+  let composeHref = $derived(`${forumList}&compose=1`);
+  let newer = $derived(!course.active && history.latestActiveOfferingId && history.latestActiveOfferingId !== course.id
+    ? history.latestActiveOfferingId
+    : undefined);
+  let span = $derived(history.rows.length > 1 ? `${history.rows.at(-1)?.term}–${history.rows[0]?.term}` : undefined);
+  let hasAbout = $derived(Boolean(course.description || course.notes || extra.length));
+
+  // Long text sits last and starts collapsed on phones; desktops keep it open (it is server-rendered open).
+  let aboutOpen = $state(true);
+  onMount(() => {
+    if (window.matchMedia('(max-width: 40rem)').matches) aboutOpen = false;
   });
+
+  function credits(value: number | null | undefined) {
+    return value == null ? null : displayValue(value);
+  }
 </script>
 
 <svelte:head>
   <title>{course.title} · {course.schoolName}｜UniCourse</title>
+  <meta name="description" content={`${course.schoolName} ${course.term} ${course.title}（${course.courseCode}）的時間地點、修課人數、歷年開課與同學評價。`} />
 </svelte:head>
 
-<a href="/">← 回課程搜尋</a>
-<article>
-  <h1>{course.title}</h1>
-  {#if course.titleEn}<p class="subtitle" lang="en">{course.titleEn}</p>{/if}
-  {#if course.isDemo}<p class="note">示範資料，非校方實際開課紀錄。</p>{/if}
-  {#if !course.active}<p class="note">已下架：此頁保留歷史開課資訊。</p>{/if}
-  <dl>
-    <dt>學校</dt><dd>{course.schoolName}</dd>
-    <dt>學期</dt><dd>{course.term}</dd>
-    {#if course.department}
-      <dt>開課單位</dt>
-      <dd>
-        <a href={departmentSearch}>{course.department}</a>{#if course.departmentCode}（{course.departmentCode}）{/if}
-        · <a href={departmentHref(course.school, course.department)}>系所總覽</a>
-      </dd>
-    {/if}
-    {#if course.classCode}
-      <dt>課號／班次</dt><dd>{course.courseCode} · {course.classCode}</dd>
-    {:else}
-      <dt>課號</dt><dd>{course.courseCode}</dd>
-    {/if}
-    {#if course.credits != null}<dt>學分</dt><dd>{credits(course.credits)}</dd>{/if}
-    {#if requirement(course)}<dt>必選修</dt><dd>{requirement(course)}</dd>{/if}
-    <dt>授課教師</dt>
-    <dd>
-      {#each course.instructors as name, index (index)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{:else}未提供{/each}
-    </dd>
-    {#if course.schedule?.length}
-      <dt>時間地點</dt>
-      <dd>
+<div class="course-page">
+  <nav class="crumbs" aria-label="所在位置">
+    <a href="/">查課</a><span aria-hidden="true">/</span><a href={schoolHref(course.school)}>{course.schoolName}</a>
+    {#if course.department}<span aria-hidden="true">/</span><a href={departmentHref(course.school, course.department)}>{course.department}</a>{/if}
+  </nav>
+
+  <header class="head">
+    <div class="title">
+      <h1>{course.title}</h1>
+      {#if course.titleEn}<p class="en" lang="en">{course.titleEn}</p>{/if}
+      <p class="dek">
+        <span class="item mono">{course.term}</span>
+        <span class="item mono">{course.courseCode}{#if course.classCode}-{course.classCode}{/if}</span>
+        {#if course.instructors.length}
+          <span class="item">{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{/each}</span>
+        {/if}
+      </p>
+      <p class="meta">
+        {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}
+        {#if !course.active}<Badge label="已下架" tone="inactive" />{/if}
+        <span>{course.schoolName} · 更新於 <time datetime={course.importedAt}>{importedAt(course.importedAt)}</time></span>
+      </p>
+    </div>
+    <div class="actions">
+      {#if isHttpUrl(course.sourceUrl)}
+        <a class="button primary" href={course.sourceUrl} target="_blank" rel="noopener noreferrer">{sourceLabel}<span aria-hidden="true"> ↗</span><span class="sr-only">（外部網站）</span></a>
+      {/if}
+      {#if syllabus}
+        <a class="button" href={syllabus} target="_blank" rel="noopener noreferrer">課綱<span aria-hidden="true"> ↗</span><span class="sr-only">（外部網站）</span></a>
+      {/if}
+    </div>
+  </header>
+
+  {#if course.isDemo || !course.active || (!isHttpUrl(course.sourceUrl) && course.sourceUrl) || (course.syllabusUrl && !syllabus)}
+    <div class="notices">
+      {#if course.isDemo}<p class="notice demo">示範資料，非校方實際開課紀錄。</p>{/if}
+      {#if !course.active}
+        <p class="notice">已下架：校方最新的課程資料已不再列出這個班次，此頁保留歷史開課資訊。{#if newer}<a href={`/courses/${newer}`}>看最新開課的班次 →</a>{/if}</p>
+      {/if}
+      {#if !isHttpUrl(course.sourceUrl) && course.sourceUrl}<p class="notice">{sourceLabel}：{course.sourceUrl}</p>{/if}
+      {#if course.syllabusUrl && !syllabus}<p class="notice">課綱：{course.syllabusUrl}</p>{/if}
+    </div>
+  {/if}
+
+  <div role="group" aria-label="課程重點"><dl class="tiles">
+    <div class="tile">
+      <dt>學分</dt>
+      <dd><span class="value num">{credits(course.credits) ?? '—'}</span>{#if course.credits != null}<small>學分</small>{/if}</dd>
+      {#if course.credits == null}<dd class="note">校方未公布</dd>{/if}
+    </div>
+    <div class="tile">
+      <dt>必選修</dt>
+      <dd><span class="value">{requirementLabel ?? '—'}</span></dd>
+      {#if requirementDetail}<dd class="note clamp"><a href="#requirement-detail">{requirementDetail}</a></dd>
+      {:else if !requirementLabel}<dd class="note">校方未公布</dd>{/if}
+    </div>
+    <div class="tile seats" class:full>
+      <dt>修課人數／名額</dt>
+      {#if course.enrolled != null}
+        <dd><span class="value num">{displayValue(course.enrolled)}</span><small>/ {capacity != null ? `${displayValue(capacity)} 人` : '名額未公布'}</small></dd>
+      {:else if capacity != null}
+        <dd><span class="value num">—</span><small>/ {displayValue(capacity)} 人</small></dd>
+      {:else}
+        <dd><span class="value">—</span></dd>
+      {/if}
+      {#if ratio != null}
+        <dd class="meter" aria-hidden="true"><span style:width={`${Math.min(100, ratio * 100)}%`}></span></dd>
+        <dd class="note">{ratio > 1 ? `超過名額 ${Math.round((ratio - 1) * 100)}%` : `已選 ${Math.round(ratio * 100)}%`}{#if full && ratio <= 1}，接近額滿{/if}</dd>
+      {:else}
+        <dd class="note">{course.enrolled == null && capacity != null ? '未公布修課人數' : capacity == null && course.enrolled != null ? '校方未公布名額' : '人數與名額未公布'}</dd>
+      {/if}
+    </div>
+    <div class="tile">
+      <dt>歷年修課</dt>
+      {#if totals?.enrolledTotal != null}
+        <dd><span class="value num">{displayValue(totals.enrolledTotal)}</span><small>人次</small></dd>
+        <dd class="note"><a href="#history">{displayValue(totals.terms)} 期 · {displayValue(totals.offerings)} 班 ↓</a></dd>
+      {:else if totals}
+        <dd><span class="value num">{displayValue(totals.terms)}</span><small>期</small></dd>
+        <dd class="note"><a href="#history">未公布人數 · {displayValue(totals.offerings)} 班 ↓</a></dd>
+      {:else}
+        <dd><span class="value">—</span></dd>
+        <dd class="note">暫時無法取得</dd>
+      {/if}
+    </div>
+    <div class="tile">
+      <dt>同學評價</dt>
+      {#if stats && stats.count > 0}
+        <dd><span class="value num">{averageScore(stats.average)}</span><small class="stars" aria-hidden="true">{stars(Math.round(stats.average ?? 0))}</small></dd>
+        <dd class="note"><a href="#ratings">{displayValue(stats.count)} 則 ↓</a></dd>
+      {:else if stats}
+        <dd><span class="value">—</span></dd>
+        <dd class="note"><a href="#ratings">還沒有評價 ↓</a></dd>
+      {:else}
+        <dd><span class="value">—</span></dd>
+        <dd class="note">暫時無法取得</dd>
+      {/if}
+    </div>
+  </dl></div>
+
+  <div class="overview">
+    <section class="panel facts" aria-labelledby="schedule-title">
+      <h2 id="schedule-title">時間地點</h2>
+      {#if course.schedule?.length}
         <ul class="schedule">
           {#each course.schedule as slot, index (index)}
-            <li>{[meeting(slot), slot.location].filter(Boolean).join(' · ')}</li>
+            <li><span class="when">{meeting(slot)}</span>{#if slot.location}<span class="where">{` · ${slot.location}`}</span>{/if}</li>
           {/each}
         </ul>
-      </dd>
-    {:else if course.scheduleText}
-      <dt>時間地點</dt><dd>{course.scheduleText}</dd>
-    {/if}
-    {#if course.capacity != null}<dt>人數上限</dt><dd>{course.capacity} 人</dd>{/if}
-    {#if course.language}<dt>授課語言</dt><dd>{course.language}</dd>{/if}
-    {#if course.campus}<dt>校區</dt><dd>{course.campus}</dd>{/if}
-    {#if course.grade}<dt>年級</dt><dd>{course.grade}</dd>{/if}
-  </dl>
+      {:else if course.scheduleText}
+        <p class="schedule-text">{course.scheduleText}</p>
+      {:else}
+        <p class="muted">校方未公布上課時間。</p>
+      {/if}
+      <dl class="facts-list">
+        <div><dt>授課教師</dt><dd>{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{:else}<span class="muted">未公布</span>{/each}</dd></div>
+        {#if course.department}
+          <div><dt>開課單位</dt><dd><a href={departmentHref(course.school, course.department)}>{course.department}</a>{#if course.departmentCode}&nbsp;<span class="muted mono">{course.departmentCode}</span>{/if}</dd></div>
+        {/if}
+        <div><dt>課號</dt><dd class="mono">{course.courseCode}{#if course.classCode}{` · 班次 ${course.classCode}`}{/if}</dd></div>
+        {#if requirementDetail}<div class="wide" id="requirement-detail"><dt>必選修（校方原文）</dt><dd>{requirementDetail}</dd></div>{/if}
+        {#if course.language}<div><dt>授課語言</dt><dd>{course.language}</dd></div>{/if}
+        {#if course.campus}<div><dt>校區</dt><dd>{course.campus}</dd></div>{/if}
+        {#if course.grade}<div><dt>年級</dt><dd>{course.grade}</dd></div>{/if}
+      </dl>
+    </section>
 
-  {#if course.description}
-    <section aria-labelledby="description">
-      <h2 id="description">課程概述</h2>
-      <p class="text">{course.description}</p>
+    <section class="history" aria-labelledby="history">
+      <div class="section-head">
+        <h2 id="history">這門課的歷年開課</h2>
+        <p class="sub">同校同課號 <span class="mono">{course.courseCode}</span> 的每個學期{#if span}（{span}）{/if}；多班次的學期為各班加總。</p>
+      </div>
+      {#if !history.available}
+        <p class="notice">歷年開課暫時無法取得，先列出本學期。</p>
+      {/if}
+      <CourseHistory rows={history.rows} currentId={course.id} school={course.school} courseCode={course.courseCode} />
+      {#if history.available && history.rows.length === 1}
+        <p class="muted small">目前只收錄到這一期，之後匯入其他學期後會在這裡畫出歷年修課人數。</p>
+      {/if}
     </section>
-  {/if}
-  {#if course.notes}
-    <section aria-labelledby="notes">
-      <h2 id="notes">備註</h2>
-      <p class="text">{course.notes}</p>
-    </section>
-  {/if}
-  {#if extra.length}
-    <section aria-labelledby="extra">
-      <h2 id="extra">其他校方欄位</h2>
-      <table>
-        <tbody>
-          {#each extra as [key, value] (key)}
-            <tr><th scope="row">{key}</th><td>{extraValue(value)}</td></tr>
-          {/each}
-        </tbody>
-      </table>
-    </section>
-  {/if}
+  </div>
 
-  <p class="links">
-    {#if isHttpUrl(course.sourceUrl)}
-      <a href={course.sourceUrl}>{course.isDemo ? '校方網站' : '校方課程頁'}</a>
+  <div class="community">
+    <CommunityRatings ratings={data.ratings} user={data.user} {form} courseCode={course.courseCode} />
+    <div class="external-slot"><CourseExternalReviews school={course.school} courseCode={course.courseCode} reviews={undefined} /></div>
+  </div>
+
+  <section class="forum" aria-labelledby="forum-title">
+    <div class="section-head row">
+      <div>
+        <h2 id="forum-title">站內討論{#if data.posts}（{displayValue(data.posts.total)}）{/if}</h2>
+        <p class="sub">UniCourse 論壇裡標記這門課的文章。</p>
+      </div>
+      <div class="actions">
+        <a class="button primary" href={data.user ? composeHref : loginHref(composeHref)}>發表關於這門課的文章</a>
+        <a class="button" href={forumList}>在論壇查看</a>
+      </div>
+    </div>
+    {#if !data.posts}
+      <EmptyState title="站內討論暫時無法取得" description="課程資料不受影響，請稍後再試。" tone="error" />
+    {:else if data.posts.posts.length}
+      <div class="cm"><CommunityPostList posts={data.posts.posts} schoolNames={{ [course.school]: course.schoolName }} label="這門課的站內討論" /></div>
+      {#if data.posts.total > data.posts.posts.length}
+        <p class="small"><a href={forumList}>查看全部 {displayValue(data.posts.total)} 篇 →</a></p>
+      {/if}
     {:else}
-      <span>{course.isDemo ? '校方網站' : '校方課程頁'}：{course.sourceUrl}</span>
+      <EmptyState title="還沒有人討論這門課" description="問問修過的同學作業量、給分或考古題。" />
     {/if}
-    {#if course.syllabusUrl && isHttpUrl(course.syllabusUrl)}
-      <a href={course.syllabusUrl}>課綱</a>
-    {:else if course.syllabusUrl}
-      <span>課綱：{course.syllabusUrl}</span>
-    {/if}
-    <a href={forumHref({ school: course.school, courseCode: course.courseCode })}>相關討論</a>
-  </p>
-  <p class="imported">最近匯入：<time datetime={course.importedAt}>{importedAt(course.importedAt)}</time></p>
-</article>
+  </section>
 
-<CommunityRatings ratings={data.ratings} user={data.user} {form} courseCode={course.courseCode} />
+  {#if hasAbout}
+    <section class="about" aria-labelledby="about-title">
+      <h2 id="about-title">課程說明與校方欄位</h2>
+      {#if course.description}
+        <details open={aboutOpen}>
+          <summary><h3 id="description">課程概述</h3></summary>
+          <p class="prose">{course.description}</p>
+        </details>
+      {/if}
+      {#if course.notes}
+        <details open={aboutOpen}>
+          <summary><h3 id="notes">備註</h3></summary>
+          <p class="prose">{course.notes}</p>
+        </details>
+      {/if}
+      {#if extra.length}
+        <details open={aboutOpen}>
+          <summary><h3 id="extra">其他校方欄位</h3></summary>
+          <dl class="extra">
+            {#each extra as [key, value] (key)}
+              <div><dt>{key}</dt><dd>{extraValue(value)}</dd></div>
+            {/each}
+          </dl>
+        </details>
+      {/if}
+    </section>
+  {/if}
+
+  <p class="source">
+    資料來源：{course.schoolName}{course.isDemo ? '（示範資料）' : '課程查詢系統'} · 最近匯入 <time datetime={course.importedAt}>{importedAt(course.importedAt)}</time>（台北時間）
+  </p>
+</div>
 
 <style>
-  article { margin-top: 1rem; padding: clamp(1rem, 4vw, 2.5rem); background: white; border: 1px solid #e5dfef; border-radius: 1rem; }
-  h1 { margin: 0; overflow-wrap: anywhere; }
-  h2 { font-size: 1.05rem; margin: 1.5rem 0 0.4rem; }
-  .subtitle { margin: 0.2rem 0 0; color: #594f69; }
-  .note { color: #694217; }
-  dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.6rem 1rem; margin: 1.25rem 0 0; }
-  dt { font-weight: 650; }
-  dd { margin: 0; overflow-wrap: anywhere; }
-  .schedule { margin: 0; padding: 0; list-style: none; }
-  .text { margin: 0; white-space: pre-line; overflow-wrap: anywhere; }
-  table { border-collapse: collapse; width: 100%; font-size: 0.95rem; }
-  th, td { padding: 0.35rem 0.5rem; border-top: 1px solid #e5dfef; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
-  th { font-weight: 650; width: 40%; }
-  .links { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin: 1.5rem 0 0; overflow-wrap: anywhere; }
-  .imported { margin: 0.75rem 0 0; color: #594f69; font-size: 0.9rem; }
+  .course-page { display: grid; gap: var(--space-6); min-inline-size: 0; color: var(--ink); font-family: var(--font-sans); }
+  .course-page > * { min-inline-size: 0; }
+  .course-page :is(h1, h2, h3, p) { margin: 0; }
+  .course-page :is(h1, h2, h3) { font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
+  .course-page a { color: var(--brand-ink); text-underline-offset: 0.18em; }
+  .sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .num { font-variant-numeric: tabular-nums; }
+  .muted { color: var(--muted); }
+  .small { font-size: var(--t-sm); }
+
+  .crumbs { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; margin-block-end: calc(-1 * var(--space-5)); color: var(--muted); font-size: var(--t-base); }
+  .crumbs a { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); }
+
+  .head { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); align-items: start; justify-content: space-between; }
+  .title { flex: 1 1 28rem; display: grid; gap: var(--space-1); min-inline-size: 0; }
+  h1 { font-size: var(--t-2xl); overflow-wrap: anywhere; }
+  .en { color: var(--ink-2); font-size: var(--t-md); overflow-wrap: anywhere; }
+  .dek { display: flex; flex-wrap: wrap; gap: 0.125rem var(--space-3); align-items: center; margin-block-start: var(--space-1) !important; color: var(--muted); font-size: var(--t-base); }
+  .meta { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; color: var(--muted); font-size: var(--t-sm); }
+  .dek .item + .item::before { content: '·'; margin-inline-end: var(--space-3); color: var(--muted); }
+  .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .button { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-base); font-weight: 650; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
+  .button:hover { background: var(--hover-row); }
+  .button.primary { border-color: var(--brand); background: var(--brand); color: var(--on-brand) !important; }
+  .button.primary:hover { border-color: var(--brand-ink); background: var(--brand-ink); }
+  .course-page :focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+
+  .notices { display: grid; gap: var(--space-2); margin-block-start: calc(-1 * var(--space-3)); }
+  .notice { padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); font-size: var(--t-base); overflow-wrap: anywhere; }
+  .notice.demo { border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); background: var(--warn-wash); color: var(--ink); }
+  .notice a { margin-inline-start: var(--space-2); font-weight: 600; }
+
+  .tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); margin: 0; }
+  .tile { display: grid; align-content: start; gap: var(--space-1); min-inline-size: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .tile dt { color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
+  .tile dd { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; margin: 0; min-inline-size: 0; }
+  .tile .value { font-size: var(--t-3xl); font-weight: 600; line-height: var(--leading-tight); overflow-wrap: anywhere; }
+  .tile small { color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
+  .tile small.stars { color: var(--warn); font-size: var(--t-base); letter-spacing: 0.04em; }
+  .tile .note { color: var(--muted); font-size: var(--t-sm); }
+  .tile .note a { color: var(--ink-2); text-decoration: none; }
+  .tile .clamp { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tile .note a:hover { color: var(--brand-ink); text-decoration: underline; }
+  .meter { display: block !important; block-size: 10px; margin-block: var(--space-1) 0 !important; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
+  .meter span { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); }
+  .seats.full .meter span { background: var(--warn); }
+  .seats.full .note { color: var(--warn); font-weight: 600; }
+
+  .overview { display: grid; grid-template-columns: minmax(16rem, 1fr) minmax(0, 2fr); gap: var(--space-6); align-items: start; }
+  .panel { padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .facts { display: grid; gap: var(--space-3); }
+  .facts h2, .section-head h2 { font-size: var(--t-xl); }
+  .schedule { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; font-size: var(--t-md); }
+  .schedule .when { font-weight: 600; }
+  .schedule .where { color: var(--ink-2); }
+  .schedule-text { font-weight: 600; overflow-wrap: anywhere; }
+  .facts-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); margin: 0; padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); font-size: var(--t-base); }
+  .facts-list div { min-inline-size: 0; }
+  .facts-list div:first-child, .facts-list div:nth-child(2), .facts-list .wide { grid-column: 1 / -1; }
+  .facts-list dt { color: var(--muted); font-size: var(--t-sm); }
+  .facts-list dd { margin: 0; overflow-wrap: anywhere; }
+
+  .history, .forum { display: grid; gap: var(--space-3); align-content: start; min-inline-size: 0; }
+  .section-head { display: grid; gap: var(--space-1); }
+  .section-head.row { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); align-items: end; justify-content: space-between; }
+  .sub { color: var(--muted); font-size: var(--t-base); overflow-wrap: anywhere; }
+
+  .community { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); align-items: start; }
+  /* Until the external reviews section exists, the ratings take the full width. */
+  .community:has(> .external-slot:empty) { grid-template-columns: minmax(0, 1fr); }
+  .external-slot:empty { display: none; }
+  .external-slot > :global(section) { margin-block-start: 0; }
+
+  .about { display: grid; gap: var(--space-2); max-inline-size: 52rem; }
+  .about h2 { margin-block-end: var(--space-1) !important; font-size: var(--t-xl); }
+  .about details { border-block-start: 1px solid var(--line); }
+  .about summary { display: flex; align-items: center; justify-content: space-between; min-block-size: var(--target-min); list-style: none; cursor: pointer; }
+  .about summary::-webkit-details-marker { display: none; }
+  .about summary::after { content: '▾'; color: var(--muted); }
+  .about details[open] summary::after { content: '▴'; }
+  .about h3 { font-size: var(--t-lg); }
+  .prose { padding-block-end: var(--space-4); color: var(--ink-2); font-size: var(--t-md); line-height: var(--leading-prose); white-space: pre-line; overflow-wrap: anywhere; }
+  .extra { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: var(--space-3) var(--space-6); margin: 0; padding-block-end: var(--space-4); font-size: var(--t-base); }
+  .extra div { min-inline-size: 0; }
+  .extra dt { color: var(--muted); font-size: var(--t-sm); }
+  .extra dd { margin: 0; overflow-wrap: anywhere; }
+  .source { padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); color: var(--muted); font-size: var(--t-sm); }
+
+  @media (max-width: 64rem) {
+    .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .overview { grid-template-columns: minmax(0, 1fr); }
+    .community { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (max-width: 40rem) {
+    .course-page { gap: var(--space-5); }
+    .crumbs { margin-block-end: calc(-1 * var(--space-4)); }
+    .actions .button { flex: 1 1 auto; }
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+    .tile { padding: var(--space-3); }
+    .tile:last-child { grid-column: 1 / -1; }
+    .tile .value { font-size: var(--t-2xl); }
+    .panel { padding: var(--space-4); }
+  }
 </style>

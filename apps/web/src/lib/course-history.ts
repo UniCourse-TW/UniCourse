@@ -1,0 +1,129 @@
+import type { CourseHistory, CourseTerm, Offering } from '@unicourse/api-client';
+
+/** A class section linked from the per-term table. */
+export interface HistoryOffering {
+  id: string;
+  label: string;
+  active: boolean;
+}
+
+/** One academic term of a cross-term course, trimmed for the chart and the per-term table. */
+export interface HistoryRow {
+  term: string;
+  enrolled: number | null;
+  capacity: number | null;
+  /** At most `maxListed` sections, the page's own offering first. */
+  offerings: HistoryOffering[];
+  offeringCount: number;
+  /** At most `maxListed` names. */
+  instructors: string[];
+  instructorCount: number;
+  /** Every offering of the term was withdrawn by the school. */
+  withdrawn: boolean;
+  current: boolean;
+}
+
+/** A chart slot: a term with offerings, or an empty gap between imported terms. */
+export interface HistorySlot {
+  term: string;
+  row: HistoryRow | null;
+}
+
+const termPattern = /^(\d{2,3})-(\d)$/;
+
+function parseTerm(term: string) {
+  const match = termPattern.exec(term);
+  return match ? { year: Number(match[1]), semester: Number(match[2]) } : null;
+}
+
+export function compareTerms(a: string, b: string) {
+  const left = parseTerm(a);
+  const right = parseTerm(b);
+  if (left && right) return left.year - right.year || left.semester - right.semester;
+  return a.localeCompare(b);
+}
+
+/** Sections and names listed per term; popular general courses have hundreds of sections a term. */
+export const maxListed = 3;
+
+/** Capacity 0 is how some schools leave 名額 blank, so it is treated as unpublished. */
+export function publishedCapacity(value: number | null | undefined) {
+  return value != null && value > 0 ? value : null;
+}
+
+function sumOrNull(values: (number | null | undefined)[]) {
+  const known = values.filter((value): value is number => value != null);
+  return known.length ? known.reduce((total, value) => total + value, 0) : null;
+}
+
+/**
+ * Rows newest first, small enough to serialise into the page (the API returns every section of every
+ * term). Per-term sums fall back to the offerings when the API leaves them out.
+ */
+export function historyRows(history: CourseHistory | null | undefined, current: Offering): HistoryRow[] {
+  const terms: CourseTerm[] = history?.terms.length
+    ? history.terms
+    : [{ term: current.term, enrolled: current.enrolled ?? null, capacity: current.capacity ?? null, offerings: [current] }];
+  return [...terms]
+    .sort((a, b) => compareTerms(b.term, a.term))
+    .map((entry) => {
+      const offerings = [...entry.offerings].sort(
+        (a, b) => Number(b.id === current.id) - Number(a.id === current.id) || (a.classCode ?? '').localeCompare(b.classCode ?? '')
+      );
+      const instructors = [...new Set(offerings.flatMap((offering) => offering.instructors))];
+      const several = offerings.length > 1;
+      // Class codes only tell sections apart when they are unique within the term (FCU reuses 001 per department).
+      const codes = offerings.map((offering) => offering.classCode).filter(Boolean);
+      const distinctCodes = new Set(codes).size === codes.length;
+      return {
+        term: entry.term,
+        enrolled: entry.enrolled ?? sumOrNull(offerings.map((offering) => offering.enrolled)),
+        capacity: publishedCapacity(entry.capacity ?? sumOrNull(offerings.map((offering) => publishedCapacity(offering.capacity)))),
+        offerings: offerings.slice(0, maxListed).map((offering) => ({
+          id: offering.id,
+          label: (distinctCodes ? offering.classCode : undefined) || (several ? offering.instructors[0] : undefined) || offering.classCode || '查看',
+          active: offering.active
+        })),
+        offeringCount: offerings.length,
+        instructors: instructors.slice(0, maxListed),
+        instructorCount: instructors.length,
+        withdrawn: offerings.length > 0 && offerings.every((offering) => !offering.active),
+        current: offerings.some((offering) => offering.id === current.id)
+      };
+    });
+}
+
+/**
+ * Chronological slots from the first to the last imported term. Regular semesters (1 and 2) missing in
+ * between become empty slots so the x axis keeps its time scale; summer terms only appear when imported.
+ */
+export function historySlots(rows: readonly HistoryRow[]): HistorySlot[] {
+  const byTerm = new Map(rows.map((row) => [row.term, row]));
+  const parsed = rows.map((row) => parseTerm(row.term));
+  if (parsed.some((term) => term === null)) {
+    return [...rows].sort((a, b) => compareTerms(a.term, b.term)).map((row) => ({ term: row.term, row }));
+  }
+  const years = parsed.map((term) => term!.year);
+  const first = Math.min(...years);
+  const last = Math.max(...years);
+  const slots: HistorySlot[] = [];
+  for (let year = first; year <= last; year += 1) {
+    const semesters = new Set([1, 2]);
+    for (const term of parsed) if (term!.year === year) semesters.add(term!.semester);
+    for (const semester of [...semesters].sort((a, b) => a - b)) {
+      const term = `${year}-${semester}`;
+      slots.push({ term, row: byTerm.get(term) ?? null });
+    }
+  }
+  // Trim the regular semesters padded before the first and after the last imported term.
+  while (slots.length && !slots[0].row) slots.shift();
+  while (slots.length && !slots.at(-1)!.row) slots.pop();
+  return slots;
+}
+
+export function fillRatio(enrolled: number | null | undefined, capacity: number | null | undefined) {
+  return enrolled != null && capacity != null && capacity > 0 ? enrolled / capacity : null;
+}
+
+/** Enrolment at or above 90% of capacity is drawn in the warning colour. */
+export const nearlyFull = 0.9;

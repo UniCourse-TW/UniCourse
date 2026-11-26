@@ -1,8 +1,12 @@
 import { error, fail } from '@sveltejs/kit';
 import { UNAVAILABLE, apiMessage } from '$lib/community-messages';
+import { historyRows } from '$lib/course-history';
 import { catalog } from '$lib/server/catalog';
 import { field, requireUser } from '$lib/server/community-forms';
 import type { Actions, PageServerLoad, RequestEvent } from './$types';
+
+/** Threads listed on the course page; the forum link shows the rest. */
+const RELATED_POSTS = 5;
 
 async function loadCourse(fetch: typeof globalThis.fetch, id: string) {
   const result = await catalog(fetch)
@@ -30,10 +34,48 @@ async function loadRatings(fetch: typeof globalThis.fetch, school: string, cours
   }
 }
 
+/** Every term of the same course code; `undefined` when the history is unavailable. */
+async function loadHistory(fetch: typeof globalThis.fetch, school: string, courseCode: string) {
+  try {
+    const result = await catalog(fetch).GET('/api/courses/{school}/{courseCode}', {
+      params: { path: { school, courseCode } }
+    });
+    return result.data;
+  } catch {
+    return undefined;
+  }
+}
+
+async function loadPosts(fetch: typeof globalThis.fetch, school: string, courseCode: string) {
+  try {
+    const result = await catalog(fetch).GET('/api/posts', { params: { query: { school, courseCode } } });
+    if (!result.data) return undefined;
+    return { posts: result.data.posts.slice(0, RELATED_POSTS), total: result.data.total };
+  } catch {
+    return undefined;
+  }
+}
+
 export const load: PageServerLoad = async ({ fetch, params, locals }) => {
   const course = await loadCourse(fetch, params.id);
-  const ratings = await loadRatings(fetch, course.school, course.courseCode, locals.user != null);
-  return { course, ratings };
+  const [ratings, history, posts] = await Promise.all([
+    loadRatings(fetch, course.school, course.courseCode, locals.user != null),
+    loadHistory(fetch, course.school, course.courseCode),
+    loadPosts(fetch, course.school, course.courseCode)
+  ]);
+  return {
+    course,
+    ratings,
+    // The API returns every section of every term (megabytes for big general courses); only the
+    // trimmed rows and totals go to the page.
+    history: {
+      available: history !== undefined,
+      rows: historyRows(history, course),
+      totals: history?.totals ?? null,
+      latestActiveOfferingId: history?.latestActiveOfferingId ?? null
+    },
+    posts
+  };
 };
 
 async function courseKey(event: RequestEvent) {
