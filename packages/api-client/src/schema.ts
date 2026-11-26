@@ -164,6 +164,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/institutions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["institutions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/instructors/{school}/{name}": {
         parameters: {
             query?: never;
@@ -397,6 +413,13 @@ export interface components {
             title: string;
             titleEn?: string | null;
         };
+        /**
+         * @description `live`: in the nightly refresh; `partial`: crawler exists but is not scheduled or covers a
+         *     subset; `blocked`: the official source forbids or prevents crawling; `planned`: no crawler yet;
+         *     `none`: the institution has no crawler slug.
+         * @enum {string}
+         */
+        CrawlStatus: "live" | "partial" | "blocked" | "planned" | "none";
         DepartmentCount: {
             /**
              * Format: int64
@@ -423,11 +446,64 @@ export interface components {
              */
             total: number;
         };
+        /**
+         * @description Higher-education system: general (incl. teacher education), technical and vocational,
+         *     military and police, religious colleges, or open universities.
+         * @enum {string}
+         */
+        EducationSystem: "general" | "technical" | "military_police" | "religious" | "open";
         ErrorBody: {
             message: string;
         };
         /** @description A school-specific scalar kept under its original field name. */
         ExtraValue: null | boolean | number | string;
+        Institution: {
+            city?: string | null;
+            /**
+             * @description MOE 學校代碼: four characters, leading zeros kept (`0001`); religious colleges and open
+             *     universities contain a letter (`1R02`, `0A01`).
+             */
+            code: string;
+            /**
+             * Format: int64
+             * @description Distinct courses with an active offering.
+             */
+            courses: number;
+            /**
+             * Format: int32
+             * @description GitHub issue number in UniCourse-TW/UniCourse.
+             */
+            issue?: number | null;
+            kind: components["schemas"]["InstitutionKind"];
+            /** @description Latest import time (ISO-8601 UTC), `null` before the first import. */
+            latestImportedAt?: string | null;
+            name: string;
+            /** @description Set for schools with a crawler; the MOE list has no English names. */
+            nameEn?: string | null;
+            /** @description Crawl status note (zh-TW). */
+            note?: string | null;
+            /**
+             * Format: int64
+             * @description Active (searchable) offerings across all terms.
+             */
+            offerings: number;
+            ownership: components["schemas"]["Ownership"];
+            /** @description Crawler slug (`/api/schools/{slug}`), `null` when there is no crawler. */
+            slug?: string | null;
+            status: components["schemas"]["CrawlStatus"];
+            system: components["schemas"]["EducationSystem"];
+            /** @description Imported terms, newest first. */
+            terms: string[];
+            website?: string | null;
+        };
+        /** @enum {string} */
+        InstitutionKind: "university" | "college" | "junior_college";
+        Institutions: {
+            /** @description Every institution in the MOE list, by code. */
+            institutions: components["schemas"]["Institution"][];
+            /** @description Latest import time at any school (ISO-8601 UTC), `null` before the first import. */
+            updatedAt?: string | null;
+        };
         InstructorOfferings: {
             name: string;
             /** @description Newest term first, then by course code. */
@@ -557,6 +633,8 @@ export interface components {
              */
             terms: number;
         };
+        /** @enum {string} */
+        Ownership: "public" | "private";
         /** @description A top-level post with its non-deleted replies, oldest first. */
         PostDetail: {
             author: components["schemas"]["Author"];
@@ -1353,6 +1431,34 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    institutions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Every Taiwanese higher-education institution in the MOE list, by code, with crawl status and indexed (active) catalog stats */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Institutions"];
                 };
             };
             500: {

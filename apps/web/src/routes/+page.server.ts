@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { coverage } from '$lib/institutions';
 import { catalog } from '$lib/server/catalog';
 import type { PageServerLoad } from './$types';
 
@@ -21,13 +22,21 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
 
   if (!query && !school && !termParam && !department) {
     const rankSchool = url.searchParams.get('rank_school') || '';
-    const [rankings, stats] = await Promise.all([
+    const [rankings, institutions] = await Promise.all([
       client.GET('/api/rankings/courses', { params: { query: { school: rankSchool || undefined, limit: 20 } } }),
-      client.GET('/api/stats/overview')
+      client.GET('/api/institutions')
     ]).catch(() => error(503, '暫時無法載入課程總覽，請稍後再試。'));
-    if (!rankings.data || !stats.data) error(503, '暫時無法載入課程總覽，請稍後再試。');
+    if (!rankings.data || !institutions.data) error(503, '暫時無法載入課程總覽，請稍後再試。');
 
-    return { ...filters, content: { kind: 'overview' as const, rankSchool, rankings: rankings.data, stats: stats.data } };
+    return {
+      ...filters,
+      content: {
+        kind: 'overview' as const,
+        rankSchool,
+        rankings: rankings.data,
+        coverage: coverage(institutions.data.institutions)
+      }
+    };
   }
 
   const courses = await client

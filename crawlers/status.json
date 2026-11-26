@@ -1,0 +1,14 @@
+{
+  "ntu": { "status": "live", "note": "每日更新；課程網未刊登修課人數", "issue": null },
+  "ntnu": { "status": "live", "note": "每日更新；修課人數不含授權碼加選", "issue": null },
+  "nycu": { "status": "live", "note": "每日更新；加退選期間官網暫不顯示修課人數", "issue": null },
+  "nthu": { "status": "live", "note": "每日更新；修課人數取自課務組公布的選課人數檔，不含校際合作課程", "issue": null },
+  "ncku": { "status": "blocked", "note": "查詢約 5 個系所後要求驗證碼，無法完整抓取一學期", "issue": 40 },
+  "nccu": { "status": "live", "note": "每日更新；尚未回溯歷史學期", "issue": 44 },
+  "nchu": { "status": "live", "note": "每日更新；官網無跨學期課號，課程只能在單一學期內比對", "issue": 43 },
+  "ccu": { "status": "live", "note": "每日更新；eCourse2 未刊登名額與修課人數", "issue": null },
+  "ncu": { "status": "blocked", "note": "課程查詢系統的 robots.txt 禁止爬取", "issue": 41 },
+  "fcu": { "status": "live", "note": "每日更新", "issue": null },
+  "tnua": { "status": "live", "note": "每日更新", "issue": null },
+  "ntua": { "status": "partial", "note": "僅收錄推廣教育學分班；全校課表需登入且 robots.txt 禁止", "issue": 42 }
+}

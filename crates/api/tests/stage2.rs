@@ -819,6 +819,35 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     assert_eq!(overview.body["totals"]["schools"], 3);
     assert_eq!(overview.body["totals"]["terms"], 2);
 
+    let listed = call(&app, "GET", "/api/institutions", None, None).await;
+    assert_eq!(listed.status, StatusCode::OK);
+    let rows = listed.body["institutions"].as_array().unwrap();
+    assert!(rows.len() > 100);
+    let by_slug = |slug: &str| rows.iter().find(|row| row["slug"] == slug).unwrap().clone();
+    let institution = by_slug("nthu");
+    assert_eq!(institution["code"], "0002");
+    assert_eq!(institution["name"], "國立清華大學");
+    assert_eq!(institution["status"], "live");
+    assert_eq!(institution["terms"], json!(["115-1", "114-2"]));
+    assert_eq!(institution["offerings"], 3);
+    assert_eq!(institution["courses"], 2);
+    assert_eq!(institution["latestImportedAt"], nthu["latestImportedAt"]);
+    let blocked = by_slug("ncku");
+    assert_eq!(blocked["status"], "blocked");
+    assert_eq!(blocked["issue"], 40);
+    assert_eq!(blocked["terms"], json!([]));
+    assert_eq!(blocked["offerings"], 0);
+    assert_eq!(blocked["latestImportedAt"], Value::Null);
+    let other = rows.iter().find(|row| row["slug"].is_null()).unwrap();
+    assert_eq!(other["status"], "none");
+    assert_eq!(other["note"], Value::Null);
+    let newest = rows
+        .iter()
+        .filter_map(|row| row["latestImportedAt"].as_str())
+        .max()
+        .unwrap();
+    assert_eq!(listed.body["updatedAt"], newest);
+
     let school = call(&app, "GET", "/api/schools/nthu", None, None).await;
     assert_eq!(school.status, StatusCode::OK);
     assert_eq!(school.body["terms"], json!(["115-1", "114-2"]));

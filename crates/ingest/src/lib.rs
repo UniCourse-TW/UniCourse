@@ -12,13 +12,8 @@ use std::collections::HashSet;
 use anyhow::{Context, Result, bail, ensure};
 use serde::{Deserialize, Deserializer};
 use sqlx::{PgPool, types::Json};
-use unicourse_catalog::{Extra, ExtraValue, Meeting, Requirement};
+use unicourse_catalog::{Extra, ExtraValue, Meeting, Requirement, SCHOOL_SLUGS};
 use url::Url;
-
-/// School slugs accepted in snapshots. Keep in sync with `crawlers/kit/src/schools.ts`.
-const SCHOOLS: [&str; 12] = [
-    "ntu", "ntnu", "nycu", "nthu", "ncku", "nccu", "nchu", "ccu", "ncu", "fcu", "tnua", "ntua",
-];
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -255,7 +250,7 @@ pub struct ValidSnapshot(Snapshot);
 pub fn parse_snapshot(bytes: &[u8]) -> Result<ValidSnapshot> {
     let snapshot: Snapshot = serde_json::from_slice(bytes)?;
     ensure!(
-        SCHOOLS.contains(&snapshot.school.as_str()),
+        SCHOOL_SLUGS.contains(&snapshot.school.as_str()),
         "unknown school slug {:?} (see crawlers/kit/src/schools.ts)",
         snapshot.school
     );

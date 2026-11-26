@@ -10,9 +10,10 @@ use axum::{
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use sqlx::PgPool;
 use unicourse_catalog::{
-    self as catalog, CourseRanking, DepartmentCount, DepartmentOfferings, ExtraValue,
-    InstructorOfferings, InstructorSummary, Meeting, Offering, Overview, OverviewTotals,
-    Requirement, School, SchoolDetail, SchoolOverview,
+    self as catalog, CourseRanking, CrawlStatus, DepartmentCount, DepartmentOfferings,
+    EducationSystem, ExtraValue, Institution, InstitutionKind, Institutions, InstructorOfferings,
+    InstructorSummary, Meeting, Offering, Overview, OverviewTotals, Ownership, Requirement, School,
+    SchoolDetail, SchoolOverview,
 };
 use utoipa::{
     IntoParams, Modify, OpenApi, ToSchema,
@@ -28,7 +29,7 @@ mod text;
 #[openapi(
     paths(
         schools, terms, departments, search, detail, rankings, overview, school_detail,
-        department_detail, instructor,
+        department_detail, instructor, institutions,
         auth::register, auth::login, auth::logout, auth::me, auth::update_me, auth::profile,
         ratings::list, ratings::stats, ratings::mine, ratings::put_mine, ratings::delete_mine,
         forum::list, forum::create, forum::detail, forum::reply, forum::update, forum::delete,
@@ -37,7 +38,8 @@ mod text;
     components(schemas(
         School, Offering, Meeting, Requirement, ExtraValue, ErrorBody, CourseRanking, Overview,
         SchoolOverview, OverviewTotals, SchoolDetail, DepartmentCount, DepartmentOfferings,
-        InstructorOfferings, InstructorSummary,
+        InstructorOfferings, InstructorSummary, Institutions, Institution, InstitutionKind,
+        Ownership, EducationSystem, CrawlStatus,
     )),
     modifiers(&SessionCookie)
 )]
@@ -215,6 +217,7 @@ pub fn router_with(pool: PgPool, config: Config) -> Router {
         .route("/api/courses/{id}", get(detail))
         .route("/api/rankings/courses", get(rankings))
         .route("/api/stats/overview", get(overview))
+        .route("/api/institutions", get(institutions))
         .route("/api/auth/register", post(auth::register))
         .route("/api/auth/login", post(auth::login))
         .route("/api/auth/logout", post(auth::logout))
@@ -363,6 +366,17 @@ async fn rankings(
 ))]
 async fn overview(State(pool): State<PgPool>) -> Result<Json<Overview>, ApiError> {
     catalog::overview(&pool)
+        .await
+        .map(Json)
+        .map_err(database_error)
+}
+
+#[utoipa::path(get, path = "/api/institutions", responses(
+    (status = 200, description = "Every Taiwanese higher-education institution in the MOE list, by code, with crawl status and indexed (active) catalog stats", body = Institutions),
+    (status = 500, body = ErrorBody)
+))]
+async fn institutions(State(pool): State<PgPool>) -> Result<Json<Institutions>, ApiError> {
+    catalog::institutions(&pool)
         .await
         .map(Json)
         .map_err(database_error)

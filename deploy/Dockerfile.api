@@ -4,6 +4,9 @@ WORKDIR /src
 COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
 COPY crates ./crates
 COPY fixtures ./fixtures
+# Embedded into the API with include_str! (crates/catalog/src/institutions.rs).
+COPY data/institutions.json ./data/
+COPY crawlers/status.json ./crawlers/
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/target \
     cargo build --locked --release --package unicourse-api --package unicourse-ingest \

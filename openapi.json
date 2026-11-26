@@ -813,6 +813,34 @@
         }
       }
     },
+    "/api/institutions": {
+      "get": {
+        "tags": [],
+        "operationId": "institutions",
+        "responses": {
+          "200": {
+            "description": "Every Taiwanese higher-education institution in the MOE list, by code, with crawl status and indexed (active) catalog stats",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Institutions"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/instructors/{school}/{name}": {
       "get": {
         "tags": [],
@@ -1858,6 +1886,17 @@
           }
         }
       },
+      "CrawlStatus": {
+        "type": "string",
+        "description": "`live`: in the nightly refresh; `partial`: crawler exists but is not scheduled or covers a\nsubset; `blocked`: the official source forbids or prevents crawling; `planned`: no crawler yet;\n`none`: the institution has no crawler slug.",
+        "enum": [
+          "live",
+          "partial",
+          "blocked",
+          "planned",
+          "none"
+        ]
+      },
       "DepartmentCount": {
         "type": "object",
         "required": [
@@ -1915,6 +1954,17 @@
           }
         }
       },
+      "EducationSystem": {
+        "type": "string",
+        "description": "Higher-education system: general (incl. teacher education), technical and vocational,\nmilitary and police, religious colleges, or open universities.",
+        "enum": [
+          "general",
+          "technical",
+          "military_police",
+          "religious",
+          "open"
+        ]
+      },
       "ErrorBody": {
         "type": "object",
         "required": [
@@ -1944,6 +1994,137 @@
           }
         ],
         "description": "A school-specific scalar kept under its original field name."
+      },
+      "Institution": {
+        "type": "object",
+        "required": [
+          "code",
+          "name",
+          "kind",
+          "ownership",
+          "system",
+          "status",
+          "terms",
+          "offerings",
+          "courses"
+        ],
+        "properties": {
+          "city": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "description": "MOE 學校代碼: four characters, leading zeros kept (`0001`); religious colleges and open\nuniversities contain a letter (`1R02`, `0A01`)."
+          },
+          "courses": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Distinct courses with an active offering."
+          },
+          "issue": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "GitHub issue number in UniCourse-TW/UniCourse.",
+            "minimum": 0
+          },
+          "kind": {
+            "$ref": "#/components/schemas/InstitutionKind"
+          },
+          "latestImportedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Latest import time (ISO-8601 UTC), `null` before the first import."
+          },
+          "name": {
+            "type": "string"
+          },
+          "nameEn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Set for schools with a crawler; the MOE list has no English names."
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Crawl status note (zh-TW)."
+          },
+          "offerings": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Active (searchable) offerings across all terms."
+          },
+          "ownership": {
+            "$ref": "#/components/schemas/Ownership"
+          },
+          "slug": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Crawler slug (`/api/schools/{slug}`), `null` when there is no crawler."
+          },
+          "status": {
+            "$ref": "#/components/schemas/CrawlStatus"
+          },
+          "system": {
+            "$ref": "#/components/schemas/EducationSystem"
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Imported terms, newest first."
+          },
+          "website": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "InstitutionKind": {
+        "type": "string",
+        "enum": [
+          "university",
+          "college",
+          "junior_college"
+        ]
+      },
+      "Institutions": {
+        "type": "object",
+        "required": [
+          "institutions"
+        ],
+        "properties": {
+          "institutions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Institution"
+            },
+            "description": "Every institution in the MOE list, by code."
+          },
+          "updatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Latest import time at any school (ISO-8601 UTC), `null` before the first import."
+          }
+        }
       },
       "InstructorOfferings": {
         "type": "object",
@@ -2405,6 +2586,13 @@
             "description": "Distinct terms imported at any school."
           }
         }
+      },
+      "Ownership": {
+        "type": "string",
+        "enum": [
+          "public",
+          "private"
+        ]
       },
       "PostDetail": {
         "type": "object",

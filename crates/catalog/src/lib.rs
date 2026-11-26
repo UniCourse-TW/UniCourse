@@ -5,8 +5,15 @@ use sqlx::{FromRow, PgPool};
 use utoipa::ToSchema;
 
 mod browse;
+mod institutions;
 
 pub use browse::*;
+pub use institutions::*;
+
+/// School slugs accepted in snapshots. Keep in sync with `crawlers/kit/src/schools.ts`.
+pub const SCHOOL_SLUGS: [&str; 12] = [
+    "ntu", "ntnu", "nycu", "nthu", "ncku", "nccu", "nchu", "ccu", "ncu", "fcu", "tnua", "ntua",
+];
 
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 

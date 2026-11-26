@@ -16,7 +16,8 @@
     <!-- Plain links (no list items) so page-level list and text queries stay unambiguous. -->
     <nav class="site-nav" aria-label="主要導覽">
       <a href="/" aria-current={page.url.pathname === '/' ? 'page' : undefined}>首頁</a>
-      <a href="/forum" aria-current={page.url.pathname.startsWith('/forum') ? 'page' : undefined}>論壇</a>
+      <a href="/schools" aria-current={page.url.pathname === '/schools' ? 'page' : undefined}>學校</a>
+      <a href="/forum"aria-current={page.url.pathname.startsWith('/forum') ? 'page' : undefined}>論壇</a>
       {#if data.user}
         <a href={profileHref(data.user.username)} class="me">@{data.user.username}</a>
         <a href="/settings" aria-current={page.url.pathname === '/settings' ? 'page' : undefined}>設定</a>
