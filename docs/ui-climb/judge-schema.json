@@ -1,0 +1,13 @@
+{
+  "judge": "opus | sol | fable | astra",
+  "round": 1,
+  "pages": [
+    {
+      "id": "home",
+      "scores": { "task": 0, "hierarchy": 0, "density": 0, "viz": null, "family": 0, "type": 0, "mobile": 0, "theme": 0, "a11y": 0, "states": 0, "copy": 0, "feel": 0 },
+      "mean": 0,
+      "top_issues": ["most important problem first, concrete and fixable, with the element and the viewport"],
+      "keep": ["what already works and must not regress"]
+    }
+  ]
+}
