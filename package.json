@@ -1,0 +1,8 @@
+{
+  "name": "unicourse",
+  "private": true,
+  "packageManager": "pnpm@10.30.0",
+  "devDependencies": {
+    "openapi-typescript": "7.13.0"
+  }
+}

@@ -1,0 +1,10 @@
+[package]
+name = "unicourse-catalog"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+sqlx.workspace = true
+utoipa.workspace = true

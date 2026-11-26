@@ -1,0 +1,3058 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "unicourse-api",
+    "description": "",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Signed in (sets the uc_session cookie)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Wrong username or password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "More than 10 failed attempts for this username in the last minute",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "logout",
+        "responses": {
+          "204": {
+            "description": "Session ended and cookie cleared (also when not signed in)"
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {},
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "getMe",
+        "responses": {
+          "200": {
+            "description": "The signed-in account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "updateMe",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The updated account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Account created and signed in (sets the uc_session cookie)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Username taken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/courses": {
+      "get": {
+        "tags": [],
+        "operationId": "search",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Matches title, English title, department and instructors, or a course code prefix.\nLeading and trailing whitespace is trimmed; the trimmed value may be at most 100\ncharacters and must not contain line breaks or NUL.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "description": "School slug (exact).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "term",
+            "in": "query",
+            "description": "Term such as `115-1` (exact); omit for all terms.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "department",
+            "in": "query",
+            "description": "Offering unit name (exact).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Up to 50 active offerings matching the filters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Offering"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/courses/{id}": {
+      "get": {
+        "tags": [],
+        "operationId": "detail",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Offering ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Course offering",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Offering"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/courses/{school}/{courseCode}/ratings": {
+      "get": {
+        "tags": [
+          "ratings"
+        ],
+        "operationId": "listRatings",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "courseCode",
+            "in": "path",
+            "description": "Cross-term course code (URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Up to 100 ratings, most recently updated first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Rating"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/courses/{school}/{courseCode}/ratings/me": {
+      "get": {
+        "tags": [
+          "ratings"
+        ],
+        "operationId": "getMyRating",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "courseCode",
+            "in": "path",
+            "description": "Cross-term course code (URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The signed-in user's rating",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyRating"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown course, or not rated yet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "ratings"
+        ],
+        "operationId": "putMyRating",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "courseCode",
+            "in": "path",
+            "description": "Cross-term course code (URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Rating created or replaced",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyRating"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "ratings"
+        ],
+        "operationId": "deleteMyRating",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "courseCode",
+            "in": "path",
+            "description": "Cross-term course code (URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Rating removed (also when there was none)"
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/courses/{school}/{courseCode}/ratings/stats": {
+      "get": {
+        "tags": [
+          "ratings"
+        ],
+        "operationId": "ratingStats",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "courseCode",
+            "in": "path",
+            "description": "Cross-term course code (URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rating count, mean and histogram",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RatingStats"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/departments": {
+      "get": {
+        "tags": [],
+        "operationId": "departments",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "description": "School slug.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Offering units with active offerings at the school, by name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/instructors/{school}/{name}": {
+      "get": {
+        "tags": [],
+        "operationId": "instructor",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "description": "Instructor name exactly as published (URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Up to 200 active offerings taught, newest term first, with a summary over all of them",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstructorOfferings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/posts": {
+      "get": {
+        "tags": [
+          "forum"
+        ],
+        "operationId": "listPosts",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "description": "`announcement`, `article` or `question`.",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/PostType"
+            }
+          },
+          {
+            "name": "school",
+            "in": "query",
+            "description": "School slug (exact).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "courseCode",
+            "in": "query",
+            "description": "Course code (exact); requires `school`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "Case-insensitive substring of the title or content, at most 100 characters.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "description": "Exact tag.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "1-based page of 20 posts (default 1).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Top-level posts, newest first, 20 per page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "forum"
+        ],
+        "operationId": "createPost",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPost"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created post",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Announcements need an admin account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/posts/{id}": {
+      "get": {
+        "tags": [
+          "forum"
+        ],
+        "operationId": "getPost",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Post ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Top-level post with up to 1000 replies, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PostDetail"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {},
+          {
+            "session": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "forum"
+        ],
+        "operationId": "deletePost",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Post or reply ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Soft-deleted; a deleted top-level post hides its whole thread"
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Neither the author nor an admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "forum"
+        ],
+        "operationId": "updatePost",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Post or reply ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Updated"
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not the author",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/posts/{id}/replies": {
+      "post": {
+        "tags": [
+          "forum"
+        ],
+        "operationId": "createReply",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Top-level post ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewReply"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created reply",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reply"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/posts/{id}/vote": {
+      "put": {
+        "tags": [
+          "forum"
+        ],
+        "operationId": "votePost",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "Post or reply ID",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoteInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "The post's new score and the caller's vote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoteResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ]
+      }
+    },
+    "/api/rankings/courses": {
+      "get": {
+        "tags": [],
+        "operationId": "rankings",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "query",
+            "description": "School slug (exact); omit for all schools.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of courses, 1 to 100 (default 20).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cross-term courses by cumulative enrollment (enrolledTotal DESC NULLS LAST, then capacityTotal DESC), over every imported term",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CourseRanking"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schools": {
+      "get": {
+        "tags": [],
+        "operationId": "schools",
+        "responses": {
+          "200": {
+            "description": "Available schools",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/School"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schools/{school}": {
+      "get": {
+        "tags": [],
+        "operationId": "school_detail",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "School with its terms and offering units",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchoolDetail"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/schools/{school}/departments/{department}": {
+      "get": {
+        "tags": [],
+        "operationId": "department_detail",
+        "parameters": [
+          {
+            "name": "school",
+            "in": "path",
+            "description": "School slug",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "department",
+            "in": "path",
+            "description": "Published offering unit name (exact, URL-encoded)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Up to 200 active offerings of the unit, newest term first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DepartmentOfferings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stats/overview": {
+      "get": {
+        "tags": [],
+        "operationId": "overview",
+        "responses": {
+          "200": {
+            "description": "Per-school and total counts of indexed (active) offerings, courses and terms",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Overview"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/terms": {
+      "get": {
+        "tags": [],
+        "operationId": "terms",
+        "responses": {
+          "200": {
+            "description": "Imported terms, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users/{username}": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "operationId": "getUserProfile",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "Username (case-insensitive)",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicProfile"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Author": {
+        "type": "object",
+        "required": [
+          "username"
+        ],
+        "properties": {
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "CourseRanking": {
+        "type": "object",
+        "description": "Cumulative totals for one cross-term course `(school, courseCode)` over every imported term.",
+        "required": [
+          "school",
+          "schoolName",
+          "courseCode",
+          "title",
+          "terms",
+          "offerings",
+          "latestOfferingId",
+          "isDemo"
+        ],
+        "properties": {
+          "capacityTotal": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Sum of `capacity` (名額); `null` when no offering of the course published it."
+          },
+          "courseCode": {
+            "type": "string"
+          },
+          "enrolledTotal": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Sum of `enrolled`; `null` when no offering of the course published it."
+          },
+          "isDemo": {
+            "type": "boolean",
+            "description": "Whether the newest offering comes from a synthetic demo snapshot."
+          },
+          "latestOfferingId": {
+            "type": "string",
+            "description": "Offering ID of the newest term (an active offering when there is one)."
+          },
+          "offerings": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Offerings (class sections) across all terms, including ones later withdrawn."
+          },
+          "school": {
+            "type": "string"
+          },
+          "schoolName": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Distinct terms with an offering of this course."
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the newest offering."
+          },
+          "titleEn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "DepartmentCount": {
+        "type": "object",
+        "required": [
+          "name",
+          "offerings",
+          "courses"
+        ],
+        "properties": {
+          "courses": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Distinct courses with an active offering."
+          },
+          "name": {
+            "type": "string",
+            "description": "Published offering unit name; use it verbatim (URL-encoded) in department URLs."
+          },
+          "offerings": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Active offerings across all terms."
+          }
+        }
+      },
+      "DepartmentOfferings": {
+        "type": "object",
+        "required": [
+          "school",
+          "schoolName",
+          "department",
+          "total",
+          "offerings"
+        ],
+        "properties": {
+          "department": {
+            "type": "string"
+          },
+          "offerings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Offering"
+            },
+            "description": "Newest term first, then by course code."
+          },
+          "school": {
+            "type": "string"
+          },
+          "schoolName": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "All active offerings of the department; `offerings` holds at most 200 of them."
+          }
+        }
+      },
+      "ErrorBody": {
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ExtraValue": {
+        "oneOf": [
+          {
+            "type": "null",
+            "default": null
+          },
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "description": "A school-specific scalar kept under its original field name."
+      },
+      "InstructorOfferings": {
+        "type": "object",
+        "required": [
+          "school",
+          "schoolName",
+          "name",
+          "summary",
+          "offerings"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "offerings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Offering"
+            },
+            "description": "Newest term first, then by course code."
+          },
+          "school": {
+            "type": "string"
+          },
+          "schoolName": {
+            "type": "string"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/InstructorSummary"
+          }
+        }
+      },
+      "InstructorSummary": {
+        "type": "object",
+        "required": [
+          "offerings",
+          "courses",
+          "terms",
+          "departments"
+        ],
+        "properties": {
+          "courses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "departments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Offering units, by name."
+          },
+          "offerings": {
+            "type": "integer",
+            "format": "int64",
+            "description": "All active offerings taught; `offerings` holds at most 200 of them."
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Terms taught, newest first."
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "password": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Me": {
+        "type": "object",
+        "description": "The signed-in account, as returned by `/api/auth/me`.",
+        "required": [
+          "username",
+          "isAdmin",
+          "createdAt"
+        ],
+        "properties": {
+          "bio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "isAdmin": {
+            "type": "boolean",
+            "description": "Admins may post announcements and delete any post."
+          },
+          "school": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "School slug."
+          },
+          "username": {
+            "type": "string",
+            "description": "Lower-case, 3-32 characters of `[a-z0-9_]`."
+          }
+        }
+      },
+      "Meeting": {
+        "type": "object",
+        "description": "One weekly meeting: `day` 1 (Mon) to 7 (Sun) and the school's own period labels in order.",
+        "required": [
+          "day",
+          "periods"
+        ],
+        "properties": {
+          "day": {
+            "type": "integer",
+            "format": "int32",
+            "maximum": 7,
+            "minimum": 1
+          },
+          "location": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "periods": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "MyRating": {
+        "type": "object",
+        "required": [
+          "score",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "review": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "NewPost": {
+        "type": "object",
+        "required": [
+          "type",
+          "title",
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "1-20000 characters of plain text (Markdown source)."
+          },
+          "courseCode": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Cross-term course code at `school`."
+          },
+          "school": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "School slug."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Up to 5 tags of 1-30 characters each; duplicates are dropped."
+          },
+          "title": {
+            "type": "string",
+            "description": "1-200 characters, single line."
+          },
+          "type": {
+            "$ref": "#/components/schemas/PostType",
+            "description": "`announcement` (admins only), `article` or `question`."
+          }
+        },
+        "additionalProperties": false
+      },
+      "NewReply": {
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "1-20000 characters of plain text (Markdown source)."
+          }
+        },
+        "additionalProperties": false
+      },
+      "Offering": {
+        "type": "object",
+        "required": [
+          "id",
+          "school",
+          "schoolName",
+          "term",
+          "courseCode",
+          "sourceId",
+          "title",
+          "instructors",
+          "sourceUrl",
+          "importedAt",
+          "isDemo"
+        ],
+        "properties": {
+          "campus": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "capacity": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32"
+          },
+          "classCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "courseCode": {
+            "type": "string"
+          },
+          "credits": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double"
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "departmentCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enrolled": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int32",
+            "description": "Students enrolled when the snapshot was crawled, if the school publishes it."
+          },
+          "extra": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ExtraValue"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
+          "grade": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "string"
+          },
+          "importedAt": {
+            "type": "string"
+          },
+          "instructors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isDemo": {
+            "type": "boolean"
+          },
+          "language": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "requirement": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Requirement"
+              }
+            ]
+          },
+          "requirementText": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "schedule": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Meeting"
+            }
+          },
+          "scheduleText": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "school": {
+            "type": "string"
+          },
+          "schoolName": {
+            "type": "string"
+          },
+          "sourceId": {
+            "type": "string"
+          },
+          "sourceUrl": {
+            "type": "string"
+          },
+          "syllabusUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "term": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "titleEn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      },
+      "Overview": {
+        "type": "object",
+        "required": [
+          "schools",
+          "totals"
+        ],
+        "properties": {
+          "schools": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SchoolOverview"
+            },
+            "description": "Schools by active offerings, most first."
+          },
+          "totals": {
+            "$ref": "#/components/schemas/OverviewTotals"
+          }
+        }
+      },
+      "OverviewTotals": {
+        "type": "object",
+        "required": [
+          "offerings",
+          "courses",
+          "schools",
+          "terms"
+        ],
+        "properties": {
+          "courses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "offerings": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "schools": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Schools with at least one imported term."
+          },
+          "terms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Distinct terms imported at any school."
+          }
+        }
+      },
+      "PostDetail": {
+        "type": "object",
+        "description": "A top-level post with its non-deleted replies, oldest first.",
+        "required": [
+          "id",
+          "type",
+          "title",
+          "content",
+          "author",
+          "tags",
+          "replyCount",
+          "score",
+          "myVote",
+          "createdAt",
+          "updatedAt",
+          "replies"
+        ],
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/Author"
+          },
+          "content": {
+            "type": "string"
+          },
+          "courseCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "myVote": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The signed-in user's vote: -1, 0 or 1 (0 when anonymous)."
+          },
+          "replies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reply"
+            }
+          },
+          "replyCount": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "school": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "score": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/PostType"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "PostPage": {
+        "type": "object",
+        "required": [
+          "posts",
+          "page",
+          "pageSize",
+          "total"
+        ],
+        "properties": {
+          "page": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pageSize": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostSummary"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Matching posts on all pages."
+          }
+        }
+      },
+      "PostSummary": {
+        "type": "object",
+        "description": "A top-level post in a listing.",
+        "required": [
+          "id",
+          "type",
+          "title",
+          "excerpt",
+          "author",
+          "tags",
+          "replyCount",
+          "score",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/Author"
+          },
+          "courseCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "excerpt": {
+            "type": "string",
+            "description": "First 200 characters of the content."
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "replyCount": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Non-deleted replies."
+          },
+          "school": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "score": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Sum of votes."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Sorted."
+          },
+          "title": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/PostType"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "PostType": {
+        "type": "string",
+        "enum": [
+          "announcement",
+          "article",
+          "question",
+          "reply"
+        ]
+      },
+      "PostUpdate": {
+        "type": "object",
+        "description": "Omitted fields stay unchanged. Replies have no title.",
+        "properties": {
+          "content": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProfileUpdate": {
+        "type": "object",
+        "description": "Omitted fields stay unchanged; `null` or an empty string clears a field.",
+        "properties": {
+          "bio": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Up to 500 characters; line breaks allowed."
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "1-50 characters, single line."
+          },
+          "school": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "School slug from `/api/schools`."
+          }
+        },
+        "additionalProperties": false
+      },
+      "PublicProfile": {
+        "type": "object",
+        "description": "Anyone's public page: profile fields, ratings and non-deleted top-level posts.",
+        "required": [
+          "username",
+          "createdAt",
+          "ratings",
+          "posts"
+        ],
+        "properties": {
+          "bio": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PostSummary"
+            },
+            "description": "Up to 50 top-level posts, newest first."
+          },
+          "ratings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserRating"
+            },
+            "description": "Up to 100 ratings, most recently updated first."
+          },
+          "school": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "Rating": {
+        "type": "object",
+        "required": [
+          "username",
+          "score",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "createdAt": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "review": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32",
+            "description": "1 to 5."
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "RatingInput": {
+        "type": "object",
+        "required": [
+          "score"
+        ],
+        "properties": {
+          "review": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Up to 2000 characters of plain text; empty or omitted means no review."
+          },
+          "score": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Integer 1 to 5.",
+            "maximum": 5,
+            "minimum": 1
+          }
+        },
+        "additionalProperties": false
+      },
+      "RatingStats": {
+        "type": "object",
+        "required": [
+          "count",
+          "histogram"
+        ],
+        "properties": {
+          "average": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "format": "double",
+            "description": "Mean score; `null` without ratings."
+          },
+          "count": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "histogram": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "Number of ratings with score 1, 2, 3, 4 and 5.",
+            "maxItems": 5,
+            "minItems": 5
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "properties": {
+          "displayName": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "1-50 characters, single line; empty means none."
+          },
+          "password": {
+            "type": "string",
+            "description": "8-128 characters."
+          },
+          "username": {
+            "type": "string",
+            "description": "3-32 characters of `[a-z0-9_]`; upper-case letters are lower-cased."
+          }
+        },
+        "additionalProperties": false
+      },
+      "Reply": {
+        "type": "object",
+        "required": [
+          "id",
+          "content",
+          "author",
+          "score",
+          "myVote",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/Author"
+          },
+          "content": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "myVote": {
+            "type": "integer",
+            "format": "int32",
+            "description": "The signed-in user's vote: -1, 0 or 1 (0 when anonymous)."
+          },
+          "score": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "Requirement": {
+        "type": "string",
+        "description": "Coarse 必選修 category; the school's own wording is kept in `requirementText`.",
+        "enum": [
+          "required",
+          "elective",
+          "general",
+          "other"
+        ]
+      },
+      "School": {
+        "type": "object",
+        "required": [
+          "slug",
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "nameEn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "slug": {
+            "type": "string"
+          }
+        }
+      },
+      "SchoolDetail": {
+        "type": "object",
+        "required": [
+          "slug",
+          "name",
+          "terms",
+          "offerings",
+          "courses",
+          "departments"
+        ],
+        "properties": {
+          "courses": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "departments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DepartmentCount"
+            },
+            "description": "Offering units with active offerings, by name."
+          },
+          "name": {
+            "type": "string"
+          },
+          "nameEn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "offerings": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Imported terms, newest first."
+          }
+        }
+      },
+      "SchoolOverview": {
+        "type": "object",
+        "required": [
+          "slug",
+          "name",
+          "offerings",
+          "courses",
+          "terms"
+        ],
+        "properties": {
+          "courses": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Distinct courses with an active offering."
+          },
+          "latestImportedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Latest import time (ISO-8601 UTC), `null` before the first import."
+          },
+          "name": {
+            "type": "string"
+          },
+          "nameEn": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "offerings": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Active (searchable) offerings across all terms."
+          },
+          "slug": {
+            "type": "string"
+          },
+          "terms": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Imported terms."
+          }
+        }
+      },
+      "UserRating": {
+        "type": "object",
+        "description": "A rating on a user's public profile.",
+        "required": [
+          "school",
+          "courseCode",
+          "score",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "courseCode": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "review": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "school": {
+            "type": "string"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Title of the course's newest offering."
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        }
+      },
+      "VoteInput": {
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "properties": {
+          "value": {
+            "type": "integer",
+            "format": "int64",
+            "description": "-1 (down), 0 (remove) or 1 (up).",
+            "maximum": 1,
+            "minimum": -1
+          }
+        },
+        "additionalProperties": false
+      },
+      "VoteResult": {
+        "type": "object",
+        "required": [
+          "score",
+          "myVote"
+        ],
+        "properties": {
+          "myVote": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "uc_session",
+        "description": "Session cookie set by /api/auth/register and /api/auth/login"
+      }
+    }
+  }
+}

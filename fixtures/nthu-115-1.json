@@ -1,0 +1,72 @@
+{
+  "school": "nthu",
+  "schoolName": "國立清華大學",
+  "schoolNameEn": "National Tsing Hua University",
+  "term": "115-1",
+  "isDemo": true,
+  "source": {
+    "name": "示範課程資料",
+    "url": "https://www.nthu.edu.tw/",
+    "fetchedAt": "2026-11-20T02:30:00Z"
+  },
+  "offerings": [
+    {
+      "sourceId": "demo-11510-001",
+      "courseCode": "DEMO201",
+      "classCode": "01",
+      "title": "線性代數",
+      "titleEn": "Linear Algebra (Demo)",
+      "instructors": ["王示範"],
+      "department": "示範數學系",
+      "departmentCode": "DMATH",
+      "credits": 3,
+      "requirement": "required",
+      "requirementText": "必修",
+      "schedule": [
+        { "day": 2, "periods": ["3", "4"], "location": "示範館 101" },
+        { "day": 4, "periods": ["3"], "location": "示範館 101" }
+      ],
+      "scheduleText": "T3T4R3 示範館101",
+      "capacity": 60,
+      "enrolled": 58,
+      "language": "中文",
+      "campus": "示範校區",
+      "grade": "1",
+      "description": "示範用的課程概述：向量空間、線性轉換與矩陣。",
+      "syllabusUrl": "https://www.nthu.edu.tw/",
+      "sourceUrl": "https://www.nthu.edu.tw/",
+      "notes": "示範備註：本課程為合成資料。",
+      "extra": { "授課方式": "講授", "英文授課": false, "權重": 1.5, "附註": null }
+    },
+    {
+      "sourceId": "demo-11510-002",
+      "courseCode": "DEMO202",
+      "classCode": "02",
+      "title": "計算機程式設計",
+      "titleEn": "Introduction to Programming (Demo)",
+      "instructors": ["林範例", "陳樣本"],
+      "department": "示範資訊工程學系",
+      "departmentCode": "DCS",
+      "credits": 2.5,
+      "requirement": "elective",
+      "requirementText": "選修",
+      "schedule": [{ "day": 1, "periods": ["a", "b"] }],
+      "scheduleText": "Mab",
+      "capacity": 0,
+      "enrolled": 72,
+      "language": "英語",
+      "sourceUrl": "https://www.nthu.edu.tw/"
+    },
+    {
+      "sourceId": "demo-11510-003",
+      "courseCode": "DEMO203",
+      "title": "藝術與人文導論",
+      "instructors": [],
+      "department": "示範通識教育中心",
+      "requirement": "general",
+      "requirementText": "通識",
+      "scheduleText": "未定",
+      "sourceUrl": "https://www.nthu.edu.tw/"
+    }
+  ]
+}

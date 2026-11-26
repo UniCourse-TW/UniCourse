@@ -1,0 +1,40 @@
+{
+  "school": "nthu",
+  "schoolName": "國立清華大學",
+  "schoolNameEn": "National Tsing Hua University",
+  "term": "114-2",
+  "isDemo": true,
+  "source": {
+    "name": "示範課程資料",
+    "url": "https://www.nthu.edu.tw/",
+    "fetchedAt": "2026-03-01T02:30:00Z"
+  },
+  "offerings": [
+    {
+      "sourceId": "demo-11420-001",
+      "courseCode": "DEMO201",
+      "classCode": "01",
+      "title": "線性代數",
+      "titleEn": "Linear Algebra (Demo)",
+      "instructors": ["王示範"],
+      "department": "示範數學系",
+      "credits": 3,
+      "requirement": "required",
+      "requirementText": "必修",
+      "scheduleText": "M3M4 示範館102",
+      "enrolled": 55,
+      "sourceUrl": "https://www.nthu.edu.tw/"
+    },
+    {
+      "sourceId": "demo-11420-002",
+      "courseCode": "DEMO204",
+      "title": "微積分",
+      "instructors": ["林範例"],
+      "department": "示範數學系",
+      "credits": 4,
+      "requirement": "required",
+      "enrolled": 80,
+      "sourceUrl": "https://www.nthu.edu.tw/"
+    }
+  ]
+}

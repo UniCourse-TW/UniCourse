@@ -1,0 +1,9 @@
+/target/
+node_modules/
+.svelte-kit/
+/apps/web/build/
+/apps/web/playwright-report/
+/apps/web/test-results/
+.env
+/snapshots/
+/crawlers/*/.cache/

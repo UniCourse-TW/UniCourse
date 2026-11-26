@@ -1,0 +1,15 @@
+{
+  "school": "nycu",
+  "schoolName": "國立陽明交通大學",
+  "term": "115-1",
+  "isDemo": true,
+  "offerings": [
+    {
+      "sourceId": "demo-001",
+      "courseCode": "DEMO101",
+      "title": "資料結構",
+      "instructors": [],
+      "sourceUrl": "https://www.nycu.edu.tw/"
+    }
+  ]
+}

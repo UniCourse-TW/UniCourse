@@ -1,0 +1,49 @@
+.overview-breadcrumb {
+  margin: 0 0 0.85rem;
+  font-size: 0.9rem;
+}
+
+.overview-header {
+  margin-bottom: 1.5rem;
+  padding: clamp(0.9rem, 4vw, 1.5rem);
+  border: 1px solid #e5dfef;
+  border-radius: 0.85rem;
+  background: #fff;
+  overflow-wrap: anywhere;
+}
+
+.overview-header h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 5vw, 2.3rem);
+  line-height: 1.2;
+}
+
+.overview-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.7rem;
+  margin: 0.8rem 0;
+}
+
+.overview-summary div {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 0.4rem;
+  background: #f0eafa;
+  color: #472485;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.overview-summary dd { margin: 0; font-weight: 700; }
+.overview-muted { color: #594f69; }
+.overview-header p { margin: 0.55rem 0 0; }
+
+.overview-policy {
+  max-width: 42rem;
+  overflow-wrap: anywhere;
+}
+
+.overview-policy h2 { margin: 1.6rem 0 0.35rem; font-size: 1.15rem; }
+.overview-policy p { margin: 0 0 0.65rem; }

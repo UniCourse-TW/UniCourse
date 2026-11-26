@@ -1,0 +1,901 @@
+//! Router tests against a real database (`sqlx::test` creates one per test).
+
+use axum::{
+    Router,
+    body::{Body, to_bytes},
+    http::{Request, StatusCode, header},
+};
+use serde_json::{Value, json};
+use sqlx::PgPool;
+use tower::ServiceExt;
+use unicourse_catalog::MIGRATOR;
+use unicourse_ingest::{import, parse_snapshot};
+
+const NTNU: &[u8] = include_bytes!("../../../fixtures/ntnu-115-1.json");
+const NYCU: &[u8] = include_bytes!("../../../fixtures/nycu-115-1.json");
+const NTHU: &[u8] = include_bytes!("../../../fixtures/nthu-115-1.json");
+const NTHU_OLDER: &[u8] = include_bytes!("../../../fixtures/nthu-114-2.json");
+
+async fn seed(pool: &PgPool) {
+    for fixture in [NTNU, NYCU, NTHU, NTHU_OLDER] {
+        import(pool, &parse_snapshot(fixture).unwrap())
+            .await
+            .unwrap();
+    }
+}
+
+struct Response {
+    status: StatusCode,
+    cookie: Option<String>,
+    body: Value,
+}
+
+async fn call(
+    app: &Router,
+    method: &str,
+    uri: &str,
+    cookie: Option<&str>,
+    body: Option<Value>,
+) -> Response {
+    let mut request = Request::builder().method(method).uri(uri);
+    if let Some(cookie) = cookie {
+        request = request.header(header::COOKIE, cookie);
+    }
+    let request = match body {
+        Some(body) => request
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(body.to_string())),
+        None => request.body(Body::empty()),
+    }
+    .unwrap();
+    let response = app.clone().oneshot(request).await.unwrap();
+    let status = response.status();
+    let cookie = response
+        .headers()
+        .get(header::SET_COOKIE)
+        .map(|value| value.to_str().unwrap().to_owned());
+    let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let body = if bytes.is_empty() {
+        Value::Null
+    } else {
+        serde_json::from_slice(&bytes).unwrap()
+    };
+    Response {
+        status,
+        cookie,
+        body,
+    }
+}
+
+/// `uc_session=...` from a Set-Cookie header, ready for a Cookie header.
+fn session(set_cookie: &str) -> String {
+    set_cookie.split(';').next().unwrap().to_owned()
+}
+
+async fn register(app: &Router, username: &str) -> String {
+    let response = call(
+        app,
+        "POST",
+        "/api/auth/register",
+        None,
+        Some(json!({ "username": username, "password": "correct horse" })),
+    )
+    .await;
+    assert_eq!(response.status, StatusCode::CREATED, "{}", response.body);
+    session(&response.cookie.unwrap())
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn register_login_me_logout(pool: PgPool) {
+    seed(&pool).await;
+    let app = unicourse_api::router(pool.clone());
+
+    let created = call(
+        &app,
+        "POST",
+        "/api/auth/register",
+        None,
+        Some(json!({ "username": "Alice_1", "password": "correct horse", "displayName": " 愛麗絲 " })),
+    )
+    .await;
+    assert_eq!(created.status, StatusCode::CREATED);
+    assert_eq!(created.body["username"], "alice_1");
+    assert_eq!(created.body["displayName"], "愛麗絲");
+    assert_eq!(created.body["isAdmin"], false);
+    assert!(created.body.get("id").is_none() && created.body.get("passwordHash").is_none());
+    let set_cookie = created.cookie.unwrap();
+    assert!(set_cookie.starts_with("uc_session="));
+    for attribute in ["HttpOnly", "SameSite=Lax", "Path=/", "Max-Age=2592000"] {
+        assert!(set_cookie.contains(attribute), "{set_cookie}");
+    }
+    assert!(!set_cookie.contains("Secure"));
+    let cookie = session(&set_cookie);
+
+    // Usernames are case-insensitively unique.
+    let taken = call(
+        &app,
+        "POST",
+        "/api/auth/register",
+        None,
+        Some(json!({ "username": "ALICE_1", "password": "another password" })),
+    )
+    .await;
+    assert_eq!(taken.status, StatusCode::CONFLICT);
+    assert_eq!(taken.body["message"], "Username is taken");
+
+    for body in [
+        json!({ "username": "ab", "password": "correct horse" }),
+        json!({ "username": "bob!", "password": "correct horse" }),
+        json!({ "username": "bob", "password": "short" }),
+        json!({ "username": "bob", "password": "x".repeat(129) }),
+        json!({ "username": "bob", "password": "correct horse", "displayName": "a\u{0}b" }),
+        json!({ "username": "bob", "password": "correct horse", "displayName": "x".repeat(51) }),
+        json!({ "username": "bob", "password": "correct horse", "extra": 1 }),
+        json!({ "username": "bob" }),
+    ] {
+        let response = call(&app, "POST", "/api/auth/register", None, Some(body.clone())).await;
+        assert_eq!(response.status, StatusCode::BAD_REQUEST, "{body}");
+        assert!(response.body["message"].is_string());
+    }
+
+    let me = call(&app, "GET", "/api/auth/me", Some(&cookie), None).await;
+    assert_eq!(me.status, StatusCode::OK);
+    assert_eq!(me.body["username"], "alice_1");
+    let anonymous = call(&app, "GET", "/api/auth/me", None, None).await;
+    assert_eq!(anonymous.status, StatusCode::UNAUTHORIZED);
+    let forged = call(
+        &app,
+        "GET",
+        "/api/auth/me",
+        Some("uc_session=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
+        None,
+    )
+    .await;
+    assert_eq!(forged.status, StatusCode::UNAUTHORIZED);
+
+    let updated = call(
+        &app,
+        "PATCH",
+        "/api/auth/me",
+        Some(&cookie),
+        Some(json!({ "bio": "資工系\n大三", "school": "nthu" })),
+    )
+    .await;
+    assert_eq!(updated.status, StatusCode::OK);
+    assert_eq!(updated.body["bio"], "資工系\n大三");
+    assert_eq!(updated.body["school"], "nthu");
+    assert_eq!(updated.body["displayName"], "愛麗絲");
+    let cleared = call(
+        &app,
+        "PATCH",
+        "/api/auth/me",
+        Some(&cookie),
+        Some(json!({ "displayName": null, "school": "" })),
+    )
+    .await;
+    assert_eq!(cleared.body["displayName"], Value::Null);
+    assert_eq!(cleared.body["school"], Value::Null);
+    assert_eq!(cleared.body["bio"], "資工系\n大三");
+    for body in [
+        json!({ "school": "nowhere" }),
+        json!({ "bio": "x".repeat(501) }),
+        json!({ "bio": "a\u{0}" }),
+    ] {
+        let response = call(
+            &app,
+            "PATCH",
+            "/api/auth/me",
+            Some(&cookie),
+            Some(body.clone()),
+        )
+        .await;
+        assert_eq!(response.status, StatusCode::BAD_REQUEST, "{body}");
+    }
+
+    let wrong = call(
+        &app,
+        "POST",
+        "/api/auth/login",
+        None,
+        Some(json!({ "username": "alice_1", "password": "wrong password" })),
+    )
+    .await;
+    assert_eq!(wrong.status, StatusCode::UNAUTHORIZED);
+    let unknown = call(
+        &app,
+        "POST",
+        "/api/auth/login",
+        None,
+        Some(json!({ "username": "nobody\u{0}", "password": "correct horse" })),
+    )
+    .await;
+    assert_eq!(unknown.status, StatusCode::UNAUTHORIZED);
+    let login = call(
+        &app,
+        "POST",
+        "/api/auth/login",
+        None,
+        Some(json!({ "username": "ALICE_1", "password": "correct horse" })),
+    )
+    .await;
+    assert_eq!(login.status, StatusCode::OK);
+    assert_eq!(login.body["username"], "alice_1");
+    let second = session(&login.cookie.unwrap());
+    assert_ne!(second, cookie);
+
+    let logout = call(&app, "POST", "/api/auth/logout", Some(&cookie), None).await;
+    assert_eq!(logout.status, StatusCode::NO_CONTENT);
+    assert!(logout.cookie.unwrap().contains("Max-Age=0"));
+    let gone = call(&app, "GET", "/api/auth/me", Some(&cookie), None).await;
+    assert_eq!(gone.status, StatusCode::UNAUTHORIZED);
+    let still = call(&app, "GET", "/api/auth/me", Some(&second), None).await;
+    assert_eq!(still.status, StatusCode::OK);
+
+    // Expired sessions are rejected.
+    sqlx::query("UPDATE sessions SET expires_at = now() - interval '1 second'")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let expired = call(&app, "GET", "/api/auth/me", Some(&second), None).await;
+    assert_eq!(expired.status, StatusCode::UNAUTHORIZED);
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn login_failures_are_rate_limited(pool: PgPool) {
+    let app = unicourse_api::router(pool.clone());
+    register(&app, "carol").await;
+    sqlx::query("INSERT INTO login_attempts (username) SELECT 'carol' FROM generate_series(1, 10)")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let limited = call(
+        &app,
+        "POST",
+        "/api/auth/login",
+        None,
+        Some(json!({ "username": "carol", "password": "correct horse" })),
+    )
+    .await;
+    assert_eq!(limited.status, StatusCode::TOO_MANY_REQUESTS);
+    sqlx::query("UPDATE login_attempts SET attempted_at = now() - interval '2 minutes'")
+        .execute(&pool)
+        .await
+        .unwrap();
+    let allowed = call(
+        &app,
+        "POST",
+        "/api/auth/login",
+        None,
+        Some(json!({ "username": "carol", "password": "correct horse" })),
+    )
+    .await;
+    assert_eq!(allowed.status, StatusCode::OK);
+
+    let secure = unicourse_api::router_with(
+        pool,
+        unicourse_api::Config {
+            cookie_secure: true,
+        },
+    );
+    let login = call(
+        &secure,
+        "POST",
+        "/api/auth/login",
+        None,
+        Some(json!({ "username": "carol", "password": "correct horse" })),
+    )
+    .await;
+    assert!(login.cookie.unwrap().ends_with("; Secure"));
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn ratings_upsert_and_stats(pool: PgPool) {
+    seed(&pool).await;
+    let app = unicourse_api::router(pool);
+    let alice = register(&app, "alice").await;
+    let bob = register(&app, "bob").await;
+    let base = "/api/courses/nthu/DEMO201/ratings";
+
+    let empty = call(&app, "GET", &format!("{base}/stats"), None, None).await;
+    assert_eq!(empty.status, StatusCode::OK);
+    assert_eq!(
+        empty.body,
+        json!({ "count": 0, "average": null, "histogram": [0, 0, 0, 0, 0] })
+    );
+    assert_eq!(
+        call(&app, "GET", &format!("{base}/me"), None, None)
+            .await
+            .status,
+        StatusCode::UNAUTHORIZED
+    );
+    assert_eq!(
+        call(&app, "GET", &format!("{base}/me"), Some(&alice), None)
+            .await
+            .status,
+        StatusCode::NOT_FOUND
+    );
+
+    let put = |cookie: String, body: Value| {
+        let app = app.clone();
+        async move {
+            call(
+                &app,
+                "PUT",
+                &format!("{base}/me"),
+                Some(&cookie),
+                Some(body),
+            )
+            .await
+        }
+    };
+    let first = put(alice.clone(), json!({ "score": 3, "review": "  還不錯 " })).await;
+    assert_eq!(first.status, StatusCode::OK);
+    assert_eq!(first.body["score"], 3);
+    assert_eq!(first.body["review"], "還不錯");
+    let replaced = put(alice.clone(), json!({ "score": 5 })).await;
+    assert_eq!(replaced.body["score"], 5);
+    assert_eq!(replaced.body["review"], Value::Null);
+    assert_eq!(replaced.body["createdAt"], first.body["createdAt"]);
+    put(
+        bob.clone(),
+        json!({ "score": 2, "review": "作業很多\n但有收穫" }),
+    )
+    .await;
+
+    let stats = call(&app, "GET", &format!("{base}/stats"), None, None).await;
+    assert_eq!(
+        stats.body,
+        json!({ "count": 2, "average": 3.5, "histogram": [0, 1, 0, 0, 1] })
+    );
+    let list = call(&app, "GET", base, None, None).await;
+    let list = list.body.as_array().unwrap();
+    assert_eq!(list.len(), 2);
+    assert_eq!(list[0]["username"], "bob");
+    assert_eq!(list[1]["username"], "alice");
+    let mine = call(&app, "GET", &format!("{base}/me"), Some(&alice), None).await;
+    assert_eq!(mine.body["score"], 5);
+
+    for body in [
+        json!({ "score": 0 }),
+        json!({ "score": 6 }),
+        json!({ "score": 2.5 }),
+        json!({ "score": "5" }),
+        json!({ "score": 4, "review": "x".repeat(2001) }),
+        json!({ "score": 4, "review": "a\u{0}b" }),
+        json!({}),
+    ] {
+        assert_eq!(
+            put(alice.clone(), body.clone()).await.status,
+            StatusCode::BAD_REQUEST,
+            "{body}"
+        );
+    }
+    // Only known cross-term courses can be rated.
+    let unknown = call(
+        &app,
+        "PUT",
+        "/api/courses/nthu/NOPE/ratings/me",
+        Some(&alice),
+        Some(json!({ "score": 4 })),
+    )
+    .await;
+    assert_eq!(unknown.status, StatusCode::NOT_FOUND);
+    assert_eq!(
+        call(&app, "GET", "/api/courses/ntu/DEMO201/ratings", None, None)
+            .await
+            .status,
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(
+        call(&app, "GET", "/api/courses/nthu/DEMO%00/ratings", None, None)
+            .await
+            .status,
+        StatusCode::BAD_REQUEST
+    );
+
+    let profile = call(&app, "GET", "/api/users/ALICE", None, None).await;
+    assert_eq!(profile.status, StatusCode::OK);
+    assert_eq!(profile.body["ratings"][0]["courseCode"], "DEMO201");
+    assert_eq!(profile.body["ratings"][0]["title"], "線性代數");
+    assert_eq!(
+        call(&app, "GET", "/api/users/nobody", None, None)
+            .await
+            .status,
+        StatusCode::NOT_FOUND
+    );
+
+    let deleted = call(&app, "DELETE", &format!("{base}/me"), Some(&alice), None).await;
+    assert_eq!(deleted.status, StatusCode::NO_CONTENT);
+    let stats = call(&app, "GET", &format!("{base}/stats"), None, None).await;
+    assert_eq!(stats.body["count"], 1);
+    assert_eq!(stats.body["average"], 2.0);
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn posts_replies_votes_and_soft_delete(pool: PgPool) {
+    seed(&pool).await;
+    let app = unicourse_api::router(pool.clone());
+    let alice = register(&app, "alice").await;
+    let bob = register(&app, "bob").await;
+
+    let created = call(
+        &app,
+        "POST",
+        "/api/posts",
+        Some(&alice),
+        Some(json!({
+            "type": "question",
+            "title": " 線代期中考範圍？ ",
+            "content": "<script>alert(1)</script>\n第幾章？",
+            "school": "nthu",
+            "courseCode": "DEMO201",
+            "tags": ["期中考", "線代", "期中考"],
+        })),
+    )
+    .await;
+    assert_eq!(created.status, StatusCode::CREATED, "{}", created.body);
+    let post = &created.body;
+    let id = post["id"].as_i64().unwrap();
+    assert_eq!(post["type"], "question");
+    assert_eq!(post["title"], "線代期中考範圍？");
+    // Content is stored verbatim as plain text; escaping is the renderer's job.
+    assert_eq!(post["content"], "<script>alert(1)</script>\n第幾章？");
+    assert_eq!(
+        post["author"],
+        json!({ "username": "alice", "displayName": null })
+    );
+    assert_eq!(post["tags"], json!(["期中考", "線代"]));
+    assert_eq!(post["replies"], json!([]));
+    assert_eq!(post["myVote"], 0);
+
+    let article = call(
+        &app,
+        "POST",
+        "/api/posts",
+        Some(&bob),
+        Some(json!({ "type": "article", "title": "選課心得", "content": "推薦 DEMO202" })),
+    )
+    .await;
+    assert_eq!(article.status, StatusCode::CREATED);
+    let article_id = article.body["id"].as_i64().unwrap();
+
+    // Announcements need an admin account.
+    let announcement = json!({ "type": "announcement", "title": "公告", "content": "維護" });
+    assert_eq!(
+        call(
+            &app,
+            "POST",
+            "/api/posts",
+            Some(&alice),
+            Some(announcement.clone())
+        )
+        .await
+        .status,
+        StatusCode::FORBIDDEN
+    );
+    sqlx::query("UPDATE users SET is_admin = true WHERE username = 'alice'")
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(
+        call(&app, "POST", "/api/posts", Some(&alice), Some(announcement))
+            .await
+            .status,
+        StatusCode::CREATED
+    );
+    sqlx::query("UPDATE users SET is_admin = false WHERE username = 'alice'")
+        .execute(&pool)
+        .await
+        .unwrap();
+
+    for body in [
+        json!({ "type": "reply", "title": "x", "content": "x" }),
+        json!({ "type": "article", "title": "", "content": "x" }),
+        json!({ "type": "article", "title": "x".repeat(201), "content": "x" }),
+        json!({ "type": "article", "title": "a\nb", "content": "x" }),
+        json!({ "type": "article", "title": "x", "content": "   " }),
+        json!({ "type": "article", "title": "x", "content": "x".repeat(20_001) }),
+        json!({ "type": "article", "title": "x", "content": "a\u{0}b" }),
+        json!({ "type": "article", "title": "x", "content": "x", "courseCode": "DEMO201" }),
+        json!({ "type": "article", "title": "x", "content": "x", "school": "nthu", "courseCode": "NOPE" }),
+        json!({ "type": "article", "title": "x", "content": "x", "school": "nowhere" }),
+        json!({ "type": "article", "title": "x", "content": "x", "tags": ["1", "2", "3", "4", "5", "6"] }),
+        json!({ "type": "article", "title": "x", "content": "x", "tags": ["x".repeat(31)] }),
+        json!({ "type": "poll", "title": "x", "content": "x" }),
+    ] {
+        let response = call(&app, "POST", "/api/posts", Some(&bob), Some(body.clone())).await;
+        assert_eq!(response.status, StatusCode::BAD_REQUEST, "{body}");
+    }
+
+    let reply = call(
+        &app,
+        "POST",
+        &format!("/api/posts/{id}/replies"),
+        Some(&bob),
+        Some(json!({ "content": "第一到四章" })),
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::CREATED, "{}", reply.body);
+    let reply_id = reply.body["id"].as_i64().unwrap();
+    assert_eq!(reply.body["author"]["username"], "bob");
+    let nested = call(
+        &app,
+        "POST",
+        &format!("/api/posts/{reply_id}/replies"),
+        Some(&alice),
+        Some(json!({ "content": "x" })),
+    )
+    .await;
+    assert_eq!(nested.status, StatusCode::BAD_REQUEST);
+    call(
+        &app,
+        "POST",
+        &format!("/api/posts/{id}/replies"),
+        Some(&alice),
+        Some(json!({ "content": "謝謝" })),
+    )
+    .await;
+
+    let vote = |cookie: String, target: i64, value: i64| {
+        let app = app.clone();
+        async move {
+            call(
+                &app,
+                "PUT",
+                &format!("/api/posts/{target}/vote"),
+                Some(&cookie),
+                Some(json!({ "value": value })),
+            )
+            .await
+        }
+    };
+    assert_eq!(
+        vote(alice.clone(), id, 1).await.body,
+        json!({ "score": 1, "myVote": 1 })
+    );
+    assert_eq!(
+        vote(bob.clone(), id, 1).await.body,
+        json!({ "score": 2, "myVote": 1 })
+    );
+    assert_eq!(
+        vote(bob.clone(), id, -1).await.body,
+        json!({ "score": 0, "myVote": -1 })
+    );
+    assert_eq!(
+        vote(bob.clone(), id, 0).await.body,
+        json!({ "score": 1, "myVote": 0 })
+    );
+    assert_eq!(vote(alice.clone(), reply_id, -1).await.body["score"], -1);
+    assert_eq!(
+        vote(alice.clone(), id, 2).await.status,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        vote(alice.clone(), 999_999, 1).await.status,
+        StatusCode::NOT_FOUND
+    );
+
+    let thread = call(&app, "GET", &format!("/api/posts/{id}"), Some(&alice), None).await;
+    assert_eq!(thread.status, StatusCode::OK);
+    assert_eq!(thread.body["score"], 1);
+    assert_eq!(thread.body["myVote"], 1);
+    assert_eq!(thread.body["replyCount"], 2);
+    let replies = thread.body["replies"].as_array().unwrap();
+    assert_eq!(replies[0]["content"], "第一到四章");
+    assert_eq!(replies[0]["myVote"], -1);
+    assert_eq!(replies[1]["content"], "謝謝");
+    let anonymous = call(&app, "GET", &format!("/api/posts/{id}"), None, None).await;
+    assert_eq!(anonymous.body["myVote"], 0);
+    // Replies are only shown inside their thread.
+    assert_eq!(
+        call(&app, "GET", &format!("/api/posts/{reply_id}"), None, None)
+            .await
+            .status,
+        StatusCode::NOT_FOUND
+    );
+
+    // Listing: top-level only, newest first, with filters.
+    let all = call(&app, "GET", "/api/posts", None, None).await;
+    assert_eq!(all.body["total"], 3);
+    assert_eq!(all.body["pageSize"], 20);
+    let titles: Vec<_> = all.body["posts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|post| post["title"].clone())
+        .collect();
+    assert_eq!(
+        titles,
+        [json!("公告"), json!("選課心得"), json!("線代期中考範圍？")]
+    );
+    assert_eq!(all.body["posts"][2]["replyCount"], 2);
+    assert_eq!(all.body["posts"][2]["score"], 1);
+    let filtered = |query: &'static str| {
+        let app = app.clone();
+        async move {
+            call(&app, "GET", &format!("/api/posts?{query}"), None, None)
+                .await
+                .body["total"]
+                .clone()
+        }
+    };
+    assert_eq!(filtered("type=question").await, 1);
+    assert_eq!(filtered("school=nthu&courseCode=DEMO201").await, 1);
+    assert_eq!(filtered("q=DEMO202").await, 1);
+    assert_eq!(filtered("q=%25").await, 0);
+    assert_eq!(filtered("tag=%E7%B7%9A%E4%BB%A3").await, 1);
+    assert_eq!(
+        call(&app, "GET", "/api/posts?page=2", None, None)
+            .await
+            .body["posts"],
+        json!([])
+    );
+
+    // Editing: author only; replies have no title.
+    let edit = |cookie: String, target: i64, body: Value| {
+        let app = app.clone();
+        async move {
+            call(
+                &app,
+                "PATCH",
+                &format!("/api/posts/{target}"),
+                Some(&cookie),
+                Some(body),
+            )
+            .await
+            .status
+        }
+    };
+    assert_eq!(
+        edit(bob.clone(), id, json!({ "title": "x" })).await,
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(
+        edit(alice.clone(), id, json!({})).await,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        edit(alice.clone(), id, json!({ "content": "" })).await,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        edit(alice.clone(), id, json!({ "title": "線代期中考範圍" })).await,
+        StatusCode::NO_CONTENT
+    );
+    assert_eq!(
+        edit(bob.clone(), reply_id, json!({ "title": "x" })).await,
+        StatusCode::BAD_REQUEST
+    );
+    assert_eq!(
+        edit(bob.clone(), reply_id, json!({ "content": "第一到五章" })).await,
+        StatusCode::NO_CONTENT
+    );
+    let thread = call(&app, "GET", &format!("/api/posts/{id}"), None, None).await;
+    assert_eq!(thread.body["title"], "線代期中考範圍");
+    assert_eq!(thread.body["replies"][0]["content"], "第一到五章");
+
+    // Soft delete: author or admin.
+    let remove = |cookie: String, target: i64| {
+        let app = app.clone();
+        async move {
+            call(
+                &app,
+                "DELETE",
+                &format!("/api/posts/{target}"),
+                Some(&cookie),
+                None,
+            )
+            .await
+            .status
+        }
+    };
+    assert_eq!(
+        remove(alice.clone(), article_id).await,
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(remove(alice.clone(), reply_id).await, StatusCode::FORBIDDEN);
+    assert_eq!(remove(bob.clone(), reply_id).await, StatusCode::NO_CONTENT);
+    let thread = call(&app, "GET", &format!("/api/posts/{id}"), None, None).await;
+    assert_eq!(thread.body["replyCount"], 1);
+    assert_eq!(thread.body["replies"].as_array().unwrap().len(), 1);
+    assert_eq!(remove(bob.clone(), reply_id).await, StatusCode::NOT_FOUND);
+    assert_eq!(
+        vote(alice.clone(), reply_id, 1).await.status,
+        StatusCode::NOT_FOUND
+    );
+
+    sqlx::query("UPDATE users SET is_admin = true WHERE username = 'alice'")
+        .execute(&pool)
+        .await
+        .unwrap();
+    assert_eq!(
+        remove(alice.clone(), article_id).await,
+        StatusCode::NO_CONTENT
+    );
+    assert_eq!(remove(alice.clone(), id).await, StatusCode::NO_CONTENT);
+    assert_eq!(
+        call(&app, "GET", &format!("/api/posts/{id}"), None, None)
+            .await
+            .status,
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(filtered("").await, 1);
+    // Replying to a deleted thread is not possible.
+    let late = call(
+        &app,
+        "POST",
+        &format!("/api/posts/{id}/replies"),
+        Some(&bob),
+        Some(json!({ "content": "x" })),
+    )
+    .await;
+    assert_eq!(late.status, StatusCode::NOT_FOUND);
+    let rows: i64 = sqlx::query_scalar("SELECT count(*) FROM posts")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(rows, 5, "soft delete keeps rows");
+
+    let profile = call(&app, "GET", "/api/users/bob", None, None).await;
+    assert_eq!(profile.body["posts"], json!([]));
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn rankings_overview_and_browsing(pool: PgPool) {
+    seed(&pool).await;
+    let app = unicourse_api::router(pool.clone());
+
+    let ranking = call(&app, "GET", "/api/rankings/courses?school=nthu", None, None).await;
+    assert_eq!(ranking.status, StatusCode::OK);
+    let rows = ranking.body.as_array().unwrap();
+    let codes: Vec<_> = rows
+        .iter()
+        .map(|row| row["courseCode"].as_str().unwrap())
+        .collect();
+    assert_eq!(codes, ["DEMO201", "DEMO204", "DEMO202", "DEMO203"]);
+    let linear = &rows[0];
+    assert_eq!(linear["terms"], 2);
+    assert_eq!(linear["offerings"], 2);
+    assert_eq!(linear["enrolledTotal"], 58 + 55);
+    assert_eq!(linear["capacityTotal"], 60);
+    assert_eq!(linear["schoolName"], "國立清華大學");
+    assert_eq!(linear["title"], "線性代數");
+    assert_eq!(linear["isDemo"], true);
+    let latest: String = sqlx::query_scalar(
+        "SELECT id::text FROM offerings WHERE school = 'nthu' AND term = '115-1' AND course_code = 'DEMO201'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(linear["latestOfferingId"], latest);
+    assert_eq!(rows[1]["capacityTotal"], Value::Null);
+    assert_eq!(rows[3]["enrolledTotal"], Value::Null);
+    assert_eq!(rows[3]["capacityTotal"], Value::Null);
+
+    let all = call(&app, "GET", "/api/rankings/courses?limit=2", None, None).await;
+    assert_eq!(all.body.as_array().unwrap().len(), 2);
+    assert_eq!(all.body[0]["courseCode"], "DEMO201");
+    let every = call(&app, "GET", "/api/rankings/courses?limit=100", None, None).await;
+    let every = every.body.as_array().unwrap();
+    // Schools without `enrolled` fall back to capacity ordering after every enrolled total.
+    let first_null = every
+        .iter()
+        .position(|row| row["enrolledTotal"].is_null())
+        .unwrap();
+    assert!(
+        every[first_null..]
+            .iter()
+            .all(|row| row["enrolledTotal"].is_null())
+    );
+
+    // Withdrawn offerings still count; the ranking is refreshed by every import.
+    let shrunk: Value = {
+        let mut snapshot: Value = serde_json::from_slice(NTHU).unwrap();
+        snapshot["offerings"].as_array_mut().unwrap().truncate(1);
+        snapshot
+    };
+    import(
+        &pool,
+        &parse_snapshot(&serde_json::to_vec(&shrunk).unwrap()).unwrap(),
+    )
+    .await
+    .unwrap();
+    let ranking = call(&app, "GET", "/api/rankings/courses?school=nthu", None, None).await;
+    assert_eq!(ranking.body.as_array().unwrap().len(), 4);
+
+    let overview = call(&app, "GET", "/api/stats/overview", None, None).await;
+    assert_eq!(overview.status, StatusCode::OK);
+    let nthu = overview.body["schools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|school| school["slug"] == "nthu")
+        .unwrap()
+        .clone();
+    assert_eq!(nthu["terms"], 2);
+    assert_eq!(nthu["offerings"], 3); // 115-1 shrunk to one + two in 114-2
+    assert_eq!(nthu["courses"], 2);
+    assert!(nthu["latestImportedAt"].as_str().unwrap().ends_with('Z'));
+    assert_eq!(overview.body["totals"]["schools"], 3);
+    assert_eq!(overview.body["totals"]["terms"], 2);
+
+    let school = call(&app, "GET", "/api/schools/nthu", None, None).await;
+    assert_eq!(school.status, StatusCode::OK);
+    assert_eq!(school.body["terms"], json!(["115-1", "114-2"]));
+    assert_eq!(
+        school.body["departments"],
+        json!([{ "name": "示範數學系", "offerings": 3, "courses": 2 }])
+    );
+    assert_eq!(
+        call(&app, "GET", "/api/schools/nowhere", None, None)
+            .await
+            .status,
+        StatusCode::NOT_FOUND
+    );
+
+    let department = call(
+        &app,
+        "GET",
+        "/api/schools/nthu/departments/%E7%A4%BA%E7%AF%84%E6%95%B8%E5%AD%B8%E7%B3%BB",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(department.status, StatusCode::OK);
+    assert_eq!(department.body["total"], 3);
+    let terms: Vec<_> = department.body["offerings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|offering| offering["term"].as_str().unwrap())
+        .collect();
+    assert_eq!(terms, ["115-1", "114-2", "114-2"]);
+    assert_eq!(department.body["offerings"][0]["enrolled"], 58);
+    assert_eq!(
+        call(
+            &app,
+            "GET",
+            "/api/schools/nthu/departments/%E6%95%B8%E5%AD%B8%E7%B3%BB",
+            None,
+            None
+        )
+        .await
+        .status,
+        StatusCode::NOT_FOUND
+    );
+
+    // 王示範 teaches DEMO201 in both terms.
+    let instructor = call(
+        &app,
+        "GET",
+        "/api/instructors/nthu/%E7%8E%8B%E7%A4%BA%E7%AF%84",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(instructor.status, StatusCode::OK);
+    assert_eq!(
+        instructor.body["summary"],
+        json!({ "offerings": 2, "courses": 1, "terms": ["115-1", "114-2"], "departments": ["示範數學系"] })
+    );
+    assert_eq!(instructor.body["offerings"][0]["term"], "115-1");
+    // Exact name match only.
+    assert_eq!(
+        call(&app, "GET", "/api/instructors/nthu/%E7%8E%8B", None, None)
+            .await
+            .status,
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(
+        call(
+            &app,
+            "GET",
+            "/api/instructors/ntu/%E7%8E%8B%E7%A4%BA%E7%AF%84",
+            None,
+            None
+        )
+        .await
+        .status,
+        StatusCode::NOT_FOUND
+    );
+}

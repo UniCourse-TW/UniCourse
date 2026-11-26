@@ -1,0 +1,22 @@
+{
+  "school": "ntnu",
+  "schoolName": "國立臺灣師範大學",
+  "term": "115-1",
+  "isDemo": true,
+  "offerings": [
+    {
+      "sourceId": "demo-001",
+      "courseCode": "DEMO101",
+      "title": "資料結構",
+      "instructors": [],
+      "sourceUrl": "https://courseap2.itc.ntnu.edu.tw/acadmOpenCourse/"
+    },
+    {
+      "sourceId": "demo-002",
+      "courseCode": "DEMO102",
+      "title": "教育心理學",
+      "instructors": [],
+      "sourceUrl": "https://courseap2.itc.ntnu.edu.tw/acadmOpenCourse/"
+    }
+  ]
+}

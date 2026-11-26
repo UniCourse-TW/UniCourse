@@ -1,0 +1,31 @@
+name: Check
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: unicourse
+          POSTGRES_PASSWORD: unicourse
+          POSTGRES_DB: unicourse
+        ports:
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U unicourse -d unicourse"
+          --health-interval 2s --health-timeout 3s --health-retries 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .node-version
+      - uses: taiki-e/install-action@just
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm --filter @unicourse/web exec playwright install --with-deps chromium
+      - run: just check

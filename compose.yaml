@@ -1,0 +1,19 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: unicourse
+      POSTGRES_PASSWORD: unicourse
+      POSTGRES_DB: unicourse
+    ports:
+      - '127.0.0.1:55432:5432'
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U unicourse -d unicourse']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  db-data:
