@@ -1,0 +1,515 @@
+{
+  "judge": "opus",
+  "round": 2,
+  "pages": [
+    {
+      "id": "home",
+      "scores": {
+        "task": 8,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": 7,
+        "family": 9,
+        "type": 8,
+        "mobile": 8,
+        "theme": 8,
+        "a11y": 7,
+        "states": 7,
+        "copy": 7,
+        "feel": 8
+      },
+      "mean": 7.75,
+      "top_issues": [
+        "Coverage numbers contradict each other (all viewports/themes): 目前收錄 says 104-1 至 115-1, the 已收錄學期 tile says 23, the 各校收錄狀態 header is 106–115, and /schools lists 21 terms per school. Pick one period and one counting rule and use it in all four places.",
+        "歷史累計修課人數排行 top 10 is dominated by 班級活動 / PE / 服務學習, which answers 'what do students actually take' badly. Add a default '排除班會／體育／服務學習' toggle (or exclude 0 學分) and state the rule in 計算方式.",
+        "The trend column (desktop and phone) mixes a filled area (row 1), flat lines, and dotted runs (NTHU PE rows) that look like broken sparklines. Use one rule: a line for consecutive terms, dots only for gaps, plus a one-line legend.",
+        "The 各校收錄狀態 grid on desktop is all 2s for every school, so it carries no information, and about 400 px of empty space sits between column 115 and 累計班次. Shrink it and put a 累計班次 bar there, or replace it with a per-school offerings sparkline.",
+        "School rows in the same table are not sorted (清華 61,018 above 臺大 196,111). Sort by 累計班次 descending or by school code, and show the sort arrow.",
+        "Ranking rows link both the Chinese and the English title with underlines (desktop), which doubles the underline noise. Link the Chinese title only and render English as muted text."
+      ],
+      "keep": [
+        "Search-first masthead with filters and hot chips; full-width 搜尋 on phone",
+        "Tabular stat tiles and rank bars drawn to one scale",
+        "On phone the ranking becomes stacked rows that keep the bar and the trend"
+      ]
+    },
+    {
+      "id": "search",
+      "scores": {
+        "task": 7,
+        "hierarchy": 8,
+        "density": 7,
+        "viz": 7,
+        "family": 8,
+        "type": 7,
+        "mobile": 8,
+        "theme": 8,
+        "a11y": 7,
+        "states": 7,
+        "copy": 8,
+        "feel": 7
+      },
+      "mean": 7.42,
+      "top_issues": [
+        "Results for 「資料」 across all schools and terms (desktop/phone) list 35 中正 rows, then 15 逢甲 rows, sorted by school id; NTU, NTHU and others never appear on page 1. Default to relevance (exact title > title contains > newest term) or interleave schools, and add a 排序 select.",
+        "The 修課人數／名額 column (desktop) is '—' for every 中正 row, so the bar column is empty for half the page. When a school never publishes enrollment, say it once (school chip or footnote) instead of repeating '—' 35 times, and collapse the column.",
+        "Row heights range from 48 px to 120 px because 逢甲 time/room strings wrap to 4 lines (e.g. (三)06 紀302(電腦實習室)…). Truncate the room to one muted line with a tooltip.",
+        "Desktop tables (light and dark): every cell is an underlined link (course, department, teacher), which reads as a wall of underlines. Underline on hover only inside data tables and keep the course title as the primary link.",
+        "Over-capacity values like '62 / 5' and '69 / 5' draw a full orange bar with no explanation. Add a footnote or tooltip (名額可能只計單一班別) or flag it as a likely source error.",
+        "Phone: each result is a 330 px card, so 50 results make a 9,000 px page. Tighten cards to 3 lines (title / school·dept·teacher / term·time·count) and page 20 at a time with 'load more'."
+      ],
+      "keep": [
+        "Result-count line and 本頁學校 chips with counts",
+        "Phone card footer pairs the term badge, course code and enrollment status",
+        "Pagination at both top and bottom"
+      ]
+    },
+    {
+      "id": "search-empty",
+      "scores": {
+        "task": 8,
+        "hierarchy": 8,
+        "density": 7,
+        "viz": null,
+        "family": 8,
+        "type": 8,
+        "mobile": 8,
+        "theme": 8,
+        "a11y": 7,
+        "states": 8,
+        "copy": 8,
+        "feel": 7
+      },
+      "mean": 7.73,
+      "top_issues": [
+        "The empty panel (desktop) is about 200 px tall with the message floating in the middle, and the real recovery options sit in a second box below. Merge them into one compact block: message, suggestion chips, 從學校瀏覽.",
+        "The primary CTA 瀏覽全部班次 sends users to 710k unfiltered offerings, which does not help. Make the primary action 'keep the keyword, widen the filters', or offer the closest course-code or title matches.",
+        "The 換個主題試試 chips are gray filled (they look disabled) while the same chips on home are white outlined. Use one chip style, and add a space in '從學校瀏覽→'.",
+        "Show which filters were active (所有學校・全部學期) next to the message, each with a one-tap remove, so users can tell the empty result is not a filter mistake."
+      ],
+      "keep": [
+        "Form stays filled with the failed query",
+        "Short, specific message and tips"
+      ]
+    },
+    {
+      "id": "course",
+      "scores": {
+        "task": 8,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": 8,
+        "family": 8,
+        "type": 7,
+        "mobile": 7,
+        "theme": 8,
+        "a11y": 7,
+        "states": 7,
+        "copy": 6,
+        "feel": 7
+      },
+      "mean": 7.42,
+      "top_issues": [
+        "其他校方欄位 leaks raw source fields: 'unt_ls 4906', 科目代碼 00001, 班級代碼 (desktop/phone). Map known keys to zh-TW labels and put unknown ones behind '原始欄位'. Also, 開課單位 shows '美國加州舊金山州立大學資訊' for 班級活動, which looks like a mis-mapped class name; validate the dept field before it reaches the breadcrumb.",
+        "In the desktop history table, the teacher cell '許芳榮、趙啟時、辛紹志等 171 位' wraps with '位' orphaned on its own line. Render 'n 位' as one nowrap muted token.",
+        "In the phone history table the 班次 column is clipped ('全部 17…') with no scroll hint, and the bar column is squeezed. Stack the rows, or add the family hint 左右捲動表格可查看其餘欄位 with a sticky term column.",
+        "The bar chart puts year labels (105…110) under every other bar, which looks misaligned. Center each academic-year label under its two terms, or add -1/-2 ticks.",
+        "The 學分 '0 學分' and 必選修 '必修' tiles take two of five tiles for low-value facts. Move them into the header meta line.",
+        "On desktop the left 時間地點 panel ends around y=720 while the right column runs to about 1,100 px, leaving a large blank. Make the left panel sticky, or move time and place to the header and give the chart the full width."
+      ],
+      "keep": [
+        "Per-term enrollment vs capacity chart with the current term highlighted",
+        "History table links to sibling sections and teachers",
+        "Rating card combines the distribution, the reviews and the my-rating edit row"
+      ]
+    },
+    {
+      "id": "schools",
+      "scores": {
+        "task": 8,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": 7,
+        "family": 9,
+        "type": 8,
+        "mobile": 7,
+        "theme": 8,
+        "a11y": 7,
+        "states": 6,
+        "copy": 7,
+        "feel": 7
+      },
+      "mean": 7.5,
+      "top_issues": [
+        "Schools with no data show 學期 0 and 已匯入班次 0 in every 尚未開始/受阻 row (desktop) and '0 班次' on phone. The design language says missing is '—', never 0; render '—' and dim these rows.",
+        "The term count disagrees with home: 學期 is 21 for most schools and 23 for 清華, home says 23, and the header says 學年覆蓋 106–115. Show each school's earliest term and make the header match the data.",
+        "Copy says 台灣時間 here and 臺北時間 on home. Pick one term and use it site-wide.",
+        "Phone rows are uneven (清華 about 190 px, others about 120 px) because the off-screen 說明 column wraps. Clamp 說明 to 2 lines or a fixed width.",
+        "The 部分 0 and 規劃中 0 tiles spend two of six tiles on zeros (both viewports). Hide zero-count tiles or merge them into one muted line.",
+        "After the 9 live schools, page 1 is filled with 尚未開始 rows. Default the filter to 已收錄＋受阻＋待匯入, with a '顯示尚未開始 138 所' toggle."
+      ],
+      "keep": [
+        "Stacked national progress bar with status tiles",
+        "Coverage mini-squares per school with a legend",
+        "Every status links to its issue and the school's official site"
+      ]
+    },
+    {
+      "id": "school",
+      "scores": {
+        "task": 7,
+        "hierarchy": 7,
+        "density": 7,
+        "viz": 7,
+        "family": 8,
+        "type": 8,
+        "mobile": 7,
+        "theme": 8,
+        "a11y": 7,
+        "states": 6,
+        "copy": 7,
+        "feel": 7
+      },
+      "mean": 7.17,
+      "top_issues": [
+        "The 歷年最多人修的課 table is cut at row 8 by a fixed-height scroll box (desktop and phone, both themes). The copy promises 前 10 門, but rows 9–10 and half of row 8 are hidden. Remove the max-height or size it to 10 rows.",
+        "近期走勢 shows a sparkline only on rows 2 and 7; the other rows show text such as '110-2・9,097 人 / 111-1・107 人' with no reason given. Draw the sparkline on every row (dots for gaps) and keep the latest value as a label.",
+        "The ranking repeats the home problem (班級活動 ×2, 公民參與, 社會實踐…). Offer an '排除 0 學分／班會' filter.",
+        "Pagination is printed twice: '共 180 個單位・第 1 頁' and then '第 1 頁，共 8 頁'. Keep one line.",
+        "The desktop chart's x-axis ticks are uneven (105-1, 106-2, 108-2, 110-1, 111-2, 113-2, 115-1). Tick every academic year at equal spacing.",
+        "The header has an orphan '每日更新' line, followed by underlined text links 開課單位↓ and 校內排行↓. Merge 每日更新 into the meta row and style the jumps as a family anchor row."
+      ],
+      "keep": [
+        "Five stat tiles with units",
+        "Per-term offerings chart with a 查看數值表格 toggle",
+        "Department list uses same-scale bars that survive on phone"
+      ]
+    },
+    {
+      "id": "department",
+      "scores": {
+        "task": 7,
+        "hierarchy": 7,
+        "density": 6,
+        "viz": 6,
+        "family": 8,
+        "type": 8,
+        "mobile": 8,
+        "theme": 8,
+        "a11y": 7,
+        "states": 6,
+        "copy": 7,
+        "feel": 7
+      },
+      "mean": 7.08,
+      "top_issues": [
+        "On desktop the offerings table is cut after about 6.5 rows (a half-visible 'Python程式設計導論' row) by a fixed-height box, even though there are 14 班次 and empty page space below. Let the table grow and use page scroll.",
+        "Missing capacity renders as '20/ 0', '18/ 0', '41/ 0'. Render '20 / —' with no bar, and normalize the spacing to '21 / 30'.",
+        "年級 and 課程評價 are '—' in every row on desktop, wasting about 25% of the width. Hide all-empty columns, or show 評價 as a badge in the course cell.",
+        "The page shows no visualization by default: 歷年開課變化 is collapsed into a <details> next to 篩選課表. Show a small per-term 班次 bar row under the stat tiles.",
+        "On phone the department name is printed twice (muted eyebrow and h1) under a breadcrumb that ends in a bare '/'. Drop the eyebrow and end the breadcrumb at 逢甲大學.",
+        "The 必修 13・選修 1・通識 0 bar spans the full width while the tile row is 580 px. Align it to the tile row and hide zero-count legend items."
+      ],
+      "keep": [
+        "Term chips (115-1 / 114-2 / 114-1 / 所有學期) as quick switches",
+        "Phone label–value cards with the enrollment bar"
+      ]
+    },
+    {
+      "id": "instructor",
+      "scores": {
+        "task": 7,
+        "hierarchy": 7,
+        "density": 7,
+        "viz": 7,
+        "family": 8,
+        "type": 8,
+        "mobile": 8,
+        "theme": 8,
+        "a11y": 7,
+        "states": 7,
+        "copy": 6,
+        "feel": 7
+      },
+      "mean": 7.25,
+      "top_issues": [
+        "The dot matrix (desktop/phone) shows only 5 of 62 courses, and columns 106–109 are empty because of the 200-section cap, while the header says 授課學期 105-1 至 115-1. Show all courses grouped by year, or state '僅顯示最近 5 門課' and drop the always-empty columns.",
+        "Three caveat sentences stack above the data (同校同名教師會合併…, 各課程的學年統計僅計入最近 200 班…, 列表與篩選只涵蓋最近 200 班次…). Merge them into one ⓘ 計算方式 disclosure.",
+        "In the desktop table, '專題研究(二) IECS4927・001 班 115-1' appears 4 times with different counts, which looks like a bug. Disambiguate the rows (department, section, or a 合併同名 badge) or collapse them into one expandable row.",
+        "The offerings table is cut mid-row ('文獻研討(一)') by a fixed-height box on desktop. Remove the max-height.",
+        "Every matrix cell carries a ↗ arrow next to the dot, which adds noise. Make the whole cell the link, drop the arrow, and keep dot size as the only encoding.",
+        "The 授課課程平均分 tile shows '—' with a two-line explanation on phone. Hide the tile when there are no ratings."
+      ],
+      "keep": [
+        "Course × year dot matrix with a legend",
+        "Over-capacity / 匯入時餘 n 名 annotations under the bars",
+        "Honest 網路上的討論 empty state with outbound PTT and 歐趴糖 search"
+      ]
+    },
+    {
+      "id": "forum",
+      "scores": {
+        "task": 8,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": null,
+        "family": 8,
+        "type": 8,
+        "mobile": 8,
+        "theme": 8,
+        "a11y": 7,
+        "states": 6,
+        "copy": 7,
+        "feel": 7
+      },
+      "mean": 7.55,
+      "top_issues": [
+        "The sparse real state (2 posts, 心得 0, 公告 0) gives no invitation or guidance on either viewport. Add a block under the list: '還沒有修課心得。到課程頁按「發表關於這門課的文章」，或直接發表 →', with the 心得 type preselected.",
+        "The helper text says 請在「課程範圍」選學校並填課號, but the desktop toolbar has no 課程範圍 control (only 學校 and 課號). Make the copy and the control names match.",
+        "There is no sort control (最新／熱門／未回覆). Add a segmented control next to the type chips.",
+        "On phone the post meta wraps so a lone '•' starts the second line ('• @UI 示範帳號 #作業 #給分'). Use gap spacing instead of bullet characters.",
+        "'共 2 篇' appears in the header and again below the list. Keep one."
+      ],
+      "keep": [
+        "Desktop list as a table with 回覆 / 分數 / 時間 columns",
+        "Type chips with counts",
+        "School + course-code chip on every post"
+      ]
+    },
+    {
+      "id": "thread",
+      "scores": {
+        "task": 8,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": null,
+        "family": 8,
+        "type": 7,
+        "mobile": 8,
+        "theme": 8,
+        "a11y": 7,
+        "states": 7,
+        "copy": 7,
+        "feel": 7
+      },
+      "mean": 7.55,
+      "top_issues": [
+        "The 這門課 side card contradicts the course page: it shows 建築專業學院學士班・趙又嬋, 110-2, 58/60 and '已收錄 1 個學期', while the UNIV902 course page shows 12 terms and 9,097 enrolled. Show the course-code summary (terms, cumulative count), or label the card as 此班次.",
+        "Double blank lines in the post body render as about 2 em gaps (desktop/phone), so a 5-line question takes 180 px. Collapse runs of blank lines into one paragraph gap.",
+        "The red 刪除 sits right next to 編輯 on both viewports. Move it into a ⋯ menu or behind a divider, and confirm before deleting.",
+        "On phone the side card sits between the post and the replies, which breaks the reading flow. Move it after the replies or reduce it to a course chip under the title.",
+        "A reply with score 0 shows a bare '0'. Mute it, and give 推/噓 a persistent pressed state (aria-pressed)."
+      ],
+      "keep": [
+        "Breadcrumb with school and course code",
+        "原 PO badge on replies",
+        "Reply box with a character counter and a plain-text hint"
+      ]
+    },
+    {
+      "id": "auth",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": null,
+        "family": 8,
+        "type": 8,
+        "mobile": 8,
+        "theme": 7,
+        "a11y": 7,
+        "states": 7,
+        "copy": 8,
+        "feel": 7
+      },
+      "mean": 7.73,
+      "top_issues": [
+        "In dark theme the active tab (登入) is a dark panel with a 1 px border on a dark track, so it barely stands out. Use brand-wash fill or a brand underline.",
+        "Forgot-password sends students to GitHub issues, which is hostile for non-developers. Offer an email or contact route, or at least a prefilled issue-template link with one line of instructions.",
+        "No login error state is visible. Define an inline role=alert under the form and move focus to the first invalid field.",
+        "Phone drops the logo that desktop shows. Keep a 40 px logo above the h1 on both viewports."
+      ],
+      "keep": [
+        "The 查課不用登入 reassurance plus the 回首頁搜尋課程 escape hatch",
+        "In-field 顯示密碼 toggle",
+        "Centered card on desktop, full-width form on phone"
+      ]
+    },
+    {
+      "id": "auth-register",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": null,
+        "family": 8,
+        "type": 8,
+        "mobile": 8,
+        "theme": 7,
+        "a11y": 8,
+        "states": 7,
+        "copy": 8,
+        "feel": 7
+      },
+      "mean": 7.82,
+      "top_issues": [
+        "In dark theme on desktop the active 註冊 tab is dark-on-dark with a thin border. Use brand-wash or a brand underline.",
+        "On desktop each 12 px muted helper sits tight against the next label. Add 4–6 px of space after each helper.",
+        "The password helper suggests a passphrase but gives no live feedback. Add 'n / 8 字' or a ✓ while typing.",
+        "帳號 has no inline validity or availability check. Show ✓/✗ on blur."
+      ],
+      "keep": [
+        "Bold 建立後無法更改 warning at the right place",
+        "The 選填，之後可改 hint on 顯示名稱",
+        "Terms consent next to the submit button"
+      ]
+    },
+    {
+      "id": "settings",
+      "scores": {
+        "task": 8,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": null,
+        "family": 8,
+        "type": 8,
+        "mobile": 8,
+        "theme": 8,
+        "a11y": 7,
+        "states": 8,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 7.91,
+      "top_issues": [
+        "Password change is unavailable (目前無法在這裡變更密碼 → GitHub issues), which is a functional gap. Ship a real change-password form, or show a disabled form with an explanation.",
+        "On desktop the section pills (公開資料 / 帳號與登出) float at the top right, far from the sections, and look like filters. Make them a sticky anchor row aligned with the content.",
+        "On desktop the preview card is short and leaves an empty right column below it. Make it sticky and include the school and bio once filled.",
+        "儲存 is outlined (secondary) even though it is the primary action. Keep it disabled-outlined while unchanged and switch to solid brand when dirty."
+      ],
+      "keep": [
+        "Live public-profile preview",
+        "尚未變更 dirty-state text next to 儲存",
+        "Character counters"
+      ]
+    },
+    {
+      "id": "profile",
+      "scores": {
+        "task": 8,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": 7,
+        "family": 8,
+        "type": 8,
+        "mobile": 8,
+        "theme": 8,
+        "a11y": 7,
+        "states": 6,
+        "copy": 7,
+        "feel": 7
+      },
+      "mean": 7.5,
+      "top_issues": [
+        "最常評的學校 picks 國立中正大學 '1 則評價' out of a 1–1 tie with 逢甲, which is misleading with sparse data. Show the tile only when one school leads with at least 2 reviews.",
+        "Four large tiles for counts of 2 dominate the top (desktop/phone). With fewer than 5 items, collapse them into one meta line and let the lists lead.",
+        "文章收到的回覆 counts the author's own reply. Count other users' replies only, or rename it.",
+        "The empty bio and school are invisible. On your own profile show '還沒有自我介紹・到設定新增'; hide it for visitors.",
+        "The desktop 評論 column needs a 2-line clamp with expand before real reviews arrive."
+      ],
+      "keep": [
+        "Rating-distribution card with the average",
+        "Reviews as a table on desktop and stacked on phone",
+        "最新／給分高 toggle"
+      ]
+    },
+    {
+      "id": "landscape",
+      "scores": {
+        "task": 8,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": 8,
+        "family": 9,
+        "type": 7,
+        "mobile": 7,
+        "theme": 8,
+        "a11y": 7,
+        "states": 7,
+        "copy": 8,
+        "feel": 7
+      },
+      "mean": 7.67,
+      "top_issues": [
+        "On desktop the 各體系網站狀態 panel has about 120 px of empty space under its 4 bars and is shorter than the 第三方工具最多的學校 panel. Size both panels to their content, or add a totals row.",
+        "Percent labels on the hatched 不明 segments ('32%', '82%', '33%') sit on the stripes and are hard to read in both themes. Move them outside the bar or onto solid chips.",
+        "Every visible row of the 收錄策略 column says 只給連結 (desktop). Hide the column when all values are the same and state the policy once in the section dek.",
+        "On phone the 第三方查課網站 dek wraps at about 60% width because 收錄原則 shares its flex row. Put the link under the heading.",
+        "On desktop the toolbar divider extends past the content column (x≈48–1232 vs 56–1224). Align it to the 72 rem column.",
+        "The page is over 3,000 px with three large tables. Add an anchor row (第三方・跨校平台・各校) under the stat tiles."
+      ],
+      "keep": [
+        "Dense sortable tables with status pills and function tags",
+        "Data source and JSON download links in the header",
+        "Stacked status bars per 體系 with a numeric table toggle"
+      ]
+    },
+    {
+      "id": "legal",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 8,
+        "viz": null,
+        "family": 8,
+        "type": 8,
+        "mobile": 8,
+        "theme": 8,
+        "a11y": 8,
+        "states": 8,
+        "copy": 9,
+        "feel": 8
+      },
+      "mean": 8.27,
+      "top_issues": [
+        "On desktop the body lines run about 870 px (≈58 em), wider than the 52 em reading measure. Cap the article column at 46–52 em.",
+        "On desktop the TOC is not sticky and scrolls away on an 1,800 px page. Make it sticky with the current section highlighted as you scroll.",
+        "The 聯絡與移除 privacy warning is 12 px muted text, which is weak especially in dark theme. Raise it to 13–14 px using --ink-2.",
+        "Phone has no way back to the TOC once the reader is mid-page. Add ↑ 回目錄 links at the end of each section."
+      ],
+      "keep": [
+        "Plain, specific zh-TW wording with a 目前狀態 badge",
+        "Sources and licensing table",
+        "Clear removal path"
+      ]
+    },
+    {
+      "id": "notfound",
+      "scores": {
+        "task": 8,
+        "hierarchy": 8,
+        "density": 7,
+        "viz": null,
+        "family": 8,
+        "type": 8,
+        "mobile": 8,
+        "theme": 7,
+        "a11y": 7,
+        "states": 8,
+        "copy": 8,
+        "feel": 7
+      },
+      "mean": 7.64,
+      "top_issues": [
+        "In light theme on desktop the 回首頁 button is white with no border on a gray panel, so it reads as disabled. Use the secondary style (white with a brand border).",
+        "On desktop the card hugs the top and leaves about 250 px of empty space before the footer. Center it, or add popular courses or schools as next steps.",
+        "The copy is course-specific (找不到這門課程). Make sure other routes (/u/x, /forum/x) get matching titles.",
+        "Prefill the search with the code or slug parsed from the bad URL to save a step."
+      ],
+      "keep": [
+        "404 chip with specific reasons",
+        "Search and alternative links right in the error card"
+      ]
+    }
+  ]
+}
