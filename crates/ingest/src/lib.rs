@@ -15,6 +15,12 @@ use sqlx::{PgPool, types::Json};
 use unicourse_catalog::{Extra, ExtraValue, Meeting, Requirement, SCHOOL_SLUGS};
 use url::Url;
 
+pub mod external_reviews;
+
+pub use external_reviews::{
+    ImportSummary, ValidExternalReviews, import_external_reviews, parse_external_reviews,
+};
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Snapshot {
@@ -84,18 +90,18 @@ struct Offering {
 }
 
 /// Optional fields may be omitted but not `null`, matching Zod's `.optional()`.
-fn present<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
+pub(crate) fn present<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
     input: D,
 ) -> Result<Option<T>, D::Error> {
     T::deserialize(input).map(Some)
 }
 
 /// Trimmed, non-empty and free of NUL (PostgreSQL text cannot store it).
-fn is_text(value: &str) -> bool {
+pub(crate) fn is_text(value: &str) -> bool {
     !value.is_empty() && value == value.trim() && !value.contains('\0')
 }
 
-fn ensure_text(value: &str, field: &str) -> Result<()> {
+pub(crate) fn ensure_text(value: &str, field: &str) -> Result<()> {
     ensure!(
         is_text(value),
         "{field} must be trimmed, non-empty and free of NUL"
@@ -103,13 +109,13 @@ fn ensure_text(value: &str, field: &str) -> Result<()> {
     Ok(())
 }
 
-fn ensure_optional_text(value: Option<&String>, field: &str) -> Result<()> {
+pub(crate) fn ensure_optional_text(value: Option<&String>, field: &str) -> Result<()> {
     value.map_or(Ok(()), |value| ensure_text(value, field))
 }
 
 /// Absolute `http(s)://` URL with a host and without credentials. The raw prefix is checked because
 /// the URL parser also accepts `https:example.edu`, which a browser would treat as a relative link.
-fn ensure_http_url(value: &str, field: &str) -> Result<()> {
+pub(crate) fn ensure_http_url(value: &str, field: &str) -> Result<()> {
     ensure_text(value, field)?;
     let prefix = |scheme: &str| {
         value
@@ -133,7 +139,7 @@ fn ensure_http_url(value: &str, field: &str) -> Result<()> {
 
 /// `YYYY-MM-DDTHH:MM:SS[.fraction]Z` with 1-9 fraction digits and a real calendar date and time
 /// (no month 13, Feb 30, 24:00:00 or leap second), the same check as `utcInstant` in the Zod schema.
-fn is_utc_timestamp(value: &str) -> bool {
+pub(crate) fn is_utc_timestamp(value: &str) -> bool {
     let bytes = value.as_bytes();
     let number = |range: std::ops::Range<usize>| {
         bytes
