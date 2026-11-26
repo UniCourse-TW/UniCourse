@@ -132,6 +132,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/courses/{school}/{courseCode}/external-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["courseExternalReviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/courses/{school}/{courseCode}/ratings": {
         parameters: {
             query?: never;
@@ -236,6 +252,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["instructor"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instructors/{school}/{name}/external-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["instructorExternalReviews"];
         put?: never;
         post?: never;
         delete?: never;
@@ -609,6 +641,61 @@ export interface components {
         };
         /** @enum {string} */
         ErrorCode: "invalid_input" | "invalid_query" | "invalid_path" | "invalid_body" | "unauthorized" | "invalid_credentials" | "forbidden" | "not_found" | "method_not_allowed" | "username_taken" | "rate_limited" | "internal_error";
+        /**
+         * @description How a post was matched to a course at import time.
+         * @enum {string}
+         */
+        ExternalMatchKind: "exact" | "title" | "contains";
+        /** @description One indexed post. Only search-result fields are stored; open `url` for the full text. */
+        ExternalReview: {
+            author?: string | null;
+            /** @description Board or forum name, e.g. `NTUcourse`. */
+            board: string;
+            courseTitle?: string | null;
+            /** @description At most 120 characters from the start of the post. */
+            excerpt?: string | null;
+            isDemo: boolean;
+            match?: null | components["schemas"]["ExternalReviewMatch"];
+            postedAt?: string | null;
+            /**
+             * Format: int32
+             * @description PTT 推文 score: pushes minus boos.
+             */
+            pushScore?: number | null;
+            /** @description Source id, e.g. `ptt`. */
+            source: string;
+            /** @description Human source name, e.g. `PTT 批踢踢`. */
+            sourceLabel: string;
+            /** @description Title tag such as 評價 or 心得. */
+            tag?: string | null;
+            teachers: string[];
+            /** @description Term named in the title, `YYY-N`. */
+            term?: string | null;
+            title: string;
+            url: string;
+        };
+        ExternalReviewMatch: {
+            courseCode: string;
+            /** @description Catalog spelling of the matched teacher, if any. */
+            instructor?: string | null;
+            kind: components["schemas"]["ExternalMatchKind"];
+            school: string;
+        };
+        ExternalReviews: {
+            /** @description Search links on sites we only link to, built from their public URL patterns. */
+            linkOnly: components["schemas"]["OutboundLink"][];
+            /** @description Up to 100 indexed posts, newest first. */
+            posts: components["schemas"]["ExternalReview"][];
+            /** @description All indexed posts, by source (the list below is capped at 100). */
+            sources: components["schemas"]["ExternalSourceCount"][];
+        };
+        /** @description Number of posts from one source. */
+        ExternalSourceCount: {
+            /** Format: int64 */
+            count: number;
+            source: string;
+            sourceLabel: string;
+        };
         /** @description A school-specific scalar kept under its original field name. */
         ExtraValue: null | boolean | number | string;
         Institution: {
@@ -766,6 +853,14 @@ export interface components {
             term: string;
             title: string;
             titleEn?: string | null;
+        };
+        /** @description An outbound search link to a `link_only` source; nothing from that site is stored or shown. */
+        OutboundLink: {
+            /** @description Human source name, e.g. `OPT 歐趴糖`. */
+            label: string;
+            /** @description Source id: `opt`, `dcard` or `ntu-rating`. */
+            source: string;
+            url: string;
         };
         Overview: {
             /** @description Schools with at least one import, by imported offerings, most first. */
@@ -1467,6 +1562,55 @@ export interface operations {
             };
         };
     };
+    courseExternalReviews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description School slug */
+                school: string;
+                /** @description Cross-term course code (URL-encoded) */
+                courseCode: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Indexed posts about the course from other sites, newest first, plus outbound search links */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalReviews"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     listRatings: {
         parameters: {
             query?: never;
@@ -1831,6 +1975,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InstructorOfferings"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    instructorExternalReviews: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description School slug */
+                school: string;
+                /** @description Instructor name exactly as published (URL-encoded) */
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Indexed posts naming the teacher, newest first, plus outbound search links */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalReviews"];
                 };
             };
             400: {

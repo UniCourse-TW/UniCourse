@@ -18,9 +18,10 @@ use sqlx::PgPool;
 use tokio::sync::Mutex;
 use unicourse_catalog::{
     self as catalog, CourseRanking, Coverage, CrawlStatus, DepartmentCount, DepartmentOfferings,
-    EducationSystem, ExtraValue, Institution, InstitutionKind, Institutions, InstructorOfferings,
-    InstructorSummary, Meeting, Offering, Overview, OverviewTotals, Ownership, Requirement, School,
-    SchoolCoverage, SchoolDetail, SchoolOverview, SearchPage, SearchSort,
+    EducationSystem, ExternalMatchKind, ExternalReview, ExternalReviewMatch, ExternalSourceCount,
+    ExtraValue, Institution, InstitutionKind, Institutions, InstructorOfferings, InstructorSummary,
+    Meeting, Offering, Overview, OverviewTotals, Ownership, Requirement, School, SchoolCoverage,
+    SchoolDetail, SchoolOverview, SearchPage, SearchSort,
 };
 use utoipa::{
     IntoParams, Modify, OpenApi, ToSchema,
@@ -28,6 +29,7 @@ use utoipa::{
 };
 
 mod auth;
+mod external_reviews;
 mod forum;
 mod history;
 mod ratings;
@@ -43,14 +45,15 @@ mod text;
         auth::register, auth::login, auth::logout, auth::me, auth::update_me, auth::profile,
         ratings::list, ratings::stats, ratings::mine, ratings::put_mine, ratings::delete_mine,
         forum::list, forum::create, forum::detail, forum::reply, forum::update, forum::delete,
-        forum::vote,
+        forum::vote, external_reviews::course, external_reviews::instructor,
     ),
     components(schemas(
         School, Offering, Meeting, Requirement, ExtraValue, ErrorBody, CourseRanking, Overview,
         SchoolOverview, OverviewTotals, SchoolDetail, DepartmentCount, DepartmentOfferings,
         InstructorOfferings, InstructorSummary, Institutions, Institution, InstitutionKind,
         Ownership, EducationSystem, CrawlStatus, SearchSort, Coverage, SchoolCoverage,
-        forum::TopLevelPostType,
+        forum::TopLevelPostType, ExternalReview, ExternalReviewMatch, ExternalMatchKind,
+        ExternalSourceCount, external_reviews::ExternalReviews, external_reviews::OutboundLink,
     )),
     modifiers(&SessionCookie)
 )]
@@ -337,6 +340,14 @@ pub fn router_with(pool: PgPool, config: Config) -> Router {
         .route(
             "/api/instructors/{school}/{name}/trends",
             get(history::instructor_trends),
+        )
+        .route(
+            "/api/instructors/{school}/{name}/external-reviews",
+            get(external_reviews::instructor),
+        )
+        .route(
+            "/api/courses/{school}/{course_code}/external-reviews",
+            get(external_reviews::course),
         )
         .route("/api/terms", get(terms))
         .route("/api/departments", get(departments))
@@ -690,6 +701,21 @@ mod tests {
                 StatusCode::NOT_FOUND,
             ),
             ("GET", "/api/instructors/nthu/a%00", StatusCode::BAD_REQUEST),
+            (
+                "GET",
+                "/api/instructors/nthu/a%00/external-reviews",
+                StatusCode::BAD_REQUEST,
+            ),
+            (
+                "GET",
+                "/api/instructors/bogus/a/external-reviews",
+                StatusCode::NOT_FOUND,
+            ),
+            (
+                "GET",
+                "/api/courses/nthu/a%00/external-reviews",
+                StatusCode::BAD_REQUEST,
+            ),
             ("GET", "/api/posts?page=0", StatusCode::BAD_REQUEST),
             ("GET", "/api/posts?type=reply", StatusCode::BAD_REQUEST),
             (
