@@ -1,0 +1,153 @@
+{
+ "F247D032-D9C1-4544-BC86-C2344E72746C": {
+  "dep_id": "F247D032-D9C1-4544-BC86-C2344E72746C",
+  "dep_cname": "醫學系",
+  "dep_ename": "Department of Medicine",
+  "1": {
+   "1051_A025": {
+    "acy": "105",
+    "sem": "1",
+    "cos_id": "A025",
+    "cos_code": "A4792  ",
+    "num_limit": "39",
+    "dep_limit": "*",
+    "URL": null,
+    "cos_cname": "普通心理學",
+    "cos_credit": "2.00",
+    "cos_hours": "2.00",
+    "TURL": "",
+    "teacher": "張立鴻",
+    "cos_time": "T34-YT206[YM]",
+    "memo": "限本系，為使課程品質提升限修39人，計入博雅選修通識學分，大一A班新生請自行選擇一門普心修讀",
+    "cos_ename": "General Psychology",
+    "brief": "",
+    "degree": "1",
+    "dep_id": "101",
+    "dep_primary": "1",
+    "dep_cname": "醫學系",
+    "dep_ename": "Department of Medicine",
+    "cos_type": "通識",
+    "cos_type_e": "General Course",
+    "crsoutline_type": "data",
+    "reg_num": "38",
+    "depType": "U"
+   },
+   "1051_A028": {
+    "acy": "105",
+    "sem": "1",
+    "cos_id": "A028",
+    "cos_code": "A0660  ",
+    "num_limit": "9999",
+    "dep_limit": "*",
+    "URL": null,
+    "cos_cname": "化學原理(一)",
+    "cos_credit": "2.00",
+    "cos_hours": "2.00",
+    "TURL": "https://biochem.ym.edu.tw/files/15-1256-15928,c21-1.php",
+    "teacher": "林達顯",
+    "cos_time": "F56-YX406[YM]",
+    "memo": null,
+    "cos_ename": "Principles of Chemistry 1",
+    "brief": "",
+    "degree": "1",
+    "dep_id": "101",
+    "dep_primary": "1",
+    "dep_cname": "醫學系",
+    "dep_ename": "Department of Medicine",
+    "cos_type": "必修",
+    "cos_type_e": "Required",
+    "crsoutline_type": "data",
+    "reg_num": "64",
+    "depType": "U"
+   },
+   "1051_A024": {
+    "acy": "105",
+    "sem": "1",
+    "cos_id": "A024",
+    "cos_code": "A4792  ",
+    "num_limit": "39",
+    "dep_limit": "*",
+    "URL": null,
+    "cos_cname": "普通心理學",
+    "cos_credit": "2.00",
+    "cos_hours": "2.00",
+    "TURL": "",
+    "teacher": "",
+    "cos_time": "T34-YT205[YM]",
+    "memo": "限本系，為使課程品質提升限修39人，計入博雅選修通識學分，大一A班新生請自行選擇一門普心修讀",
+    "cos_ename": "General Psychology",
+    "brief": "",
+    "degree": "1",
+    "dep_id": "101",
+    "dep_primary": "1",
+    "dep_cname": "醫學系",
+    "dep_ename": "Department of Medicine",
+    "cos_type": "通識",
+    "cos_type_e": "General Course",
+    "crsoutline_type": "data",
+    "reg_num": "27",
+    "depType": "U"
+   }
+  },
+  "costype": {
+   "1051_A025": {
+    "博雅選修通識_博雅選修通識": {
+     "course_category_cname": "博雅選修通識_博雅選修通識",
+     "course_category_ename": "Optional Liberal Education_Optional Liberal Education",
+     "course_category_type": "37",
+     "GECIName": "",
+     "GECIEngName": ""
+    }
+   },
+   "1051_A028": {
+    "": {
+     "course_category_cname": "",
+     "course_category_ename": "",
+     "course_category_type": "",
+     "GECIName": "",
+     "GECIEngName": ""
+    }
+   },
+   "1051_A024": {
+    "博雅選修通識_博雅選修通識": {
+     "course_category_cname": "博雅選修通識_博雅選修通識",
+     "course_category_ename": "Optional Liberal Education_Optional Liberal Education",
+     "course_category_type": "37",
+     "GECIName": "",
+     "GECIEngName": ""
+    }
+   }
+  },
+  "brief": {
+   "1051_A025": {
+    "A909": {
+     "brief_code": "A909",
+     "brief": "博雅選修通識 (90)"
+    }
+   },
+   "1051_A028": {
+    "": {
+     "brief_code": "",
+     "brief": ""
+    }
+   },
+   "1051_A024": {
+    "A909": {
+     "brief_code": "A909",
+     "brief": "博雅選修通識 (90)"
+    }
+   }
+  },
+  "language": {
+   "1051_A025": {
+    "授課語言代碼": "zh-tw"
+   },
+   "1051_A028": {
+    "授課語言代碼": "zh-tw"
+   },
+   "1051_A024": {
+    "授課語言代碼": "zh-tw"
+   }
+  }
+ }
+}

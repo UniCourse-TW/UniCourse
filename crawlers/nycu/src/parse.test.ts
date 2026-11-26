@@ -81,3 +81,17 @@ test('extracts only the public course description and rejects a wrong-term cours
   assert.throws(() => parseOfferings(sample, '114', '1'), /unexpected term/);
   assert.deepEqual(parseOfferings('', '115', '1'), []);
 });
+
+test('parses a pre-merger term (105-1, former National Yang-Ming University rows) served by the merged timetable', () => {
+  const legacy = JSON.parse(readFileSync(new URL('./samples/legacy-105-1.json', import.meta.url), 'utf8'));
+  const rows = parseOfferings(legacy, '105', '1').map(({ offering }) => offering);
+  Offering.array().parse(rows);
+  const psychology = rows.find(({ sourceId }) => sourceId === 'A025');
+  assert.equal(psychology?.courseCode, 'A4792');
+  assert.equal(psychology?.department, '醫學系');
+  assert.equal(psychology?.enrolled, 38);
+  assert.equal(psychology?.campus, '台北陽明校區');
+  assert.deepEqual(psychology?.schedule, [{ day: 2, periods: ['3', '4'], location: 'YT206' }]);
+  assert.deepEqual(rows.find(({ sourceId }) => sourceId === 'A024')?.instructors, []);
+  assert.throws(() => parseOfferings(legacy, '109', '1'), /unexpected term/);
+});
