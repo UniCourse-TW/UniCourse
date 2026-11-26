@@ -96,7 +96,7 @@ function examplePages(f) {
     { id: 'auth', url: '/auth' },
     { id: 'settings', url: '/settings', loggedIn: true },
     { id: 'profile', url: `/u/${ACCOUNT.username}` },
-    { id: 'landscape', url: '/landscape.html', maxHeight: 3000 },
+    { id: 'landscape', url: '/landscape', maxHeight: 3000 },
     { id: 'legal', url: '/terms' },
     // Extra state shots (not page ids): empty search, 404, auth register tab.
     { id: 'search-empty', url: `/?q=${encodeURIComponent('zzzz-no-such-course')}&term=all` },
@@ -110,12 +110,18 @@ function examplePages(f) {
  * reply and one rating exist, so every page has something to show.
  */
 async function prepareFixtures() {
+  // Prefer the most-taken course that is still offered, so course/school/department/instructor pages show
+  // several terms of history; fall back to any offering for the small demo fixtures.
+  const ranked = await getJson(`${api}/api/rankings/courses?limit=20`);
+  const top = Array.isArray(ranked) ? ranked.find((r) => r.latestActiveOfferingId && r.terms > 1) : null;
+  const topOffering = top ? await getJson(`${api}/api/courses/${top.latestActiveOfferingId}`) : null;
   const courses = await getJson(`${api}/api/courses?limit=50`);
   if (!Array.isArray(courses) || courses.length === 0) {
     throw new Error(`No offerings at ${api}; run \`just seed\` against this API's database first.`);
   }
   // Prefer an offering with department, instructors and enrolment so the detail page is full.
   const course =
+    (topOffering?.department && topOffering.instructors?.length ? topOffering : null) ??
     courses.find((c) => c.department && c.instructors.length && c.enrolled != null) ??
     courses.find((c) => c.department && c.instructors.length) ??
     courses[0];
