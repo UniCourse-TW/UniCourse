@@ -71,7 +71,8 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await page.locator('summary', { hasText: '發表文章' }).click();
   const compose = page.getByRole('region', { name: '發表文章' });
   await expect(compose.getByLabel('相關課號')).toHaveValue('DEMO201');
-  await expect(compose.getByText('✓ 線性代數')).toBeVisible();
+  // The lookup is a server action round trip; allow for a cold dev server when the suite runs in parallel.
+  await expect(compose.getByText('✓ 線性代數')).toBeVisible({ timeout: 15_000 });
   await compose.getByRole('radio', { name: '提問' }).check();
   await compose.getByLabel('標題').fill(title);
   await compose.getByLabel('內容', { exact: true }).fill('第一行\n<b>不是粗體</b>');
