@@ -1,0 +1,213 @@
+#!/usr/bin/env node
+// Captures every page of the UI climb (docs/ui-climb/plan.md) at phone and desktop size, light
+// and dark, as full-page PNGs named <page>-<phone|desktop>-<light|dark>.png.
+//
+//   node scripts/ui-shots.mjs --base http://127.0.0.1:5273 --out docs/ui-climb/shots/r1
+//     [--api http://127.0.0.1:3101] [--only course,search] [--no-login]
+//
+// Example URLs come from the `just seed` fixtures (nthu/ntnu/nycu demo courses) and are looked up
+// through the API, so ids stay right after a reseed. Pages that need community content (thread,
+// profile, ratings on the course page) get it from a throwaway account the script registers on
+// the API and reuses on later runs; the same account's session cookie makes the logged-in shots
+// (settings, forum compose, rating form).
+//
+// Playwright comes from apps/web/node_modules (no install at the repo root needed).
+
+import { createRequire } from 'node:module';
+import { mkdir } from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const { chromium } = createRequire(path.join(root, 'apps/web/package.json'))('@playwright/test');
+
+const args = parseArgs(process.argv.slice(2));
+const base = (args.base ?? 'http://127.0.0.1:5273').replace(/\/$/, '');
+const api = (args.api ?? process.env.API_ORIGIN ?? 'http://127.0.0.1:3101').replace(/\/$/, '');
+const out = path.resolve(args.out ?? 'docs/ui-climb/shots/r0');
+const only = args.only ? new Set(args.only.split(',')) : null;
+const login = !('no-login' in args);
+
+const VIEWPORTS = {
+  phone: { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true },
+  desktop: { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1 }
+};
+const SCHEMES = ['light', 'dark'];
+/** Tallest capture in CSS px; judges see the top of long tables, which is where the design lives. */
+const MAX_HEIGHT = 4500;
+
+// Throwaway account for the community pages. Password lives only here and in the local database.
+const ACCOUNT = { username: 'ui_climb_demo', password: 'ui-climb-demo-pass', displayName: 'UI 示範帳號' };
+
+const fixtures = await prepareFixtures();
+const pages = examplePages(fixtures);
+
+await mkdir(out, { recursive: true });
+const browser = await chromium.launch();
+const failures = [];
+for (const page of pages) {
+  if (only && !only.has(page.id)) continue;
+  for (const [device, options] of Object.entries(VIEWPORTS)) {
+    for (const scheme of SCHEMES) {
+      const context = await browser.newContext({ ...options, colorScheme: scheme, locale: 'zh-TW', timezoneId: 'Asia/Taipei' });
+      if (page.loggedIn && fixtures.session) {
+        const { hostname } = new URL(base);
+        await context.addCookies([{ name: 'uc_session', value: fixtures.session, domain: hostname, path: '/' }]);
+      }
+      const tab = await context.newPage();
+      const file = path.join(out, `${page.id}-${device}-${scheme}.png`);
+      try {
+        const response = await tab.goto(base + page.url, { waitUntil: 'networkidle', timeout: 60_000 });
+        const status = response?.status();
+        if (status !== (page.status ?? 200)) failures.push(`${page.id}: HTTP ${status} for ${page.url}`);
+        // Let fonts and any late layout settle before the capture.
+        await tab.evaluate(() => document.fonts?.ready);
+        await tab.waitForTimeout(250);
+        // Full page, but capped so a 150-row table does not become a 13 MB PNG.
+        const height = Math.min(await tab.evaluate(() => document.documentElement.scrollHeight), page.maxHeight ?? MAX_HEIGHT);
+        await tab.screenshot({ path: file, fullPage: true, type: 'png', clip: { x: 0, y: 0, width: options.viewport.width, height } });
+        console.log(`${path.basename(file)}  ${status}`);
+      } catch (error) {
+        failures.push(`${page.id} ${device} ${scheme}: ${error.message.split('\n')[0]}`);
+      }
+      await context.close();
+    }
+  }
+}
+await browser.close();
+
+if (failures.length) {
+  console.error('\nProblems:\n  ' + failures.join('\n  '));
+  process.exitCode = 1;
+}
+
+/** One entry per page id in plan.md, plus a few state shots judges need for the `states` dimension. */
+function examplePages(f) {
+  return [
+    { id: 'home', url: '/' },
+    { id: 'search', url: `/?q=${encodeURIComponent('資料')}&school=&term=all` },
+    { id: 'course', url: `/courses/${f.courseId}`, loggedIn: true },
+    { id: 'schools', url: '/schools' },
+    { id: 'school', url: `/schools/${f.school}` },
+    { id: 'department', url: `/schools/${f.school}/departments/${encodeURIComponent(f.department)}` },
+    { id: 'instructor', url: `/instructors/${f.school}/${encodeURIComponent(f.instructor)}` },
+    { id: 'forum', url: '/forum', loggedIn: true },
+    { id: 'thread', url: f.postId ? `/forum/${f.postId}` : '/forum', loggedIn: true },
+    { id: 'auth', url: '/auth' },
+    { id: 'settings', url: '/settings', loggedIn: true },
+    { id: 'profile', url: `/u/${ACCOUNT.username}` },
+    { id: 'landscape', url: '/landscape.html', maxHeight: 3000 },
+    { id: 'legal', url: '/terms' },
+    // Extra state shots (not page ids): empty search, 404, auth register tab.
+    { id: 'search-empty', url: `/?q=${encodeURIComponent('zzzz-no-such-course')}&term=all` },
+    { id: 'notfound', url: '/courses/999999999', status: 404 },
+    { id: 'auth-register', url: '/auth?mode=register' }
+  ];
+}
+
+/**
+ * Finds example ids in the seeded catalog and makes sure the throwaway account, one thread with a
+ * reply and one rating exist, so every page has something to show.
+ */
+async function prepareFixtures() {
+  const courses = await getJson(`${api}/api/courses?limit=50`);
+  if (!Array.isArray(courses) || courses.length === 0) {
+    throw new Error(`No offerings at ${api}; run \`just seed\` against this API's database first.`);
+  }
+  // Prefer an offering with department, instructors and enrolment so the detail page is full.
+  const course =
+    courses.find((c) => c.department && c.instructors.length && c.enrolled != null) ??
+    courses.find((c) => c.department && c.instructors.length) ??
+    courses[0];
+  const fixtures = {
+    courseId: course.id,
+    school: course.school,
+    courseCode: course.courseCode,
+    department: course.department ?? '',
+    instructor: course.instructors[0] ?? '',
+    session: null,
+    postId: null
+  };
+  if (!login) return fixtures;
+
+  fixtures.session = await signIn();
+  if (!fixtures.session) {
+    console.warn('Could not sign in on the API; logged-in shots will render signed out.');
+    return fixtures;
+  }
+  const headers = { 'content-type': 'application/json', cookie: `uc_session=${fixtures.session}` };
+
+  // One thread about the example course, with one reply, created once and reused.
+  const mine = await getJson(`${api}/api/posts?school=${course.school}&courseCode=${encodeURIComponent(course.courseCode)}&pageSize=1`);
+  if (mine?.posts?.length) {
+    fixtures.postId = mine.posts[0].id;
+  } else {
+    const post = await fetch(`${api}/api/posts`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        type: 'question',
+        title: `${course.title} 作業量和給分如何？`,
+        content: '想請問修過的同學：\n\n1. 每週作業大概要花多少時間？\n2. 期中期末的比重？\n3. 老師上課會點名嗎？\n\n先謝謝大家。',
+        school: course.school,
+        courseCode: course.courseCode,
+        tags: ['作業', '給分']
+      })
+    }).then((r) => (r.ok ? r.json() : null));
+    if (post?.id) {
+      fixtures.postId = post.id;
+      await fetch(`${api}/api/posts/${post.id}/replies`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ content: '作業每週約 3 小時，期中 30%、期末 40%，其餘是作業。老師不點名，但小考會算分。' })
+      });
+      await fetch(`${api}/api/posts/${post.id}/vote`, { method: 'PUT', headers, body: JSON.stringify({ value: 1 }) });
+    }
+  }
+
+  // One rating with a review on the example course.
+  await fetch(`${api}/api/courses/${course.school}/${encodeURIComponent(course.courseCode)}/ratings/me`, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({ score: 4, review: '講解清楚，作業量適中。期末範圍很大，建議平時就跟上進度。' })
+  });
+  return fixtures;
+}
+
+/** Registers the throwaway account (or signs in when it already exists) and returns the session token. */
+async function signIn() {
+  for (const route of ['register', 'login']) {
+    const body = route === 'register' ? ACCOUNT : { username: ACCOUNT.username, password: ACCOUNT.password };
+    const response = await fetch(`${api}/api/auth/${route}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) continue;
+    for (const header of response.headers.getSetCookie()) {
+      const match = /^uc_session=([^;]+)/.exec(header);
+      if (match) return match[1];
+    }
+  }
+  return null;
+}
+
+async function getJson(url) {
+  const response = await fetch(url);
+  return response.ok ? response.json() : null;
+}
+
+function parseArgs(argv) {
+  const parsed = {};
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (!arg.startsWith('--')) continue;
+    const key = arg.slice(2);
+    const next = argv[i + 1];
+    if (next && !next.startsWith('--')) {
+      parsed[key] = next;
+      i++;
+    } else parsed[key] = true;
+  }
+  return parsed;
+}
