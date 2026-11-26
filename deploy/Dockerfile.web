@@ -1,0 +1,25 @@
+# Builds the SvelteKit (adapter-node) front end. Context: repository root.
+FROM docker.io/library/node:24-bookworm-slim AS build
+WORKDIR /src
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
+COPY apps/web/package.json apps/web/
+COPY packages/api-client/package.json packages/api-client/
+COPY crawlers ./crawlers
+RUN find crawlers -mindepth 2 -maxdepth 2 ! -name package.json -exec rm -rf {} + ; \
+    pnpm install --frozen-lockfile
+COPY packages ./packages
+COPY apps/web ./apps/web
+RUN pnpm --filter @unicourse/web build \
+    && pnpm --filter @unicourse/web --prod deploy --legacy /out
+
+FROM docker.io/library/node:24-bookworm-slim
+RUN useradd --system --uid 10001 unicourse
+WORKDIR /app
+COPY --from=build /out/build ./build
+COPY --from=build /out/node_modules ./node_modules
+COPY --from=build /out/package.json ./package.json
+USER unicourse
+ENV NODE_ENV=production PORT=3000 HOST=0.0.0.0 ORIGIN=https://unicourse.observe.tw
+EXPOSE 3000
+CMD ["node", "build"]

@@ -1,0 +1,78 @@
+# UniCourse on sky-server. Data under /srv/unicourse; the web container is routed by Dokploy's Traefik
+# (docker provider on dokploy-network) via the labels below; TLS terminates at Cloudflare.
+name: unicourse
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: unicourse
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: unicourse
+    volumes:
+      - /srv/unicourse/pg:/var/lib/postgresql/data
+    secrets: [db_password]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U unicourse -d unicourse']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    image: unicourse-api:${UNICOURSE_TAG:-latest}
+    build: { context: .., dockerfile: deploy/Dockerfile.api }
+    restart: unless-stopped
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      DATABASE_URL: postgres://unicourse:${UNICOURSE_DB_PASSWORD}@db:5432/unicourse
+      COOKIE_SECURE: '1'
+    expose: ['3001']
+    networks:
+      default:
+        # `web` also sits on the shared dokploy-network, where a plain `api` name would resolve to
+        # another project's service; this alias is unambiguous.
+        aliases: [unicourse-api]
+
+  web:
+    image: unicourse-web:${UNICOURSE_TAG:-latest}
+    build: { context: .., dockerfile: deploy/Dockerfile.web }
+    restart: unless-stopped
+    depends_on: [api]
+    environment:
+      API_ORIGIN: http://unicourse-api:3001
+      ORIGIN: https://${UNICOURSE_HOST:-unicourse.observe.tw}
+    networks: [default, dokploy-network]
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: dokploy-network
+      traefik.http.routers.unicourse.rule: Host(`${UNICOURSE_HOST:-unicourse.observe.tw}`)
+      traefik.http.routers.unicourse.entrypoints: web
+      traefik.http.services.unicourse.loadbalancer.server.port: '3000'
+
+  # One-shot jobs, run by the systemd timer (deploy/systemd/unicourse-refresh.service):
+  #   docker compose run --rm crawl && docker compose run --rm ingest
+  crawl:
+    image: unicourse-crawl:${UNICOURSE_TAG:-latest}
+    build: { context: .., dockerfile: deploy/Dockerfile.crawl }
+    profiles: [jobs]
+    volumes:
+      - /srv/unicourse/snapshots:/snapshots
+
+  ingest:
+    image: unicourse-api:${UNICOURSE_TAG:-latest}
+    profiles: [jobs]
+    depends_on: { db: { condition: service_healthy } }
+    environment:
+      DATABASE_URL: postgres://unicourse:${UNICOURSE_DB_PASSWORD}@db:5432/unicourse
+    volumes:
+      - /srv/unicourse/snapshots:/snapshots:ro
+    command: ['unicourse-ingest', '/snapshots']
+
+secrets:
+  db_password:
+    file: /srv/unicourse/secrets/db_password
+
+networks:
+  dokploy-network:
+    external: true

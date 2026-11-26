@@ -1,0 +1,10 @@
+[Unit]
+Description=UniCourse: crawl all schools and import snapshots
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/sky/Projects/UniCourse/deploy
+EnvironmentFile=/srv/unicourse/secrets/compose.env
+ExecStart=/bin/bash -c 'docker compose --env-file /srv/unicourse/secrets/compose.env run --rm crawl; docker compose --env-file /srv/unicourse/secrets/compose.env run --rm ingest'
+TimeoutStartSec=4h

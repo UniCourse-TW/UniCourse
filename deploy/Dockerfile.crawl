@@ -1,0 +1,16 @@
+# Runs all school crawlers and writes snapshots to /snapshots. Context: repository root.
+FROM docker.io/library/node:24-bookworm-slim
+WORKDIR /src
+# python3 (stdlib only) is used by crawlers/nthu to read the school's XLSX archive for past terms.
+RUN apt-get update && apt-get install -y --no-install-recommends python3 && rm -rf /var/lib/apt/lists/* \
+    && corepack enable && useradd --system --uid 10001 --create-home unicourse
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
+COPY apps/web/package.json apps/web/
+COPY packages/api-client/package.json packages/api-client/
+COPY crawlers ./crawlers
+COPY scripts/crawl-all.sh ./scripts/crawl-all.sh
+RUN pnpm install --frozen-lockfile && chown -R unicourse /src
+USER unicourse
+ENV SNAPSHOT_DIR=/snapshots
+VOLUME /snapshots
+CMD ["bash", "scripts/crawl-all.sh"]

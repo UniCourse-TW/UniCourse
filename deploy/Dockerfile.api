@@ -1,0 +1,20 @@
+# Builds the Axum API and the ingest CLI. Context: repository root.
+FROM docker.io/library/rust:1.91.1-bookworm AS build
+WORKDIR /src
+COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
+COPY crates ./crates
+COPY fixtures ./fixtures
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/src/target \
+    cargo build --locked --release --package unicourse-api --package unicourse-ingest \
+    && mkdir -p /out && cp target/release/unicourse-api target/release/unicourse-ingest /out/
+
+FROM docker.io/library/debian:bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/* \
+    && useradd --system --uid 10001 unicourse
+COPY --from=build /out/unicourse-api /out/unicourse-ingest /usr/local/bin/
+USER unicourse
+ENV API_BIND=0.0.0.0:3001
+EXPOSE 3001
+HEALTHCHECK --interval=15s --timeout=3s --retries=5 CMD curl -fsS http://127.0.0.1:3001/api/schools >/dev/null || exit 1
+CMD ["unicourse-api"]
