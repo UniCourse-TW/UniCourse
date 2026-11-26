@@ -47,9 +47,9 @@ export function hasSchoolPage(institution: Institution): boolean {
   return (institution.status === 'live' || institution.status === 'partial') && institution.terms.length > 0;
 }
 
-/** Schools in the nightly refresh and the distinct terms they cover. */
+/** Live schools with imported data and the distinct terms they cover. */
 export function coverage(institutions: Institution[]) {
-  const live = institutions.filter((institution) => institution.status === 'live');
+  const live = institutions.filter((institution) => institution.status === 'live' && institution.terms.length > 0);
   return { schools: live.length, terms: new Set(live.flatMap((institution) => institution.terms)).size };
 }
 

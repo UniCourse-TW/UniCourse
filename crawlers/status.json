@@ -20,9 +20,10 @@
     "issue": null
   },
   "ncku": {
-    "status": "blocked",
-    "note": "查詢約 5 個系所後要求驗證碼，無法完整抓取一學期",
-    "issue": 1
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；官網查詢約 5 個系所後要求驗證碼",
+    "issue": 1,
+    "source": "tvc"
   },
   "nccu": {
     "status": "live",
@@ -40,9 +41,10 @@
     "issue": null
   },
   "ncu": {
-    "status": "blocked",
-    "note": "課程查詢系統的 robots.txt 禁止爬取",
-    "issue": 2
+    "status": "live",
+    "note": "資料來源：大學校院課程資源網（每週更新）；官網課程查詢系統的 robots.txt 禁止爬取",
+    "issue": 2,
+    "source": "tvc"
   },
   "fcu": {
     "status": "live",

@@ -832,12 +832,21 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     assert_eq!(institution["offerings"], 3);
     assert_eq!(institution["courses"], 2);
     assert_eq!(institution["latestImportedAt"], nthu["latestImportedAt"]);
-    let blocked = by_slug("ncku");
-    assert_eq!(blocked["status"], "blocked");
-    assert_eq!(blocked["issue"], 1);
-    assert_eq!(blocked["terms"], json!([]));
-    assert_eq!(blocked["offerings"], 0);
-    assert_eq!(blocked["latestImportedAt"], Value::Null);
+    let partial = by_slug("ntua");
+    assert_eq!(partial["status"], "partial");
+    assert_eq!(partial["issue"], 3);
+    assert_eq!(partial["terms"], json!([]));
+    assert_eq!(partial["offerings"], 0);
+    assert_eq!(partial["latestImportedAt"], Value::Null);
+    // Served by the national platform (`source: "tvc"` in status.json); the note says so.
+    let national = by_slug("ncku");
+    assert_eq!(national["status"], "live");
+    assert!(
+        national["note"]
+            .as_str()
+            .unwrap()
+            .contains("大學校院課程資源網")
+    );
     // Every institution has a slug; one without a status entry has status `none`.
     assert!(rows.iter().all(|row| row["slug"].is_string()));
     let other = by_slug("nsysu");

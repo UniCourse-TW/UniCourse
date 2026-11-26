@@ -26,9 +26,11 @@ test('shows historical enrollment, filters the ranking and browses a school and 
 
   await expect(page.getByRole('region', { name: '資料總覽' })).toHaveCount(0);
 
-  // The coverage line counts live schools and their distinct terms, straight from the API.
+  // The coverage line counts live schools with imported terms and their distinct terms, from the API.
   const { institutions } = await (await request.get(`${API}/api/institutions`)).json();
-  const live = institutions.filter((school: { status: string }) => school.status === 'live');
+  const live = institutions.filter(
+    (school: { status: string; terms: string[] }) => school.status === 'live' && school.terms.length > 0
+  );
   const terms = new Set(live.flatMap((school: { terms: string[] }) => school.terms));
   await expect(ranking.getByText(`目前收錄 ${live.length} 校、${terms.size} 個學期 · 查看各校收錄狀態`)).toBeVisible();
   await ranking.getByRole('link', { name: '查看各校收錄狀態' }).click();
@@ -62,7 +64,7 @@ test('returns a localized 404 for an unknown department', async ({ page }) => {
 
 test('lists every institution with its crawl status and filters by status', async ({ page, request }) => {
   const { institutions } = await (await request.get(`${API}/api/institutions`)).json();
-  const blockedCount = institutions.filter((school: { status: string }) => school.status === 'blocked').length;
+  const partialCount = institutions.filter((school: { status: string }) => school.status === 'partial').length;
 
   await page.goto('/schools');
   await expect(page.getByRole('heading', { level: 1, name: '各校收錄狀態' })).toBeVisible();
@@ -73,35 +75,41 @@ test('lists every institution with its crawl status and filters by status', asyn
 
   const chips = page.getByRole('list', { name: '收錄狀態統計' }).getByRole('link');
   await expect(chips).toHaveText([/^已收錄 \d+$/, /^部分 \d+$/, /^受阻 \d+$/, /^規劃中 \d+$/, /^尚未開始 \d+$/]);
-  await expect(chips.filter({ hasText: '受阻' })).toHaveText(`受阻 ${blockedCount}`);
+  await expect(chips.filter({ hasText: '部分' })).toHaveText(`部分 ${partialCount}`);
 
   const table = page.getByRole('table', { name: /大專校院收錄狀態/ });
   const rows = table.locator('tbody tr:not(.group)');
   await expect(rows).toHaveCount(institutions.length);
   await expect(table.getByRole('rowheader', { name: /^一般大學/ })).toBeVisible();
 
-  const ncku = rows.filter({ hasText: '國立成功大學' });
-  await expect(ncku.getByText('（0005）')).toBeVisible();
-  await expect(ncku.getByText('受阻', { exact: true })).toBeVisible();
-  await expect(ncku.getByRole('link', { name: '#1' })).toHaveAttribute(
+  const ntua = rows.filter({ hasText: '國立臺灣藝術大學' });
+  await expect(ntua.getByText('（0029）')).toBeVisible();
+  await expect(ntua.getByText('部分', { exact: true })).toBeVisible();
+  await expect(ntua.getByRole('link', { name: '#3' })).toHaveAttribute(
     'href',
-    'https://github.com/UniCourse-TW/UniCourse/issues/1'
+    'https://github.com/UniCourse-TW/UniCourse/issues/3'
   );
-  await expect(ncku.getByRole('link', { name: '國立成功大學', exact: true })).toHaveCount(0);
+  // No imported offerings in the fixtures, so no internal school page link.
+  await expect(ntua.getByRole('link', { name: '國立臺灣藝術大學', exact: true })).toHaveCount(0);
+
+  // NCKU's own site blocks crawling; its data comes from the national platform.
+  const ncku = rows.filter({ hasText: '國立成功大學' });
+  await expect(ncku.getByText('已收錄', { exact: true })).toBeVisible();
+  await expect(ncku.getByText(/資料來源：大學校院課程資源網/)).toBeVisible();
 
   const nthu = rows.filter({ hasText: '國立清華大學' });
   await expect(nthu.getByRole('link', { name: '國立清華大學', exact: true })).toHaveAttribute('href', '/schools/nthu');
   await expect(nthu.getByText(/^2 學期 \/ \d+ 班次$/)).toBeVisible();
 
   const status = page.getByRole('combobox', { name: '狀態' });
-  await status.selectOption('blocked');
+  await status.selectOption('partial');
   await page.getByRole('button', { name: '篩選' }).click();
-  await expect(page).toHaveURL(/\/schools\?.*status=blocked/);
-  await expect(status).toHaveValue('blocked');
-  await expect(rows).toHaveCount(blockedCount);
-  await expect(rows.filter({ hasText: '國立成功大學' })).toHaveCount(1);
+  await expect(page).toHaveURL(/\/schools\?.*status=partial/);
+  await expect(status).toHaveValue('partial');
+  await expect(rows).toHaveCount(partialCount);
+  await expect(rows.filter({ hasText: '國立臺灣藝術大學' })).toHaveCount(1);
   await expect(rows.filter({ hasText: '國立清華大學' })).toHaveCount(0);
-  await expect(chips.filter({ hasText: '受阻' })).toHaveAttribute('aria-current', 'true');
+  await expect(chips.filter({ hasText: '部分' })).toHaveAttribute('aria-current', 'true');
 
   // Keyword search accepts 台 for 臺 and matches school codes.
   await page.goto('/schools?q=台灣大學');
