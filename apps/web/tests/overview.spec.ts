@@ -64,7 +64,10 @@ test('shows historical enrollment, filters the ranking and browses a school and 
 test('returns a localized 404 for an unknown department', async ({ page }) => {
   const response = await page.goto('/schools/nthu/departments/not-found');
   expect(response?.status()).toBe(404);
-  await expect(page.getByText('找不到這個開課單位。')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '找不到這個開課單位' })).toBeVisible();
+  // Every 404 offers a way out: back to the school plus the nationwide status page.
+  await expect(page.getByRole('link', { name: '回學校頁' })).toHaveAttribute('href', '/schools/nthu');
+  await expect(page.getByRole('link', { name: '看各校收錄狀態' })).toBeVisible();
 });
 
 test('shows recovery links for an empty semester and an unknown teacher', async ({ page }) => {
