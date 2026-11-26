@@ -27,27 +27,60 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   if (!filters.school) filters.courseCode = '';
 
   const client = catalog(fetch);
-  const [posts, schools] = await Promise.all([
-    client.GET('/api/posts', {
-      params: {
-        query: {
-          type: filters.type || undefined,
-          school: filters.school || undefined,
-          courseCode: filters.courseCode || undefined,
-          q: filters.q || undefined,
-          tag: filters.tag || undefined,
-          page: filters.page
-        }
-      }
-    }),
-    client.GET('/api/schools')
+  const query = {
+    school: filters.school || undefined,
+    courseCode: filters.courseCode || undefined,
+    q: filters.q || undefined,
+    tag: filters.tag || undefined
+  };
+  // Per-type totals for the category chips: the same filters without the type. The API has no
+  // facet endpoint, so these are first-page requests whose `total` is all we read.
+  const totals = () =>
+    Promise.all(
+      (['', ...listTypes] as const).map((type) =>
+        client
+          .GET('/api/posts', { params: { query: { ...query, type: type || undefined } } })
+          .then((result) => result.data)
+          .catch(() => undefined)
+      )
+    );
+  const [posts, schools, counts] = await Promise.all([
+    client.GET('/api/posts', { params: { query: { ...query, type: filters.type || undefined, page: filters.page } } }),
+    client.GET('/api/schools'),
+    totals()
   ]).catch(() => error(503, UNAVAILABLE));
   if (posts.response.status === 400) error(400, apiMessage(posts.error));
   if (!posts.data || !schools.data) error(503, UNAVAILABLE);
-  return { filters, posts: posts.data, schools: schools.data };
+  const [all, ...byType] = counts;
+  return {
+    filters,
+    compose: url.searchParams.get('compose') === '1',
+    posts: posts.data,
+    schools: schools.data,
+    // `null` when a count request failed: the chip then shows no number rather than 0.
+    counts: {
+      all: all?.total ?? null,
+      ...Object.fromEntries(listTypes.map((type, index) => [type, byType[index]?.total ?? null]))
+    } as Record<'all' | ListType, number | null>,
+    latest: all?.posts[0]?.createdAt ?? null
+  };
 };
 
 export const actions: Actions = {
+  /** Looks a course code up for the compose form ("→ 資料結構 ✓"); called with `fetch` from the page. */
+  checkCourse: async ({ fetch, request }) => {
+    const form = await request.formData();
+    const school = field(form, 'school').trim();
+    const courseCode = field(form, 'courseCode').trim();
+    if (!school || !courseCode || courseCode.length > 100) return { found: null };
+    const result = await catalog(fetch)
+      .GET('/api/courses', { params: { query: { school, q: courseCode } } })
+      .catch(() => undefined);
+    if (!result?.data) return { found: null, unavailable: true };
+    const match = result.data.find((offering) => offering.courseCode.toLowerCase() === courseCode.toLowerCase());
+    return { found: match ? { title: match.title, courseCode: match.courseCode, term: match.term } : false };
+  },
+
   create: async (event) => {
     const user = requireUser(event);
     const form = await event.request.formData();
