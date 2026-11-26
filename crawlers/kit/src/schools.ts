@@ -1,16 +1,35 @@
-export const SCHOOLS = {
-  ntu: { name: '國立臺灣大學', nameEn: 'National Taiwan University' },
-  ntnu: { name: '國立臺灣師範大學', nameEn: 'National Taiwan Normal University' },
-  nycu: { name: '國立陽明交通大學', nameEn: 'National Yang Ming Chiao Tung University' },
-  nthu: { name: '國立清華大學', nameEn: 'National Tsing Hua University' },
-  ncku: { name: '國立成功大學', nameEn: 'National Cheng Kung University' },
-  nccu: { name: '國立政治大學', nameEn: 'National Chengchi University' },
-  nchu: { name: '國立中興大學', nameEn: 'National Chung Hsing University' },
-  ccu: { name: '國立中正大學', nameEn: 'National Chung Cheng University' },
-  ncu: { name: '國立中央大學', nameEn: 'National Central University' },
-  fcu: { name: '逢甲大學', nameEn: 'Feng Chia University' },
-  tnua: { name: '國立臺北藝術大學', nameEn: 'Taipei National University of the Arts' },
-  ntua: { name: '國立臺灣藝術大學', nameEn: 'National Taiwan University of Arts' }
-} as const;
+import { readFileSync } from 'node:fs';
 
-export type SchoolSlug = keyof typeof SCHOOLS;
+/** One row of `data/institutions.json` (MOE open data; see `data/institutions.README.md`). */
+export interface Institution {
+  /** MOE 學校代碼, e.g. `0009`. */
+  code: string;
+  /** Official Chinese name, e.g. `國立中山大學`. */
+  name: string;
+  nameEn: string | null;
+  /** Snapshot `school` value, unique and stable, e.g. `nsysu`. */
+  slug: string;
+  kind: 'university' | 'college' | 'junior_college';
+  ownership: 'public' | 'private';
+  city: string | null;
+  website: string | null;
+  system: 'general' | 'technical' | 'military_police' | 'religious' | 'open';
+}
+
+/** Every institution; `data/institutions.json` is the single source of truth for slugs. */
+export const INSTITUTIONS: readonly Institution[] = JSON.parse(
+  readFileSync(new URL('../../../data/institutions.json', import.meta.url), 'utf8')
+);
+
+export const SCHOOLS: Readonly<Record<string, { name: string; nameEn?: string; code: string }>> = Object.fromEntries(
+  INSTITUTIONS.map((institution) => [
+    institution.slug,
+    { name: institution.name, nameEn: institution.nameEn ?? undefined, code: institution.code }
+  ])
+);
+
+export type SchoolSlug = string;
+
+export function isSchoolSlug(slug: string): boolean {
+  return Object.hasOwn(SCHOOLS, slug);
+}

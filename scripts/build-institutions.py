@@ -27,7 +27,8 @@ SOURCES = {
     "highera1.csv": "https://stats.moe.gov.tw/files/opendata/highera1.csv",
 }
 
-# Crawler slugs (crawlers/kit/src/schools.ts), matched by the exact MOE school name.
+# Slugs and English names of the schools with a dedicated crawler (crawlers/<slug>), matched by the
+# exact MOE school name. These never change.
 SLUGS = {
     "國立臺灣大學": ("ntu", "National Taiwan University"),
     "國立臺灣師範大學": ("ntnu", "National Taiwan Normal University"),
@@ -42,6 +43,25 @@ SLUGS = {
     "國立臺北藝術大學": ("tnua", "Taipei National University of the Arts"),
     "國立臺灣藝術大學": ("ntua", "National Taiwan University of Arts"),
 }
+
+# Explicit slug overrides by MOE code, for institutions whose 網址 is missing from the MOE files or
+# does not end in .edu.tw. Each value is the school's own .edu.tw domain label (see
+# data/course-sites.json for the official sites they were taken from).
+SLUG_OVERRIDES = {
+    "0A01": "nou",  # 國立空中大學, nou.edu.tw
+    "3A01": "ouk",  # 高雄市立空中大學, ouk.edu.tw
+    "1R02": "tbts",  # 基督教台灣浸會神學院, tbts.edu.tw
+    "1R03": "cct",  # 臺北基督學院, cct.edu.tw
+    "1R04": "iktc",  # 一貫道天皇學院, iktc.edu.tw
+    "1R05": "tgst",  # 台灣神學研究學院, tgst.edu.tw
+    "1R06": "iktcds",  # 一貫道崇德學院, iktcds.edu.tw
+    "1R07": "ttcs",  # 台灣基督長老教會南神神學院, ttcs.edu.tw
+    "1R08": "ces",  # 中華福音神學研究學院, ces.edu.tw
+    "1R09": "wxsjc",  # 唯心聖教學院, wxsjc.edu.tw
+    "1R10": "bwbc",  # 福智佛教學院, bwbc.edu.tw
+}
+
+SLUG = re.compile(r"^[a-z][a-z0-9]{1,15}$")
 
 # 體系別 in 大專校院名錄. MOE statistics count 師範 (teacher-education) universities among the
 # general universities, so they map to `general`.
@@ -81,8 +101,26 @@ def kind(name):
     raise ValueError(f"cannot classify {name!r}")
 
 
+def derive_slug(code, name, website):
+    """Stable snapshot slug: crawler slug, explicit override, else the label before `.edu.tw` in 網址.
+
+    `http://www.nsysu.edu.tw` -> `nsysu`, `http://new.ntpu.edu.tw/` -> `ntpu`,
+    `http://www2.kmu.edu.tw` -> `kmu`. Lowercase ASCII; uniqueness is checked in build().
+    """
+    if name in SLUGS:
+        return SLUGS[name][0]
+    if code in SLUG_OVERRIDES:
+        return SLUG_OVERRIDES[code]
+    host = re.sub(r"^https?://", "", (website or "").strip().lower()).split("/")[0].split(":")[0]
+    match = re.search(r"(?:^|\.)([a-z0-9-]+)\.edu\.tw$", host)
+    if not match:
+        raise ValueError(f"{code} {name}: no .edu.tw website; add it to SLUG_OVERRIDES")
+    return match.group(1)
+
+
 def institution(code, name, ownership, city, website, system):
-    slug, name_en = SLUGS.get(name, (None, None))
+    name_en = SLUGS.get(name, (None, None))[1]
+    slug = derive_slug(code, name, website)
     return {
         "code": code,
         "name": name,
@@ -141,7 +179,13 @@ def build(directory):
     codes = [item["code"] for item in institutions]
     assert all(CODE.match(code) for code in codes), "unexpected school code"
     assert len(codes) == len(set(codes)), "duplicate school code"
-    matched = {item["slug"] for item in institutions if item["slug"]}
+    slugs = [item["slug"] for item in institutions]
+    bad = [slug for slug in slugs if not SLUG.match(slug)]
+    assert not bad, f"slugs must be lowercase ASCII (2-16 chars): {bad}"
+    assert len(slugs) == len(set(slugs)), "duplicate slug; add an entry to SLUG_OVERRIDES"
+    unused = set(SLUG_OVERRIDES) - set(codes)
+    assert not unused, f"SLUG_OVERRIDES codes without an MOE row: {sorted(unused)}"
+    matched = set(slugs)
     missing = {slug for slug, _ in SLUGS.values()} - matched
     assert not missing, f"crawler slugs without an MOE row: {sorted(missing)}"
     years = {"u1_new.csv": year, "higherr.csv": religious_year, "highera1.csv": open_year}

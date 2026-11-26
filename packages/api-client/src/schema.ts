@@ -414,9 +414,9 @@ export interface components {
             titleEn?: string | null;
         };
         /**
-         * @description `live`: in the nightly refresh; `partial`: crawler exists but is not scheduled or covers a
+         * @description `live`: in the scheduled refresh; `partial`: crawler exists but is not scheduled or covers a
          *     subset; `blocked`: the official source forbids or prevents crawling; `planned`: no crawler yet;
-         *     `none`: the institution has no crawler slug.
+         *     `none`: no entry in `crawlers/status.json` (no data source yet).
          * @enum {string}
          */
         CrawlStatus: "live" | "partial" | "blocked" | "planned" | "none";
@@ -478,7 +478,7 @@ export interface components {
             /** @description Latest import time (ISO-8601 UTC), `null` before the first import. */
             latestImportedAt?: string | null;
             name: string;
-            /** @description Set for schools with a crawler; the MOE list has no English names. */
+            /** @description Set for schools with a dedicated crawler; the MOE list has no English names. */
             nameEn?: string | null;
             /** @description Crawl status note (zh-TW). */
             note?: string | null;
@@ -488,8 +488,8 @@ export interface components {
              */
             offerings: number;
             ownership: components["schemas"]["Ownership"];
-            /** @description Crawler slug (`/api/schools/{slug}`), `null` when there is no crawler. */
-            slug?: string | null;
+            /** @description School slug (`/api/schools/{slug}` once the school has imported offerings). */
+            slug: string;
             status: components["schemas"]["CrawlStatus"];
             system: components["schemas"]["EducationSystem"];
             /** @description Imported terms, newest first. */

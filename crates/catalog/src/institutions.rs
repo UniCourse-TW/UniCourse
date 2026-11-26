@@ -39,9 +39,9 @@ pub enum EducationSystem {
     Open,
 }
 
-/// `live`: in the nightly refresh; `partial`: crawler exists but is not scheduled or covers a
+/// `live`: in the scheduled refresh; `partial`: crawler exists but is not scheduled or covers a
 /// subset; `blocked`: the official source forbids or prevents crawling; `planned`: no crawler yet;
-/// `none`: the institution has no crawler slug.
+/// `none`: no entry in `crawlers/status.json` (no data source yet).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize, Serialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum CrawlStatus {
@@ -59,7 +59,8 @@ pub struct InstitutionRecord {
     pub code: String,
     pub name: String,
     pub name_en: Option<String>,
-    pub slug: Option<String>,
+    /// Snapshot `school` value; see `data/institutions.README.md` for the derivation rule.
+    pub slug: String,
     pub kind: InstitutionKind,
     pub ownership: Ownership,
     pub city: Option<String>,
@@ -74,6 +75,11 @@ pub struct StatusEntry {
     pub status: CrawlStatus,
     pub note: String,
     pub issue: Option<u32>,
+    /// Crawler package under `crawlers/` that produces this school's snapshots when it is not the
+    /// school's own package, e.g. `tvc` for the national 大學校院課程資源網. Absent means
+    /// `crawlers/<slug>`, which then always wins over the national source.
+    #[serde(default)]
+    pub source: Option<String>,
 }
 
 pub static INSTITUTION_RECORDS: LazyLock<Vec<InstitutionRecord>> = LazyLock::new(|| {
@@ -90,10 +96,10 @@ pub struct Institution {
     /// universities contain a letter (`1R02`, `0A01`).
     pub code: String,
     pub name: String,
-    /// Set for schools with a crawler; the MOE list has no English names.
+    /// Set for schools with a dedicated crawler; the MOE list has no English names.
     pub name_en: Option<String>,
-    /// Crawler slug (`/api/schools/{slug}`), `null` when there is no crawler.
-    pub slug: Option<String>,
+    /// School slug (`/api/schools/{slug}` once the school has imported offerings).
+    pub slug: String,
     pub kind: InstitutionKind,
     pub ownership: Ownership,
     pub city: Option<String>,
@@ -160,13 +166,9 @@ pub async fn institutions(pool: &PgPool) -> Result<Institutions, sqlx::Error> {
     let institutions = INSTITUTION_RECORDS
         .iter()
         .map(|record| {
-            let entry = record.slug.as_ref().and_then(|slug| CRAWL_STATUS.get(slug));
-            let school = record.slug.as_ref().and_then(|slug| stats.remove(slug));
-            let status = match (&record.slug, entry) {
-                (None, _) => CrawlStatus::None,
-                (Some(_), Some(entry)) => entry.status,
-                (Some(_), None) => CrawlStatus::Planned,
-            };
+            let entry = CRAWL_STATUS.get(&record.slug);
+            let school = stats.remove(&record.slug);
+            let status = entry.map_or(CrawlStatus::None, |entry| entry.status);
             Institution {
                 code: record.code.clone(),
                 name: record.name.clone(),
@@ -233,30 +235,40 @@ mod tests {
     }
 
     #[test]
-    fn slugs_match_status_and_rust_list() {
-        let slugs: Vec<&str> = INSTITUTION_RECORDS
-            .iter()
-            .filter_map(|record| record.slug.as_deref())
-            .collect();
-        let unique: HashSet<&str> = slugs.iter().copied().collect();
-        assert_eq!(unique.len(), slugs.len(), "a slug is used twice");
-        for slug in &slugs {
-            assert!(SCHOOL_SLUGS.contains(slug), "{slug} not in SCHOOL_SLUGS");
-        }
-        for slug in SCHOOL_SLUGS {
+    fn slugs_are_unique_and_status_entries_are_known() {
+        assert_eq!(
+            SCHOOL_SLUGS.len(),
+            INSTITUTION_RECORDS.len(),
+            "a slug is used twice"
+        );
+        for slug in SCHOOL_SLUGS.iter() {
             assert!(
-                unique.contains(slug),
-                "{slug} missing from institutions.json"
-            );
-            assert!(
-                CRAWL_STATUS.contains_key(slug),
-                "{slug} missing from status.json"
+                (2..=16).contains(&slug.len())
+                    && slug.starts_with(|c: char| c.is_ascii_lowercase())
+                    && slug
+                        .bytes()
+                        .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit()),
+                "bad slug {slug:?}"
             );
         }
+        let crawlers = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../crawlers");
         for (slug, entry) in CRAWL_STATUS.iter() {
-            assert!(unique.contains(slug.as_str()), "status for unknown {slug}");
+            assert!(
+                SCHOOL_SLUGS.contains(slug.as_str()),
+                "status for unknown {slug}"
+            );
             assert_ne!(entry.status, CrawlStatus::None, "{slug}: none is API-only");
             assert!(!entry.note.trim().is_empty(), "{slug}: empty note");
+            if let Some(source) = &entry.source {
+                assert!(
+                    crawlers.join(source).join("package.json").is_file(),
+                    "{slug}: source crawlers/{source} does not exist"
+                );
+                assert_ne!(
+                    source, slug,
+                    "{slug}: omit source for the school's own crawler"
+                );
+            }
         }
     }
 
@@ -267,7 +279,8 @@ mod tests {
         for entry in std::fs::read_dir(&crawlers).unwrap() {
             let path = entry.unwrap().path();
             let name = path.file_name().unwrap().to_str().unwrap().to_owned();
-            if name == "kit" || !path.join("package.json").is_file() {
+            // `tvc` (national platform) is a multi-school source, referenced by `source`.
+            if name == "kit" || name == "tvc" || !path.join("package.json").is_file() {
                 continue;
             }
             packages += 1;
@@ -275,7 +288,21 @@ mod tests {
                 CRAWL_STATUS.contains_key(&name),
                 "crawlers/{name} has no status"
             );
+            assert!(
+                SCHOOL_SLUGS.contains(name.as_str()),
+                "crawlers/{name} is not a slug"
+            );
         }
-        assert_eq!(packages, CRAWL_STATUS.len());
+        assert!(packages > 0);
+        // A school without a `source` is crawled by its own package (which then always wins over
+        // the national source); one with a `source` may still keep a package, e.g. a blocked one.
+        for (slug, entry) in CRAWL_STATUS.iter() {
+            if entry.source.is_none() {
+                assert!(
+                    crawlers.join(slug).join("package.json").is_file(),
+                    "{slug} has no source and no crawlers/{slug} package"
+                );
+            }
+        }
     }
 }

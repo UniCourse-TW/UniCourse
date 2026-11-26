@@ -43,12 +43,8 @@ export const ISSUES_URL = 'https://github.com/UniCourse-TW/UniCourse/issues';
  * `/schools/{slug}` 404s until a school has imported offerings, so only crawled schools with
  * data get an internal link.
  */
-export function hasSchoolPage(institution: Institution): institution is Institution & { slug: string } {
-  return (
-    !!institution.slug &&
-    (institution.status === 'live' || institution.status === 'partial') &&
-    institution.terms.length > 0
-  );
+export function hasSchoolPage(institution: Institution): boolean {
+  return (institution.status === 'live' || institution.status === 'partial') && institution.terms.length > 0;
 }
 
 /** Schools in the nightly refresh and the distinct terms they cover. */

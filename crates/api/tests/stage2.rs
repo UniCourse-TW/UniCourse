@@ -838,7 +838,10 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     assert_eq!(blocked["terms"], json!([]));
     assert_eq!(blocked["offerings"], 0);
     assert_eq!(blocked["latestImportedAt"], Value::Null);
-    let other = rows.iter().find(|row| row["slug"].is_null()).unwrap();
+    // Every institution has a slug; one without a status entry has status `none`.
+    assert!(rows.iter().all(|row| row["slug"].is_string()));
+    let other = by_slug("nsysu");
+    assert_eq!(other["name"], "國立中山大學");
     assert_eq!(other["status"], "none");
     assert_eq!(other["note"], Value::Null);
     let newest = rows

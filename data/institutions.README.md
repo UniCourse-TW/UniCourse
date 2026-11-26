@@ -38,6 +38,17 @@ Total: **150** institutions. SHA-256 of the files used: `u1_new.csv` 2cf2c5c6…
 - `city`: 縣市名稱 without its numeric prefix (`[38]臺北市` → `臺北市`); `null` for the open
   universities (dataset 6237 has no city column).
 - `website`: 網址 verbatim (often `http://`); `null` outside the 名錄 (datasets 6236/6237 have none).
-- `nameEn`: the MOE files have no English names; set only for the 12 crawler schools (from
-  `crawlers/kit/src/schools.ts`), otherwise `null`.
-- `slug`: the crawler slug, matched by exact MOE name; the script fails if any of the 12 is missing.
+- `nameEn`: the MOE files have no English names; set only for the 12 schools with a dedicated
+  crawler (`SLUGS` in the script), otherwise `null`.
+- `slug`: every institution has one; it is the snapshot `school` value and the `/schools/{slug}`
+  path, so it must never change once published. This file is the single source of truth for slugs:
+  `crawlers/kit/src/schools.ts` and `unicourse_catalog::SCHOOL_SLUGS` both read it. Rule, first match
+  wins:
+  1. the dedicated crawler slug (`SLUGS`, matched by exact MOE name: `ntu`, `nthu`, …);
+  2. an explicit override by MOE code (`SLUG_OVERRIDES`), used for the 11 religious colleges and
+     open universities whose rows have no 網址; each is the school's own `.edu.tw` domain label;
+  3. otherwise the domain label right before `.edu.tw` in 網址 (`http://www.nsysu.edu.tw` →
+     `nsysu`, `http://new.ntpu.edu.tw/` → `ntpu`, `http://www.uTaipei.edu.tw` → `utaipei`).
+
+  Slugs are lowercase ASCII, 2–16 characters, and unique; the script fails otherwise. If a school
+  changes its domain or a new school collides, add a `SLUG_OVERRIDES` entry that keeps the old slug.

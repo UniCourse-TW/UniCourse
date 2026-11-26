@@ -68,17 +68,40 @@ export async function runCrawler(definition: CrawlerDefinition, argv = process.a
     limit,
     log
   });
-  const school = SCHOOLS[definition.school];
-  const snapshot = Snapshot.parse({
+  const snapshot = buildSnapshot({
     school: definition.school,
-    schoolName: school.name,
-    schoolNameEn: school.nameEn,
     term,
     isDemo: values.demo,
-    source: { ...definition.source, fetchedAt: new Date().toISOString() },
+    source: definition.source,
     offerings: limit ? offerings.slice(0, limit) : offerings
   });
-  await mkdir(dirname(out), { recursive: true });
-  await writeFile(out, JSON.stringify(snapshot, null, 2) + '\n');
+  await writeSnapshot(out, snapshot);
   log(`wrote ${snapshot.offerings.length} offerings to ${out} in ${((Date.now() - started) / 1000).toFixed(1)}s`);
+}
+
+/** Validate one school/term snapshot; names come from data/institutions.json. */
+export function buildSnapshot(input: {
+  school: SchoolSlug;
+  term: string;
+  isDemo?: boolean;
+  source: { name: string; url: string };
+  offerings: Offering[];
+  fetchedAt?: Date;
+}): Snapshot {
+  const school = SCHOOLS[input.school];
+  if (!school) throw new Error(`unknown school slug ${input.school} (see data/institutions.json)`);
+  return Snapshot.parse({
+    school: input.school,
+    schoolName: school.name,
+    schoolNameEn: school.nameEn,
+    term: input.term,
+    isDemo: input.isDemo ?? false,
+    source: { ...input.source, fetchedAt: (input.fetchedAt ?? new Date()).toISOString() },
+    offerings: input.offerings
+  });
+}
+
+export async function writeSnapshot(path: string, snapshot: Snapshot) {
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, JSON.stringify(snapshot, null, 2) + '\n');
 }

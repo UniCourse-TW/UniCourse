@@ -7,27 +7,34 @@
 
 ```
 { "code": "0001", "name": "國立政治大學", "nameEn": "National Chengchi University",
-  "slug": "nccu" | null, "kind": "university" | "college" | "junior_college",
+  "slug": "nccu", "kind": "university" | "college" | "junior_college",
   "ownership": "public" | "private", "city": "臺北市", "website": "https://www.nccu.edu.tw/",
   "system": "general" | "technical" | "military_police" | "religious" | "open" }
 ```
 
-`code` is the MOE 學校代碼 (string, leading zeros kept). `slug` links to our crawler slug when one
-exists (the 12 current slugs), otherwise null. Keep the source URL and retrieval date in
-`data/institutions.README.md`. Closed/merged schools are excluded.
+`code` is the MOE 學校代碼 (string, leading zeros kept). Every institution has a unique, stable
+`slug` (snapshot `school` value and `/schools/{slug}` path): the dedicated crawler slug, an explicit
+override, or the domain label before `.edu.tw` (rule in `data/institutions.README.md`). This file is
+the single source of truth for slugs; `crawlers/kit/src/schools.ts` and `unicourse_catalog::SCHOOL_SLUGS`
+read it. Keep the source URL and retrieval date in `data/institutions.README.md`. Closed/merged
+schools are excluded.
 
 ## Crawl status
 
-`crawlers/status.json` is hand-maintained, one entry per slug:
+`crawlers/status.json` is hand-maintained, one entry per slug that has a data source:
 
 ```
 { "ntu": { "status": "live", "note": "每日更新；課程網未刊登修課人數", "issue": null },
   "ncku": { "status": "blocked", "note": "查詢約 5 個系所後要求驗證碼", "issue": 40 }, ... }
 ```
 
-`status`: `live` (in the nightly refresh), `partial` (crawler exists, not scheduled or subset only),
+`status`: `live` (in a scheduled refresh), `partial` (crawler exists, not scheduled or subset only),
 `blocked` (official source forbids or prevents crawling), `planned` (no crawler yet). `issue` is a
-GitHub issue number in UniCourse-TW/UniCourse or null.
+GitHub issue number in UniCourse-TW/UniCourse or null. Optional `source` names the crawler package
+that produces the snapshots when it is not `crawlers/<slug>`: `"tvc"` for the national
+大學校院 / 技職校院課程資源網 (`crawlers/tvc`), with a note starting 「資料來源：大學校院課程資源網」.
+`crawlers/tvc` only writes schools with no entry or with `source: "tvc"`, so a school crawled by its
+own package is never overwritten by the national source.
 
 ## API
 
@@ -40,10 +47,12 @@ master list with live catalog stats:
   "courses": number, "latestImportedAt": string|null }
 ```
 
-`status` is `none` for institutions without a crawler slug. Stats are 0/empty for schools with no data.
+`status` is `none` for institutions without a `status.json` entry. Stats are 0/empty for schools with no data.
 Both JSON files are embedded into the API binary at build time (`include_str!`) so the deploy image
-needs no extra files; a unit test checks every slug in `status.json` exists in `institutions.json`
-and in the Rust slug list, and that every crawler package under `crawlers/` has a status entry.
+needs no extra files; unit tests check that slugs are unique lowercase ASCII, that every slug in
+`status.json` exists in `institutions.json`, that every per-school crawler package under `crawlers/`
+has a status entry, that an entry without `source` has its own package, and that a `source` package
+exists.
 
 ## Web
 

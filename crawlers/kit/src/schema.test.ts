@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { Snapshot, currentTerm, requirementFromText } from './index.ts';
+import { INSTITUTIONS, SCHOOLS, Snapshot, currentTerm, encodeForm, requirementFromText } from './index.ts';
 
 test('v1 fixtures still validate as v2 snapshots', async () => {
   for (const name of ['ntnu-115-1', 'nycu-115-1']) {
@@ -37,4 +37,23 @@ test('helpers', () => {
   assert.equal(requirementFromText('必修'), 'required');
   assert.equal(requirementFromText('通識選修'), 'general');
   assert.equal(requirementFromText(undefined), undefined);
+});
+
+test('school slugs come from data/institutions.json', () => {
+  const base = {
+    schoolName: 'x', term: '115-1', isDemo: true,
+    offerings: [{ sourceId: 'a', courseCode: 'c', title: 't', instructors: [], sourceUrl: 'https://example.edu/' }]
+  };
+  assert.equal(INSTITUTIONS.length, Object.keys(SCHOOLS).length);
+  assert.equal(SCHOOLS.nsysu?.name, '國立中山大學');
+  assert.equal(SCHOOLS.ntu?.nameEn, 'National Taiwan University');
+  assert.ok(Snapshot.safeParse({ ...base, school: 'nsysu' }).success);
+  assert.ok(!Snapshot.safeParse({ ...base, school: 'nowhere' }).success);
+  assert.ok(!Snapshot.safeParse({ ...base, school: 'toString' }).success);
+});
+
+test('encodeForm writes legacy charsets', () => {
+  assert.equal(encodeForm({ a: 'x y', b: '+/=' }), 'a=x+y&b=%2B%2F%3D');
+  assert.equal(encodeForm({ q: '中山' }, 'big5'), 'q=%A4%A4%A4s');
+  assert.equal(encodeForm({ q: '中山' }), new URLSearchParams({ q: '中山' }).toString());
 });

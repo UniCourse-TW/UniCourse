@@ -1888,7 +1888,7 @@
       },
       "CrawlStatus": {
         "type": "string",
-        "description": "`live`: in the nightly refresh; `partial`: crawler exists but is not scheduled or covers a\nsubset; `blocked`: the official source forbids or prevents crawling; `planned`: no crawler yet;\n`none`: the institution has no crawler slug.",
+        "description": "`live`: in the scheduled refresh; `partial`: crawler exists but is not scheduled or covers a\nsubset; `blocked`: the official source forbids or prevents crawling; `planned`: no crawler yet;\n`none`: no entry in `crawlers/status.json` (no data source yet).",
         "enum": [
           "live",
           "partial",
@@ -2000,6 +2000,7 @@
         "required": [
           "code",
           "name",
+          "slug",
           "kind",
           "ownership",
           "system",
@@ -2051,7 +2052,7 @@
               "string",
               "null"
             ],
-            "description": "Set for schools with a crawler; the MOE list has no English names."
+            "description": "Set for schools with a dedicated crawler; the MOE list has no English names."
           },
           "note": {
             "type": [
@@ -2069,11 +2070,8 @@
             "$ref": "#/components/schemas/Ownership"
           },
           "slug": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "Crawler slug (`/api/schools/{slug}`), `null` when there is no crawler."
+            "type": "string",
+            "description": "School slug (`/api/schools/{slug}` once the school has imported offerings)."
           },
           "status": {
             "$ref": "#/components/schemas/CrawlStatus"

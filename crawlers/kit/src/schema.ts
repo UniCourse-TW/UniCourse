@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { SCHOOLS } from './schools.js';
+import { isSchoolSlug } from './schools.js';
 
 // Trimmed, non-empty, no NUL (PostgreSQL text cannot store it).
 const text = z.string().trim().min(1).refine((value) => !value.includes('\u0000'), 'NUL is not allowed');
@@ -73,7 +73,8 @@ export const Offering = z
 
 export const Snapshot = z
   .object({
-    school: z.enum(Object.keys(SCHOOLS) as [keyof typeof SCHOOLS, ...(keyof typeof SCHOOLS)[]]),
+    // Any slug in data/institutions.json.
+    school: z.string().refine(isSchoolSlug, 'unknown school slug (see data/institutions.json)'),
     schoolName: text,
     schoolNameEn: text.optional(),
     term: z.string().regex(/^\d{3}-[123]$/, 'term must look like 115-1'),
