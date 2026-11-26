@@ -7,7 +7,8 @@
   import CourseHistory from '$lib/course-history.svelte';
   import { fillRatio, nearlyFull, publishedCapacity } from '$lib/course-history';
   import { averageScore, stars } from '$lib/community-format';
-  import { extraValue, importedAt, isHttpUrl, meeting, requirement } from '$lib/format';
+  import { labelledExtra } from '$lib/course-extra';
+  import { importedAt, isHttpUrl, meeting, requirement } from '$lib/format';
   import { departmentHref, instructorHref, schoolHref } from '$lib/overview-paths';
   import Badge from '$lib/ui/Badge.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -18,7 +19,7 @@
   let { data, form }: PageProps = $props();
   let course = $derived(data.course);
   let history = $derived(data.history);
-  let extra = $derived(Object.entries(course.extra ?? {}));
+  let extra = $derived(labelledExtra(course.extra));
   let capacity = $derived(publishedCapacity(course.capacity));
   let ratio = $derived(fillRatio(course.enrolled, capacity));
   let full = $derived(ratio != null && ratio >= nearlyFull);
@@ -39,6 +40,10 @@
   let newer = $derived(!course.active && history.latestActiveOfferingId && history.latestActiveOfferingId !== course.id
     ? history.latestActiveOfferingId
     : undefined);
+  let termRow = $derived(history.rows.find((row) => row.current));
+  // A term total only adds information when the term has more than one section.
+  let termTotal = $derived(termRow && termRow.offeringCount > 1 ? termRow : undefined);
+  let ratingCount = $derived(stats?.count ?? 0);
   let span = $derived(history.rows.length > 1 ? `${history.rows.at(-1)?.term}–${history.rows[0]?.term}` : undefined);
   let hasAbout = $derived(Boolean(course.description || course.notes || extra.length));
 
@@ -78,7 +83,9 @@
       <p class="meta">
         {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}
         {#if !course.active}<Badge label="已下架" tone="inactive" />{/if}
-        <span>{course.schoolName} · 更新於 <time datetime={course.importedAt}>{importedAt(course.importedAt)}</time></span>
+        <span class="fact">{#if course.credits != null}<b class="num">{credits(course.credits)}</b> 學分{:else}學分未公布{/if}</span>
+        <span class="fact">{#if requirementLabel}<b>{requirementLabel}</b>{#if requirementDetail}<a class="detail" href="#requirement-detail">校方原文</a>{/if}{:else}必選修未公布{/if}</span>
+        <span>{course.schoolName} · 更新於 <time datetime={course.importedAt}>{importedAt(course.importedAt)}</time>（臺北時間）</span>
       </p>
     </div>
     <div class="actions">
@@ -102,20 +109,9 @@
     </div>
   {/if}
 
-  <div role="group" aria-label="課程重點"><dl class="tiles">
-    <div class="tile">
-      <dt>學分</dt>
-      <dd><span class="value num">{credits(course.credits) ?? '—'}</span>{#if course.credits != null}<small>學分</small>{/if}</dd>
-      {#if course.credits == null}<dd class="note">校方未公布</dd>{/if}
-    </div>
-    <div class="tile">
-      <dt>必選修</dt>
-      <dd><span class="value">{requirementLabel ?? '—'}</span></dd>
-      {#if requirementDetail}<dd class="note clamp"><a href="#requirement-detail">{requirementDetail}</a></dd>
-      {:else if !requirementLabel}<dd class="note">校方未公布</dd>{/if}
-    </div>
+  <div role="group" aria-label="課程重點"><dl class="tiles" class:three={!termTotal}>
     <div class="tile seats" class:full>
-      <dt>修課人數／名額</dt>
+      <dt>本班修課人數／名額</dt>
       {#if course.enrolled != null}
         <dd><span class="value num">{displayValue(course.enrolled)}</span><small>/ {capacity != null ? `${displayValue(capacity)} 人` : '名額未公布'}</small></dd>
       {:else if capacity != null}
@@ -130,13 +126,24 @@
         <dd class="note">{course.enrolled == null && capacity != null ? '未公布修課人數' : capacity == null && course.enrolled != null ? '校方未公布名額' : '人數與名額未公布'}</dd>
       {/if}
     </div>
+    {#if termTotal}
+      <div class="tile">
+        <dt>本學期全班次（{termTotal.term}）</dt>
+        {#if termTotal.enrolled != null}
+          <dd><span class="value num">{displayValue(termTotal.enrolled)}</span><small>/ {termTotal.capacity != null ? `${displayValue(termTotal.capacity)} 人` : '名額未公布'}</small></dd>
+        {:else}
+          <dd><span class="value">—</span><small>人數未公布</small></dd>
+        {/if}
+        <dd class="note"><a href="#history">{displayValue(termTotal.offeringCount)} 個班次合計 ↓</a></dd>
+      </div>
+    {/if}
     <div class="tile">
-      <dt>歷年修課</dt>
+      <dt>歷年累計</dt>
       {#if totals?.enrolledTotal != null}
         <dd><span class="value num">{displayValue(totals.enrolledTotal)}</span><small>人次</small></dd>
-        <dd class="note"><a href="#history">{displayValue(totals.terms)} 期 · {displayValue(totals.offerings)} 班 ↓</a></dd>
+        <dd class="note"><a href="#history">{displayValue(totals.terms)} 個學期 · {displayValue(totals.offerings)} 班 ↓</a></dd>
       {:else if totals}
-        <dd><span class="value num">{displayValue(totals.terms)}</span><small>期</small></dd>
+        <dd><span class="value num">{displayValue(totals.terms)}</span><small>個學期</small></dd>
         <dd class="note"><a href="#history">未公布人數 · {displayValue(totals.offerings)} 班 ↓</a></dd>
       {:else}
         <dd><span class="value">—</span></dd>
@@ -145,12 +152,12 @@
     </div>
     <div class="tile">
       <dt>同學評價</dt>
-      {#if stats && stats.count > 0}
+      {#if stats && ratingCount > 0}
         <dd><span class="value num">{averageScore(stats.average)}</span><small class="stars" aria-hidden="true">{stars(Math.round(stats.average ?? 0))}</small></dd>
-        <dd class="note"><a href="#ratings">{displayValue(stats.count)} 則 ↓</a></dd>
+        <dd class="note" class:sparse={ratingCount < 3}><a href="#ratings">{ratingCount < 3 ? `目前僅 ${ratingCount} 則評價，僅供參考 ↓` : `${displayValue(ratingCount)} 則評價 ↓`}</a></dd>
       {:else if stats}
-        <dd><span class="value">—</span></dd>
-        <dd class="note"><a href="#ratings">還沒有評價 ↓</a></dd>
+        <dd><span class="value small-value">尚無評價</span></dd>
+        <dd class="note"><a href="#ratings">修過這門課？成為第一個評分 ↓</a></dd>
       {:else}
         <dd><span class="value">—</span></dd>
         <dd class="note">暫時無法取得</dd>
@@ -160,6 +167,7 @@
 
   <div class="overview">
     <section class="panel facts" aria-labelledby="schedule-title">
+      <div class="when-where">
       <h2 id="schedule-title">時間地點</h2>
       {#if course.schedule?.length}
         <ul class="schedule">
@@ -172,6 +180,7 @@
       {:else}
         <p class="muted">校方未公布上課時間。</p>
       {/if}
+      </div>
       <dl class="facts-list">
         <div><dt>授課教師</dt><dd>{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{:else}<span class="muted">未公布</span>{/each}</dd></div>
         {#if course.department}
@@ -245,10 +254,10 @@
       {/if}
       {#if extra.length}
         <details open={aboutOpen}>
-          <summary><h3 id="extra">其他校方欄位</h3></summary>
+          <summary><h3 id="extra">其他校方欄位（{extra.length}）</h3></summary>
           <dl class="extra">
-            {#each extra as [key, value] (key)}
-              <div><dt>{key}</dt><dd>{extraValue(value)}</dd></div>
+            {#each extra as field (field.key)}
+              <div><dt>{field.label}</dt><dd>{field.value}</dd></div>
             {/each}
           </dl>
         </details>
@@ -257,7 +266,7 @@
   {/if}
 
   <p class="source">
-    資料來源：{course.schoolName}{course.isDemo ? '（示範資料）' : '課程查詢系統'} · 最近匯入 <time datetime={course.importedAt}>{importedAt(course.importedAt)}</time>（台北時間）
+    資料來源：{course.schoolName}{course.isDemo ? '（示範資料）' : '課程查詢系統'} · 最近匯入 <time datetime={course.importedAt}>{importedAt(course.importedAt)}</time>（臺北時間）
   </p>
 </div>
 
@@ -281,7 +290,10 @@
   h1 { font-size: var(--t-2xl); overflow-wrap: anywhere; }
   .en { color: var(--ink-2); font-size: var(--t-md); overflow-wrap: anywhere; }
   .dek { display: flex; flex-wrap: wrap; gap: 0.125rem var(--space-3); align-items: center; margin-block-start: var(--space-1) !important; color: var(--muted); font-size: var(--t-base); }
-  .meta { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; color: var(--muted); font-size: var(--t-sm); }
+  .meta { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); align-items: center; color: var(--muted); font-size: var(--t-sm); }
+  .meta .fact { display: inline-flex; gap: var(--space-1); align-items: baseline; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--panel); color: var(--ink-2); white-space: nowrap; }
+  .meta .fact b { color: var(--ink); font-weight: 650; }
+  .meta .detail { font-size: var(--t-xs); }
   .dek .item + .item::before { content: '·'; margin-inline-end: var(--space-3); color: var(--muted); }
   .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .button { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-base); font-weight: 650; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
@@ -295,7 +307,8 @@
   .notice.demo { border-color: color-mix(in srgb, var(--warn) 40%, var(--line)); background: var(--warn-wash); color: var(--ink); }
   .notice a { margin-inline-start: var(--space-2); font-weight: 600; }
 
-  .tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); margin: 0; }
+  .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); margin: 0; }
+  .tiles.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .tile { display: grid; align-content: start; gap: var(--space-1); min-inline-size: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .tile dt { color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
   .tile dd { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; margin: 0; min-inline-size: 0; }
@@ -304,24 +317,27 @@
   .tile small.stars { color: var(--warn); font-size: var(--t-base); letter-spacing: 0.04em; }
   .tile .note { color: var(--muted); font-size: var(--t-sm); }
   .tile .note a { color: var(--ink-2); text-decoration: none; }
-  .tile .clamp { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tile .value.small-value { font-size: var(--t-xl); }
+  .tile .note.sparse a { color: var(--ink); font-weight: 600; }
   .tile .note a:hover { color: var(--brand-ink); text-decoration: underline; }
   .meter { display: block !important; block-size: 10px; margin-block: var(--space-1) 0 !important; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .meter span { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); }
   .seats.full .meter span { background: var(--warn); }
   .seats.full .note { color: var(--warn); font-weight: 600; }
 
-  .overview { display: grid; grid-template-columns: minmax(16rem, 1fr) minmax(0, 2fr); gap: var(--space-6); align-items: start; }
+  .overview { display: grid; gap: var(--space-6); }
   .panel { padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
-  .facts { display: grid; gap: var(--space-3); }
+  /* Time and place sit in one full-width strip, so the history below gets the whole column. */
+  .facts { display: grid; grid-template-columns: minmax(14rem, 1fr) minmax(0, 2fr); gap: var(--space-3) var(--space-6); align-items: start; }
+  .when-where { display: grid; gap: var(--space-2); min-inline-size: 0; }
   .facts h2, .section-head h2 { font-size: var(--t-xl); }
   .schedule { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; font-size: var(--t-md); }
   .schedule .when { font-weight: 600; }
   .schedule .where { color: var(--ink-2); }
   .schedule-text { font-weight: 600; overflow-wrap: anywhere; }
-  .facts-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3) var(--space-4); margin: 0; padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); font-size: var(--t-base); }
+  .facts-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); gap: var(--space-3) var(--space-4); margin: 0; padding-inline-start: var(--space-6); border-inline-start: 1px solid var(--line); font-size: var(--t-base); }
   .facts-list div { min-inline-size: 0; }
-  .facts-list div:first-child, .facts-list div:nth-child(2), .facts-list .wide { grid-column: 1 / -1; }
+  .facts-list .wide { grid-column: 1 / -1; }
   .facts-list dt { color: var(--muted); font-size: var(--t-sm); }
   .facts-list dd { margin: 0; overflow-wrap: anywhere; }
 
@@ -352,17 +368,18 @@
   .source { padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); color: var(--muted); font-size: var(--t-sm); }
 
   @media (max-width: 64rem) {
-    .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .overview { grid-template-columns: minmax(0, 1fr); }
+    .tiles, .tiles.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .tiles.three .tile:last-child { grid-column: 1 / -1; }
+    .facts { grid-template-columns: minmax(0, 1fr); }
+    .facts-list { padding-inline-start: 0; padding-block-start: var(--space-3); border-inline-start: 0; border-block-start: 1px solid var(--line); }
     .community { grid-template-columns: minmax(0, 1fr); }
   }
   @media (max-width: 40rem) {
     .course-page { gap: var(--space-5); }
     .crumbs { margin-block-end: calc(-1 * var(--space-4)); }
     .actions .button { flex: 1 1 auto; }
-    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+    .tiles { gap: var(--space-2); }
     .tile { padding: var(--space-3); }
-    .tile:last-child { grid-column: 1 / -1; }
     .tile .value { font-size: var(--t-2xl); }
     .panel { padding: var(--space-4); }
   }

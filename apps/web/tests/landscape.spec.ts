@@ -36,7 +36,7 @@ test('the legal documents have a table of contents and the review-index sections
   await expect(toc.getByRole('link', { name: '外部評論索引' })).toHaveAttribute('href', '#reviews');
   await expect(page.locator('#reviews')).toHaveText('外部評論索引');
   await expect(page.getByText('不超過 120 字的摘要')).toBeVisible();
-  await expect(page.getByRole('link', { name: /UniCourse-TW\/UniCourse issues/ })).toHaveAttribute('href', /github\.com/);
+  await expect(page.getByRole('link', { name: /在 GitHub 建立 issue/ })).toHaveAttribute('href', /github\.com/);
 
   await page.goto('/privacy');
   await expect(page.getByRole('heading', { name: '外部評論索引儲存的資料' })).toBeVisible();

@@ -28,13 +28,29 @@
   let histogram = $derived(
     [5, 4, 3, 2, 1].map((score) => ({ label: `${score} 分`, value: profile.ratings.filter((rating) => rating.score === score).length }))
   );
-  /** The school this person rates most often, for the fourth tile. */
-  let topSchool = $derived.by(() => {
+  let schoolCounts = $derived.by(() => {
     const counts = new Map<string, number>();
     for (const rating of profile.ratings) counts.set(rating.school, (counts.get(rating.school) ?? 0) + 1);
-    const [best] = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-    return best ? { name: data.schoolNames[best[0]] ?? best[0], count: best[1] } : null;
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   });
+  /**
+   * The school this person rates most often, only when one school clearly leads (at least 2 ratings and
+   * more than any other school); a tie or a single rating is not a preference.
+   */
+  let topSchool = $derived.by(() => {
+    const [best, second] = schoolCounts;
+    if (!best || best[1] < 2 || (second && second[1] === best[1])) return null;
+    return { name: data.schoolNames[best[0]] ?? best[0], count: best[1] };
+  });
+  let schoolSpread = $derived(
+    schoolCounts.length === 0 ? '還沒有評價'
+      : schoolCounts.length === 1 ? `${data.schoolNames[schoolCounts[0][0]] ?? schoolCounts[0][0]}`
+      : schoolCounts[0][1] === schoolCounts.at(-1)![1] ? `${schoolCounts.length} 所，各 ${schoolCounts[0][1]} 則`
+      : `${schoolCounts.length} 所`
+  );
+  /** Fewer than this many ratings and posts: one line of counts instead of four big tiles. */
+  const SPARSE = 5;
+  let sparse = $derived(ratingCount < SPARSE && profile.posts.length < SPARSE);
 
   let hydrated = $state(false);
   let sort = $state<'recent' | 'score'>('recent');
@@ -69,7 +85,8 @@
         {#if schoolName}<span class="sep">·</span>{schoolName}{/if}
         <span class="sep">·</span><time datetime={profile.createdAt}>{joinedMonth(profile.createdAt)}</time>加入
       </p>
-      {#if profile.bio}<p class="bio">{profile.bio}</p>{/if}
+      {#if profile.bio}<p class="bio">{profile.bio}</p>
+      {:else if isMe}<p class="bio empty">還沒有自我介紹・<a href="/settings">到設定新增</a>（只有你看得到這行）</p>{/if}
       <nav class="jump" aria-label="本頁段落">
         <a href="#ratings">課程評價 <span class="num">{ratingCount}</span></a>
         <a href="#posts">發表的文章 <span class="num">{profile.posts.length}</span></a>
@@ -78,12 +95,37 @@
     {#if isMe}<a class="cm-btn secondary edit" href="/settings">編輯個人資料</a>{/if}
   </header>
 
-  <section class="summary" class:compact={ratingCount > 0 && ratingCount < 3} aria-label="活動摘要">
+  {#if sparse}
+    <!-- Little activity: one line of counts; the distribution folds away until there is more to show. -->
+    <section class="summary-line" aria-label="活動摘要">
+      <div role="group" aria-label="活動統計">
+        <dl class="counts">
+          <div><dt>課程評價</dt><dd class="num">{ratingCount} 則{#if average !== null}<span class="sub">平均 {average.toFixed(1)}／5</span>{/if}</dd></div>
+          <div><dt>發表文章</dt><dd class="num">{profile.posts.length} 篇</dd></div>
+          <div><dt>文章的回覆數</dt><dd class="num">{replies} 則</dd></div>
+          <div><dt>評過的學校</dt><dd>{schoolSpread}</dd></div>
+        </dl>
+      </div>
+      {#if ratingCount && average !== null}
+        <details class="dist-fold">
+          <summary>看給分分布</summary>
+          <div class="dist compact-dist">
+            <BarList label="給分分布" items={histogram} unit="則" showValues={false} />
+          </div>
+        </details>
+      {/if}
+    </section>
+  {:else}
+  <section class="summary" aria-label="活動摘要">
     <StatRow label="活動統計">
       <StatTile label="課程評價" value={ratingCount} unit="則" note={ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : undefined} />
       <StatTile label="發表文章" value={profile.posts.length} unit="篇" note={profile.posts.length >= POST_CAP ? `顯示最近 ${POST_CAP} 篇` : undefined} />
-      <StatTile label="文章收到的回覆" value={replies} unit="則" />
-      <StatTile label="最常評的學校" value={topSchool?.name ?? null} note={topSchool ? `${topSchool.count} 則評價` : '還沒有評價'} />
+      <StatTile label="文章的回覆數" value={replies} unit="則" note="含作者自己的回覆" />
+      {#if topSchool}
+        <StatTile label="最常評的學校" value={topSchool.name} note={`${topSchool.count} 則評價`} />
+      {:else}
+        <StatTile label="評過的學校" value={schoolCounts.length} unit="所" note="沒有特別偏重哪一所" />
+      {/if}
     </StatRow>
     {#if ratingCount && average !== null}
       <div class="dist">
@@ -94,6 +136,7 @@
       </div>
     {/if}
   </section>
+  {/if}
 
   <section class="block" aria-labelledby="ratings">
     <div class="block-head">
@@ -109,7 +152,7 @@
       <EmptyState title={isMe ? '你還沒有評價任何課程' : `${name} 還沒有評價任何課程`}
         description={isMe ? '找一門修過的課，在課程頁給分並寫幾句心得。' : '有評價後會列在這裡，平均給分也會一起出現。'}>
         {#snippet action()}
-          {#if isMe}<a class="cm-btn secondary" href="/">去找一門修過的課 →</a>{/if}
+          <a class="cm-btn secondary" href="/">{isMe ? '去找一門修過的課 →' : '回到查課 →'}</a>
         {/snippet}
       </EmptyState>
     {:else}
@@ -197,17 +240,24 @@
   }
   .summary:not(:has(.dist)) { grid-template-columns: minmax(0, 1fr); }
   .summary :global(.stat-row) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  /* The fourth tile holds a school name, not a count: keep it readable but smaller than the numbers. */
+  /* The fourth tile may hold a school name, not a count: keep it readable but smaller than the numbers. */
   .summary :global(.stat-row > :nth-child(4) dd) { font-size: var(--t-xl); line-height: 1.3; min-block-size: 2.1rem; display: flex; align-items: center; }
+  .bio.empty { color: var(--muted); font-size: var(--t-sm); }
+  .summary-line { display: grid; gap: var(--space-2); margin-block-start: var(--space-5); }
+  .counts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .counts div { display: grid; gap: 2px; min-inline-size: 0; }
+  .counts dt { color: var(--muted); font-size: var(--t-sm); }
+  .counts dd { margin: 0; font-size: var(--t-lg); font-weight: 650; }
+  .counts .sub { margin-inline-start: var(--space-2); color: var(--ink-2); font-size: var(--t-sm); font-weight: 500; }
+  .dist-fold summary { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; cursor: pointer; }
+  .dist-fold .dist { max-inline-size: 28rem; }
+  .compact-dist :global(.bar-row) { min-block-size: 1.25rem; }
   .dist { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; margin-block-end: var(--space-2) !important; color: var(--ink-2) !important; font-size: var(--t-sm) !important; letter-spacing: 0 !important; }
   .eyebrow .avg { margin-inline-start: 0.3em; font-size: var(--t-lg); font-weight: 650; color: var(--ink); }
   .eyebrow .cm-hint { margin-inline-start: var(--space-1); }
   .dist :global(.bar-row) { grid-template-columns: 2.5rem minmax(0, 1fr) 3rem; min-block-size: 1.625rem; padding-block: 0; }
   .dist :global(.track) { grid-row: auto; grid-column: auto; }
-  /* One or two ratings: the distribution is still drawn to scale, just shorter. */
-  .compact .dist :global(.bar-row) { min-block-size: 1.25rem; }
-  .compact .dist :global(.track) { block-size: 6px; }
   .block { margin-block-start: var(--space-8); scroll-margin-block-start: 5rem; }
   .block-head { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; justify-content: space-between; margin-block-end: var(--space-3); }
   .block-head h2 { font-size: var(--t-lg) !important; scroll-margin-block-start: 5rem; }
@@ -256,6 +306,7 @@
     .edit { grid-column: 1 / -1; }
     .jump a { min-block-size: var(--target-min); }
     .summary :global(.stat-row) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .counts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
     /* Stack: each rating becomes a short card-like row; column names come from data-label. */
     thead { display: none; }
     table, tbody, tr, tbody :is(th, td) { display: block; }

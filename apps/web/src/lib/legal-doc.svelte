@@ -13,10 +13,12 @@
     sections: readonly DocSection[];
     /** The sibling document (terms ↔ privacy). */
     sibling: { href: string; label: string };
+    /** Plain-language points shown under the title, so readers get the gist before the full text. */
+    summary?: readonly string[];
     children: Snippet;
   }
 
-  let { title, updated, sections, sibling, children }: Props = $props();
+  let { title, updated, sections, sibling, summary = [], children }: Props = $props();
   let updatedLabel = $derived(updated.replaceAll('-', '/'));
   let contact = $derived(sections.find((section) => section.id === 'removal' || section.id === 'contact'));
 
@@ -55,12 +57,18 @@
       {#if contact}<span class="sep" aria-hidden="true">·</span><a href={`#${contact.id}`}>{contact.title}</a>{/if}
       <span class="sep" aria-hidden="true">·</span><a href={sibling.href}>{sibling.label} <span aria-hidden="true">→</span></a>
     </p>
+    {#if summary.length}
+      <section class="gist" aria-labelledby="gist-title">
+        <h2 id="gist-title">白話重點</h2>
+        <ul>{#each summary as point, index (index)}<li>{point}</li>{/each}</ul>
+      </section>
+    {/if}
   </header>
   <div class="doc-layout">
-    <nav class="doc-toc" aria-label="目錄">
+    <nav class="doc-toc" id="toc" aria-label="目錄">
       <!-- Closed in the markup so phones start collapsed; desktop CSS keeps the list visible regardless. -->
       <details>
-        <summary>目錄</summary>
+        <summary>目錄<span class="toc-hint">：展開 {sections.length} 個章節</span></summary>
         <ol>
           {#each sections as section (section.id)}
             <li><a href={`#${section.id}`} aria-current={currentId === section.id ? 'true' : undefined}>{section.title}</a></li>
@@ -82,6 +90,10 @@
 <style>
   .doc { display: grid; gap: var(--space-5); min-inline-size: 0; color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
   .doc-head { display: grid; gap: var(--space-1); }
+  .gist { max-inline-size: 46em; margin-block-start: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .gist h2 { margin: 0 0 var(--space-1); font-size: var(--t-base); font-weight: 650; color: var(--ink-2); }
+  .gist ul { margin: 0; padding-inline-start: 1.2em; color: var(--ink); font-size: var(--t-base); line-height: 1.7; }
+  .toc-hint { display: none; font-weight: 500; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .meta { margin: 0; color: var(--muted); font-size: var(--t-base); }
   .meta .sep { margin-inline: 0.4em; color: var(--axis); }
@@ -101,7 +113,8 @@
   .doc-toc .sibling { margin-block-start: var(--space-1); padding-block-start: var(--space-1); border-block-start: 1px solid var(--line); }
   .doc-toc .sibling a { color: var(--brand-ink); font-weight: 600; }
 
-  /* Long-form text: 15 px on 1.8, 52 em measure, h2 20 px with 28 px above. */
+  /* Long-form text: 15 px on 1.8; running text keeps a 46 em measure, tables may use the full column. */
+  .prose :global(:is(p, ul, ol, h2, h3)) { max-inline-size: 46em; }
   .prose { min-inline-size: 0; max-inline-size: 58em; font-size: var(--t-md); line-height: var(--leading-prose); overflow-wrap: anywhere; hanging-punctuation: none; }
   .prose :global(h2) { margin: var(--space-8) 0 var(--space-2); font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); scroll-margin-block-start: var(--space-4); }
   .prose :global(section:first-of-type h2) { margin-block-start: 0; }
@@ -115,7 +128,13 @@
   .prose :global(tr:last-child td) { border-block-end: 0; }
   .prose :global(code) { font-family: var(--font-mono); font-size: 0.9em; }
   .prose :global(.callout) { margin: 0 0 var(--space-3); padding: var(--space-3) var(--space-4); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); }
-  .prose :global(.callout .note) { display: block; margin-block-start: var(--space-1); color: var(--muted); font-size: var(--t-sm); line-height: 1.6; }
+  .prose :global(.callout .note) { display: block; margin-block-start: var(--space-2); color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
+  .prose :global(.contact-routes) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-3); max-inline-size: 46em; margin: 0 0 var(--space-3); }
+  .prose :global(.contact-routes > div) { display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .prose :global(.contact-routes h3) { margin: 0; font-size: var(--t-md); }
+  .prose :global(.contact-routes p) { margin: 0; color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
+  .prose :global(.contact-routes a.route) { display: inline-flex; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
+  .prose :global(.to-toc) { display: none; }
   .prose :global(.status) { display: inline-block; margin-inline-end: var(--space-1); padding: 0 7px; border-radius: var(--radius-pill); background: var(--warn-wash); color: var(--warn); font-size: var(--t-sm); font-weight: 600; line-height: 1.6; }
   .next { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-6) 0 0; padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); font-weight: 600; }
   .next a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
@@ -144,5 +163,10 @@
     .doc-toc details[open] summary::after { content: '▴'; }
     .doc-toc summary:focus-visible { outline: var(--focus-ring); outline-offset: calc(-1 * var(--focus-offset)); border-radius: var(--radius-panel); }
     .doc-toc li a { min-block-size: var(--target-min); }
+    .toc-hint { display: inline; }
+    .doc-toc summary { justify-content: flex-start; }
+    .doc-toc summary::after { margin-inline-start: auto; }
+    /* Phones: every section ends with a way back to the contents. */
+    .prose :global(.to-toc) { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; text-decoration: none; }
   }
 </style>

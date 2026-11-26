@@ -66,10 +66,11 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '線性代數' })).toBeVisible();
   await expect(page.getByText('Linear Algebra (Demo)')).toBeVisible();
   await expect(page.getByText('週二 第 3、4 節 · 示範館 101')).toBeVisible();
-  // Key facts sit in the tiles above the fold; school fields are a definition list further down.
+  // Credits and 必選修 sit in the header meta line; seat counts in the tiles above the fold; school
+  // fields are a definition list further down.
+  await expect(page.getByText('3 學分', { exact: true })).toBeVisible();
+  await expect(page.getByText('必修', { exact: true }).first()).toBeVisible();
   const facts = page.getByRole('group', { name: '課程重點' });
-  await expect(facts).toContainText('3學分');
-  await expect(facts).toContainText('必修');
   await expect(facts.getByText('/ 60 人')).toBeVisible();
   await expect(page.locator('#extra').locator('xpath=ancestor::details')).toContainText('授課方式講授');
   await expect(page.getByRole('link', { name: '課綱' })).toBeVisible();

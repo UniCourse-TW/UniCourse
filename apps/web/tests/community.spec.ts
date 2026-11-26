@@ -4,7 +4,9 @@ const API = 'http://127.0.0.1:3001';
 
 /** The rating count shown in the course's 課程評價 summary. */
 async function ratingCount(page: Page) {
-  const text = await page.locator('#ratings').getByText(/\d+ 則評價/).textContent();
+  const ratings = page.locator('#ratings');
+  if (await ratings.getByText('尚無評價', { exact: true }).count()) return 0;
+  const text = await ratings.getByText(/\d+ 則評價/).textContent();
   return Number(text?.match(/(\d+) 則評價/)?.[1]);
 }
 

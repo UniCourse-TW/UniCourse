@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ISSUES_URL } from '$lib/institutions';
+  import { PRIVATE_REPORT_URL, PUBLIC_REPORT_URL } from '$lib/legal-contact';
   import LegalDoc from '$lib/legal-doc.svelte';
 
   const UPDATED = '2026-11-27';
@@ -11,6 +11,12 @@
     { id: 'cookies', title: 'Cookie 與記錄' },
     { id: 'contact', title: '移除與聯絡' }
   ];
+  const summary = [
+    '查課不用帳號，本站不要求學號、姓名或電子郵件。',
+    '註冊只存帳號名稱與雜湊後的密碼；顯示名稱、學校與自我介紹都是選填。',
+    '評分、文章與回覆會公開，也可能被搜尋引擎索引；投票只顯示合計。',
+    '沒有廣告與第三方追蹤；登入 Cookie 只用來維持登入。'
+  ];
 </script>
 
 <svelte:head>
@@ -18,11 +24,12 @@
   <meta name="description" content="UniCourse 的隱私權政策：查課不需帳號、帳號儲存的資料、哪些內容會公開、外部評論索引儲存的欄位、Cookie 用途與移除請求方式。" />
 </svelte:head>
 
-<LegalDoc title="隱私權政策" updated={UPDATED} {sections} sibling={{ href: '/terms', label: '使用條款' }}>
+<LegalDoc title="隱私權政策" updated={UPDATED} {sections} {summary} sibling={{ href: '/terms', label: '使用條款' }}>
   <section aria-labelledby="browse">
     <h2 id="browse">查課與登入</h2>
     <p>查詢各校公開課程不需要帳號，本站不會要求你提供學號、姓名或電子郵件。課程資料可能未即時更新，請以校方公開系統為準。</p>
     <p>只有評分、發文、回覆與投票需要登入。登入後瀏覽器會儲存一個用於維持登入狀態的 Cookie；登出即結束目前的登入。</p>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="account">
@@ -37,12 +44,14 @@
         <tr role="row"><td role="cell" data-label="資料">評分、心得、文章、回覆、投票</td><td role="cell" data-label="用途">社群功能</td><td role="cell" data-label="是否公開">內容公開；投票只顯示合計</td></tr>
       </tbody>
     </table>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="public">
     <h2 id="public">公開內容</h2>
     <p>帳號名稱、你填寫的公開個人資料，以及送出的課程評分、心得、文章與回覆都會公開顯示，也可能被搜尋引擎索引。請勿在公開內容中填寫學號、聯絡方式等不想公開的資料。</p>
     <p>你可以自行修改或刪除自己的評分與文章；刪除後不再顯示於站內，但已被搜尋引擎或他人保存的副本不在本站控制範圍。</p>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="reviews">
@@ -59,6 +68,7 @@
       </tbody>
     </table>
     <p>只收錄站方 robots 檔以 <code>Content-Signal</code> 明確允許搜尋的網站；其他網站只提供連結。索引內容不用於訓練模型，不提供給第三方；原文被刪除時會在下次更新時移除。收錄原則詳見<a href="/terms#reviews">使用條款</a>。</p>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="cookies">
@@ -69,15 +79,25 @@
       <li>伺服器記錄：為了排除故障與防止濫用，會短期保留請求時間、路徑與來源 IP，不用於廣告，也不與第三方分享。</li>
       <li>本站沒有第三方追蹤或廣告程式碼。</li>
     </ul>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="contact">
     <h2 id="contact">移除與聯絡</h2>
-    <p>想刪除帳號、移除外部索引中的某一筆，或對資料處理有疑問，請附上相關頁面的連結，用下面任一方式聯絡：</p>
-    <p class="callout">
-      <a href={ISSUES_URL} rel="noopener external">在 GitHub 建立請求（UniCourse-TW/UniCourse issues） <span aria-hidden="true">↗</span></a>
-      <span class="note">issue 是公開頁面，請不要張貼密碼、學號或其他不想公開的資料。不方便公開時，可改用 GitHub 的私密回報（Security advisory）或<a href="https://github.com/UniCourse-TW" rel="noopener external">UniCourse-TW 組織頁</a>上列出的維護者信箱。</span>
-      <span class="note">請求通常在七天內處理；處理結果會回覆在同一則 issue 或原信件。</span>
-    </p>
+    <p>想刪除帳號、移除外部索引中的某一筆，或對資料處理有疑問，用下面兩種方式之一聯絡：</p>
+    <div class="contact-routes">
+      <div>
+        <h3>公開回報</h3>
+        <p>一般的資料處理問題或移除外部索引，結果大家都看得到。請不要附上學號、聯絡方式等個人資料。</p>
+        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 建立 issue <span aria-hidden="true">↗</span></a>
+      </div>
+      <div>
+        <h3>私密聯絡</h3>
+        <p>涉及個人資料、帳號問題或不想公開的請求。用 GitHub 的私密回報表單送出，只有維護者看得到。</p>
+        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密回報給維護者 <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+    <p>請附上相關頁面的連結。請求通常在七天內處理，結果會回覆在同一則 issue 或私密回報中。</p>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 </LegalDoc>

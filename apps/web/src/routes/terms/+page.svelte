@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ISSUES_URL } from '$lib/institutions';
+  import { PRIVATE_REPORT_URL, PUBLIC_REPORT_URL } from '$lib/legal-contact';
   import LegalDoc from '$lib/legal-doc.svelte';
 
   const UPDATED = '2026-11-27';
@@ -11,6 +11,12 @@
     { id: 'removal', title: '聯絡與移除' },
     { id: 'changes', title: '條款變更' }
   ];
+  const summary = [
+    '課程資料來自各校公開系統，可能比校方晚更新；選課與上課以校方為準。',
+    '查課不用登入；評分、發文與回覆需要帳號，內容會公開顯示並可能被搜尋引擎索引。',
+    '外站評論只提供連結；索引功能上線後也只存標題與 120 字以內的摘要，不轉載全文。',
+    '要更正或移除資料，可以公開回報，也可以私密聯絡維護者。'
+  ];
 </script>
 
 <svelte:head>
@@ -18,11 +24,12 @@
   <meta name="description" content="UniCourse 的使用條款：課程資料的來源與限制、帳號與社群規範、外部評論索引的收錄原則與移除方式。" />
 </svelte:head>
 
-<LegalDoc title="使用條款" updated={UPDATED} {sections} sibling={{ href: '/privacy', label: '隱私權政策' }}>
+<LegalDoc title="使用條款" updated={UPDATED} {sections} {summary} sibling={{ href: '/privacy', label: '隱私權政策' }}>
   <section aria-labelledby="data">
     <h2 id="data">課程資料</h2>
     <p>UniCourse 彙整各校公開系統的課程資料，方便跨校查詢與比較歷年修課人數。資料可能晚於校方更新，實際選課、上課時間、名額與成績規定請以校方系統為準。</p>
     <p>標示「示範」的課程不是實際開課紀錄；各校的收錄進度與未收錄原因列在<a href="/schools">各校收錄狀態</a>。</p>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="sources">
@@ -37,6 +44,7 @@
       </tbody>
     </table>
     <p>校方系統要求登入、使用驗證碼或以 robots 規則拒絕抓取時，本站不會收錄該校資料，並在各校收錄狀態頁標示「受阻」。本站的程式碼與資料檔以開源方式公開於 GitHub。</p>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="account">
@@ -48,6 +56,7 @@
       <li>違反上述規範的內容可能被移除；情節嚴重時會停用帳號。</li>
     </ul>
     <p>你送出的公開內容會以帳號名稱顯示，並可能被搜尋引擎索引；細節見<a href="/privacy#public">隱私權政策的公開內容</a>。</p>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="reviews">
@@ -61,21 +70,32 @@
       <li>原文被刪除或站方規則改變時，索引會在下次更新時一併移除。</li>
     </ul>
     <p>各站的處理方式列在<a href="/landscape#third-party">課程網站總覽的第三方查課網站</a>。</p>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="removal">
     <h2 id="removal">聯絡與移除</h2>
-    <p>若你是文章作者、被提及的教師或當事人，想移除外部索引中的某一筆，或認為課程資料、評分與文章有誤，請附上該頁面的連結，用下面任一方式告訴我們：</p>
-    <p class="callout">
-      <a href={ISSUES_URL} rel="noopener external">在 GitHub 建立移除或更正請求（UniCourse-TW/UniCourse issues） <span aria-hidden="true">↗</span></a>
-      <span class="note">issue 是公開頁面，請不要在裡面張貼學號、聯絡方式等個人資料。不方便公開時，可改用 GitHub 的私密回報（Security advisory）或<a href="https://github.com/UniCourse-TW" rel="noopener external">UniCourse-TW 組織頁</a>上列出的維護者信箱，私下聯絡。</span>
-      <span class="note">請求通常在七天內處理；處理結果會回覆在同一則 issue 或原信件。</span>
-    </p>
+    <p>若你是文章作者、被提及的教師或當事人，想移除外部索引中的某一筆，或認為課程資料、評分與文章有誤，用下面兩種方式之一告訴我們：</p>
+    <div class="contact-routes">
+      <div>
+        <h3>公開回報</h3>
+        <p>更正課程資料、回報錯誤或移除外部索引，結果大家都看得到。請不要附上學號、聯絡方式等個人資料。</p>
+        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 建立 issue <span aria-hidden="true">↗</span></a>
+      </div>
+      <div>
+        <h3>私密聯絡</h3>
+        <p>涉及個人資料、帳號問題或不想公開的請求。用 GitHub 的私密回報表單送出，只有維護者看得到。</p>
+        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密回報給維護者 <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+    <p>請附上相關頁面的連結。請求通常在七天內處理，結果會回覆在同一則 issue 或私密回報中。</p>
     <p>移除索引不影響原網站上的文章；要刪除原文請聯絡該網站。</p>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="changes">
     <h2 id="changes">條款變更</h2>
     <p>條款有實質更動時會更新頁首的日期；重大變更會在首頁公告。繼續使用本站即表示你同意更新後的條款。</p>
+    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 </LegalDoc>

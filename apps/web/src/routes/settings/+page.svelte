@@ -4,7 +4,7 @@
   import '$lib/community-ui.css';
   import { initial, joinedMonth, slashDate } from '$lib/community-format';
   import { profileHref } from '$lib/community-paths';
-  import { ISSUES_URL } from '$lib/institutions';
+  import { PRIVATE_REPORT_URL } from '$lib/legal-contact';
   import type { SubmitFunction } from '@sveltejs/kit';
   import type { PageProps } from './$types';
 
@@ -57,20 +57,37 @@
   <title>設定｜UniCourse</title>
 </svelte:head>
 
+{#snippet previewCard()}
+  <div class="preview-card">
+    <span class="avatar" aria-hidden="true">{initial(previewName)}</span>
+    <div class="who">
+      <p class="name">{previewName}</p>
+      <p class="handle">
+        <span class="mono">@{data.profile.username}</span>
+        {#if current.school && schoolNames[current.school]}<span class="sep">·</span>{schoolNames[current.school]}{/if}
+        <span class="sep">·</span>{joinedMonth(data.profile.createdAt)}加入
+      </p>
+      {#if current.bio.trim()}<p class="bio">{current.bio.trim()}</p>{:else}<p class="bio empty">（沒有自我介紹）</p>{/if}
+    </div>
+  </div>
+  <p class="preview-note">{hydrated ? (dirty ? '預覽含尚未儲存的變更；按「儲存」後才會公開。' : '這是目前公開頁上的樣子；修改欄位時預覽會即時更新。') : '這是目前公開頁上的樣子。'}</p>
+{/snippet}
+
 <div class="cm settings">
   <header class="cm-head">
     <h1>設定</h1>
     <p class="cm-dek">
       <span class="mono">@{data.profile.username}</span><span class="sep">·</span><time datetime={data.profile.createdAt}>{slashDate(data.profile.createdAt)}</time> 加入<span class="sep">·</span><a href={profileHref(data.profile.username)}>查看公開個人頁 →</a>
     </p>
-    <nav class="cm-actions sections" aria-label="設定項目">
-      <a class="cm-chip" href="#public">公開資料</a>
-      <a class="cm-chip" href="#account">帳號與登出</a>
-    </nav>
   </header>
 
   <div class="layout">
     <div class="panels">
+      <!-- In-page navigation, pinned above the panels it jumps between. -->
+      <nav class="sections" aria-label="設定項目">
+        <a href="#public">公開資料</a>
+        <a href="#account">帳號、密碼與登出</a>
+      </nav>
       <section id="public" class="cm-panel" aria-labelledby="public-title">
         <h2 id="public-title">公開資料</h2>
         <p class="lead">這些資料會顯示在你的<a href={profileHref(data.profile.username)}>個人頁</a>，以及你的評價、文章與回覆旁。</p>
@@ -105,13 +122,19 @@
           {#if form && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
           <!-- Without JavaScript the button is always the solid primary; with it, it only lights up once something changed. -->
           <div class="save-row">
-            <button class="cm-btn" class:secondary={hydrated && !dirty && !saving} aria-busy={saving} disabled={saving}>{saving ? '儲存中…' : '儲存'}</button>
+            <button class="cm-btn" class:secondary={hydrated && !dirty && !saving} aria-busy={saving}
+              disabled={saving || (hydrated && !dirty)}>{saving ? '儲存中…' : '儲存'}</button>
             <p class="status" role="status">
               {#if savedVisible}<span class="ok"><span aria-hidden="true">✓</span> 已儲存</span>
               {:else if hydrated && dirty}<span class="pending">有尚未儲存的變更</span>
-              {:else if hydrated}<span class="idle">尚未變更</span>{/if}
+              {:else if hydrated}<span class="idle">尚未變更，修改後才能儲存</span>{/if}
             </p>
           </div>
+          <!-- Phones have no side preview: the same card folds open here, next to 儲存. -->
+          <details class="preview-fold">
+            <summary>預覽公開個人頁</summary>
+            {@render previewCard()}
+          </details>
         </form>
       </section>
 
@@ -121,7 +144,11 @@
         <dl class="facts">
           <div><dt>帳號</dt><dd><span class="mono">@{data.profile.username}</span> <span class="cm-hint">建立後無法更改</span></dd></div>
           <div><dt>加入於</dt><dd class="num">{slashDate(data.profile.createdAt)}</dd></div>
-          <div><dt>密碼</dt><dd>目前無法在這裡變更密碼。<span class="cm-hint">需要協助請到 <a href={ISSUES_URL} rel="noopener external">GitHub issues</a>（不要附上密碼）。</span></dd></div>
+          <div>
+            <dt>密碼</dt>
+            <dd>目前還不能在這裡自行變更密碼。
+              <span class="cm-hint">需要重設時，用<a href={PRIVATE_REPORT_URL} rel="noopener external">私密回報</a>告訴維護者你的帳號名稱；只有維護者看得到，請不要附上密碼。</span></dd>
+          </div>
           {#if data.profile.isAdmin}<div><dt>權限</dt><dd>管理員</dd></div>{/if}
         </dl>
         <form method="POST" action="/auth?/logout" class="logout">
@@ -134,26 +161,20 @@
     <!-- Live preview of the public identity block, so the effect of each field is visible before saving. -->
     <aside class="preview" aria-labelledby="preview-title">
       <h2 id="preview-title" class="eyebrow">個人頁預覽</h2>
-      <div class="preview-card">
-        <span class="avatar" aria-hidden="true">{initial(previewName)}</span>
-        <div class="who">
-          <p class="name">{previewName}</p>
-          <p class="handle">
-            <span class="mono">@{data.profile.username}</span>
-            {#if current.school && schoolNames[current.school]}<span class="sep">·</span>{schoolNames[current.school]}{/if}
-            <span class="sep">·</span>{joinedMonth(data.profile.createdAt)}加入
-          </p>
-          {#if current.bio.trim()}<p class="bio">{current.bio.trim()}</p>{:else}<p class="bio empty">（沒有自我介紹）</p>{/if}
-        </div>
-      </div>
-      <p class="preview-note">{hydrated ? '預覽會隨輸入即時更新；按「儲存」才會生效。' : '這是目前公開頁上的樣子。'}</p>
+      {@render previewCard()}
     </aside>
   </div>
 </div>
 
 <style>
   .settings .sep { margin-inline: 0.4em; color: var(--axis); }
-  .sections .cm-chip { min-block-size: 2.25rem; }
+  .sections { position: sticky; inset-block-start: 0; z-index: 2; display: flex; gap: var(--space-1); padding-block: var(--space-1); border-block-end: 1px solid var(--line); background: var(--bg); }
+  .sections a { display: inline-flex; align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border-radius: var(--radius-control); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-decoration: none; }
+  .sections a:hover { color: var(--brand-ink); background: var(--hover-row); }
+  .sections a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .preview-fold { display: none; }
+  .preview-fold summary { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; cursor: pointer; }
+  .preview-fold[open] { display: grid; gap: var(--space-2); }
   .layout { display: grid; grid-template-columns: minmax(0, 42rem) minmax(16rem, 20rem); gap: var(--space-6); align-items: start; }
   .panels { display: grid; gap: var(--space-4); min-inline-size: 0; }
   .cm-panel { scroll-margin-block-start: 5rem; }
@@ -187,6 +208,8 @@
   @media (max-width: 56rem) {
     .layout { grid-template-columns: minmax(0, 1fr); }
     .preview { display: none; }
+    .preview-fold { display: block; }
+    .preview-fold[open] { display: grid; }
   }
   @media (max-width: 40rem) {
     .save-row .cm-btn { flex: 1 1 100%; }

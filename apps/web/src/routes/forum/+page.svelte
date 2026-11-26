@@ -41,6 +41,9 @@
   let composeOrLogin = $derived(data.user ? composeHref : loginHref(composeHref));
 
   const fmt = new Intl.NumberFormat('zh-TW');
+  /** At most this many posts in the whole forum: the list gets an invitation underneath. */
+  const SPARSE_POSTS = 5;
+  const articleHref = '/forum?type=article&compose=1';
   const count = (value: number | null) => (value === null ? '' : fmt.format(value));
   const typeChips = [
     { type: '', label: '全部', key: 'all' },
@@ -88,8 +91,9 @@
       <input name="q" type="search" maxlength="100" defaultValue={filters.q} placeholder="搜尋標題或內文" aria-describedby="search-scope" />
     </label>
     <details class="scope" open={scopeCount > 0 || undefined}>
-      <summary>課程範圍{#if scopeCount}<span class="badge-count">{scopeCount}</span>{/if}</summary>
-      <div class="scope-fields">
+      <summary>課程範圍{#if scopeCount}<span class="scope-now">：{schoolNames[filters.school] ?? filters.school}{#if filters.courseCode}&nbsp;<span class="mono">{filters.courseCode}</span>{/if}</span>{/if}</summary>
+      <div class="scope-fields" role="group" aria-labelledby="scope-label">
+        <span class="scope-label" id="scope-label">課程範圍</span>
         <FilterSelect name="school" label="學校" options={schoolOptions} value={filters.school} allLabel="全部學校" />
         <label class="code-field">
           <span>課號</span>
@@ -102,7 +106,7 @@
     {#if filters.tag}<input type="hidden" name="tag" value={filters.tag} />{/if}
     <button class="cm-btn">套用</button>
     {#if filtered || filters.courseCode}<a class="clear" href="/forum">清除</a>{/if}
-    <p class="scope-hint" id="search-scope"><span id="code-hint">關鍵字比對標題與內文；要找特定班次，請在「課程範圍」選學校並填課號。</span></p>
+    <p class="scope-hint" id="search-scope"><span id="code-hint">關鍵字比對標題與內文；要找某門課的討論，在「課程範圍」選學校並填課號。列表依發表時間由新到舊。</span></p>
   </form>
 
   <div class="chip-bar">
@@ -172,12 +176,25 @@
       {/if}
     {:else}
       <CommunityPostList posts={data.posts.posts} {schoolNames} label={filtered ? '符合的文章' : '最新文章'} />
-      <footer class="pager">
-        <p class="num">
-          {#if pages > 1}第 {fmt.format(first)}–{fmt.format(last)} 篇<span class="sep">·</span>{/if}共 {fmt.format(total)} 篇
-        </p>
-        <Pagination url={page.url} page={filters.page} totalPages={pages} label="文章分頁" />
-      </footer>
+      {#if pages > 1}
+        <footer class="pager">
+          <p class="num">第 {fmt.format(first)}–{fmt.format(last)} 篇<span class="sep">·</span>共 {fmt.format(total)} 篇</p>
+          <Pagination url={page.url} page={filters.page} totalPages={pages} label="文章分頁" />
+        </footer>
+      {/if}
+      {#if !filtered && !filters.courseCode && total <= SPARSE_POSTS}
+        <!-- A young forum: say so and point at the most useful next post. -->
+        <aside class="sparse" aria-labelledby="sparse-title">
+          <h3 id="sparse-title">論壇才剛開始，目前只有 {fmt.format(total)} 篇。</h3>
+          <p>
+            {#if data.counts.article === 0}還沒有修課心得。{/if}最有用的是針對一門課的心得或提問：到課程頁按「發表關於這門課的文章」，課號會自動帶上；也可以直接在這裡發表。
+          </p>
+          <div class="state-actions start">
+            <a class="cm-btn" href={data.user ? articleHref : loginHref(articleHref)}>寫一篇修課心得</a>
+            <a class="cm-btn secondary" href="/">先查一門修過的課</a>
+          </div>
+        </aside>
+      {/if}
     {/if}
   </section>
 </div>
@@ -269,6 +286,12 @@
   }
   .pager p { min-block-size: var(--target-min); display: flex; align-items: center; }
   .state-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }
+  .state-actions.start { justify-content: flex-start; }
+  .sparse { display: grid; gap: var(--space-2); margin-block-start: var(--space-4); padding: var(--space-4) var(--space-5); border: 1px dashed var(--control-line); border-radius: var(--radius-panel); background: var(--panel); }
+  .sparse h3 { font-size: var(--t-md) !important; }
+  .sparse p { color: var(--ink-2); font-size: var(--t-base); max-inline-size: 46em; }
+  .scope-label { color: var(--muted); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
+  .scope-now { font-weight: 500; color: var(--ink); }
 
   @media (max-width: 40rem) {
     .search { flex: 1 1 10rem; }
@@ -278,7 +301,7 @@
     .scope summary {
       display: inline-flex;
       align-items: center;
-      gap: var(--space-2);
+      max-inline-size: 100%;
       min-block-size: var(--target-min);
       padding: 0 var(--space-3);
       border: 1px solid var(--control-line);
@@ -289,13 +312,12 @@
       font-weight: 600;
       cursor: pointer;
       list-style: none;
-      white-space: nowrap;
     }
     .scope summary::-webkit-details-marker { display: none; }
-    .scope summary::after { content: '▾'; color: var(--muted); }
+    .scope summary::after { content: '▾'; margin-inline-start: var(--space-2); color: var(--muted); }
     .scope[open] summary::after { content: '▴'; }
-    .badge-count { display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 5px; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); }
     .scope-fields { flex-basis: 100%; padding-block-start: var(--space-2); }
+    .scope-label { display: none; }
     .scope-fields :global(.field) { flex: 1 1 100%; }
     .scope-fields :global(.field select) { flex: 1; max-inline-size: none; }
     .code-field { flex: 1 1 100%; }
@@ -314,8 +336,5 @@
       inline-size: calc(100% + 2 * var(--space-4));
       mask-image: linear-gradient(to right, #000 calc(100% - 2rem), transparent);
     }
-  }
-  @media (min-width: 40.01rem) {
-    .badge-count { display: none; }
   }
 </style>
