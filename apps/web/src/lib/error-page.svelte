@@ -42,7 +42,7 @@
 
 <section class="error-page" class:outage={!notFound} aria-labelledby="error-title">
   <img src="/unicourse.png" alt="" width="40" height="40" />
-  <p class="code"><span class="ui-tabular">{status}</span>{#if !notFound && message} · {message}{/if}</p>
+  <p class="code"><span class="ui-tabular">{status}</span>{#if !notFound && message && message !== detail} · {message}{/if}</p>
   <h1 id="error-title">{heading}</h1>
   <p class="detail">{detail}</p>
   {#if search}
