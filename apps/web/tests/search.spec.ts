@@ -5,9 +5,11 @@ test('searches Chinese titles, filters by school and opens the mobile details pa
   await expect(page.getByLabel('學期')).toHaveValue('115-1');
   await page.getByRole('searchbox', { name: '關鍵字' }).fill('資料');
   await page.getByRole('button', { name: '搜尋' }).click();
+  // The overview page also lists demo courses named 資料結構 in the ranking, so wait for the search URL.
+  await page.waitForURL(/[?&]q=/);
   await expect(page.getByRole('link', { name: '資料結構' })).toHaveCount(2);
 
-  await page.getByLabel('學校').selectOption('ntnu');
+  await page.locator('select[name="school"]').selectOption('ntnu');
   await page.getByRole('button', { name: '搜尋' }).click();
   await expect(page.getByRole('link', { name: '資料結構' })).toHaveCount(1);
   await expect(page.getByText('國立臺灣師範大學 · 115-1 · DEMO101')).toBeVisible();
