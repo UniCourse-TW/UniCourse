@@ -44,3 +44,7 @@ cargo run --locked --package unicourse-ingest -- snapshots/
 ```
 
 標誌沿用 `UniCourse-TW/Public-Assets` 的 `UniCourse_icon.128x128.png`。
+
+## 授權
+
+MIT License，見 [LICENSE](LICENSE)。
