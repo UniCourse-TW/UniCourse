@@ -7,11 +7,13 @@ const UNAVAILABLE = '暫時無法載入學校資料，請稍後再試。';
 export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const client = catalog(fetch);
   const path = { school: params.school };
+  const includeNonAcademic = url.searchParams.get('include_non_academic') === 'true';
+  const rankingQuery = { ...path, limit: 10, academic: !includeNonAcademic };
   const [result, institutionResult, trendResult, rankingResult] = await Promise.all([
     client.GET('/api/schools/{school}', { params: { path } }).catch(() => error(503, UNAVAILABLE)),
     client.GET('/api/institutions').catch(() => null),
     client.GET('/api/schools/{school}/trends', { params: { path } }).catch(() => null),
-    client.GET('/api/rankings/courses', { params: { query: { ...path, limit: 10 } } }).catch(() => null)
+    client.GET('/api/rankings/courses', { params: { query: rankingQuery } }).catch(() => null)
   ]);
 
   if (result.response.status === 404) error(404, '找不到這所學校。');
@@ -30,8 +32,9 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
     institution: institutionResult?.data?.institutions.find(({ slug }) => slug === school.slug) ?? null,
     trends: trendResult?.data ?? null,
     rankings: rankingResult?.data ?? null,
+    includeNonAcademic,
     units: {
-      query, page, totalPages, total: departments.length, matched: matches.length,
+      query, page, totalPages, total: departments.length, matched: matches.length, start: (page - 1) * pageSize + 1,
       max: departments.reduce((highest, unit) => Math.max(highest, unit.offerings), 0),
       rows: matches.slice((page - 1) * pageSize, page * pageSize)
     }

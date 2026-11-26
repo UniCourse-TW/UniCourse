@@ -27,12 +27,16 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(rankSchool).toHaveValue('nthu');
   await expect(ranking.getByRole('listitem')).toHaveCount(4);
   await expect(ranking.getByRole('link', { name: '資料結構' })).toHaveCount(0);
+  await ranking.getByRole('checkbox', { name: '含班會、體育等非學術課程' }).check();
+  await expect(page).toHaveURL(/[?&]include_non_academic=true([&#]|$)/);
 
   const snapshot = page.getByRole('region', { name: '目前收錄' });
   await expect(snapshot.getByText('開課班次')).toBeVisible();
   await expect(snapshot.getByText('114-2 至 115-1')).toBeVisible();
   const coverage = page.getByRole('region', { name: '各校收錄狀態' });
-  await expect(coverage.getByRole('img', { name: /國立清華大學收錄範圍.*114 學年：1 學期.*115 學年：1 學期/ })).toBeVisible();
+  const nthuCoverage = coverage.getByRole('row').filter({ hasText: '國立清華大學' });
+  await expect(nthuCoverage).toContainText('114-2 至 115-1');
+  await expect(nthuCoverage).toContainText('2 個學期');
   await coverage.getByRole('link', { name: /全部 \d+ 所/ }).click();
   await expect(page).toHaveURL('/schools');
 
@@ -44,7 +48,7 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(page.getByRole('heading', { name: '國立清華大學' })).toBeVisible();
   await expect(page.getByRole('list', { name: '每學期開課班次' }).getByRole('listitem')).toHaveCount(2);
   await expect(page.getByRole('table', { name: '校內累計修課人次排行' })).toBeVisible();
-  await expect(page.getByText(/匯入期間：114-2 至 115-1/)).toBeVisible();
+  await expect(page.getByText(/收錄期間：114-2 至 115-1/)).toBeVisible();
 
   await page.getByRole('link', { name: '示範數學系' }).click();
   await expect(page).toHaveURL(`/schools/nthu/departments/${encodeURIComponent('示範數學系')}`);
@@ -105,10 +109,12 @@ test('derives directory coverage from crawler status and imported offerings', as
   );
 
   const chips = page.getByRole('list', { name: '收錄狀態統計' }).getByRole('link');
-  await expect(chips).toHaveCount(6);
+  await expect(chips.filter({ hasText: /(^|\s)0 所/ })).toHaveCount(0);
   await expect(chips.filter({ hasText: '已收錄' })).toContainText(`已收錄 ${liveCount} 所`);
   await expect(chips.filter({ hasText: '待匯入' })).toContainText(`待匯入 ${pendingCount} 所`);
-  await expect(chips.filter({ hasText: '受阻' })).toContainText(`受阻 ${blockedCount} 所`);
+  const blockedChip = chips.filter({ hasText: '受阻' });
+  if (blockedCount) await expect(blockedChip).toContainText(`受阻 ${blockedCount} 所`);
+  else await expect(blockedChip).toHaveCount(0);
 
   const table = page.getByRole('table', { name: /大專校院收錄狀態/ });
   const rows = table.locator('tbody tr:not(.group)');

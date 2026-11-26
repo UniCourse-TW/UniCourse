@@ -59,10 +59,20 @@ export function hasSchoolPage(institution: Institution): boolean {
   );
 }
 
-/** Schools with fully connected crawlers and active imported offerings. */
 export function coverage(institutions: Institution[]) {
-  const live = institutions.filter((institution) => directoryStatus(institution) === 'live');
-  return { schools: live.length, terms: new Set(live.flatMap((institution) => institution.terms)).size };
+  const schools = institutions.filter(hasImportedOfferings);
+  const terms = [...new Set(schools.flatMap((school) => school.terms))].sort().reverse();
+  return {
+    schools: schools.length,
+    terms,
+    offerings: schools.reduce((total, school) => total + school.offerings, 0),
+    courses: schools.reduce((total, school) => total + school.courses, 0)
+  };
+}
+
+export function coveragePeriod(terms: readonly string[]) {
+  const ordered = [...terms].sort();
+  return ordered.length > 1 ? `${ordered[0]} 至 ${ordered.at(-1)}` : ordered[0] ?? null;
 }
 
 function pick<T extends string>(value: string | null, allowed: readonly T[]): T | '' {
@@ -111,10 +121,10 @@ export function sortInstitutions(institutions: Institution[], sort: SchoolSort, 
 }
 
 export function coverageYears(institutions: Institution[]) {
-  const latest = institutions.reduce((year, institution) => institution.terms.reduce((current, term) => (
-    /^\d{3,4}-[12]$/.test(term) ? Math.max(current, Number(term.split('-')[0])) : current
-  ), year), 115);
-  return Array.from({ length: 10 }, (_, index) => String(latest - 9 + index));
+  const years = coverage(institutions).terms.filter((term) => /^\d{3,4}-[12]$/.test(term)).map((term) => Number(term.split('-')[0]));
+  if (!years.length) return [];
+  const first = Math.min(...years);
+  return Array.from({ length: Math.max(...years) - first + 1 }, (_, index) => String(first + index));
 }
 
 export function yearCoverage(terms: string[], years: string[]) {

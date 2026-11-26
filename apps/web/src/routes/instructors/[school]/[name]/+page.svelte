@@ -24,10 +24,11 @@
   let truncated = $derived(data.listed < summary.offerings);
   let enrollment = $derived(publishedEnrollment(data.trends));
   let rating = $derived(meanRating(data.summaryRatings));
-  let ratingNote = $derived(rating.count ? `${displayValue(rating.count)} 則 · 課程評價` : [...data.summaryRatings.values()].some((value) => value !== null) ? '所查課程尚無評價' : '暫未取得評價');
+  let ratedSample = $derived([...data.summaryRatings.values()].filter((value) => value !== null).length);
+  let ratingNote = $derived(rating.count ? `抽查 ${displayValue(ratedSample)} 門 · ${displayValue(rating.count)} 則評價` : ratedSample ? `抽查 ${displayValue(ratedSample)} 門，目前尚無評價` : '暫未取得評價');
   let span = $derived(summary.terms.length > 1 ? `${summary.terms.at(-1)} 至 ${summary.terms[0]}` : summary.terms[0]);
   let externalQuery = $derived(`${instructor.name} ${instructor.schoolName}`);
-  let termOptions = $derived([...new Set([...summary.terms, ...(data.term ? [data.term] : [])])].map((value) => ({ value, label: value })));
+  let termOptions = $derived([...new Set([...data.listedTerms, ...(data.term ? [data.term] : [])])].map((value) => ({ value, label: value })));
   let courseOptions = $derived(data.courseCode && !data.courses.some(({ value }) => value === data.courseCode)
     ? [...data.courses, { value: data.courseCode, label: data.courseCode }]
     : data.courses);
@@ -47,7 +48,7 @@
     <div class="browse-stack">
       <h1>{instructor.name}</h1>
       <p class="browse-dek"><span>{instructor.schoolName}課程資料</span>{#if span}<span>授課學期 {span}</span>{/if}
-        {#if data.updatedAt}<span>列表更新於 <time datetime={data.updatedAt}>{importedAt(data.updatedAt)}</time></span>{/if}</p>
+        {#if data.updatedAt}<span>列表更新於 <time datetime={data.updatedAt}>{importedAt(data.updatedAt)}</time>（臺北時間）</span>{/if}</p>
       {#if summary.departments.length}
         {#if summary.departments.length <= 3}
           <p class="browse-inline browse-note">開課單位：{#each summary.departments as department (department)}<a href={departmentHref(instructor.school, department)}>{department}</a>{/each}</p>
@@ -64,11 +65,11 @@
   </header>
 
   <div class="browse-compact-stats"><StatRow label="歷年授課統計">
-    <StatTile label="開課班次" value={summary.offerings} unit="班" />
-    <StatTile label="授課課程" value={summary.courses} unit="門" />
+    <StatTile label="歷年開課班次" value={summary.offerings} unit="班" note={truncated ? `列表含最近 ${displayValue(data.listed)} 班` : undefined} />
+    <StatTile label="歷年授課課程" value={summary.courses} unit="門" note={truncated ? `列表含 ${displayValue(data.courses.length)} 門` : undefined} />
     <StatTile label="授課學期" value={summary.terms.length} unit="期" />
     <div class="browse-wide-stat"><StatTile label="累計修課" value={enrollment} unit="人次" note={enrollment !== null ? '只加總已公布人數' : data.trends === null ? '統計暫未取得' : '未公布人數'} /></div>
-    <StatTile label="授課課程平均分" value={rating.mean} unit="分" note={ratingNote} />
+    {#if rating.count}<StatTile label="抽查課程評價" value={rating.mean} unit="分" note={ratingNote} />{/if}
   </StatRow></div>
 
   <section class="browse-stack" aria-labelledby="history">
@@ -78,8 +79,8 @@
   </section>
 
   <section class="browse-stack" aria-labelledby="offerings">
-    <SectionHeader title={`開課列表（${displayValue(summary.offerings)}）`} id="offerings" />
-    {#if truncated}<p class="browse-note">列表與篩選只涵蓋最近 {displayValue(data.listed)} 班次。<a href={`/?${new URLSearchParams({ school: instructor.school, term: 'all', q: instructor.name })}`}>用教師名搜尋更多課程</a></p>{/if}
+    <SectionHeader title={`開課列表（${displayValue(data.listed)} 班）`} id="offerings" />
+    {#if truncated}<p class="browse-note">這裡可篩選最近 {displayValue(data.listed)} 班（共 {displayValue(summary.offerings)} 班）。<a href={`/?${new URLSearchParams({ school: instructor.school, term: 'all', q: instructor.name })}`}>按教師姓名查找較早班次</a></p>{/if}
     <div class="instructor-filters">
       <FilterBar action={`${base}#offerings`} label="開課列表篩選" clearHref={filtered ? `${base}#offerings` : undefined}>
         <FilterSelect name="term" label="學期" value={data.term} options={termOptions} />
@@ -87,8 +88,10 @@
       </FilterBar>
     </div>
     {#if data.rows.length}
+      <p class="browse-note">{filtered ? '符合條件 ' : '列表共 '}{displayValue(data.matched)} 班次 · 顯示 {displayValue(data.firstRow)}–{displayValue(data.firstRow + data.rows.length - 1)} 班</p>
+      <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="授課班次上方分頁" />
       <SchoolsOfferingTable offerings={data.rows} ratings={data.ratings} mode="instructor" caption="授課班次" showTerm />
-      <p class="browse-note">{filtered ? '符合條件 ' : '已列出 '}{displayValue(data.matched)} 班次 · 評價採同校同課號，最多查詢每次列表的前 10 門課。</p>
+      <p class="browse-note">{#if !rating.count}{ratingNote}。{/if}評價採同校同課號，最多查詢每次列表的前 10 門課；— 表示校方未公布。</p>
       <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="授課班次分頁" />
     {:else}
       <EmptyState title="沒有符合條件的開課班次" description={truncated ? '這個條件在已列出的班次中沒有結果。' : '試試其他學期或課程。'}>

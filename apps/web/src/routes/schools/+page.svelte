@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { importedAt, isHttpUrl } from '$lib/format';
-  import { ISSUES_URL, directoryStatus, directoryStatusLabels, hasSchoolPage, kindLabel, ownerships, ownershipLabels, statuses, systemLabels, yearCoverage, type DirectoryStatus, type SchoolSort } from '$lib/institutions';
+  import { ISSUES_URL, coveragePeriod, directoryStatus, directoryStatusLabels, hasImportedOfferings, hasSchoolPage, kindLabel, ownerships, ownershipLabels, statuses, systemLabels, yearCoverage, type DirectoryStatus, type SchoolSort } from '$lib/institutions';
   import { schoolHref } from '$lib/overview-paths';
   import { changeQuery, displayValue } from '$lib/ui/format';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -15,7 +15,8 @@
   let { data }: PageProps = $props();
   let filters = $derived(data.filters);
   let filtered = $derived(Boolean(filters.q || filters.status || filters.ownership || filters.system));
-  let yearsLabel = $derived(`${data.years[0]}–${data.years.at(-1)}`);
+  let period = $derived(coveragePeriod(data.coverage.terms));
+  let yearsLabel = $derived(data.years.length > 1 ? `${data.years[0]}–${data.years.at(-1)}` : data.years[0]);
   const ownershipOptions = ownerships.map((value) => ({ value, label: ownershipLabels[value] }));
   const statusOptions = statuses.map((value) => ({ value, label: directoryStatusLabels[value] }));
   const statusColors: Record<DirectoryStatus, string> = {
@@ -66,7 +67,7 @@
       <h1>各校收錄狀態</h1>
       <p class="browse-dek">
         <span>教育部大專校院開放資料 · {displayValue(data.total)} 所</span>
-        {#if data.updatedAt}<span>課程資料更新於 <time datetime={data.updatedAt}>{importedAt(data.updatedAt)}</time>（台灣時間）</span>{:else}<span>尚無課程匯入紀錄</span>{/if}
+        {#if data.updatedAt}<span>課程資料更新於 <time datetime={data.updatedAt}>{importedAt(data.updatedAt)}</time>（臺北時間）</span>{:else}<span>尚無課程匯入紀錄</span>{/if}
       </p>
     </div>
     <div class="browse-actions">
@@ -94,7 +95,7 @@
   </form>
 
   <section class="browse-stack national-status" aria-labelledby="national-status">
-    <div class="table-meta"><h2 id="national-status">全國收錄進度</h2><p class="browse-note"><strong class="ui-tabular">{displayValue(data.offerings)}</strong> 班次已匯入 · 全國合計</p></div>
+    <div class="table-meta"><h2 id="national-status">全國收錄進度</h2><p class="browse-note"><strong>{displayValue(data.coverage.schools)} 所收錄學校</strong> · {displayValue(data.coverage.offerings)} 班次{#if period} · {period}（{displayValue(data.coverage.terms.length)} 個學期）{/if}</p></div>
     {#if data.total}
       <div class="status-segments" aria-hidden="true">
         {#each data.counts.filter(({ count }) => count > 0) as { status, count } (status)}
@@ -103,7 +104,7 @@
       </div>
     {/if}
     <ul class="status-grid" aria-label="收錄狀態統計">
-      {#each data.counts as { status, count } (status)}
+      {#each data.counts.filter(({ status, count }) => count > 0 || filters.status === status) as { status, count } (status)}
         <li>
           <a href={statusHref(status)} aria-current={filters.status === status ? 'true' : undefined}>
             <StatusPill status={status === 'pending_import' ? 'planned' : status} label={directoryStatusLabels[status]} />
@@ -125,6 +126,7 @@
         <p class="browse-note">{filtered ? '符合條件' : '共'} {displayValue(data.shown)} 所 · 顯示 {data.start + 1}–{data.end} 所</p>
         <div class="browse-note legend"><Heatstrip cells={[{ period: '一', value: 0 }, { period: '二', value: 1 }, { period: '三', value: 2 }]} label="覆蓋圖例" /> <span>空格、淺色、深色各表示 0、1、2 個學期有資料</span></div>
       </div>
+      <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="學校名錄上方分頁" />
       <p class="browse-note swipe-hint" id="directory-hint">往右捲動可查看學年覆蓋、更新時間與說明。</p>
       <!-- svelte-ignore a11y_no_noninteractive_tabindex (The named table region is horizontally scrollable.) -->
       <div class="directory-frame" role="region" aria-label="大專校院收錄狀態（表格）" aria-describedby="directory-hint" tabindex="0">
@@ -146,7 +148,8 @@
               {#each group.institutions as school (school.code)}
                 {@const cells = yearCoverage(school.terms, data.years)}
                 {@const status = directoryStatus(school)}
-                <tr>
+                {@const imported = hasImportedOfferings(school)}
+                <tr class:unimported={!imported}>
                   <th scope="row" class="school-name">
                     {#if hasSchoolPage(school)}<a href={schoolHref(school.slug)}>{school.name}</a>{:else}{school.name}{/if}
                     <span class="browse-code">{school.code}</span>
@@ -155,21 +158,24 @@
                     <StatusPill status={status === 'pending_import' ? 'planned' : status} label={directoryStatusLabels[status]} />
                     {#if status === 'pending_import'}
                       <small>{school.status === 'partial' ? '部分接入' : '爬蟲已接入'}，{school.terms.length ? '目前無可查班次' : '本站尚無匯入'}</small>
+                    {:else if imported}
+                      <small class="mobile-count ui-tabular">{displayValue(school.offerings)} 班次 · 收錄至 {school.terms[0]}</small>
                     {:else}
-                      <small class="mobile-count ui-tabular">{displayValue(school.offerings)} 班次</small>
+                      <small class="mobile-count">{status === 'blocked' ? '資料取得受阻' : '尚無可查班次'}</small>
                     {/if}
                   </td>
                   <td class="coverage">
-                    {#if school.terms.length}
+                    {#if imported}
                       <Heatstrip {cells} label={`${school.name}：${cells.map(({ period, value }) => `${period} 學年 ${value} 學期`).join('、')}`} />
-                    {:else}<span class="browse-note">尚無匯入</span>{/if}
+                      <span>{coveragePeriod(school.terms)}</span>
+                    {:else}<span title="本站尚無可查詢的班次">—</span>{/if}
                   </td>
-                  <td class="numeric">{displayValue(school.terms.length)}</td>
-                  <td class="numeric">{displayValue(school.offerings)}</td>
+                  <td class="numeric" title={imported ? undefined : '本站尚無可查詢的班次'}>{displayValue(imported ? school.terms.length : null)}</td>
+                  <td class="numeric" title={imported ? undefined : '本站尚無可查詢的班次'}>{displayValue(imported ? school.offerings : null)}</td>
                   <td>{kindLabel(school)}</td>
-                  <td>{#if school.latestImportedAt}<time datetime={school.latestImportedAt} title={`${importedAt(school.latestImportedAt)}（台灣時間）`}><span aria-hidden="true">{shortImportedAt(school.latestImportedAt)}</span><span class="full-date">{importedAt(school.latestImportedAt)}（台灣時間）</span></time>{:else}—{/if}</td>
+                  <td>{#if school.latestImportedAt}<time datetime={school.latestImportedAt} title={`${importedAt(school.latestImportedAt)}（臺北時間）`}><span aria-hidden="true">{shortImportedAt(school.latestImportedAt)}</span><span class="full-date">{importedAt(school.latestImportedAt)}（臺北時間）</span></time>{:else}<span title="未有匯入紀錄">—</span>{/if}</td>
                   <td class="note-cell">
-                    {school.note ?? ''}
+                    {#if school.note}<span class="school-note" title={school.note}>{school.note}</span>{/if}
                     {#if school.issue}<a href={`${ISSUES_URL}/${school.issue}`} rel="external">#{school.issue}</a>{/if}
                     {#if !hasSchoolPage(school) && school.website && isHttpUrl(school.website)}<a href={school.website} rel="external" aria-label={`${school.name}官方網站`}>官網 ↗</a>{:else if !school.note && !school.issue}—{/if}
                   </td>
@@ -179,7 +185,7 @@
           {/each}
         </table>
       </div>
-      <p class="browse-note">排序後分頁，同一頁按教育體系分組。班次只計目前可查詢的資料。</p>
+      <p class="browse-note">排序後分頁，同一頁按教育體系分組。班次只計目前可查詢的資料；— 表示該項尚無資料。</p>
       <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="學校名錄分頁" />
     {:else if filtered}
       <EmptyState title="沒有符合條件的學校" description="試試簡稱、學校代碼，或放寬篩選條件。">
@@ -206,7 +212,7 @@
   .table-meta strong { color: var(--ink); }
   .status-segments { display: flex; block-size: .45rem; overflow: hidden; border-radius: var(--radius-pill); }
   .status-segments span { flex-basis: 0; }
-  .status-grid { list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-2); margin: 0; padding: 0; }
+  .status-grid { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: var(--space-2); margin: 0; padding: 0; }
   .status-grid a { display: grid; grid-template-columns: auto auto; justify-content: space-between; justify-items: start; align-items: baseline; gap: .15rem .35rem; height: 100%; padding: .45rem .6rem; border: 1px solid var(--line); background: var(--panel); border-radius: var(--radius-card); color: var(--ink); text-decoration: none; font-size: var(--t-base); }
   .status-grid a :global(.badge) { grid-column: 1 / -1; }
   .status-grid a:hover, .status-grid a[aria-current] { border-color: var(--brand); background: var(--brand-wash); }
@@ -240,6 +246,8 @@
   td time { font-variant-numeric: tabular-nums; }
   .full-date { position: absolute; clip-path: inset(50%); inline-size: 1px; block-size: 1px; overflow: hidden; }
   .note-cell { min-inline-size: 8.5rem; }
+  .school-note { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  .unimported :is(.numeric, .coverage, .browse-code) { color: var(--muted); }
   .note-cell a { white-space: nowrap; }
   #sources { border-block-start: 1px solid var(--line); padding-block-start: .85rem; }
   @media (max-width: 938px) { .swipe-hint { display: block; } }

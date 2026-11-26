@@ -7,14 +7,15 @@
     columns: readonly TableColumn<Row>[];
     rows: readonly Row[];
     rowKey: (row: Row) => string | number;
+    rowHref?: (row: Row) => string | undefined;
   }
 
-  let { label, columns, rows, rowKey }: Props = $props();
+  let { label, columns, rows, rowKey, rowHref }: Props = $props();
 </script>
 
 <details>
   <summary>查看數值表格</summary>
-  <DataTable caption={`${label}：數值表格`} {columns} {rows} {rowKey} minWidth="0" scrollHint={false} />
+  <DataTable caption={`${label}：數值表格`} {columns} {rows} {rowKey} {rowHref} minWidth="0" maxHeight="none" scrollHint={false} />
 </details>
 
 <style>

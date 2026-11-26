@@ -1,6 +1,10 @@
 import type { Offering, RatingStats, TermTrend } from '@unicourse/api-client';
 import type { MatrixPoint, MatrixRow } from './ui/types';
 
+export function reportedCapacity({ enrolled, capacity }: Pick<Offering, 'enrolled' | 'capacity'>) {
+  return capacity === 0 && enrolled != null && enrolled > 0 ? null : capacity ?? null;
+}
+
 export function offeringEdition(offerings: Offering[]) {
   return offerings.reduce<string | null>((latest, row) => !latest || row.importedAt > latest ? row.importedAt : latest, null);
 }

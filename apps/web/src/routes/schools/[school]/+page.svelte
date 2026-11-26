@@ -2,8 +2,8 @@
   import { page } from '$app/state';
   import type { CourseRanking } from '@unicourse/api-client';
   import { importedAt, isHttpUrl } from '$lib/format';
-  import { directoryStatus, directoryStatusLabels, kindLabel } from '$lib/institutions';
-  import { departmentHref, schoolHref } from '$lib/overview-paths';
+  import { coveragePeriod, directoryStatus, directoryStatusLabels, kindLabel } from '$lib/institutions';
+  import { departmentHref, overviewSearchHref, rankingHref, schoolHref } from '$lib/overview-paths';
   import SchoolsTermHistory from '$lib/schools-term-history.svelte';
   import Badge from '$lib/ui/Badge.svelte';
   import BarCell from '$lib/ui/BarCell.svelte';
@@ -18,7 +18,7 @@
   import StatRow from '$lib/ui/StatRow.svelte';
   import StatTile from '$lib/ui/StatTile.svelte';
   import StatusPill from '$lib/ui/StatusPill.svelte';
-  import { displayValue } from '$lib/ui/format';
+  import { changeQuery, displayValue } from '$lib/ui/format';
   import type { TableColumn } from '$lib/ui/types';
   import '$lib/schools-browse.css';
   import type { PageProps } from './$types';
@@ -29,7 +29,13 @@
   let status = $derived(institution ? directoryStatus(institution) : null);
   let units = $derived(data.units);
   let searchHref = $derived(`/?${new URLSearchParams({ school: school.slug, term: 'all' })}`);
-  let terms = $derived([...new Set([...school.terms, ...(data.trends ?? []).map(({ term }) => term)])].sort());
+  let coverageTerms = $derived(institution?.terms ?? school.terms);
+  let period = $derived(coveragePeriod(coverageTerms));
+  let rankingToggle = $derived(changeQuery(new URL('#ranking', page.url), (params) => {
+    if (data.includeNonAcademic) params.delete('include_non_academic');
+    else params.set('include_non_academic', 'true');
+  }));
+  let terms = $derived([...new Set([...coverageTerms, ...(data.trends ?? []).map(({ term }) => term)])].sort());
   let trendsByTerm = $derived(new Map(data.trends?.map((row) => [row.term, row])));
   let enrollmentTerms = $derived((data.trends ?? []).filter(({ enrolled }) => enrolled != null));
   let ranked = $derived((data.rankings ?? []).filter((row) => row.enrolledTotal != null));
@@ -64,9 +70,10 @@
         {#if school.nameEn}<span lang="en">{school.nameEn}</span>{/if}
         {#if institution?.city}<span>{institution.city} · {kindLabel(institution)}</span>{:else if institution}<span>{kindLabel(institution)}</span>{/if}
         {#if status}<StatusPill status={status === 'pending_import' ? 'planned' : status} label={directoryStatusLabels[status]} />{/if}
-        <span>本站匯入資料{#if institution?.latestImportedAt} · 更新於 <time datetime={institution.latestImportedAt}>{importedAt(institution.latestImportedAt)}</time>{/if}</span>
+        <span>本站匯入資料{#if institution?.latestImportedAt} · 更新於 <time datetime={institution.latestImportedAt}>{importedAt(institution.latestImportedAt)}</time>（臺北時間）{/if}</span>
+        {#if institution?.note === '每日更新'}<span>每日更新</span>{/if}
       </p>
-      {#if institution?.note}<p class="browse-note">{institution.note}</p>{/if}
+      {#if institution?.note && institution.note !== '每日更新'}<p class="browse-note">{institution.note}</p>{/if}
     </div>
     <div class="browse-actions">
       <a class="browse-button browse-primary" href={searchHref}>搜尋這所學校的課程</a>
@@ -77,9 +84,9 @@
   <nav class="browse-inline browse-note jump-links" aria-label="跳至本頁章節"><a href="#departments">開課單位 ↓</a><a href="#ranking">校內排行 ↓</a></nav>
 
   <div class="browse-compact-stats"><StatRow label="收錄概況">
-    <StatTile label="開課班次" value={school.offerings} unit="班" />
-    <StatTile label="課程" value={school.courses} unit="門" />
-    <StatTile label="已匯入學期" value={school.terms.length} unit="期" />
+    <StatTile label="開課班次" value={institution?.offerings ?? school.offerings} unit="班" />
+    <StatTile label="課程" value={institution?.courses ?? school.courses} unit="門" />
+    <StatTile label="已收錄學期" value={coverageTerms.length} unit="期" />
     <StatTile label="開課單位" value={units.total} unit="個" />
     <div class="browse-wide-stat"><StatTile label="累計修課" value={enrollmentTerms.length ? enrollmentTerms.reduce((sum, term) => sum + (term.enrolled ?? 0), 0) : null}
       unit="人次" note={enrollmentTerms.length ? undefined : data.trends === null ? '統計暫未取得' : '未公布人數'} /></div>
@@ -90,11 +97,12 @@
     {#if data.trends === null}
       <ErrorState title="暫時無法取得班次走勢" retryHref={page.url.pathname + page.url.search} />
     {:else if data.trends.length}
-      <SchoolsTermHistory label="每學期開課班次" points={terms.map((term) => ({ term, value: trendsByTerm.get(term)?.offerings ?? (school.terms.includes(term) ? 0 : null) }))} />
+      <SchoolsTermHistory label="每學期開課班次" points={terms.map((term) => ({ term, value: trendsByTerm.get(term)?.offerings ?? null }))}
+        termHref={(term) => overviewSearchHref({ school: school.slug, term })} />
     {:else}
       <EmptyState title="目前沒有班次走勢" description="待有開課班次後，這裡會顯示各學期的變化。" />
     {/if}
-    <p class="browse-note">{school.terms.length ? `匯入期間：${school.terms.at(-1)}${school.terms.length > 1 ? ` 至 ${school.terms[0]}` : ''}` : '尚未匯入'} · 修課人次只加總已公布數字。{hasDemoRankings ? '目前排行含示範資料，統計亦未排除示範班次。' : ''}</p>
+    <p class="browse-note">{period ? `收錄期間：${period}` : '尚未匯入'} · 修課人次只加總已公布數字。{hasDemoRankings ? '目前排行含示範資料，統計亦未排除示範班次。' : ''}</p>
   </section>
 
   <div class="browse-columns">
@@ -106,12 +114,13 @@
         </FilterBar>
       {/if}
       {#if units.rows.length}
-        <DataTable caption="開課單位與班次" columns={unitColumns} rows={units.rows} rowKey={(row) => row.name} rowHref={(row) => departmentHref(school.slug, row.name)} minWidth="100%" scrollHint={false}>
+        <p class="browse-note">共 {displayValue(units.matched)} 個單位 · 顯示 {displayValue(units.start)}–{displayValue(units.start + units.rows.length - 1)} 個</p>
+        <Pagination url={page.url} page={units.page} totalPages={units.totalPages} label="開課單位上方分頁" />
+        <DataTable caption="開課單位與班次" columns={unitColumns} rows={units.rows} rowKey={(row) => row.name} rowHref={(row) => departmentHref(school.slug, row.name)} minWidth="100%" maxHeight="none" scrollHint={false}>
           {#snippet cell(row, column)}
             {#if column.id === 'offerings'}<BarCell value={row.offerings} max={units.max} />{:else}{displayValue(column.value?.(row))}{/if}
           {/snippet}
         </DataTable>
-        <p class="browse-note">共 {displayValue(units.matched)} 個單位{units.totalPages > 1 ? ` · 第 ${units.page} 頁` : ''}</p>
         <Pagination url={page.url} page={units.page} totalPages={units.totalPages} label="開課單位分頁" />
       {:else}
         <EmptyState title={units.query ? '沒有符合條件的開課單位' : '目前沒有開課單位'} description={units.query ? '換個關鍵字試試。' : '待資料匯入後，這裡會顯示各單位。'} />
@@ -119,12 +128,13 @@
     </section>
 
     <section class="browse-stack" aria-labelledby="ranking">
-      <SectionHeader title="歷年最多人修的課" id="ranking" description="前 10 門，只排名有公布修課人數的課。走勢同尺度，最近有公布的學期與人數列於下方。" />
+      <SectionHeader title="歷年最多人修的課" id="ranking" description={data.includeNonAcademic ? '包含班會、體育等非學術課程；只排名有公布修課人數的課。' : '預設排除班會、體育等非學術課程；只排名有公布修課人數的課。'} />
+      <a class="browse-button rank-toggle" href={rankingToggle}>{data.includeNonAcademic ? '只看學術課程' : '含班會、體育等非學術課程'}</a>
       {#if data.rankings === null}
         <ErrorState title="暫時無法取得校內排行" retryHref={page.url.pathname + page.url.search} />
       {:else}
         {#if ranked.length}
-          <DataTable caption="校內累計修課人次排行" columns={rankColumns} rows={ranked} rowKey={(row) => row.courseCode} rowHref={courseHref} stickyColumn="course" minWidth="20rem">
+          <DataTable caption="校內累計修課人次排行" columns={rankColumns} rows={ranked} rowKey={(row) => row.courseCode} rowHref={courseHref} stickyColumn="course" minWidth="20rem" maxHeight="none" scrollHint={false}>
             {#snippet cell(row, column)}
               {#if column.id === 'course'}
                 <span class="browse-course-cell">
@@ -137,8 +147,8 @@
                 {@const byTerm = new Map(row.trend.map(({ term, enrolled }) => [term, enrolled]))}
                 {@const known = trendTerms.filter((term) => byTerm.get(term) != null)}
                 {@const latest = known.at(-1)}
-                {#if known.length > 2 && trendTerms.some((term, index) => byTerm.get(term) != null && index > 0 && byTerm.get(trendTerms[index - 1]) != null)}
-                  <Sparkline values={trendTerms.map((term) => byTerm.get(term) ?? null)} labels={trendTerms} label={`${row.title}各期修課人數；${known.map((term) => `${term}：${displayValue(byTerm.get(term))} 人`).join('；')}`} min={0} max={maxTrend} />
+                {#if known.length > 2}
+                  <Sparkline values={trendTerms.map((term) => byTerm.get(term) ?? null)} labels={trendTerms} label={`${row.title}各期修課人數；${known.map((term) => `${term}：${displayValue(byTerm.get(term))} 人`).join('；')}`} min={0} max={maxTrend} showArea={false} />
                   <span class="rank-term ui-tabular">{latest} · {displayValue(byTerm.get(latest ?? ''))} 人</span>
                 {:else if known.length}
                   {#each known as term (term)}<span class="rank-term ui-tabular">{term} · {displayValue(byTerm.get(term))} 人</span>{/each}
@@ -155,7 +165,7 @@
             <BarList label="累計名額（不列入人次排行）" unit="名" items={capacities.map((row) => ({ label: row.title, value: row.capacityTotal ?? null, href: courseHref(row) }))} />
           </div>
         {/if}
-        <a class="browse-button" href={`/?${new URLSearchParams({ rank_school: school.slug })}`}>查看全站排行 →</a>
+        <a class="browse-button" href={rankingHref(school.slug, true, data.includeNonAcademic)}>查看校內前 50 門 →</a>
       {/if}
     </section>
   </div>

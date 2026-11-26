@@ -9,9 +9,10 @@
     points: readonly TrendPoint[];
     unit?: string;
     kind?: 'column' | 'line';
+    termHref?: (term: string) => string;
   }
 
-  let { label, points, unit, kind = 'column' }: Props = $props();
+  let { label, points, unit, kind = 'column', termHref }: Props = $props();
   let rows = $derived(points.map((point) => ({ ...point, value: finiteValue(point.value) })));
   let values = $derived(rows.flatMap(({ value }) => value === null ? [] : [value]));
   let compact = $derived(values.length <= 3);
@@ -43,7 +44,7 @@
     <dl class="period-values" aria-label={label}>
       {#each compactRows as point (point.term)}
         <div>
-          <dt>{point.term}</dt>
+          <dt>{#if termHref && point.value !== null}<a href={termHref(point.term)}>{point.term}</a>{:else}{point.term}{/if}</dt>
           <dd class:missing={point.value === null}>{point.value === null ? '未公布' : displayValue(point.value)}{#if point.value !== null && unit} <small>{unit}</small>{/if}</dd>
         </div>
       {/each}
@@ -99,7 +100,7 @@
     {/if}
   {/if}
   {#if rows.length && (!values.length || compactRows.length !== rows.length || !compact)}
-    <ChartValues {label} {columns} {rows} rowKey={(point) => point.term} />
+    <ChartValues {label} {columns} {rows} rowKey={(point) => point.term} rowHref={termHref ? (point) => point.value !== null ? termHref?.(point.term) : undefined : undefined} />
   {/if}
 </figure>
 
