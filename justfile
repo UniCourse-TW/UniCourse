@@ -34,3 +34,7 @@ check-crawlers:
 
 crawl *ARGS:
     bash scripts/crawl-all.sh {{ARGS}}
+
+# National platform for every school without its own crawler, e.g. `just crawl-tvc --term 115-1,114-2`.
+crawl-tvc *ARGS:
+    corepack pnpm --silent --filter @unicourse/crawler-tvc crawl -- --out-dir "$PWD/snapshots/tvc" {{ARGS}}

@@ -1,0 +1,28 @@
+{
+  "name": "@unicourse/crawler-tvc",
+  "description": "Imports the Ministry of Education national course platform (大學校院 / 技職校院課程資源網) into one UniCourse snapshot per school and term.",
+  "private": true,
+  "homepage": "https://unicourse.observe.tw/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UniCourse-TW/UniCourse.git",
+    "directory": "crawlers/tvc"
+  },
+  "bugs": {
+    "url": "https://github.com/UniCourse-TW/UniCourse/issues"
+  },
+  "type": "module",
+  "scripts": {
+    "crawl": "tsx src/main.ts",
+    "check": "tsc -p tsconfig.json",
+    "test": "node --import tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "@unicourse/crawler-kit": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3"
+  }
+}

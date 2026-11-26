@@ -260,6 +260,22 @@ importers:
         specifier: 5.9.3
         version: 5.9.3
 
+  crawlers/tvc:
+    dependencies:
+      '@unicourse/crawler-kit':
+        specifier: workspace:*
+        version: link:../kit
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.4
+      tsx:
+        specifier: 4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/api-client:
     dependencies:
       openapi-fetch:

@@ -11,11 +11,13 @@ done
 mkdir -p "$out"
 # CRAWL_SKIP lists slugs to leave out. Defaults: ncu = robots.txt disallows; ntua = only a labelled
 # extension-education subset is public; ncku = the site demands a CAPTCHA after ~5 departments.
+# ncu and ncku come from the national platform instead (crawlers/tvc, `source: "tvc"` in status.json).
 skip=" ${CRAWL_SKIP-ncu ntua ncku} "
 schools=()
 for dir in crawlers/*/; do
   slug=$(basename "$dir")
-  [[ $slug == kit ]] && continue
+  # kit is the shared library; tvc (national platform, many schools) has its own job: just crawl-tvc.
+  [[ $slug == kit || $slug == tvc ]] && continue
   [[ $skip == *" $slug "* ]] && { echo "== $slug skipped (CRAWL_SKIP)"; continue; }
   [[ -f $dir/src/crawler.ts ]] || continue
   schools+=("$slug")
