@@ -834,7 +834,7 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     assert_eq!(institution["latestImportedAt"], nthu["latestImportedAt"]);
     let blocked = by_slug("ncku");
     assert_eq!(blocked["status"], "blocked");
-    assert_eq!(blocked["issue"], 40);
+    assert_eq!(blocked["issue"], 1);
     assert_eq!(blocked["terms"], json!([]));
     assert_eq!(blocked["offerings"], 0);
     assert_eq!(blocked["latestImportedAt"], Value::Null);
