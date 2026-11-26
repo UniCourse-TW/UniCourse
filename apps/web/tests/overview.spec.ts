@@ -112,7 +112,9 @@ test('derives directory coverage from crawler status and imported offerings', as
   await expect(chips.filter({ hasText: /(^|\s)0 所/ })).toHaveCount(0);
   await expect(chips.filter({ hasText: '已收錄' })).toContainText(`已收錄 ${liveCount} 所`);
   await expect(chips.filter({ hasText: '待匯入' })).toContainText(`待匯入 ${pendingCount} 所`);
-  await expect(chips.filter({ hasText: '受阻' })).toContainText(`受阻 ${blockedCount} 所`);
+  const blockedChip = chips.filter({ hasText: '受阻' });
+  if (blockedCount) await expect(blockedChip).toContainText(`受阻 ${blockedCount} 所`);
+  else await expect(blockedChip).toHaveCount(0);
 
   const table = page.getByRole('table', { name: /大專校院收錄狀態/ });
   const rows = table.locator('tbody tr:not(.group)');
