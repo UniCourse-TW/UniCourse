@@ -202,10 +202,10 @@
               <dd class="num">{#if summary.enrolledTotal != null}{fmt.format(summary.enrolledTotal)} <small>人次</small>{:else}<span title="校方未公布修課人數">—</span>{/if}</dd>
             </div>
             <div>
-              <dt>最新學期 {summary.latestTerm}</dt>
+              <dt>{summary.latestTerm} 修課／名額</dt>
               <dd class="num">
-                {#if summary.latestEnrolled != null}{fmt.format(summary.latestEnrolled)}{:else}<span title="校方未公布修課人數">—</span>{/if}
-                / {#if summary.latestCapacity != null}{fmt.format(summary.latestCapacity)}{:else}<span title="校方未公布名額">—</span>{/if} 人
+                <span class="nowrap">{#if summary.latestEnrolled != null}{fmt.format(summary.latestEnrolled)}{:else}<span title="校方未公布修課人數">—</span>{/if}
+                / {#if summary.latestCapacity != null}{fmt.format(summary.latestCapacity)}{:else}<span title="校方未公布名額">—</span>{/if}</span>
                 <small>{summary.latestSections > 1 ? `${summary.latestSections} 個班次合計` : '1 個班次'}</small>
               </dd>
             </div>

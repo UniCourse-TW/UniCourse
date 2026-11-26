@@ -279,9 +279,10 @@
     tbody tr > * { padding: 0; border: 0; }
     tbody tr.current > th { box-shadow: none; }
     tbody tr.current { box-shadow: inset 3px 0 0 var(--brand); }
-    tbody th { align-self: center; }
-    td.num { align-self: center; }
-    .names, .sections { grid-column: 1 / -1; }
+    tbody th { grid-row: 1; grid-column: 1; align-self: center; }
+    td.num { grid-row: 1; grid-column: 2; align-self: center; }
+    .names { grid-row: 2; grid-column: 1 / -1; }
+    .sections { grid-row: 3; grid-column: 1 / -1; }
     .names { min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); }
     .track { flex: 1 1 auto; max-inline-size: 8rem; }
     .value { min-inline-size: 0; }
