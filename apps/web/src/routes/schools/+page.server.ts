@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { groupBySystem, matches, parseFilters, statuses, systems } from '$lib/institutions';
+import { coverageYears, groupBySystem, matches, parseFilters, schoolSorts, sortInstitutions, statuses, systems } from '$lib/institutions';
 import { catalog } from '$lib/server/catalog';
 import type { PageServerLoad } from './$types';
 
@@ -14,18 +14,33 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   const { institutions, updatedAt } = result.data;
   const filters = parseFilters(url.searchParams);
   const shown = institutions.filter((institution) => matches(institution, filters));
+  const sort = schoolSorts.find((value) => value === url.searchParams.get('sort')) ?? 'status';
+  const order = url.searchParams.get('order');
+  const direction = order === 'asc' || order === 'desc' ? order : sort === 'status' || sort === 'name' ? 'asc' : 'desc';
+  const pageSize = 24;
+  const totalPages = Math.max(1, Math.ceil(shown.length / pageSize));
+  const requestedPage = Number(url.searchParams.get('page'));
+  const page = Number.isSafeInteger(requestedPage) ? Math.min(Math.max(1, requestedPage), totalPages) : 1;
+  const start = (page - 1) * pageSize;
 
   return {
     filters,
+    sort,
+    direction,
+    page,
+    totalPages,
+    start,
+    end: Math.min(start + pageSize, shown.length),
+    years: coverageYears(institutions),
     updatedAt: updatedAt ?? null,
     total: institutions.length,
+    offerings: institutions.reduce((total, institution) => total + institution.offerings, 0),
     counts: statuses.map((status) => ({
       status,
       count: institutions.filter((institution) => institution.status === status).length
     })),
-    // Only offer systems that have schools (the MOE list has no 軍警校院 rows).
     systems: systems.filter((system) => institutions.some((institution) => institution.system === system)),
     shown: shown.length,
-    groups: groupBySystem(shown)
+    groups: groupBySystem(sortInstitutions(shown, sort, direction).slice(start, start + pageSize))
   };
 };
