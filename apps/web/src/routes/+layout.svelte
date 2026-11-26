@@ -16,7 +16,7 @@
     { href: '/', label: '首頁' },
     { href: '/schools', label: '學校' },
     { href: '/forum', label: '論壇' },
-    { href: '/landscape.html', label: '網站總覽' }
+    { href: '/landscape', label: '網站總覽' }
   ];
 </script>
 
