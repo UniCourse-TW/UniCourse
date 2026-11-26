@@ -25,6 +25,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version-file: .node-version
+          # pnpm comes from corepack after this step, so the built-in cache cannot find it yet.
+          package-manager-cache: false
       - uses: taiki-e/install-action@just
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm --filter @unicourse/web exec playwright install --with-deps chromium
