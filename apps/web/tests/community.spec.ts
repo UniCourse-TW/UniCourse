@@ -117,8 +117,12 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(page.getByRole('link', { name: title })).toBeVisible();
 
   // Both show up on the public profile, linked from the account menu.
-  await openMenu(page);
-  await nav.getByRole('link', { name: '個人頁面' }).click();
+  // The menu closes on every navigation (including late hydration), so open and click as one retried step.
+  await expect(async () => {
+    await openMenu(page);
+    await nav.getByRole('link', { name: '個人頁面' }).click({ timeout: 1000 });
+    await expect(page).toHaveURL(/\/u\//, { timeout: 2000 });
+  }).toPass({ timeout: 20_000 });
   await expect(page.getByRole('heading', { name: '測試同學' })).toBeVisible();
   await expect(page.getByRole('group', { name: '活動統計' })).toContainText('課程評價');
   await expect(page.getByRole('img', { name: '4 分（滿分 5 分）' })).toBeVisible();
