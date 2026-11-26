@@ -8,8 +8,9 @@
   `CofopdlCtrl?action=showGrid&acadmYear=115&acadmTerm=1&deptCode=<code>&…&limit=99999`
   (same endpoint as the historical `NTNU-Course` package), plus the department list
   `CofnameCtrl?action=cof&type=chn&year=115&term=1`.
-- Historical terms `114-2`, `114-1`, `113-2`, and `113-1` use those same parameters. Each grid row's
-  `acadm_year` and `acadm_term` must match the requested term.
+- Past terms use the same two endpoints with older `acadmYear`/`acadmTerm` (`year`/`term` for the
+  department list), so the department list is always fetched for the requested term, not the current one.
+  Each grid row's `acadm_year` and `acadm_term` must match the requested term. See *History* below.
 - Per-offering page (`sourceUrl` / `syllabusUrl`): `SyllabusCtrl?year=&term=&courseCode=&courseGroup=&deptCode=&formS=&classes1=&deptGroup=`,
   the page the grid's 「課程綱要」 button opens.
 
@@ -48,6 +49,53 @@ Environment switches (all off by default):
 | `NTNU_FETCH_DETAILS=1` | fetch every syllabus page for `description` |
 | `NTNU_SKIP_PROGRAMS=1` | skip the `ZU..` 學分學程 codes (~200 fewer requests, loses ~20 offerings) |
 | `NTNU_INCLUDE_CROSS_SCHOOL=1` | also include `9...` 校際臺大/臺科大 codes, i.e. NTU/NTUST courses open to NTNU students |
+
+## History (backfilled 2026-11-27)
+
+Crawled back to **105-1** (20 terms, 105-1 … 114-2, plus the live 115-1). Every term ran with the default
+switches, at kit defaults, in 1.5–2.8 min. `requests` is what the crawler logs (`requests: N`, logical
+requests: session page + department list + one grid query per code; kit-internal 429/5xx retries not
+counted). No term needed a session re-open.
+
+| term | dept codes (queried) | offerings | with `enrolled` | only under 學分學程 | requests | seconds |
+| --- | --- | --- | --- | --- | --- | --- |
+| 105-1 | 135 (130) | 3,125 | 3,125 | 0 | 132 | 94 |
+| 105-2 | 134 (129) | 3,002 | 3,002 | 0 | 131 | 167 |
+| 106-1 | 146 (141) | 3,185 | 3,185 | 51 | 143 | 99 |
+| 106-2 | 147 (142) | 3,108 | 3,108 | 57 | 144 | 106 |
+| 107-1 | 163 (158) | 3,239 | 3,239 | 29 | 160 | 124 |
+| 107-2 | 161 (156) | 3,125 | 3,125 | 39 | 158 | 118 |
+| 108-1 | 166 (161) | 3,238 | 3,238 | 26 | 163 | 120 |
+| 108-2 | 165 (160) | 3,108 | 3,108 | 36 | 162 | 118 |
+| 109-1 | 172 (167) | 3,329 | 3,329 | 31 | 169 | 135 |
+| 109-2 | 170 (165) | 3,206 | 3,206 | 37 | 167 | 115 |
+| 110-1 | 171 (166) | 3,326 | 3,326 | 30 | 168 | 117 |
+| 110-2 | 168 (163) | 3,164 | 3,164 | 32 | 165 | 124 |
+| 111-1 | 172 (167) | 3,285 | 3,285 | 22 | 169 | 130 |
+| 111-2 | 172 (167) | 3,131 | 3,131 | 34 | 169 | 128 |
+| 112-1 | 184 (179) | 3,267 | 3,267 | 28 | 181 | 138 |
+| 112-2 | 183 (178) | 3,136 | 3,136 | 35 | 180 | 138 |
+| 113-1 … 114-2 | 189–214 | 3,087–3,217 | all | ≈20–24 | 189–315 | 138–191 |
+
+Per-term notes:
+
+- The JSON format is unchanged since 105-1 (same keys, same `time_inf` syntax, UTF-8); the parser
+  needed no changes. `src/samples/grid-105-1.json` covers an old-term row.
+- Campus label: up to 113-1 the main campus is printed as `本部`; from 113-2 on as `和平`. Both are kept
+  as published (`campus` = `本部` / `和平`); they are the same campus, but the crawler does not rename it.
+- 105-1 and 105-2 department lists have no `ZU..` 學分學程 codes, so no program-only offerings exist for
+  those terms (later terms have 22–57).
+- `◎密集課程` (109-2 on) and `◎面授/同步` (112-1 on) segments have no day/period; they stay in
+  `scheduleText` only. One 110-1 row (`0338`) has `1-4 本部 誠204` without a weekday; it is kept in
+  `scheduleText` and gets no `schedule` (the day is not guessed).
+- `counter_exceptAuth` is present on every row of every term and is the final count of the term; 8–27
+  offerings per term have `enrolled = 0`, and ~150–240 per term exceed `capacity` (限修人數), as on the
+  live system (manual/authorised additions).
+
+Older terms: the department list answers back to **89-1** (88-1 and earlier return an empty list), and a
+spot check of the `EU00` grid for 90-1 and 95-1 returned rows. Those terms were not crawled (outside the
+ten-year target); note that 95-1 sample rows show `counter_exceptAuth = 0`, so enrolment numbers before
+105 should be checked before they are trusted.
 
 ## Field mapping
 

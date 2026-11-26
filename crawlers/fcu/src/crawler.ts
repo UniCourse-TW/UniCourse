@@ -87,8 +87,10 @@ export const crawler = defineCrawler({
     const base = { lang: 'cht', year, sms };
 
     const init = await post<InitResponse>(ctx, 'init', { lang: 'cht' });
+    // `init.yearList` only lists the years offered in the UI drop-down (107+ in 2026-11), but the services answer
+    // for much older years too (verified back to 90-1). Do not reject on it; an empty term fails below.
     if (init.yearList && !init.yearList.includes(year)) {
-      throw new Error(`FCU has no data for academic year ${year} (available: ${init.yearList.join(', ')})`);
+      ctx.log(`academic year ${year} is not in init.yearList (${init.yearList.join(', ')}); querying anyway`);
     }
     ctx.log(`site default term ${init.defaultYearSms?.year}-${init.defaultYearSms?.sms}`);
 

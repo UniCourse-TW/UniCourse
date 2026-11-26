@@ -1,0 +1,1979 @@
+[
+  {
+    "name": "國立臺灣科技大學課程查詢",
+    "url": "https://querycourse.ntust.edu.tw/querycourse/",
+    "schools": [
+      "0022"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣科技大學教務處",
+    "category": [
+      "course_query"
+    ],
+    "features": "依學期/系所/課名/教師查詢開課資料,含課程大綱連結",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開免登入;與選課系統為同校自建系統(courseselection.ntust.edu.tw)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.academic.ntust.edu.tw/p/450-1048-8227,c1.php?Lang=zh-tw",
+      "https://querycourse.ntust.edu.tw/querycourse/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立臺灣科技大學選課系統",
+    "url": "https://courseselection.ntust.edu.tw/",
+    "schools": [
+      "0022"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣科技大學教務處",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生網路選課(初選/加退選)",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "另有校際選課(interuniversity.ntust.edu.tw)、交換生選課系統。 2026-11-27 探測 HTTP 200(轉址至 https://ssoam2.ntust.edu.tw/account/login?ReturnUrl=%2Fconnect%2Fauthorize%3Fclient_id%3DCourseSelection%26redirect_uri%3Dhttps%253A%252F%252Fcourseselection.ntust.edu.tw%252Fsignin-oidc%26response_type%3Dcode%26scope%3Dopenid%2520profile%2520email%26code_challenge%3Dbu3jAkgnVuI9ix4tWGzD7igvH03-GxAcg75uwMm_21c%26code_challenge_method%3DS256%26state%3DOpenIdConnect.AuthenticationProperties%253DeAlkrwlI2ARHM3P3iinHjo1WEqEm8HNMq95A0-PPc7uv1rSFuIeUNU_GtovwzyGHJKZzaFTuRt2BYF4mBQ0GY8lPvhW8_9ONTYo4ruCy0mhVsY-a8kIuWzV9Sd6FaC1TzhjFj2Lew97-ns6Aew7UZyvPsaInUyqEbUqwQE7Nr0TDz-J7W5J7-jPIpYt3zIPsHguf6vgKNMQnfpIoWwN2EuQDgXlhj96Fwpi-hnKBDNBco-T7tv5Xd4SjIcNORhpS1ncXpFW04EIj-6fmV07P9PY3953LCGDUUUx2qGw-Sf8OUG7DieZ4sujhuWioJIVR%26response_mode%3Dform_post%26nonce%3D639313140938493478.YzY4ODYzNmEtNGE5OS00Yjg1LThkOWUtNzY1Yzc2OTM3NjEzNjQxN2EwNDItODcwNi00MzY1LWJlM2QtYmNjY2Y3ZDY5YjY0%26x-client-SKU%3DID_NET451%26x-client-ver%3D5.3.0.0)",
+    "evidence": [
+      "https://www.academic.ntust.edu.tw/p/412-1048-8201.php?Lang=zh-tw",
+      "https://courseselection.ntust.edu.tw/ (2026-11-27 探測 HTTP 200(轉址至 https://ssoam2.ntust.edu.tw/account/login?ReturnUrl=%2Fconnect%2Fauthorize%3Fclient_id%3DCourseSelection%26redirect_uri%3Dhttps%253A%252F%252Fcourseselection.ntust.edu.tw%252Fsignin-oidc%26response_type%3Dcode%26scope%3Dopenid%2520profile%2520email%26code_challenge%3Dbu3jAkgnVuI9ix4tWGzD7igvH03-GxAcg75uwMm_21c%26code_challenge_method%3DS256%26state%3DOpenIdConnect.AuthenticationProperties%253DeAlkrwlI2ARHM3P3iinHjo1WEqEm8HNMq95A0-PPc7uv1rSFuIeUNU_GtovwzyGHJKZzaFTuRt2BYF4mBQ0GY8lPvhW8_9ONTYo4ruCy0mhVsY-a8kIuWzV9Sd6FaC1TzhjFj2Lew97-ns6Aew7UZyvPsaInUyqEbUqwQE7Nr0TDz-J7W5J7-jPIpYt3zIPsHguf6vgKNMQnfpIoWwN2EuQDgXlhj96Fwpi-hnKBDNBco-T7tv5Xd4SjIcNORhpS1ncXpFW04EIj-6fmV07P9PY3953LCGDUUUx2qGw-Sf8OUG7DieZ4sujhuWioJIVR%26response_mode%3Dform_post%26nonce%3D639313140938493478.YzY4ODYzNmEtNGE5OS00Yjg1LThkOWUtNzY1Yzc2OTM3NjEzNjQxN2EwNDItODcwNi00MzY1LWJlM2QtYmNjY2Y3ZDY5YjY0%26x-client-SKU%3DID_NET451%26x-client-ver%3D5.3.0.0))"
+    ]
+  },
+  {
+    "name": "國立臺灣科技大學大學部課程地圖與選課推薦系統",
+    "url": "https://academicgaa.ntust.edu.tw/CourseMap/Index",
+    "schools": [
+      "0022"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣科技大學教務處",
+    "category": [
+      "course_map"
+    ],
+    "features": "大學部課程地圖、選課推薦",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.academic.ntust.edu.tw/p/450-1048-12152,c1.php?Lang=zh-tw",
+      "https://academicgaa.ntust.edu.tw/CourseMap/Index (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立雲林科技大學課程查詢系統(WebNewCAS)",
+    "url": "https://webapp.yuntech.edu.tw/WebNewCAS/Course/QueryCour.aspx",
+    "schools": [
+      "0023"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立雲林科技大學教務處",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "雲科大開課查詢,含教學大綱",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "雲科大同時營運全國「技職課程資源網」(course-tvc.yuntech.edu.tw)與課程資訊交換平台(tlrcct.yuntech.edu.tw),多所專科校網連到該處。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://aax.yuntech.edu.tw/index.php/ql-ct/course-selection",
+      "https://webapp.yuntech.edu.tw/WebNewCAS/Course/QueryCour.aspx (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立雲林科技大學加退選課系統(AAXCCS)",
+    "url": "https://webapp.yuntech.edu.tw/AAXCCS/Default.aspx",
+    "schools": [
+      "0023"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立雲林科技大學教務處",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生加退選",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.yuntech.edu.tw/",
+      "https://webapp.yuntech.edu.tw/AAXCCS/Default.aspx (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立屏東科技大學校務資訊服務系統(課務組)",
+    "url": "https://course.npust.edu.tw/cnads/",
+    "schools": [
+      "0024"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立屏東科技大學教務處課務組",
+    "category": [
+      "course_query",
+      "syllabus",
+      "enrollment"
+    ],
+    "features": "開課資料、課程大綱、線上選課、教學評量入口;公開區有課程資料查詢",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "選課系統路徑為 course.npust.edu.tw/Course/(手冊 https://course.npust.edu.tw/Course/doc/manual.pdf 說明未登入可瀏覽基本畫面)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: https://wp.npust.edu.tw/identity/ 在校生入口列出網路選課系統與課程查詢",
+      "https://course.npust.edu.tw/cnads/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立臺北科技大學課程查詢系統",
+    "url": "https://aps.ntut.edu.tw/course/tw/QueryCurrPage.jsp",
+    "schools": [
+      "0025"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北科技大學教務處",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "北科大課程/教學大綱與進度查詢(ShowSyllabus.jsp),含舊學期",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本機對 www/aps.ntut.edu.tw 的 DNS 皆解析失敗,連結僅經 web search 與校方開課與師資資訊頁確認。另有英文版 aps.ntut.edu.tw/course/en/course.jsp、手機版 course/mobile/QueryCurrPage.jsp(Dcard 提到 2025 年系統更新)。第三方有「北科課程好朋友」。 2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>;無法從本機確認,可能為防火牆/舊 TLS/校內限定",
+    "evidence": [
+      "https://info.ntut.edu.tw/p/412-1056-10797.php?Lang=zh-tw",
+      "https://aps.ntut.edu.tw/course/tw/QueryCurrPage.jsp (2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>)"
+    ]
+  },
+  {
+    "name": "國立虎尾科技大學班級課表查詢",
+    "url": "https://qry.nfu.edu.tw/class.php",
+    "schools": [
+      "0033"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立虎尾科技大學教務處",
+    "category": [
+      "course_query"
+    ],
+    "features": "虎尾科大班級課表查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "教務處課程資訊頁 https://oaa.nfu.edu.tw/zh_tw/teaching/courses 與選課專區 https://oaa.nfu.edu.tw/zh_tw/teaching/select 為入口;未找到公開教學大綱查詢系統。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://oaa.nfu.edu.tw/zh_tw/teaching/courses/departments",
+      "https://qry.nfu.edu.tw/class.php (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立澎湖科技大學教務處選課/課程地圖頁",
+    "url": "https://www.npu.edu.tw/sub/form/index.aspx?Parser=2,21,153,139",
+    "schools": [
+      "0042"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立澎湖科技大學教務處",
+    "category": [
+      "enrollment",
+      "course_map"
+    ],
+    "features": "澎科大教務處選課說明與課程地圖(Parser=1,21,156,139)頁面",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "僅找到說明頁,未找到公開開課查詢系統;澎科大網站為 content/index.aspx?Parser= 版型。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.npu.edu.tw/sub/index.aspx?m1=21",
+      "https://www.npu.edu.tw/sub/form/index.aspx?Parser=2,21,153,139 (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立勤益科技大學校務行政入口頁",
+    "url": "https://www.ncut.edu.tw/p/412-1000-737.php?Lang=zh-tw",
+    "schools": [
+      "0043"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立勤益科技大學",
+    "category": [
+      "other",
+      "enrollment"
+    ],
+    "features": "勤益科大校務行政系統入口(教師篇 nmsd.ncut.edu.tw/teacher/、行政篇 msd.ncut.edu.tw)",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "學生課程查詢/選課系統入口未能從公開頁確認,需再查。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.ncut.edu.tw/",
+      "https://www.ncut.edu.tw/p/412-1000-737.php?Lang=zh-tw (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立臺北護理健康大學教務資訊系統(課程查詢系統)",
+    "url": "https://system10.ntunhs.edu.tw/AcadInfoSystem/Modules/Main/Index.aspx",
+    "schools": [
+      "0046"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北護理健康大學教務處",
+    "category": [
+      "course_query",
+      "enrollment"
+    ],
+    "features": "課程查詢系統與課程科目表查詢系統;選課走 e-Portfolio",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "教學計畫(教學大綱)以 PDF 放在 system8.ntunhs.edu.tw/TeachPlan/<學期>/…(例 https://system8.ntunhs.edu.tw/TeachPlan/1101/1101-0719-3151Q871-315211.pdf)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://teaching-acad.ntunhs.edu.tw/var/file/40/1040/attach/31/pta_68080_9374973_39750.pdf",
+      "https://system10.ntunhs.edu.tw/AcadInfoSystem/Modules/Main/Index.aspx (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立高雄餐旅大學MyNKUHT 入口網",
+    "url": "https://cip.nkuht.edu.tw/",
+    "schools": [
+      "0047"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立高雄餐旅大學",
+    "category": [
+      "other",
+      "enrollment"
+    ],
+    "features": "高餐大校園入口(單一登入),選課/課表經此",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開課程查詢頁未找到;校網版型為 /p/403-1000-x.php。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.nkuht.edu.tw/p/403-1000-18.php",
+      "https://cip.nkuht.edu.tw/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立臺中科技大學課表查詢(日間部)",
+    "url": "https://aisap.nutc.edu.tw/public/day/CourseMenu.aspx",
+    "schools": [
+      "0050"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺中科技大學教務處",
+    "category": [
+      "course_query"
+    ],
+    "features": "中科大日間部公開課表查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校務/學生管理系統為資通電腦「各學制教務系統整合擴充案」;操作手冊 https://aca.nutc.edu.tw/var/file/15/1015/img/565/127578794.pdf (我的課表/課程查詢/課程標準)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://aca.nutc.edu.tw/p/404-1015-90673.php",
+      "https://aisap.nutc.edu.tw/public/day/CourseMenu.aspx (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立臺北商業大學課程資訊查詢",
+    "url": "https://ntcbadm.ntub.edu.tw/pub/TchSchedule_Search.aspx",
+    "schools": [
+      "0051"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北商業大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "北商大公開課程資訊/班級課表/教師課表查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "同網域 /pub/cur_class.aspx(班級課表)、/pub/Cur_Teachers.aspx(教師課表);學生資訊系統 ntcbadm1.ntub.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.ntub.edu.tw/",
+      "https://ntcbadm.ntub.edu.tw/pub/TchSchedule_Search.aspx (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立高雄科技大學線上選課系統(含課程查詢)",
+    "url": "https://aais4.nkust.edu.tw/selcrs_std",
+    "schools": [
+      "0053"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立高雄科技大學教務處",
+    "category": [
+      "course_query",
+      "enrollment"
+    ],
+    "features": "高科大選課系統,可課程查詢並看課程大綱",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方建議 https://aais1.nkust.edu.tw/selcrs_dp(兩個網址本機探測皆 404,可能需經校首頁導向);並因網站更新建議從校首頁進入;另有跨校選課公共平台 cross-school.nkust.edu.tw。 2026-11-27 探測 HTTP 404;無法從本機確認,可能為防火牆/舊 TLS/校內限定",
+    "evidence": [
+      "https://acad.nkust.edu.tw/p/406-1063-103886,r2072.php?Lang=zh-tw",
+      "https://aais4.nkust.edu.tw/selcrs_std (2026-11-27 探測 HTTP 404)"
+    ]
+  },
+  {
+    "name": "國立臺灣戲曲學院在校學生頁(教學務系統入口)",
+    "url": "https://www.tcpa.edu.tw/p/426-1000-5.php?Lang=zh-tw",
+    "schools": [
+      "0144"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣戲曲學院",
+    "category": [
+      "other",
+      "enrollment"
+    ],
+    "features": "戲曲學院教學務系統與選課分流入口、北區跨校選課連結",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "未找到公開課程查詢頁。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.tcpa.edu.tw/",
+      "https://www.tcpa.edu.tw/p/426-1000-5.php?Lang=zh-tw (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "國立臺南護理專科學校單一登入入口網(教務學務系統)",
+    "url": "https://sso-portal.ntin.edu.tw/SSO/",
+    "schools": [
+      "0221"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺南護理專科學校",
+    "category": [
+      "other",
+      "enrollment"
+    ],
+    "features": "南護專單一登入,教務學務系統入口(舊入口 academy.ntin.edu.tw/ntin/)",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開課程查詢未找到。 2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>;無法從本機確認,可能為防火牆/舊 TLS/校內限定",
+    "evidence": [
+      "https://www.ntin.edu.tw/administration_president1.aspx?id=1095",
+      "https://sso-portal.ntin.edu.tw/SSO/ (2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>)"
+    ]
+  },
+  {
+    "name": "國立臺東專科學校教務處(選課.成績.缺曠查詢)",
+    "url": "https://acad.ntc.edu.tw/",
+    "schools": [
+      "0222"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺東專科學校教務處",
+    "category": [
+      "other",
+      "enrollment"
+    ],
+    "features": "臺東專校教務處首頁;學生專區「選課.成績.缺曠查詢」(http://b001.ntc.edu.tw/p/426-1001-15.php?Lang=zh-tw)",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "portal.ntc.edu.tw 為校園入口網;公開課程查詢未找到。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://acad.ntc.edu.tw/",
+      "https://acad.ntc.edu.tw/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "朝陽科技大學課程資訊查詢(CTS0006)",
+    "url": "https://cts.cyut.edu.tw/CTS0006",
+    "schools": [
+      "1018"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "朝陽科技大學教務處",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "朝陽科大課程資訊總覽、全文檢索、學程查詢、選課手冊",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "舊版 admin.cyut.edu.tw/crsinfo/;選課系統另為 class.cyut.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://acad.cyut.edu.tw/p/426-1002-5.php?Lang=zh-tw",
+      "https://cts.cyut.edu.tw/CTS0006 (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "朝陽科技大學選課系統",
+    "url": "https://class.cyut.edu.tw/",
+    "schools": [
+      "1018"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "朝陽科技大學教務處",
+    "category": [
+      "enrollment"
+    ],
+    "features": "初選/加退選;公開頁有選課人數查詢 CED/CourseLimitDInfos、可選課程清單 CED/EtcCourseList",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://acad.cyut.edu.tw/p/426-1002-5.php?Lang=zh-tw",
+      "https://class.cyut.edu.tw/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "南臺科技大學歷年課程資訊查詢",
+    "url": "https://webap.stust.edu.tw/courinfo/",
+    "schools": [
+      "1023"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "南臺科技大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "南臺科大歷年課程資訊查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "網路選課另為 http://course.stust.edu.tw/;校務系統列表 my.stust.edu.tw/site/weblist。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.stust.edu.tw/",
+      "https://webap.stust.edu.tw/courinfo/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "崑山科技大學課程教學大綱資訊網",
+    "url": "https://syllabus.ksu.edu.tw/",
+    "schools": [
+      "1024"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "崑山科技大學教務處",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "崑山科大依學期/課名/班級/教師查課並看教學大綱(已有 115-1)",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "myKSU 入口 https://my.ksu.edu.tw/ 含日間部抽籤選課系統;有 syllabus.ahan.net 同介面站,疑為廠商(阿漢)平台。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: https://syllabus.ksu.edu.tw/",
+      "https://syllabus.ksu.edu.tw/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "嘉南藥理大學學生課程導航GPS系統",
+    "url": "https://ais.cnu.edu.tw",
+    "schools": [
+      "1025"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "嘉南藥理大學",
+    "category": [
+      "course_map",
+      "course_query"
+    ],
+    "features": "嘉藥課程導航、課程地圖",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "全校課程地圖(日間部) https://exam.cnu.edu.tw/Dsbc/ 、(進修部) /Nsbc/;學生資訊行動化平台 st.cnu.edu.tw;網路大學(舊版) ecourse.cnu.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.cnu.edu.tw/",
+      "https://ais.cnu.edu.tw (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "樹德科技大學課程查詢系統",
+    "url": "https://info.stu.edu.tw/ACA/student/QueryAGECourse/index.asp",
+    "schools": [
+      "1026"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "樹德科技大學教務處",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "樹德科大當期開課查詢,點課程代碼看教學大綱;大綱歷年查詢 info.stu.edu.tw/ACA/teacher/Syllabus/CourseQuery.asp",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校務資訊系統(info.stu.edu.tw)含課程地圖、選課;教務處 aca2.wp.stu.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: https://info.stu.edu.tw/ACA/student/QueryAGECourse/index.asp",
+      "https://info.stu.edu.tw/ACA/student/QueryAGECourse/index.asp (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "龍華科技大學開放式課程查詢系統",
+    "url": "https://sys.lhu.edu.tw/oapx/lhuplan/Query/course_qry.aspx",
+    "schools": [
+      "1030"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "龍華科技大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "龍華科大開放式課程查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "網路選課 https://sys.lhu.edu.tw/CourseAp/SGLogin.aspx;課程地圖 https://sys.lhu.edu.tw/oapx/lhuplan/Course/SCourse_Qry.aspx;校園入口網 eportal.lhu.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.lhu.edu.tw/",
+      "https://sys.lhu.edu.tw/oapx/lhuplan/Query/course_qry.aspx (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "輔英科技大學輔英資訊服務(課程)",
+    "url": "https://cos.fy.edu.tw/",
+    "schools": [
+      "1031"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "輔英科技大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "enrollment"
+    ],
+    "features": "課程計畫(yco_1112.asp)、科目表/課程概述/開課科目/教室時間/全校課程地圖查詢;選課日程",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "選課路徑:學生專區→資訊系統→學期選課系統入口;選課日程 PDF 在 cos.fy.edu.tw/Cos/<學期>選課日程.pdf。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: https://cos.fy.edu.tw/fywww/new/new_info/cos_info/yco_1112.asp",
+      "https://cos.fy.edu.tw/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "明新科技大學開課資訊查詢服務",
+    "url": "https://sss.must.edu.tw/RWD_CosInfo/",
+    "schools": [
+      "1032"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "明新科技大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "明新科大開課資訊查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "學生資訊服務系統 sss.must.edu.tw;校務學生資訊系統 mustwebsystem.must.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.must.edu.tw/",
+      "https://sss.must.edu.tw/RWD_CosInfo/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "弘光科技大學課程資訊查詢(HK_Y01)",
+    "url": "http://course.hk.edu.tw/hktea/HK_Y01/Y01_login_cus.aspx",
+    "schools": [
+      "1034"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "弘光科技大學教務處",
+    "category": [
+      "course_query"
+    ],
+    "features": "弘光科大課程資訊查詢(訪客)",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "課程大綱 https://course.hk.edu.tw/hktea/HK_A02/A020A20.aspx;選課分流六站 cou01~cou06.hk.edu.tw/hk_a03/;97 學年前大綱舊站為內網 IP。 2026-11-27 本機探測失敗:<urlopen error timed out>;無法從本機確認,可能為防火牆/舊 TLS/校內限定",
+    "evidence": [
+      "https://cur.hk.edu.tw/",
+      "http://course.hk.edu.tw/hktea/HK_Y01/Y01_login_cus.aspx (2026-11-27 本機探測失敗:<urlopen error timed out>)"
+    ]
+  },
+  {
+    "name": "健行科技大學課程資訊(cos.uch)",
+    "url": "https://cos.uch.edu.tw/course_info/index.html",
+    "schools": [
+      "1036"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "健行科技大學教務處",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "健行科大課程資訊查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "選課系統 日間部 https://cosop.uch.edu.tw/stdsel/system_D/std_web/sel_index.asp、進修部 …/system_N/…;「stdsel」路徑與育達科大 cur.ydu.edu.tw/stdsel 相同,疑同一套 ASP 選課系統。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://aa.uch.edu.tw/p/404-1010-624.php?Lang=zh-tw",
+      "https://cos.uch.edu.tw/course_info/index.html (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "正修科技大學課表查詢服務",
+    "url": "https://csweb4.csu.edu.tw/",
+    "schools": [
+      "1037"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "正修科技大學圖書資訊處",
+    "category": [
+      "course_query"
+    ],
+    "features": "正修科大課表查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "網路選課 https://csweb.csu.edu.tw/;說明頁 https://www.csu.edu.tw/p/450-1000-12506,c0.php?Lang=zh-tw;開課與師資資訊 https://info.csu.edu.tw/p/412-1091-825.php?Lang=zh-tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.csu.edu.tw/p/450-1000-12506,c0.php?Lang=zh-tw",
+      "https://csweb4.csu.edu.tw/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "萬能科技大學學生網路選課系統(ezpick)",
+    "url": "http://ezpick.vnu.edu.tw/elective.aspx",
+    "schools": [
+      "1038"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "萬能科技大學教務處",
+    "category": [
+      "enrollment"
+    ],
+    "features": "萬能科大第一階段選課;第二階段後查詢在學生資訊系統 weboffice.vnu.edu.tw/web_stu/",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "未找到全校公開課程查詢,僅通識中心/各系提供課程綱要下載;選課說明 https://administration.vnu.edu.tw/oaa/3077?n=47050。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: https://www.vnu.edu.tw/file_35244_114-2學生選課說明手冊(彙整b).pdf",
+      "http://ezpick.vnu.edu.tw/elective.aspx (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "建國科技大學課程大綱、進度表及課表查詢",
+    "url": "https://db.ctu.edu.tw/db_subject/index.aspx",
+    "schools": [
+      "1040"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "建國科技大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "建國科大教學大綱/進度表、班級課表查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "選課系統 http://db.ctu.edu.tw/student/login.aspx;延修生 db.ctu.edu.tw/student_ex/login.aspx;資訊入口網 portal2.ctu.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.ctu.edu.tw/p/412-1000-5873.php?Lang=zh-tw",
+      "https://db.ctu.edu.tw/db_subject/index.aspx (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "明志科技大學網路選課系統(日間部)",
+    "url": "http://day.course.mcut.edu.tw/",
+    "schools": [
+      "1041"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "明志科技大學教務處",
+    "category": [
+      "enrollment"
+    ],
+    "features": "明志科大日間部選課;進修部 http://course.mcut.edu.tw/",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校園入口網 portal.mcut.edu.tw;教務處 aca.mcut.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.mcut.edu.tw/",
+      "http://day.course.mcut.edu.tw/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "台鋼科技大學課程查詢",
+    "url": "https://stuinfo.tsust.edu.tw/course.htm",
+    "schools": [
+      "1042"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "台鋼科技大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "台鋼科大課程查詢",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "前身高苑科大;網路選課 https://webinfo2.tsust.edu.tw/SL_Publicationsystem/;單一登入 portal.tsust.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.tsust.edu.tw/",
+      "https://stuinfo.tsust.edu.tw/course.htm (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "大仁科技大學大仁選課系統",
+    "url": "https://web95.tajen.edu.tw/PHP/index_stu.html",
+    "schools": [
+      "1043"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "大仁科技大學",
+    "category": [
+      "enrollment",
+      "course_query"
+    ],
+    "features": "大仁科大選課",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校務平台 cli.tajen.edu.tw/studentcutclass/。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.tajen.edu.tw/",
+      "https://web95.tajen.edu.tw/PHP/index_stu.html (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "聖約翰科技大學課程資訊網(Sjucourse)",
+    "url": "https://sjuportal.sju.edu.tw/Sjucourse/",
+    "schools": [
+      "1044"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "聖約翰科技大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "聖約翰科大課程資訊",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "學生入口網 sjusip.sju.edu.tw;教師入口 epteacher.sju.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.sju.edu.tw/",
+      "https://sjuportal.sju.edu.tw/Sjucourse/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "嶺東科技大學選課系統(含課程資訊/課程綱要)",
+    "url": "https://course.ltu.edu.tw/StudySelect.aspx",
+    "schools": [
+      "1045"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "嶺東科技大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "enrollment"
+    ],
+    "features": "嶺東科大課程資訊、課程綱要(StSyView.aspx)、選課 FAQ",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "課程地圖 https://aisweb.ltu.edu.tw/ltucmap/ 與 http://cmap.ltu.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.ltu.edu.tw/",
+      "https://course.ltu.edu.tw/StudySelect.aspx (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "中國科技大學學生選課系統",
+    "url": "https://sas1.cute.edu.tw/student_portal/index.htm",
+    "schools": [
+      "1046"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中國科技大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "中國科大學生選課系統(另有內網 IP 備用)",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "單一入口 iq.cute.edu.tw;進修部時程 PDF 在 even.cute.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.cute.edu.tw/",
+      "https://sas1.cute.edu.tw/student_portal/index.htm (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "中臺科技大學課程資訊・開課清單",
+    "url": "https://aca.ctust.edu.tw/p/412-1021-6142.php?Lang=zh-tw",
+    "schools": [
+      "1047"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中臺科技大學教務處",
+    "category": [
+      "course_query"
+    ],
+    "features": "中臺科大開課清單、選課公告",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://aca.ctust.edu.tw",
+      "https://aca.ctust.edu.tw/p/412-1021-6142.php?Lang=zh-tw (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "台南應用科技大學開課課程查詢(sc2008)",
+    "url": "https://stu95.tut.edu.tw/sc2008/default(tutst).asp",
+    "schools": [
+      "1051"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "台南應用科技大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "台南應大開課課程查詢",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "路徑「/sc2008」與慈惠醫專學生資訊網(163.24.235.235/sc2008)相同,疑同一套學生資訊系統;課程地圖 https://coursemap.tut.edu.tw/;南應入口 portal.tut.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.tut.edu.tw/",
+      "https://stu95.tut.edu.tw/sc2008/default(tutst).asp (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "中信科技大學課程資訊查詢平台(CourseQuery)",
+    "url": "https://web.isic.ctbctech.edu.tw/CourseQuery",
+    "schools": [
+      "1052"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中信科技大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "中信科大課程資訊查詢(班級/教師/教室課表)",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "/CourseQuery 路徑與致理科大 coursequery.chihlee.edu.tw/CourseQuery/ 相同,疑同一廠商模板;網路選課 https://web6.isic.ctbctech.edu.tw/webselect/login.asp(日)、websel.isic.ctbctech.edu.tw/webselect_n/(夜)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.ctbctech.edu.tw/",
+      "https://web.isic.ctbctech.edu.tw/CourseQuery (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "元培醫事科技大學校務系統(選課/課程大綱)",
+    "url": "https://is.ypu.edu.tw/",
+    "schools": [
+      "1053"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "元培醫事科技大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "enrollment"
+    ],
+    "features": "元培醫事科大校務系統;訪客帳號可查全校課表與課程大綱,學生入口選課",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "查詢方式與訪客帳號公布於 https://edu.ypu.edu.tw/p/412-1011-5926.php;選課專區 https://edu.ypu.edu.tw/p/404-1011-54789.php。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://edu.ypu.edu.tw/p/412-1011-5926.php",
+      "https://is.ypu.edu.tw/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "景文科技大學網路選課系統(GCourse)",
+    "url": "http://aisvm7.just.edu.tw/GCourse/",
+    "schools": [
+      "1054"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "景文科技大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "景文科大選課;通識/體育志願選課 deans.just.edu.tw/RedirectPECourse/",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "搜尋結果顯示頁面為 109 學年舊畫面;課表查詢由 CIP 入口雲(jwcip.just.edu.tw)提供。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.just.edu.tw/p/412-1000-113.php?Lang=zh-tw",
+      "http://aisvm7.just.edu.tw/GCourse/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "中華醫事科技大學科目名稱暨課程大綱查詢",
+    "url": "https://mys.hwai.edu.tw/hwai-m/AA/Sel0405/Sel0405",
+    "schools": [
+      "1055"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中華醫事科技大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "中華醫大課程大綱、班級/教師/教室課表查詢(Sel0401~0405)",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "選課系統 https://course.hwai.edu.tw/hwai-m/S 與 course2.hwai.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://admi.hwai.edu.tw",
+      "https://mys.hwai.edu.tw/hwai-m/AA/Sel0405/Sel0405 (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "東南科技大學在校學生頁(課程/授課大綱查詢)",
+    "url": "https://index.tnu.edu.tw/page/student",
+    "schools": [
+      "1056"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "東南科技大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "東南科大班級開課表、課程/授課大綱、教室課表、教師課表、學習地圖查詢入口",
+    "loginRequired": "unknown",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "資訊公開頁 https://web.tnu.edu.tw/campusdata/?p=216 列同樣連結;新一代校務系統/Info 為選課入口。 2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>;無法從本機確認,可能為防火牆/舊 TLS/校內限定",
+    "evidence": [
+      "web search 2026-11-27: https://www.tnu.edu.tw/student",
+      "https://index.tnu.edu.tw/page/student (2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>)"
+    ]
+  },
+  {
+    "name": "德明財經科技大學課程地圖(CourseMap)",
+    "url": "http://ep-s.takming.edu.tw/CourseMap/",
+    "schools": [
+      "1057"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "德明財經科技大學教務處",
+    "category": [
+      "course_map",
+      "syllabus"
+    ],
+    "features": "德明財大課程地圖與課程大綱",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "TIP 資訊網提供班級(個人)課表查詢與網路選課;各學院課程資訊手冊 PDF 在 www.takming.edu.tw/course/newstud/。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: https://www.takming.edu.tw/course/newstud/Registration%20Information-N.pdf",
+      "http://ep-s.takming.edu.tw/CourseMap/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "南開科技大學選課專區(教務處)",
+    "url": "https://nkaao.nkut.edu.tw/front/curriculum/course/news.php?ID=bmt1dF9hYW8mY291cnNl",
+    "schools": [
+      "1060"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "南開科技大學教務處",
+    "category": [
+      "enrollment"
+    ],
+    "features": "南開科大學生選課專區",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校務資訊系統 https://app2.nkut.edu.tw/nkc/。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://nkaao.nkut.edu.tw/",
+      "https://nkaao.nkut.edu.tw/front/curriculum/course/news.php?ID=bmt1dF9hYW8mY291cnNl (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "中華科技大學公開課表/課程查詢系統(PubCsSearch)",
+    "url": "http://ap26.cust.edu.tw:8080/pis/PubCsSearch",
+    "schools": [
+      "1061"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中華科技大學教務處",
+    "category": [
+      "course_query"
+    ],
+    "features": "中華科大公開課程查詢",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本機對 cust.edu.tw 的 TLS 握手失敗(legacy renegotiation),僅能經搜尋結果(教務處 FAQ http://aca.cust.edu.tw/aca/fqa.html)確認;課程規劃表 https://aca.cust.edu.tw/curicul/course.html;舊資訊查詢系統 http://www.cust.edu.tw/www/info/intro_s.php 為 99 學年頁面。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: http://aca.cust.edu.tw/aca/fqa.html",
+      "http://ap26.cust.edu.tw:8080/pis/PubCsSearch (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "僑光科技大學開課排課、各類課表查詢",
+    "url": "https://www.ocu.edu.tw/p/404-1000-42863.php?Lang=zh-tw",
+    "schools": [
+      "1062"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "僑光科技大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "僑光科大開課/課表查詢入口",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "選課資訊專區 https://rcs.ocu.edu.tw/p/412-1024-2619.php?Lang=zh-tw;學生資訊系統 ccap.ocu.edu.tw/newsys。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.ocu.edu.tw/p/412-1000-5535.php?Lang=zh-tw",
+      "https://www.ocu.edu.tw/p/404-1000-42863.php?Lang=zh-tw (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "育達科技大學開課資料查詢",
+    "url": "http://course.ydu.edu.tw/LP/",
+    "schools": [
+      "1063"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "育達科技大學教務處",
+    "category": [
+      "course_query"
+    ],
+    "features": "育達科大開課資料查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "選課系統 http://cur.ydu.edu.tw/stdsel/signform.asp;資訊入口 portal.ydu.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://aao.ydu.edu.tw/zh_tw/course",
+      "http://course.ydu.edu.tw/LP/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "美和科技大學課程地圖資訊系統",
+    "url": "https://coursemap.meiho.edu.tw/",
+    "schools": [
+      "1064"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "美和科技大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "美和科大課程地圖",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校務行政系統入口 https://www.meiho.edu.tw/p/404-1000-13542.php。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.meiho.edu.tw/p/412-1000-5313.php?Lang=zh-tw",
+      "https://coursemap.meiho.edu.tw/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "吳鳳科技大學學生校務行政系統",
+    "url": "https://ccam.cc.wfu.edu.tw/",
+    "schools": [
+      "1065"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "吳鳳科技大學",
+    "category": [
+      "other",
+      "enrollment"
+    ],
+    "features": "吳鳳科大學生校務行政系統",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開課程查詢未找到;家長入口 sais1.wfu.edu.tw/guardPortal。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.wfu.edu.tw/",
+      "https://ccam.cc.wfu.edu.tw/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "修平科技大學開課科目查詢",
+    "url": "http://pisj.hust.edu.tw/jack2005/DataQuery/QueryOpenCourse.jsp",
+    "schools": [
+      "1069"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "修平科技大學教務處",
+    "category": [
+      "course_query"
+    ],
+    "features": "修平科大開課科目/班級/教師/教室課表查詢(DataQuery)",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "課程地圖 https://cmap.hust.edu.tw/;課表查詢頁 https://academic.hust.edu.tw/curriculum?item=12&custom=880&type=detail&isEn=0;網路選課 http://163.17.65.120/jack/Select3/assign.jsp(IP)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://academic.hust.edu.tw",
+      "http://pisj.hust.edu.tw/jack2005/DataQuery/QueryOpenCourse.jsp (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "長庚科技大學學年度開課暨課程資料查詢",
+    "url": "https://webmis.cgust.edu.tw/course/coursequery.asp",
+    "schools": [
+      "1070"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "長庚科技大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "長庚科大開課、課程規範大綱、進度表",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校務資訊系統 webmis.cgust.edu.tw 含學生線上選課;選課說明 https://acad.cgust.edu.tw/p/412-1008-2578.php。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: https://webmis.cgust.edu.tw/course/coursequery.asp",
+      "https://webmis.cgust.edu.tw/course/coursequery.asp (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "臺北城市科技大學全校/班級/教師課表查詢(tsint)",
+    "url": "https://siw.tpcu.edu.tw/tsint/",
+    "schools": [
+      "1071"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北城市科技大學教務處",
+    "category": [
+      "course_query"
+    ],
+    "features": "城市科大課表查詢;選課 http://siw72.tpcu.edu.tw/tsint/",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "課程資訊查詢說明頁 https://aao.tpcu.edu.tw/p/412-1016-638.php?Lang=zh-tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://aao.tpcu.edu.tw/",
+      "https://siw.tpcu.edu.tw/tsint/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "敏實科技大學課程/書單/教學大綱查詢(訪客)",
+    "url": "https://ccourse.mitust.edu.tw/score/crs_info/crs_guest_rwd.aspx",
+    "schools": [
+      "1072"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "敏實科技大學教務處",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "敏實科大訪客課程、書單、教學大綱查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "另有課表查詢 https://regist.mitust.edu.tw/register/shwCourseTable.ASP;115 學年起大綱 https://regist.mitust.edu.tw/mgtstock/cp_public/course_progress_public_search.asp;學生資訊系統 ccourse.mitust.edu.tw/score。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.mitust.edu.tw/",
+      "https://ccourse.mitust.edu.tw/score/crs_info/crs_guest_rwd.aspx (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "醒吾科技大學選課系統",
+    "url": "https://choice.hwu.edu.tw/choice/course.html",
+    "schools": [
+      "1073"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "醒吾科技大學教務處",
+    "category": [
+      "enrollment"
+    ],
+    "features": "醒吾科大選課",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校務系統 https://campus.hwu.edu.tw/hwc/index.html;科目與教師開課資料查詢教學 https://b001.hwu.edu.tw/Post?PId=4796。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.hwu.edu.tw/",
+      "https://choice.hwu.edu.tw/choice/course.html (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "文藻外語大學選課專區(教務處)",
+    "url": "http://d002.wzu.edu.tw/category/136230",
+    "schools": [
+      "1075"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "文藻外語大學教務處",
+    "category": [
+      "enrollment",
+      "course_query"
+    ],
+    "features": "文藻外語大學選課專區(全校開課清單)",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "課程地圖 https://webnet.wzu.edu.tw/wzuEc/index.aspx;資訊服務入口網 sso.wzu.edu.tw;教學綱要需登入校務資訊系統查詢。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://a001.wzu.edu.tw/visit/6",
+      "http://d002.wzu.edu.tw/category/136230 (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "華夏科技大學學生暨家長查詢服務系統(課表)",
+    "url": "https://student.hwh.edu.tw/student/Q/Q01/CourseTable",
+    "schools": [
+      "1076"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "華夏科技大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "華夏科大各班課表查詢",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "舊課程計畫表 http://campus.hwh.edu.tw/public/CourseComment.aspx(100 學年範例)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: https://student.hwh.edu.tw/student/Q/Q01/CourseTable",
+      "https://student.hwh.edu.tw/student/Q/Q01/CourseTable (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "致理科技大學課程資訊系統(CourseQuery)",
+    "url": "http://coursequery.chihlee.edu.tw/CourseQuery/",
+    "schools": [
+      "1078"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "致理科技大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "致理科大課表查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "學生選課 http://csportal.chihlee.edu.tw;學生資訊系統 sis.chihlee.edu.tw/SISystem/;路徑與中信科大相同。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.chihlee.edu.tw/",
+      "http://coursequery.chihlee.edu.tw/CourseQuery/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "宏國德霖科技大學課程資訊查詢(課程大綱)",
+    "url": "http://infosys.hdut.edu.tw/ALLTOP/module_dli_acad/A4/A4936_CusOutlineRep.php",
+    "schools": [
+      "1080"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "宏國德霖科技大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "宏國德霖科大課程大綱查詢",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "「ALLTOP」為廠商模組路徑;選課操作 https://academicaffairs.hdut.edu.tw/p/404-1002-11756.php。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.hdut.edu.tw/",
+      "http://infosys.hdut.edu.tw/ALLTOP/module_dli_acad/A4/A4936_CusOutlineRep.php (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "崇右影藝科技大學網路選課",
+    "url": "http://course.cufa.edu.tw/",
+    "schools": [
+      "1082"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "崇右影藝科技大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "崇右影藝科大網路選課",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "學生資訊服務系統 schinfo.cufa.edu.tw。 2026-11-27 本機探測失敗:<urlopen error timed out>;無法從本機確認,可能為防火牆/舊 TLS/校內限定",
+    "evidence": [
+      "https://www.cufa.edu.tw/",
+      "http://course.cufa.edu.tw/ (2026-11-27 本機探測失敗:<urlopen error timed out>)"
+    ]
+  },
+  {
+    "name": "台北海洋科技大學課程查詢系統(系級頁)",
+    "url": "https://dgad.tumt.edu.tw/p/412-1016-4487.php?Lang=zh-tw",
+    "schools": [
+      "1083"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "台北海洋科技大學電競數位遊戲與動畫設計系",
+    "category": [
+      "course_query"
+    ],
+    "features": "海洋科大電競數位遊戲與動畫設計系課程查詢(教室課表/班級課表)",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "未找到全校公開課程查詢;各系自有頁(航海系/觀光系課程規劃頁)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: https://tmgt.tumt.edu.tw/p/412-1013-780.php?Lang=zh-tw",
+      "https://dgad.tumt.edu.tw/p/412-1016-4487.php?Lang=zh-tw (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "亞東科技大學課程查詢系統",
+    "url": "https://portal.aeust.edu.tw/index.php?sid=CosQuery&mode=Query",
+    "schools": [
+      "1084"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "亞東科技大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "亞東科大課程查詢",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "學生選課 https://s.aeust.edu.tw/;課程地圖 http://www.cmap.aeust.edu.tw/;個人入口 portal.aeust.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.aeust.edu.tw/",
+      "https://portal.aeust.edu.tw/index.php?sid=CosQuery&mode=Query (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "南亞技術學院課表/教學大綱查詢",
+    "url": "https://web.nanya.edu.tw/school_service/student/stdcourse/class_d.htm",
+    "schools": [
+      "1168"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "南亞技術學院",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "南亞技術學院教學大綱(class_d)、課表(class_t)、選課(select_class)",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "http://www.nanya.edu.tw/home.aspx",
+      "https://web.nanya.edu.tw/school_service/student/stdcourse/class_d.htm (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "黎明技術學院選課相關(教務處)",
+    "url": "https://www.lit.edu.tw/academic/4032/",
+    "schools": [
+      "1183"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "黎明技術學院教務處",
+    "category": [
+      "enrollment"
+    ],
+    "features": "黎明技術學院選課事務;網路選課走 sso.lit.edu.tw",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開課程查詢未找到。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.lit.edu.tw/academic/",
+      "https://www.lit.edu.tw/academic/4032/ (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "德育護理健康學院選課專區(教務處)",
+    "url": "https://aca.dyhu.edu.tw/p/412-1022-37.php?Lang=zh-tw",
+    "schools": [
+      "1185"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "德育護理健康學院教務處",
+    "category": [
+      "enrollment"
+    ],
+    "features": "德育護理健康學院選課專區",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.dyhu.edu.tw/",
+      "https://aca.dyhu.edu.tw/p/412-1022-37.php?Lang=zh-tw (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "馬偕醫護管理專科學校快速選課網址(course.mkc)",
+    "url": "https://cas.mkc.edu.tw/cas/login?service=https://course.mkc.edu.tw/index_cas.php",
+    "schools": [
+      "1282"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "馬偕醫護管理專科學校",
+    "category": [
+      "enrollment"
+    ],
+    "features": "馬偕醫專選課(CAS 單一登入)",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "數位學習為 TronClass(tronclass.mkc.edu.tw,Keycloak SSO identity.mkc.edu.tw)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "http://www.mkc.edu.tw",
+      "https://cas.mkc.edu.tw/cas/login?service=https://course.mkc.edu.tw/index_cas.php (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "仁德醫護管理專科學校網路選課系統",
+    "url": "http://webservice2.jente.edu.tw/school/students/",
+    "schools": [
+      "1283"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "仁德醫護管理專科學校",
+    "category": [
+      "enrollment"
+    ],
+    "features": "仁德醫專網路選課;夜間輔導選課 webservice.jente.edu.tw/nightclass/",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "課程地圖 http://ep.jente.edu.tw/LearningMap/CurriculumAndVocation.aspx;重補修課程查詢 webservice2.jente.edu.tw/repairs/classinfo.php;網站為 oljtwww.jente.edu.tw (Joomla)。 2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>;無法從本機確認,可能為防火牆/舊 TLS/校內限定",
+    "evidence": [
+      "web search 2026-11-27: http://oljtwww.jente.edu.tw/index.php",
+      "http://webservice2.jente.edu.tw/school/students/ (2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>)"
+    ]
+  },
+  {
+    "name": "樹人醫護管理專科學校選課系統",
+    "url": "https://course.szmc.edu.tw/szmc_all/sel/login",
+    "schools": [
+      "1284"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "樹人醫護管理專科學校",
+    "category": [
+      "enrollment"
+    ],
+    "features": "樹人醫專選課",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "學生資訊網 https://sdnews.szmc.edu.tw/szmc_all/Home/Login。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.szmc.edu.tw/",
+      "https://course.szmc.edu.tw/szmc_all/sel/login (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "慈惠醫護管理專科學校學生資訊網(sc2008)",
+    "url": "http://163.24.235.235/sc2008",
+    "schools": [
+      "1285"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "慈惠醫護管理專科學校",
+    "category": [
+      "other",
+      "course_query"
+    ],
+    "features": "慈惠醫專學生資訊網(IP 位址入口)",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "路徑 /sc2008 與台南應大 stu95.tut.edu.tw/sc2008 相同;校網 https://www.tzuhui.edu.tw/home?cid=122 為校務資訊系統頁。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.tzuhui.edu.tw/home",
+      "http://163.24.235.235/sc2008 (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "耕莘健康管理專科學校新版校務行政系統(SAIS)",
+    "url": "https://sais-main.ctcn.edu.tw/CTCN/Home/landing",
+    "schools": [
+      "1286"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "耕莘健康管理專科學校",
+    "category": [
+      "other",
+      "enrollment",
+      "course_query"
+    ],
+    "features": "耕莘健專新版校務行政系統",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "「SAIS」疑為廠商校務系統產品名;說明 https://www.ctcn.edu.tw/Link_q.aspx?q=LS;吳鳳科大亦有 sais1.wfu.edu.tw。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "http://www.ctcn.edu.tw",
+      "https://sais-main.ctcn.edu.tw/CTCN/Home/landing (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "敏惠醫護管理專科學校開課資訊(teacher_qry)",
+    "url": "http://school.mhchcm.edu.tw/minhwei_webmis/teacher_qry_techguidtop.asp",
+    "schools": [
+      "1287"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "敏惠醫護管理專科學校",
+    "category": [
+      "course_query"
+    ],
+    "features": "敏惠醫專開課資訊",
+    "loginRequired": "unknown",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校務資訊說明 https://c025.mhchcm.edu.tw/p/412-1025-83.php?Lang=zh-tw。 2026-11-27 本機探測失敗:<urlopen error timed out>;無法從本機確認,可能為防火牆/舊 TLS/校內限定",
+    "evidence": [
+      "https://www.mhchcm.edu.tw/",
+      "http://school.mhchcm.edu.tw/minhwei_webmis/teacher_qry_techguidtop.asp (2026-11-27 本機探測失敗:<urlopen error timed out>)"
+    ]
+  },
+  {
+    "name": "育英醫護管理專科學校課表查詢專區(教務行政組)",
+    "url": "https://www.yuhing.edu.tw/ischool/publish_page/11?cid=178",
+    "schools": [
+      "1289"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "育英醫護管理專科學校教務處",
+    "category": [
+      "course_query",
+      "course_map"
+    ],
+    "features": "育英醫專課表查詢、課程地圖 https://lms.yuhing.edu.tw/cmap/、開課師資統計",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "教學計畫 PDF 直接放在官網(例 …/ischool/wr/file/1/551/…pdf);頁面為 ischool 版型(與慈惠醫專相同 /ischool/publish_page/)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.yuhing.edu.tw/ischool/publish_page/11/?cid=164",
+      "https://www.yuhing.edu.tw/ischool/publish_page/11?cid=178 (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "聖母醫護管理專科學校聖母醫專網站(教務/課程)",
+    "url": "https://www.smc.edu.tw/nss/p/index",
+    "schools": [
+      "1291"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "聖母醫護管理專科學校",
+    "category": [
+      "other"
+    ],
+    "features": "聖母醫專官網;校內選課/成績查詢系統入口未能確認",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開課程查詢系統未找到;僅有課程規劃表 PDF(例 https://www.smc.edu.tw/uploads/1657079974902sN7pIvW1.pdf)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: https://www.smc.edu.tw/nss/p/EDM",
+      "https://www.smc.edu.tw/nss/p/index (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "新生醫護管理專科學校教務處選課公告(新生e日遊)",
+    "url": "https://aa.hsc.edu.tw/p/404-1001-48950.php",
+    "schools": [
+      "1292"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "新生醫護管理專科學校教務處",
+    "category": [
+      "enrollment"
+    ],
+    "features": "新生醫專選課流程:經「新生e日遊」專科系統→教務系統→選課(加退選)",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "portal.hsc.edu.tw 從本機 DNS 解析失敗;首頁有「課程查詢」連結(web.hsc.edu.tw)。 2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "web search 2026-11-27: https://aa.hsc.edu.tw/p/406-1001-51066,r1.php?Lang=zh-tw",
+      "https://aa.hsc.edu.tw/p/404-1001-48950.php (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "崇仁醫護管理專科學校全校課程地圖",
+    "url": "https://coursemap.cjc.edu.tw/coursemap",
+    "schools": [
+      "1293"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "崇仁醫護管理專科學校",
+    "category": [
+      "course_map",
+      "course_query"
+    ],
+    "features": "崇仁醫專全校課程地圖,同平台含學輔、實習管理",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.cjc.edu.tw/",
+      "https://coursemap.cjc.edu.tw/coursemap (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "技職課程資源網",
+    "url": "http://course-tvc.yuntech.edu.tw/Web/index.aspx",
+    "schools": [],
+    "scope": "multi_school",
+    "operator": "official",
+    "operatorName": "國立雲林科技大學",
+    "category": [
+      "course_map",
+      "syllabus"
+    ],
+    "features": "教育部技職校院課程資源網(雲科大維運),供專科/技專校院課程資訊交換",
+    "loginRequired": "unknown",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "多所專科(例:育英醫專)官網連到此站。 涵蓋技職校院(維運校代碼 0023)。2026-11-27 本機探測失敗:<urlopen error timed out>",
+    "evidence": [
+      "https://www.yuhing.edu.tw/ischool/publish_page/0/",
+      "http://course-tvc.yuntech.edu.tw/Web/index.aspx (2026-11-27 本機探測失敗:<urlopen error timed out>)"
+    ]
+  },
+  {
+    "name": "跨校選課公共平台(高科大)",
+    "url": "https://cross-school.nkust.edu.tw/course/course07m.aspx",
+    "schools": [],
+    "scope": "multi_school",
+    "operator": "official",
+    "operatorName": "國立高雄科技大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "南部技專校院跨校選課公共平台",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "育英醫專、樹德科大等校網連結。 涵蓋技職校院(維運校代碼 0053)。2026-11-27 探測 HTTP 200",
+    "evidence": [
+      "https://www.yuhing.edu.tw/ischool/publish_page/0/",
+      "https://cross-school.nkust.edu.tw/course/course07m.aspx (2026-11-27 探測 HTTP 200)"
+    ]
+  },
+  {
+    "name": "北區跨校選課(ctle.ntut)",
+    "url": "http://www.ctle.ntut.edu.tw/public/toElectCourseStep2.do?d-5487-p=1&showRight=false&showRight=false",
+    "schools": [],
+    "scope": "multi_school",
+    "operator": "official",
+    "operatorName": "國立臺北科技大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "北區大學校院跨校選課平台(北科大 ctle 維運)",
+    "loginRequired": "unknown",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "戲曲學院在校學生頁連結。 涵蓋技職校院(維運校代碼 0025)。2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>",
+    "evidence": [
+      "https://www.tcpa.edu.tw/p/426-1000-5.php?Lang=zh-tw",
+      "http://www.ctle.ntut.edu.tw/public/toElectCourseStep2.do?d-5487-p=1&showRight=false&showRight=false (2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>)"
+    ]
+  },
+  {
+    "name": "課程資訊交換平台(tlrcct)",
+    "url": "http://www.tlrcct.yuntech.edu.tw/ctlr_web/ciep/AnnounceList.aspx",
+    "schools": [],
+    "scope": "multi_school",
+    "operator": "official",
+    "operatorName": "國立雲林科技大學",
+    "category": [
+      "other"
+    ],
+    "features": "技職校院課程資訊交換平台",
+    "loginRequired": "unknown",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "仁德醫專官網連結。 涵蓋技職校院(維運校代碼 0023)。2026-11-27 本機探測失敗:<urlopen error timed out>",
+    "evidence": [
+      "http://oljtwww.jente.edu.tw/index.php",
+      "http://www.tlrcct.yuntech.edu.tw/ctlr_web/ciep/AnnounceList.aspx (2026-11-27 本機探測失敗:<urlopen error timed out>)"
+    ]
+  }
+]

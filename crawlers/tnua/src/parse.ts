@@ -66,7 +66,7 @@ function redactContact(text: string): string {
     .replace(/(?<!\d)(?:\+886[ -]?9\d|09\d{2})[ -]?\d{3}[ -]?\d{3}(?!\d)/g, '[手機號碼略]');
 }
 
-export function toOffering(row: CourseRow, sourceTerm: string, department: { code: string; name: string }): Offering {
+export function toOffering(row: CourseRow, sourceTerm: string, department: { code: string; name?: string }): Offering {
   const sourceId = row.CourseID.trim();
   const [title, titleEn] = row.CourseName.split(/\s*&nbsp;?\s*|\u00a0/, 2);
   if (row.Year + row.Term !== sourceTerm || !sourceId.startsWith(`${sourceTerm}-`) || !title?.trim()) {

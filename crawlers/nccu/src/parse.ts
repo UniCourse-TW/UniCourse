@@ -76,8 +76,11 @@ export function realUnits<T, K extends keyof T>(list: T[], codeKey: K): T[] {
 }
 
 const DAYS: Record<string, number> = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 日: 7 };
-/** NCCU period labels in daily order: A B 1 2 3 4 C D 5 6 7 8 E F G. */
-const PERIOD = /^[AB1-8C-G]$/;
+/**
+ * NCCU period labels in daily order: A B 1 2 3 4 C D 5 6 7 8 E F G H.
+ * `H` is the last evening period (seen as `FGH`, `GH`, `EFGH` in every term since 105-1).
+ */
+const PERIOD = /^[AB1-8C-H]$/;
 
 /**
  * Parse NCCU `subTime` such as `三D56` or `一CD四78` into meetings.
@@ -85,9 +88,9 @@ const PERIOD = /^[AB1-8C-G]$/;
  */
 export function parseSubTime(raw: string | undefined): Meeting[] | undefined {
   const text = (raw ?? '').replace(/\s+/g, '');
-  if (!text || !/^([一二三四五六日][AB1-8C-G]+)+$/.test(text)) return undefined;
+  if (!text || !/^([一二三四五六日][AB1-8C-H]+)+$/.test(text)) return undefined;
   const meetings: Meeting[] = [];
-  for (const match of text.matchAll(/([一二三四五六日])([AB1-8C-G]+)/g)) {
+  for (const match of text.matchAll(/([一二三四五六日])([AB1-8C-H]+)/g)) {
     const periods = [...match[2]].filter((p) => PERIOD.test(p));
     meetings.push({ day: DAYS[match[1]], periods });
   }

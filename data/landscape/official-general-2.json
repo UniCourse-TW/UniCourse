@@ -1,0 +1,3538 @@
+[
+  {
+    "name": "開課資料查詢",
+    "url": "https://sis.fju.edu.tw/#/couSearch/basicInfo",
+    "schools": [
+      "1002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "輔仁大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "公開查詢開課資料。",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方另列獨立大綱與選課入口。本次直連查詢入口及 robots.txt 皆為 TLS 憑證驗證失敗；未逐一驗證課程結果或爬蟲規則。",
+    "evidence": [
+      "https://sis.fju.edu.tw/#/couSearch/basicInfo (直接請求：TLS 憑證驗證失敗)",
+      "https://course.fju.edu.tw/ (選課資訊網列出開課資料查詢)",
+      "https://sis.fju.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "課程大綱查詢",
+    "url": "https://outline.fju.edu.tw/#/outLineSearch/searchView",
+    "schools": [
+      "1002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "輔仁大學",
+    "category": [
+      "syllabus"
+    ],
+    "features": "查閱各學期、開課單位課程大綱。",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與開課查詢不同主機。校方仍列為課程大綱查詢；本次直連 TLS 憑證驗證失敗，未驗證結果。",
+    "evidence": [
+      "https://outline.fju.edu.tw/#/outLineSearch/searchView (直接請求：TLS 憑證驗證失敗)",
+      "https://www.fju.edu.tw/resource.jsp?labelID=14 (列出大綱查詢入口)"
+    ]
+  },
+  {
+    "name": "學生選課系統",
+    "url": "https://signcourse.fju.edu.tw/",
+    "schools": [
+      "1002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "輔仁大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生登入後辦理選課。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本次直連：TLS 憑證驗證失敗；不代表已永久停用。",
+    "evidence": [
+      "https://signcourse.fju.edu.tw/ (直接請求：TLS 憑證驗證失敗)",
+      "https://course.fju.edu.tw/ (正式選課入口)"
+    ]
+  },
+  {
+    "name": "TronClass 教學平台",
+    "url": "https://elearn2.fju.edu.tw/",
+    "schools": [
+      "1002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "輔仁大學",
+    "category": [
+      "lms"
+    ],
+    "features": "提供校內線上教學、教材與作業。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：TronClass。",
+    "evidence": [
+      "https://elearn2.fju.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.fju.edu.tw/resource.jsp?labelID=14 (在校生頁列為 TronClass 教學平台)"
+    ]
+  },
+  {
+    "name": "iCAN 教學平台",
+    "url": "http://www.elearn.fju.edu.tw/",
+    "schools": [
+      "1002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "輔仁大學",
+    "category": [
+      "lms"
+    ],
+    "features": "校方列出的 iCAN 教學平台。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與 TronClass 並列，未確認是否仍承載新課程。 本次直連：連線或回應逾時；不代表已永久停用。",
+    "evidence": [
+      "http://www.elearn.fju.edu.tw/ (直接請求：連線或回應逾時)",
+      "https://www.fju.edu.tw/resource.jsp?labelID=14 (在校生頁同時列出 iCAN 與 TronClass)"
+    ]
+  },
+  {
+    "name": "東吳大學課表查詢網路",
+    "url": "https://web.sys.scu.edu.tw/class40.asp?option=1",
+    "schools": [
+      "1003"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "東吳大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "一般課表查詢可查開課與授課計畫。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "舊式 ASP 框架；暑修另有入口。",
+    "evidence": [
+      "https://web.sys.scu.edu.tw/class40.asp?option=1 (直接開啟公開頁面，未登入)",
+      "https://web-ch.scu.edu.tw/regcurr (教務處註冊課務組列一般課表查詢)"
+    ]
+  },
+  {
+    "name": "校務行政資訊系統",
+    "url": "https://web.sys.scu.edu.tw/",
+    "schools": [
+      "1003"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "東吳大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內學生經校務系統辦理選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "舊式網頁框架；勿與公開課表入口混同。",
+    "evidence": [
+      "https://web.sys.scu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://web-ch.scu.edu.tw/regcurr/web_page/2292 (網路選課與註冊資料)"
+    ]
+  },
+  {
+    "name": "課程地圖",
+    "url": "http://cmap.curr.scu.edu.tw/",
+    "schools": [
+      "1003"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "東吳大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "課務組列出的課程地圖入口。",
+    "loginRequired": "unknown",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本次直連：連線或回應逾時；不代表已永久停用。",
+    "evidence": [
+      "http://cmap.curr.scu.edu.tw/ (直接請求：連線或回應逾時)",
+      "https://web-ch.scu.edu.tw/regcurr (官方課務組直接連結)"
+    ]
+  },
+  {
+    "name": "東吳大學 TronClass",
+    "url": "https://tronclass.scu.edu.tw/",
+    "schools": [
+      "1003"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "東吳大學",
+    "category": [
+      "lms"
+    ],
+    "features": "東吳大學數位教學平台，對外顯示課程清單和登入入口。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：TronClass；課內教材權限未驗證。",
+    "evidence": [
+      "https://tronclass.scu.edu.tw/ (直連驗證系統入口，未使用校內帳號)"
+    ]
+  },
+  {
+    "name": "中原大學課程查詢",
+    "url": "https://itouch.cycu.edu.tw/active_system/CourseQuerySystem/",
+    "schools": [
+      "1004"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中原大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "公開開課查詢和課程教學大綱。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "根路徑以 HTML meta refresh 導往單頁應用 spa。 robots.txt 指令（最多列八行）：User-agent: *；Disallow:。",
+    "evidence": [
+      "https://itouch.cycu.edu.tw/active_system/CourseQuerySystem/ (直接開啟公開頁面，未登入)",
+      "https://itouch.cycu.edu.tw/active_system/CourseQuerySystem/spa (前端查詢入口)",
+      "https://itouch.cycu.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "中原大學選課系統",
+    "url": "https://myself.cycu.edu.tw/#/login",
+    "schools": [
+      "1004"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中原大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內學生登入選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://myself.cycu.edu.tw/#/login (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://deptweb.cycu.edu.tw/tcsl/系所專區/連結下載/校內資源連結/ (校方系網列出的選課入口)"
+    ]
+  },
+  {
+    "name": "My Mentor 選課指導系統",
+    "url": "https://acadm.cycu.edu.tw/相關平台/my-mentor選課指導系統/",
+    "schools": [
+      "1004"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中原大學",
+    "category": [
+      "course_map",
+      "schedule_planner"
+    ],
+    "features": "以修課規劃與選課指導輔助學生。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "這是官方說明入口；個人功能須校內登入，不是加退選網站。",
+    "evidence": [
+      "https://acadm.cycu.edu.tw/相關平台/my-mentor選課指導系統/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://acadm.cycu.edu.tw/課務與註冊組聯合服務中心/相關平台/ (校方列為相關系統)"
+    ]
+  },
+  {
+    "name": "i-learning 2.0",
+    "url": "https://ilearning.cycu.edu.tw/",
+    "schools": [
+      "1004"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中原大學",
+    "category": [
+      "lms"
+    ],
+    "features": "提供 Moodle 課程空間及可公開閱覽的操作說明。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "平台首頁公告 i-learning 1.0 教材備份與運行事項。",
+    "evidence": [
+      "https://ilearning.cycu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://ilearning.cycu.edu.tw/mod/forum/discuss.php?d=260013 (1.0 系統運行及備份說明)"
+    ]
+  },
+  {
+    "name": "淡江大學課程查詢系統",
+    "url": "https://esquery.tku.edu.tw/acad/",
+    "schools": [
+      "1005"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "淡江大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "查閱各學期課表和授課資訊。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "查閱 robots.txt：HTTP 404；無法據此判定爬取規則。",
+    "evidence": [
+      "https://esquery.tku.edu.tw/acad/ (直接開啟公開頁面，未登入)",
+      "https://classic.tku.edu.tw/campstu.asp (在校學生頁列課程查詢系統)",
+      "https://esquery.tku.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "網路選課系統",
+    "url": "https://www.ais.tku.edu.tw/elecos/",
+    "schools": [
+      "1005"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "淡江大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內線上選課及加退選。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://www.ais.tku.edu.tw/elecos/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://classic.tku.edu.tw/campstu.asp (官方連結)"
+    ]
+  },
+  {
+    "name": "大學學習課程查詢系統",
+    "url": "https://luis.tku.edu.tw/",
+    "schools": [
+      "1005"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "淡江大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "呈現大學學習及課程規劃資訊。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "可開啟系統首頁，頁面另有登入。",
+    "evidence": [
+      "https://luis.tku.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://classic.tku.edu.tw/campstu.asp (官方列為大學學習課程查詢系統)"
+    ]
+  },
+  {
+    "name": "iClass 學習平台",
+    "url": "https://iclass.tku.edu.tw/",
+    "schools": [
+      "1005"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "淡江大學",
+    "category": [
+      "lms"
+    ],
+    "features": "淡江師生使用的學習平台。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品名稱 iClass。",
+    "evidence": [
+      "https://iclass.tku.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://classic.tku.edu.tw/campstu.asp (官方連結)"
+    ]
+  },
+  {
+    "name": "Moodle 遠距教學平台",
+    "url": "https://moodle.tku.edu.tw/",
+    "schools": [
+      "1005"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "淡江大學",
+    "category": [
+      "lms"
+    ],
+    "features": "遠距教學 Moodle 平台。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與 iClass 並列。 本次直連：連線或回應逾時；不代表已永久停用。",
+    "evidence": [
+      "https://moodle.tku.edu.tw/ (直接請求：連線或回應逾時)",
+      "https://classic.tku.edu.tw/campstu.asp (校方列為 Moodle 遠距教學平台)"
+    ]
+  },
+  {
+    "name": "中國文化大學選課專用入口",
+    "url": "https://mycourse.pccu.edu.tw/",
+    "schools": [
+      "1006"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中國文化大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生進入文大網路選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://mycourse.pccu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.pccu.edu.tw/ (官方首頁「選課入口」)"
+    ]
+  },
+  {
+    "name": "課業輔導管理系統",
+    "url": "https://teacher.pccu.edu.tw/",
+    "schools": [
+      "1006"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中國文化大學",
+    "category": [
+      "lms",
+      "syllabus"
+    ],
+    "features": "教師由教師專區維護課程介紹、進度和教材，學生利用校園資訊網閱覽。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "記錄的是教師專區入口；未用校內帳號驗證。 本次直連：DNS 無法解析；不代表已永久停用。",
+    "evidence": [
+      "https://teacher.pccu.edu.tw/ (直接請求：DNS 無法解析)",
+      "https://reg.pccu.edu.tw/var/file/40/1040/img/2322/84491056.pdf (教務處課業輔導系統操作路徑)",
+      "https://crjdmc.pccu.edu.tw/p/405-1221-65353,c4748.php?Lang=zh-tw (課業輔導功能與大綱說明)"
+    ]
+  },
+  {
+    "name": "課程檢索系統",
+    "url": "https://coursesearch.fcu.edu.tw/",
+    "schools": [
+      "1007"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "逢甲大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "公開查詢各學期開課、課程詳細資訊及大綱。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方同時連結 coursesearch01、coursesearch02；同一系統不重複算。 查閱 robots.txt：無法建立連線；無法據此判定爬取規則。",
+    "evidence": [
+      "https://coursesearch.fcu.edu.tw/ (直接開啟公開頁面，未登入)",
+      "https://www.iecs.fcu.edu.tw/about/course_plan/ (115-1 課表和課程檢索入口)",
+      "https://coursesearch.fcu.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "逢甲大學選課系統",
+    "url": "https://course.fcu.edu.tw/",
+    "schools": [
+      "1007"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "逢甲大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "使用 NID 與驗證碼登入辦理選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "登入頁另連公開課程檢索系統。",
+    "evidence": [
+      "https://course.fcu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://course.fcu.edu.tw/coursequest.aspx (登入頁的課程檢索轉接)"
+    ]
+  },
+  {
+    "name": "iLearn",
+    "url": "https://ilearn.fcu.edu.tw/",
+    "schools": [
+      "1007"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "逢甲大學",
+    "category": [
+      "lms"
+    ],
+    "features": "線上課程教材、教學活動與平台公告。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：Moodle；舊 ilearn2 主機轉址至本入口。",
+    "evidence": [
+      "https://ilearn.fcu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.iecs.fcu.edu.tw/about/course_plan/ (資工系連到 iLearn 2.0)"
+    ]
+  },
+  {
+    "name": "資工系課程地圖",
+    "url": "https://www.iecs.fcu.edu.tw/about/course_plan/",
+    "schools": [
+      "1007"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "逢甲大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "公開資工系課程計畫與課程地圖下載。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "僅資工系；包含 115 學年度課程地圖，不代表全校地圖系統。",
+    "evidence": [
+      "https://www.iecs.fcu.edu.tw/about/course_plan/ (直接開啟公開頁面，未登入)",
+      "https://www.iecs.fcu.edu.tw/media/img/ckeditor/2026/08/18/115_bachelor_course_map_new.pdf (115 級大學部課程地圖)"
+    ]
+  },
+  {
+    "name": "逢甲大學資料開放平台",
+    "url": "https://opendata.fcu.edu.tw/OpenData/Process",
+    "schools": [
+      "1007"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "逢甲大學",
+    "category": [
+      "open_data",
+      "api"
+    ],
+    "features": "提供校園資料 API 介接申請與審核說明。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "限校內教職員生從 MyFCU 申請 API Key；公開可讀的是規範與介紹，未確認有可使用的全校開課資料 API。查閱 robots.txt：HTTP 404；無法據此判定爬取規則。",
+    "evidence": [
+      "https://opendata.fcu.edu.tw/OpenData/Process (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://opendata.fcu.edu.tw/OpenData/Rule (使用對象及管理要點)",
+      "https://opendata.fcu.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "課程綱要查詢系統",
+    "url": "https://alcat.pu.edu.tw/index_ToNewPlt.php?sysID=CourseCatalogSys",
+    "schools": [
+      "1008"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "靜宜大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "靜宜課程綱要查詢入口。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "ALCAT 以表單轉接 MyPU；115 學年度校方指南及公開操作說明明示為「公眾項目」。",
+    "evidence": [
+      "https://alcat.pu.edu.tw/index_ToNewPlt.php?sysID=CourseCatalogSys (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://alcat.pu.edu.tw/ (E 校園服務網)",
+      "https://freshman.pu.edu.tw/p/16-1118-9924.php?Lang=zh-tw (115 學年度修課指南的公眾查詢路徑)",
+      "https://dorac.pu.edu.tw/var/file/59/1059/img/446/student03.pdf (公開操作說明)"
+    ]
+  },
+  {
+    "name": "靜宜大學課程地圖",
+    "url": "https://alcat.pu.edu.tw/2009coursemap/",
+    "schools": [
+      "1008"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "靜宜大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "按學系查看課程地圖。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "獨立的舊課程地圖公開介面；未確認與 MyPU 版本同步。",
+    "evidence": [
+      "https://alcat.pu.edu.tw/2009coursemap/ (直接開啟公開頁面，未登入)",
+      "https://www.pu.edu.tw/ (官方首頁列課程地圖)"
+    ]
+  },
+  {
+    "name": "外校生校際選課系統",
+    "url": "https://alcat.pu.edu.tw/index_ToNewPlt.php?sysID=outside_choice2",
+    "schools": [
+      "1008"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "靜宜大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "外校學生申辦校際選課的轉接入口。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "轉接 MyPU；115-1 校方說明須先註冊再選課，不是本校生選課入口。",
+    "evidence": [
+      "https://alcat.pu.edu.tw/index_ToNewPlt.php?sysID=outside_choice2 (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://alcat.pu.edu.tw/ (E 校園服務網)",
+      "https://dorac.pu.edu.tw/p/16-1059-62263.php?Lang=zh-tw (115-1 校際選課流程)"
+    ]
+  },
+  {
+    "name": "選課手冊暨課程綱要查詢（972以前）",
+    "url": "https://alcat.pu.edu.tw/abstract_new/query_main.php",
+    "schools": [
+      "1008"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "靜宜大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "查詢舊選課手冊及教學綱要。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "官網明標 97-2 以前，保留作歷史來源。",
+    "evidence": [
+      "https://alcat.pu.edu.tw/abstract_new/query_main.php (直接開啟公開頁面，未登入)",
+      "https://alcat.pu.edu.tw/ (並列新舊課程綱要查詢)"
+    ]
+  },
+  {
+    "name": "玩課雲 WOW Class",
+    "url": "https://tronclass.pu.edu.tw/",
+    "schools": [
+      "1008"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "靜宜大學",
+    "category": [
+      "lms"
+    ],
+    "features": "靜宜校內教學、教材與作業平台，首頁可查看公開課程清單。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：TronClass；自 112-1 全面取代舊網路學園，校方以校園帳號登入。",
+    "evidence": [
+      "https://tronclass.pu.edu.tw/ (直連驗證系統入口，未使用校內帳號)",
+      "https://dorac.pu.edu.tw/p/406-1059-45291%2Cr13.php?Lang=zh-tw (校方公告替換原學習平台)",
+      "https://dorac.pu.edu.tw/var/file/59/1059/img/455/11_notice_20250728.pdf (官方教材使用通知)"
+    ]
+  },
+  {
+    "name": "靜宜大學 e 校園服務網選課",
+    "url": "https://alcat.pu.edu.tw/",
+    "schools": [
+      "1008"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "靜宜大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "本校學生登入校園服務網辦理第一、二階段選課及加退選。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開課程綱要與外校生校際選課另有專用入口。",
+    "evidence": [
+      "https://alcat.pu.edu.tw/ (直接連線檢查：HTTP 200，未使用校內帳號)",
+      "https://c026.pu.edu.tw/p/404-1059-12043.php?Lang=zh-tw (教務處選課登入流程)",
+      "https://freshman.pu.edu.tw/p/16-1118-9924.php?Lang=zh-tw (115 學年度新生選課指南)"
+    ]
+  },
+  {
+    "name": "開課與師資資訊",
+    "url": "https://cgupublic.cgu.edu.tw/TeacherInfoAndOthers",
+    "schools": [
+      "1009"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "長庚大學",
+    "category": [
+      "course_query",
+      "course_map"
+    ],
+    "features": "提供各系所課程地圖、課規、實際開課資料及師資連結。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "官方資訊公開索引，不是單一互動式課表；資料分散到各系所。",
+    "evidence": [
+      "https://cgupublic.cgu.edu.tw/TeacherInfoAndOthers (直接開啟公開頁面，未登入)"
+    ]
+  },
+  {
+    "name": "icgu 校務資訊系統",
+    "url": "https://i.cgu.edu.tw/",
+    "schools": [
+      "1009"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "長庚大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "長庚學生使用的校務入口，包括校內選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://i.cgu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.cgu.edu.tw/ (首頁校務資訊入口)"
+    ]
+  },
+  {
+    "name": "長庚大學數位學習",
+    "url": "https://moocs.cgu.edu.tw/sso/cgu_o365login.php",
+    "schools": [
+      "1009"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "長庚大學",
+    "category": [
+      "lms"
+    ],
+    "features": "透過 Microsoft 365 校園身分登入數位學習平台。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本次直連：HTTP 403；不代表已永久停用。",
+    "evidence": [
+      "https://moocs.cgu.edu.tw/sso/cgu_o365login.php (直接請求：HTTP 403)",
+      "https://www.cgu.edu.tw/ (首頁數位學習 E-Learning 連結)"
+    ]
+  },
+  {
+    "name": "課程資料及教學計畫書查詢",
+    "url": "https://portal.yzu.edu.tw/cosSelect/Index.aspx",
+    "schools": [
+      "1010"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "元智大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "教學計畫書與課程資料查詢入口。",
+    "loginRequired": "unknown",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本次直連：連線或回應逾時；不代表已永久停用。",
+    "evidence": [
+      "https://portal.yzu.edu.tw/cosSelect/Index.aspx (直接請求：連線或回應逾時)",
+      "https://www.yzu.edu.tw/index.php/tw/services (元智校園服務連結)"
+    ]
+  },
+  {
+    "name": "元智大學選課系統",
+    "url": "https://isdna1.yzu.edu.tw/Cnstdsel/default.aspx",
+    "schools": [
+      "1010"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "元智大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "登入後選課；登入頁列出相關操作入口。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://isdna1.yzu.edu.tw/Cnstdsel/default.aspx (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.yzu.edu.tw/index.php/tw/services (校園服務列選課系統)"
+    ]
+  },
+  {
+    "name": "元智大學應用外語系課程地圖",
+    "url": "https://fl.hs.yzu.edu.tw/tw/modules/news/article.php?storyid=363",
+    "schools": [
+      "1010"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "元智大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "公開應用外語系課程規劃與英語、日語、語言科技修課路徑。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系級地圖，不代表全校統一地圖。",
+    "evidence": [
+      "https://fl.hs.yzu.edu.tw/tw/modules/news/article.php?storyid=363 (直接連線檢查：HTTP 200，未使用校內帳號)"
+    ]
+  },
+  {
+    "name": "中華大學課程查詢",
+    "url": "https://course.chu.edu.tw/",
+    "schools": [
+      "1011"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中華大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "查詢學期課程、開課單位和課程資訊。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "入口標示 115 學年度第 1 學期。 robots.txt 指令（最多列八行）：User-agent: *；Disallow: /。",
+    "evidence": [
+      "https://course.chu.edu.tw/ (直接開啟公開頁面，未登入)",
+      "https://www.chu.edu.tw/p/426-1000-2.php?Lang=zh-tw (校方連到課程查詢)",
+      "https://course.chu.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "CHUMoodle 數位學習平台入口網站",
+    "url": "https://elearn.chu.edu.tw/",
+    "schools": [
+      "1011"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中華大學",
+    "category": [
+      "lms"
+    ],
+    "features": "校內教學空間，首頁公布各學年度的課程平台。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：Moodle。",
+    "evidence": [
+      "https://elearn.chu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.chu.edu.tw/p/426-1000-2.php?Lang=zh-tw (校方指定入口)"
+    ]
+  },
+  {
+    "name": "中華大學學生學習歷程資訊系統",
+    "url": "https://sso.chu.edu.tw/",
+    "schools": [
+      "1011"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中華大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生登入 e-Portfolio 進入網路選課和查詢選課結果。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與免登入課程查詢、CHUMoodle 分開。",
+    "evidence": [
+      "https://sso.chu.edu.tw/ (直接連線檢查：HTTP 200，未使用校內帳號)",
+      "https://aa.chu.edu.tw/var/file/49/1049/img/423689108.pdf (115-1 選課行事曆)",
+      "https://sa.chu.edu.tw/var/file/50/1050/img/460/235181882.pdf (選課操作手冊)"
+    ]
+  },
+  {
+    "name": "大葉大學課程查詢",
+    "url": "http://syl.dyu.edu.tw/",
+    "schools": [
+      "1012"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "大葉大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "查閱開課清單、課程綱要及選課限制。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "http://syl.dyu.edu.tw/ (直接開啟公開頁面，未登入)",
+      "https://mdc.dyu.edu.tw/rwd/course.html (系網明列課程查詢用途)"
+    ]
+  },
+  {
+    "name": "大葉大學學生資訊系統",
+    "url": "https://sis.dyu.edu.tw/RWD/",
+    "schools": [
+      "1012"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "大葉大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生校務入口，選課等校內作業須登入。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://sis.dyu.edu.tw/RWD/ (直接開啟入口；HTTP 回應成功，未登入)"
+    ]
+  },
+  {
+    "name": "大葉大學 TronClass",
+    "url": "https://tronclass.dyu.edu.tw/",
+    "schools": [
+      "1012"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "大葉大學",
+    "category": [
+      "lms"
+    ],
+    "features": "校內數位課程及教材平台。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：TronClass。",
+    "evidence": [
+      "https://tronclass.dyu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://sis.dyu.edu.tw/RWD/ (學生資訊系統列出 TronClass)"
+    ]
+  },
+  {
+    "name": "多媒體數位內容學程課程規劃",
+    "url": "https://mdc.dyu.edu.tw/rwd/course.html",
+    "schools": [
+      "1012"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "大葉大學",
+    "category": [
+      "course_map",
+      "course_query"
+    ],
+    "features": "公開系級課程地圖及歷年開課總表、班級和教師課表。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "僅所屬系所；有 115-1 的 PDF 附件。",
+    "evidence": [
+      "https://mdc.dyu.edu.tw/rwd/course.html (直接開啟公開頁面，未登入)",
+      "https://mdc.dyu.edu.tw/files/1151-all.pdf (115-1 開課總表)"
+    ]
+  },
+  {
+    "name": "華梵大學網路初選",
+    "url": "http://mis1.cc.hfu.edu.tw/CS/",
+    "schools": [
+      "1013"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "華梵大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內學生登入辦理網路初選。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "http://mis1.cc.hfu.edu.tw/CS/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.hfu.edu.tw/Front/Student-Affairs-System/Student-Affairs-System-01/Page.aspx?id=9MDH7z%2BLWlo= (選課系統連結)"
+    ]
+  },
+  {
+    "name": "MyWay 我的模組課程學習地圖",
+    "url": "https://myway.hfu.edu.tw/",
+    "schools": [
+      "1013"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "華梵大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "提供課程模組總覽與個人模組選擇。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開首頁和模組資訊；個人功能另設登入。",
+    "evidence": [
+      "https://myway.hfu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.hfu.edu.tw/ (主站 MyWay 連結)"
+    ]
+  },
+  {
+    "name": "華梵大學數位學習網",
+    "url": "https://m26.hfu.edu.tw/moodle/",
+    "schools": [
+      "1013"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "華梵大學",
+    "category": [
+      "lms"
+    ],
+    "features": "校方連結的 Moodle 數位教學入口。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：Moodle。 本次直連：連線或回應逾時；不代表已永久停用。",
+    "evidence": [
+      "https://m26.hfu.edu.tw/moodle/ (直接請求：連線或回應逾時)",
+      "https://www.hfu.edu.tw/ (首頁直接連結)"
+    ]
+  },
+  {
+    "name": "義守大學課程大綱查詢",
+    "url": "https://netreg.isu.edu.tw/wapp/wapp_sha/wap_s140000_bilingual.asp",
+    "schools": [
+      "1014"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "義守大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "公開依學年學期、系所等條件查詢課程大綱。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與選課入口共用主機，但大綱查詢不要求校內身分。",
+    "evidence": [
+      "https://netreg.isu.edu.tw/wapp/wapp_sha/wap_s140000_bilingual.asp (直接開啟公開頁面，未登入)",
+      "https://aa.isu.edu.tw/page/課程大綱查詢-kdrUMpAuqGJb (教務處說明與系統連結)"
+    ]
+  },
+  {
+    "name": "義守大學網路註冊與選課",
+    "url": "https://netreg.isu.edu.tw/",
+    "schools": [
+      "1014"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "義守大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內學生辦理網路選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "同主機有公開課程大綱；本項指需登入的選課入口。",
+    "evidence": [
+      "https://netreg.isu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://aa.isu.edu.tw/page/選課操作及課程查詢-tZ1LwUOcwmQb (教務處選課操作說明)"
+    ]
+  },
+  {
+    "name": "ISU Moodle 教學資源平台",
+    "url": "https://moodle.isu.edu.tw/",
+    "schools": [
+      "1014"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "義守大學",
+    "category": [
+      "lms"
+    ],
+    "features": "義守大學的數位教學資源及課程搜尋入口。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：Moodle；首頁另連 110–113 學年度平台。",
+    "evidence": [
+      "https://moodle.isu.edu.tw/ (直連驗證系統入口，未使用校內帳號)"
+    ]
+  },
+  {
+    "name": "學期開課一覽表",
+    "url": "https://ap4.shu.edu.tw/stu1/stu1/sc01021.aspx",
+    "schools": [
+      "1015"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "世新大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "免登入查全校各學期開課及課程資訊。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "查閱 robots.txt：HTTP 404；無法據此判定爬取規則。",
+    "evidence": [
+      "https://ap4.shu.edu.tw/stu1/stu1/sc01021.aspx (直接開啟公開頁面，未登入)",
+      "https://www.shu.edu.tw/Student.aspx (官方「開課查課」連結)",
+      "https://ap4.shu.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "世新選課地圖查詢（訪客）",
+    "url": "https://ap2.shu.edu.tw/stu1/stu1/SE0201.aspx",
+    "schools": [
+      "1015"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "世新大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "提供訪客按學年度及學制、系級檢視課程規劃。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://ap2.shu.edu.tw/stu1/stu1/SE0201.aspx (直接開啟公開頁面，未登入)",
+      "https://www.shu.edu.tw/Student.aspx (官方選課地圖連結)"
+    ]
+  },
+  {
+    "name": "世新大學選課系統",
+    "url": "https://aplb.shu.edu.tw/",
+    "schools": [
+      "1015"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "世新大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生登入進行選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "HTTP 轉址至 https://ap7.shu.edu.tw/stu2/login.aspx。",
+    "evidence": [
+      "https://aplb.shu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.shu.edu.tw/Student.aspx (官方選課系統連結)"
+    ]
+  },
+  {
+    "name": "TronClass 教學平台",
+    "url": "https://ap.shu.edu.tw/SSO/WebTrans.aspx?id=TronClass_Root",
+    "schools": [
+      "1015"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "世新大學",
+    "category": [
+      "lms"
+    ],
+    "features": "使用世新 SSO 進入 TronClass 教學課程。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：TronClass。",
+    "evidence": [
+      "https://ap.shu.edu.tw/SSO/WebTrans.aspx?id=TronClass_Root (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.shu.edu.tw/Student.aspx (在校生頁列出兩個 LMS)"
+    ]
+  },
+  {
+    "name": "eLearn 教學平台",
+    "url": "https://ap.shu.edu.tw/sso/WebTrans.aspx?id=eLearn_Root",
+    "schools": [
+      "1015"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "世新大學",
+    "category": [
+      "lms"
+    ],
+    "features": "使用世新 SSO 進入 eLearn。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與 TronClass 並列；未確認是否仍開設新課程。",
+    "evidence": [
+      "https://ap.shu.edu.tw/sso/WebTrans.aspx?id=eLearn_Root (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.shu.edu.tw/Student.aspx (在校生頁另列 eLearn)"
+    ]
+  },
+  {
+    "name": "銘傳大學開課資料",
+    "url": "https://stu.mcu.edu.tw/appx/qry/Qs01.aspx",
+    "schools": [
+      "1016"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "銘傳大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "查詢各學期開課及課程資料。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "舊開課資料入口以 JavaScript 轉址至本頁。",
+    "evidence": [
+      "https://stu.mcu.edu.tw/appx/qry/Qs01.aspx (直接開啟公開頁面，未登入)",
+      "https://www.mcu.edu.tw/student/new-query/sel-query/index.html (舊入口轉址)",
+      "https://academic.mcu.edu.tw/qa-ch-03curriculum-section/ (教務處課務組)"
+    ]
+  },
+  {
+    "name": "銘傳大學學生資訊系統",
+    "url": "https://www.mcu.edu.tw/student/new-query/default.asp",
+    "schools": [
+      "1016"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "銘傳大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生校務入口，提供登入後選課及學籍功能。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://www.mcu.edu.tw/student/new-query/default.asp (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://academic.mcu.edu.tw/qa-ch-03curriculum-section/ (官方入口)"
+    ]
+  },
+  {
+    "name": "銘傳大學數位學習網",
+    "url": "https://moodle.mcu.edu.tw/",
+    "schools": [
+      "1016"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "銘傳大學",
+    "category": [
+      "lms"
+    ],
+    "features": "Moodle 數位課程及教學資源。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：Moodle。",
+    "evidence": [
+      "https://moodle.mcu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://web2.mcu.edu.tw/學習資源/ (官方學習資源頁)"
+    ]
+  },
+  {
+    "name": "實踐大學臺北校務系統",
+    "url": "https://ap.usc.edu.tw/sso/Login.aspx",
+    "schools": [
+      "1017"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "實踐大學",
+    "category": [
+      "course_query",
+      "enrollment"
+    ],
+    "features": "校方文件列出訪客查閱學期開課一覽及學生登入選課。",
+    "loginRequired": "partial",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "官方首頁入口；本次直連 HTTP 404。高雄校區另有可以開啟的入口。",
+    "evidence": [
+      "https://ap.usc.edu.tw/sso/Login.aspx (直接請求：HTTP 404)",
+      "https://www.usc.edu.tw/ (首頁列校務系統)",
+      "https://regcurr.usc.edu.tw/p/405-1059-35996%2Cc2813.php?Lang=zh-tw (115-1 教務處區分訪客查課與登入功能)"
+    ]
+  },
+  {
+    "name": "實踐大學 TronClass",
+    "url": "https://tronclass.usc.edu.tw/",
+    "schools": [
+      "1017"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "實踐大學",
+    "category": [
+      "lms"
+    ],
+    "features": "實踐大學數位教學課程平台。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：TronClass。",
+    "evidence": [
+      "https://tronclass.usc.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.usc.edu.tw/ (首頁直接連結)"
+    ]
+  },
+  {
+    "name": "實踐大學高雄校務系統",
+    "url": "https://ap.kh.usc.edu.tw/sso/login.aspx",
+    "schools": [
+      "1017"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "實踐大學",
+    "category": [
+      "course_query",
+      "course_map",
+      "enrollment"
+    ],
+    "features": "高雄校區訪客可查課表及教室使用，新生可預覽課表。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "登入表單和新生／訪客查詢入口並列；未以校內帳號驗證選課流程。",
+    "evidence": [
+      "https://ap.kh.usc.edu.tw/sso/login.aspx (直連驗證系統入口，未使用校內帳號)",
+      "https://aca.kh.usc.edu.tw/p/404-1001-22619.php?Lang=zh-tw (高雄教務處的訪客查詢路徑)",
+      "https://bpca.kh.usc.edu.tw/p/406-1029-33599%2Cr1081.php?Lang=zh-tw (列出課程查詢與全校課程地圖功能)"
+    ]
+  },
+  {
+    "name": "高雄醫學大學 Web 資料庫",
+    "url": "https://wac.kmu.edu.tw/",
+    "schools": [
+      "1019"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "高雄醫學大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "enrollment"
+    ],
+    "features": "校方文件說明可在開放查詢查閱課程大綱與進度；學生登入辦理網路選課。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "官方選課手冊列 Q.1.06 課程資料查詢；未登入學生系統。",
+    "evidence": [
+      "https://wac.kmu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://info.kmu.edu.tw/index.php/kmu-information/board-of-directors/financial-information/20-other-information/61-course-and-faculty (官方公開區列課程大綱及進度功能)"
+    ]
+  },
+  {
+    "name": "南華校務行政系統",
+    "url": "https://necis.nhu.edu.tw/nhu",
+    "schools": [
+      "1020"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "南華大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生登入辦理校務及選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://necis.nhu.edu.tw/nhu (直接開啟入口；HTTP 回應成功，未登入)"
+    ]
+  },
+  {
+    "name": "南華大學數位學習網",
+    "url": "https://moodle.nhu.edu.tw/",
+    "schools": [
+      "1020"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "南華大學",
+    "category": [
+      "lms"
+    ],
+    "features": "校內課程教材和數位教學。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：Moodle。",
+    "evidence": [
+      "https://moodle.nhu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://necis.nhu.edu.tw/nhu (校務入口列數位學習網)"
+    ]
+  },
+  {
+    "name": "南華大學課程資訊查詢",
+    "url": "https://std.nhu.edu.tw/Academic/SelCourse/QueryCourses.aspx",
+    "schools": [
+      "1020"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "南華大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "免登入以學期、系所、課程名稱與 SDGs 等條件查詢課程。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "同一表單提供英文介面入口。",
+    "evidence": [
+      "https://std.nhu.edu.tw/Academic/SelCourse/QueryCourses.aspx (直連驗證系統入口，未使用校內帳號)"
+    ]
+  },
+  {
+    "name": "真理大學全校課表查詢",
+    "url": "https://sso.au.edu.tw/AU/outside.aspx?mainPage=QQBwAHAAbABpAGMAYQB0AGkAbwBuAC8AVABLAEUALwBUAEsARQAyADIALwBUAEsARQAyADIAMQAwAF8AMAAxAC4AYQBzAHAAeAA=",
+    "schools": [
+      "1021"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "真理大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "校務系統的對外全校課表查詢。",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本次直連：TLS 連線失敗；不代表已永久停用。",
+    "evidence": [
+      "https://sso.au.edu.tw/AU/outside.aspx?mainPage=QQBwAHAAbABpAGMAYQB0AGkAbwBuAC8AVABLAEUALwBUAEsARQAyADIALwBUAEsARQAyADIAMQAwAF8AMAAxAC4AYQBzAHAAeAA= (直接請求：TLS 連線失敗)",
+      "https://registration.au.edu.tw/ (教務處兩處連到全校課表)"
+    ]
+  },
+  {
+    "name": "真理大學課程地圖",
+    "url": "https://registration.au.edu.tw/p/404-1024-101568.php?Lang=zh-tw",
+    "schools": [
+      "1021"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "真理大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "註冊課務組彙整各系課程地圖。",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系所連結彙編，不是互動式選課系統。 本次直連：TLS 連線失敗；不代表已永久停用。",
+    "evidence": [
+      "https://registration.au.edu.tw/p/404-1024-101568.php?Lang=zh-tw (直接請求：TLS 連線失敗)",
+      "https://registration.au.edu.tw/ (註冊課務組「課程地圖」)"
+    ]
+  },
+  {
+    "name": "真理大學校務資訊系統",
+    "url": "https://sso.au.edu.tw/portal/",
+    "schools": [
+      "1021"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "真理大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "經校務入口登入後進行學生選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://sso.au.edu.tw/portal/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://webpage.au.edu.tw/p/426-1085-1.php?Lang=zh-tw (在校學生頁列出系統)"
+    ]
+  },
+  {
+    "name": "真理大學 TronClass",
+    "url": "https://tronclass.au.edu.tw/#/",
+    "schools": [
+      "1021"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "真理大學",
+    "category": [
+      "lms"
+    ],
+    "features": "校內數位課程與教材。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：TronClass。 本次直連：連線或回應逾時；不代表已永久停用。",
+    "evidence": [
+      "https://tronclass.au.edu.tw/#/ (直接請求：連線或回應逾時)",
+      "https://registration.au.edu.tw/p/404-1024-118472.php?Lang=zh-tw (註冊課務組 TronClass 使用說明)"
+    ]
+  },
+  {
+    "name": "本學期課程",
+    "url": "https://couquery.ttu.edu.tw/main/ListClassCourse.php",
+    "schools": [
+      "1022"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "大同大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "公開查詢本學期課堂與課程資訊。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://couquery.ttu.edu.tw/main/ListClassCourse.php (直接開啟公開頁面，未登入)",
+      "https://curri.ttu.edu.tw/ (教務處課務組列本學期課程入口)"
+    ]
+  },
+  {
+    "name": "系所歷年開課資料查詢系統",
+    "url": "https://tchinfo.ttu.edu.tw/couquery/historysbj.php",
+    "schools": [
+      "1022"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "大同大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "依系所和學年度查詢歷史開課資料。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與 couquery 本學期入口不同。",
+    "evidence": [
+      "https://tchinfo.ttu.edu.tw/couquery/historysbj.php (直接開啟公開頁面，未登入)",
+      "https://curri.ttu.edu.tw/ (教務處課務組直接連結)"
+    ]
+  },
+  {
+    "name": "大同大學課程地圖",
+    "url": "https://curri.ttu.edu.tw/p/412-1033-1193.php",
+    "schools": [
+      "1022"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "大同大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "教務處公開各系課程地圖。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://curri.ttu.edu.tw/p/412-1033-1193.php (直接開啟公開頁面，未登入)",
+      "https://curri.ttu.edu.tw/ (課務組地圖入口)"
+    ]
+  },
+  {
+    "name": "大同大學校務資訊系統",
+    "url": "https://stucis.ttu.edu.tw/stucis.htm",
+    "schools": [
+      "1022"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "大同大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生透過校務資訊系統登入辦理選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "框架式入口；未登入。",
+    "evidence": [
+      "https://stucis.ttu.edu.tw/stucis.htm (直連驗證系統入口，未使用校內帳號)"
+    ]
+  },
+  {
+    "name": "大同大學 iLearn",
+    "url": "https://ilearn.ttu.edu.tw/",
+    "schools": [
+      "1022"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "大同大學",
+    "category": [
+      "lms"
+    ],
+    "features": "數位教學平台，對外顯示課程清單與登入入口。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：TronClass；課內教材權限未驗證。",
+    "evidence": [
+      "https://ilearn.ttu.edu.tw/ (直連驗證系統入口，未使用校內帳號)"
+    ]
+  },
+  {
+    "name": "慈濟大學課程資訊系統",
+    "url": "https://edurp.tcu.edu.tw/scaswebadmin/annoclaslist.aspx",
+    "schools": [
+      "1027"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "慈濟大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "公開查詢各學期開課資訊。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "使用 ASP.NET；官方入口可免登入。 查閱 robots.txt：HTTP 404；無法據此判定爬取規則。",
+    "evidence": [
+      "https://edurp.tcu.edu.tw/scaswebadmin/annoclaslist.aspx (直接開啟公開頁面，未登入)",
+      "https://academic.tcu.edu.tw/ (教務處直接列課程查詢系統)",
+      "https://edurp.tcu.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "新校務系統",
+    "url": "https://admin.tcu.edu.tw/TCU/RWD/nlogin.php",
+    "schools": [
+      "1027"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "慈濟大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內選課及校務功能入口。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "官網另並列舊校務系統。",
+    "evidence": [
+      "https://admin.tcu.edu.tw/TCU/RWD/nlogin.php (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.tcu.edu.tw/ (官網標示「(新)校務系統」)"
+    ]
+  },
+  {
+    "name": "TCU Moodle",
+    "url": "https://moodle.tcu.edu.tw/",
+    "schools": [
+      "1027"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "慈濟大學",
+    "category": [
+      "lms"
+    ],
+    "features": "慈濟大學 Moodle 數位學習入口。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "直連導向 Moodle 登入頁。",
+    "evidence": [
+      "https://moodle.tcu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)"
+    ]
+  },
+  {
+    "name": "學期課程／授課進度表查詢",
+    "url": "https://newacademic.tmu.edu.tw/outside.aspx?mainPage=QQBwAHAAbAB%20pAGMAYQB0AGkAbwBuAC8AVABLAEUALwBUAEsARQA1ADAALwBUAEsAR%20QA1ADAAMQAwAF8ALgBhAHMAcAB4AA==&GUID=",
+    "schools": [
+      "1028"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北醫學大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "查詢學期課程及授課進度表。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "使用校務系統 outside 入口，由新生入口與 LMS 同時連結。",
+    "evidence": [
+      "https://newacademic.tmu.edu.tw/outside.aspx?mainPage=QQBwAHAAbAB%20pAGMAYQB0AGkAbwBuAC8AVABLAEUALwBUAEsARQA1ADAALwBUAEsAR%20QA1ADAAMQAwAF8ALgBhAHMAcAB4AA==&GUID= (直接開啟公開頁面，未登入)",
+      "https://freshman.tmu.edu.tw/graduate/xmdoc/cont?xsmsid=0J113405531836846849 (新生選課須知)",
+      "https://im.tmu.edu.tw/index/ (課程查詢連結)"
+    ]
+  },
+  {
+    "name": "北醫教務系統",
+    "url": "https://newacademic.tmu.edu.tw/",
+    "schools": [
+      "1028"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北醫學大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生登入辦理課程選課及加退選。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://newacademic.tmu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://im.tmu.edu.tw/index/ (網站明列選課及加退選入口)"
+    ]
+  },
+  {
+    "name": "I'm@TMU 數位學習4.0",
+    "url": "https://im.tmu.edu.tw/",
+    "schools": [
+      "1028"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北醫學大學",
+    "category": [
+      "lms"
+    ],
+    "features": "提供數位教學課程、資源及學生常用教務連結。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "頁尾標示台灣數位學習科技 Formosasoft。",
+    "evidence": [
+      "https://im.tmu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://im.tmu.edu.tw/index/ (功能連結及供應商標示)"
+    ]
+  },
+  {
+    "name": "中山醫學大學學生選課系統",
+    "url": "https://stucs.csmu.edu.tw/",
+    "schools": [
+      "1029"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中山醫學大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "中山醫學生登入後完成網路選課。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "教務處有 115-1 選課公告。 本次直連：連線或回應逾時；不代表已永久停用。",
+    "evidence": [
+      "https://stucs.csmu.edu.tw/ (直接請求：連線或回應逾時)",
+      "https://oaa.csmu.edu.tw/ (教務處直接連結及學期公告)"
+    ]
+  },
+  {
+    "name": "中山醫學大學全校課程地圖",
+    "url": "https://map.csmu.edu.tw/default.htm",
+    "schools": [
+      "1029"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中山醫學大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "分院系提供課程地圖。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "框架式入口。",
+    "evidence": [
+      "https://map.csmu.edu.tw/default.htm (直接開啟公開頁面，未登入)",
+      "https://oaa.csmu.edu.tw/ (官方課程地圖連結)"
+    ]
+  },
+  {
+    "name": "ee-class 數位學習系統",
+    "url": "https://ee2.csmu.edu.tw/",
+    "schools": [
+      "1029"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中山醫學大學",
+    "category": [
+      "lms"
+    ],
+    "features": "教學空間與數位學習功能。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：ee-class。",
+    "evidence": [
+      "https://ee2.csmu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://oaa.csmu.edu.tw/ (官方標示 ee-class)"
+    ]
+  },
+  {
+    "name": "中山醫學大學課表及課程綱要查詢",
+    "url": "https://student.csmu.edu.tw/guest/wSco005Pub/wSco005Pub.aspx",
+    "schools": [
+      "1029"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中山醫學大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "免登入依學年度、學期、學制及系所查詢課表與課程綱要。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "學生資訊系統的訪客區，不是登入選課入口。",
+    "evidence": [
+      "https://student.csmu.edu.tw/guest/wSco005Pub/wSco005Pub.aspx (直連驗證系統入口，未使用校內帳號)",
+      "https://student.csmu.edu.tw/guest/NoneLogon1.aspx (訪客入口導向查詢表單)"
+    ]
+  },
+  {
+    "name": "長榮大學課程查詢系統",
+    "url": "https://eportal.cjcu.edu.tw/syllabus/home",
+    "schools": [
+      "1033"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "長榮大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "course_map"
+    ],
+    "features": "查詢課程綱要與課程配當。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "配當是在同一課程查詢系統的另一頁。 robots.txt 未回傳可識別的爬蟲指令。",
+    "evidence": [
+      "https://eportal.cjcu.edu.tw/syllabus/home (直接開啟公開頁面，未登入)",
+      "https://cjcu.edu.tw/tw/service.php?id=1 (官方並列配當查詢和大綱查詢)",
+      "https://eportal.cjcu.edu.tw/Syllabus/Home/Plan (課程配當頁)",
+      "https://eportal.cjcu.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "長榮大學選課系統",
+    "url": "https://csweb.cjcu.edu.tw/",
+    "schools": [
+      "1033"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "長榮大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生線上選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://csweb.cjcu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://cjcu.edu.tw/tw/service.php?id=1 (官方系統入口)"
+    ]
+  },
+  {
+    "name": "長榮大學 I-Learning",
+    "url": "https://tronclass.cjcu.edu.tw/#/",
+    "schools": [
+      "1033"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "長榮大學",
+    "category": [
+      "lms"
+    ],
+    "features": "長榮大學數位教學平台，首頁提供登入。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：TronClass；未驗證課內教材。",
+    "evidence": [
+      "https://tronclass.cjcu.edu.tw/#/ (直連驗證系統入口，未使用校內帳號)",
+      "https://eportal.cjcu.edu.tw/Syllabus/Home/Plan (官方課程查詢頁連到 I-Learning)"
+    ]
+  },
+  {
+    "name": "中國醫藥大學選課系統",
+    "url": "https://web1.cmu.edu.tw/",
+    "schools": [
+      "1035"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中國醫藥大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內學生登入辦理線上初選及加退選。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "首頁連結到獨立的公開課程查詢及課程地圖。",
+    "evidence": [
+      "https://web1.cmu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)"
+    ]
+  },
+  {
+    "name": "中國醫藥大學 Moodle 數位學習系統",
+    "url": "https://moodle.cmu.edu.tw/",
+    "schools": [
+      "1035"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中國醫藥大學",
+    "category": [
+      "lms"
+    ],
+    "features": "Moodle 校內教學與教材。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "直連導向登入頁。",
+    "evidence": [
+      "https://moodle.cmu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)"
+    ]
+  },
+  {
+    "name": "中國醫藥大學課程查詢系統",
+    "url": "https://web1.cmu.edu.tw/courseinfo/",
+    "schools": [
+      "1035"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中國醫藥大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "公開依學期、校區、教師、時段與授課類型查詢課程及教學進度。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "提供 EMI、全英語、遠距、TAICA 等條件。",
+    "evidence": [
+      "https://web1.cmu.edu.tw/courseinfo/ (直接連線檢查：HTTP 200，未使用校內帳號)",
+      "https://financial.cmu.edu.tw/course (校務資訊公開專區，說明課程查詢與教學進度)"
+    ]
+  },
+  {
+    "name": "中國醫藥大學全校課程地圖",
+    "url": "https://web1.cmu.edu.tw/cmap/index.asp",
+    "schools": [
+      "1035"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中國醫藥大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "依學院系所瀏覽學士、碩士和博士課程地圖。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與公開課程查詢為同主機的不同系統。",
+    "evidence": [
+      "https://web1.cmu.edu.tw/cmap/index.asp (直接連線檢查：HTTP 200，未使用校內帳號)"
+    ]
+  },
+  {
+    "name": "玄奘大學開課資訊查詢",
+    "url": "https://tch.hcu.edu.tw/pub/HCUCur.asp",
+    "schools": [
+      "1039"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "玄奘大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "依學年度、學期與開課班級查閱各系所的開課資訊。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "頁面載明 115-2 課程預定 2026 年 12 月 7 日開放查詢。",
+    "evidence": [
+      "https://tch.hcu.edu.tw/pub/HCUCur.asp (直接開啟公開頁面，未登入)",
+      "https://www.hcu.edu.tw/HCU-student/zh-tw (學生頁列開課資訊查詢)"
+    ]
+  },
+  {
+    "name": "玄奘大學選課系統",
+    "url": "https://csys.hcu.edu.tw/",
+    "schools": [
+      "1039"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "玄奘大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生登入後選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://csys.hcu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.hcu.edu.tw/HCU-student/zh-tw (網路選課連結)"
+    ]
+  },
+  {
+    "name": "玄奘大學數位學習 I-learn 平台",
+    "url": "https://ilearn.hcu.edu.tw/",
+    "schools": [
+      "1039"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "玄奘大學",
+    "category": [
+      "lms"
+    ],
+    "features": "教學資訊、課程教材與 I-learn 操作教學。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：Moodle；校方使用 I-learn 品牌。",
+    "evidence": [
+      "https://ilearn.hcu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.hcu.edu.tw/HCU-student/zh-tw (官網學生資訊)"
+    ]
+  },
+  {
+    "name": "亞洲大學課程查詢系統",
+    "url": "https://webs.asia.edu.tw/CourseInformationSystem/Home/Index",
+    "schools": [
+      "1048"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "亞洲大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "免登入查學年度、學期及開課課程。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "查閱 robots.txt：HTTP 404；無法據此判定爬取規則。",
+    "evidence": [
+      "https://webs.asia.edu.tw/CourseInformationSystem/Home/Index (直接開啟公開頁面，未登入)",
+      "https://course.asia.edu.tw/ (學生資訊系統另連公開查詢)",
+      "https://webs.asia.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "亞洲大學選課系統",
+    "url": "https://cosselenter.asia.edu.tw/Chcourse/",
+    "schools": [
+      "1048"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "亞洲大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "登入後辦理學生選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://cosselenter.asia.edu.tw/Chcourse/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://course.asia.edu.tw/ (學生資訊系統連結)"
+    ]
+  },
+  {
+    "name": "亞洲大學 TronClass",
+    "url": "https://tronclass.asia.edu.tw/",
+    "schools": [
+      "1048"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "亞洲大學",
+    "category": [
+      "lms"
+    ],
+    "features": "亞洲大學數位教學平台，首頁提供登入。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：TronClass；與學生公開課程查詢不同主機。",
+    "evidence": [
+      "https://tronclass.asia.edu.tw/ (直連驗證系統入口，未使用校內帳號)"
+    ]
+  },
+  {
+    "name": "開南大學課程查詢",
+    "url": "http://portal.knu.edu.tw/info/mainframe2.aspx",
+    "schools": [
+      "1049"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "開南大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "教務處列出的校務課程查詢介面。",
+    "loginRequired": "unknown",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "http://portal.knu.edu.tw/info/mainframe2.aspx (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://acad.knu.edu.tw/ (教務處直接連結)"
+    ]
+  },
+  {
+    "name": "開南大學教學計劃表",
+    "url": "https://course.knu.edu.tw/p/412-1045-761.php?Lang=zh-tw",
+    "schools": [
+      "1049"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "開南大學",
+    "category": [
+      "syllabus"
+    ],
+    "features": "註冊課務組公開教學計劃表。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "教務網頁下載入口，不是獨立的動態查詢。",
+    "evidence": [
+      "https://course.knu.edu.tw/p/412-1045-761.php?Lang=zh-tw (直接開啟公開頁面，未登入)",
+      "https://acad.knu.edu.tw/ (教務處直接連結)"
+    ]
+  },
+  {
+    "name": "開南大學課程地圖",
+    "url": "http://aol.knu.edu.tw/course_map/full_course_map.php",
+    "schools": [
+      "1049"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "開南大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "開南教務處列出的全校課程地圖。",
+    "loginRequired": "unknown",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本次直連：DNS 無法解析；不代表已永久停用。",
+    "evidence": [
+      "http://aol.knu.edu.tw/course_map/full_course_map.php (直接請求：DNS 無法解析)",
+      "https://acad.knu.edu.tw/ (教務處直接連結)"
+    ]
+  },
+  {
+    "name": "開南大學數位學習網",
+    "url": "http://elearning.knu.edu.tw/",
+    "schools": [
+      "1049"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "開南大學",
+    "category": [
+      "lms"
+    ],
+    "features": "教務處列出的數位學習入口。",
+    "loginRequired": "unknown",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本次直連：無法建立連線；不代表已永久停用。",
+    "evidence": [
+      "http://elearning.knu.edu.tw/ (直接請求：無法建立連線)",
+      "https://acad.knu.edu.tw/ (教務處直接連結)"
+    ]
+  },
+  {
+    "name": "開南大學跨平台校務行政資訊系統",
+    "url": "https://sts2.knu.edu.tw/",
+    "schools": [
+      "1049"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "開南大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內學生登入教務系統進行加選、退選與微學分課程選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "官方另列需舊瀏覽器的校務入口。",
+    "evidence": [
+      "https://sts2.knu.edu.tw/ (直接連線檢查：HTTP 200，未使用校內帳號)",
+      "https://course.knu.edu.tw/p/404-1045-40947.php (開南教務處選課流程與跨平台網址)"
+    ]
+  },
+  {
+    "name": "佛光大學課程網",
+    "url": "https://selcourse2.fgu.edu.tw/course_plan/cs_cont_menu.aspx",
+    "schools": [
+      "1050"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "佛光大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "course_map"
+    ],
+    "features": "按學年度查詢課程規劃和課程資料。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://selcourse2.fgu.edu.tw/course_plan/cs_cont_menu.aspx (直接開啟公開頁面，未登入)",
+      "https://academic.fgu.edu.tw/zh_tw/RCD/PCDc/PCDA2 (教務處標示佛光課程網「新」)"
+    ]
+  },
+  {
+    "name": "佛光大學選課系統",
+    "url": "https://courseapp.fgu.edu.tw/webcourse/mainpage.aspx",
+    "schools": [
+      "1050"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "佛光大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生登入辦理選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://courseapp.fgu.edu.tw/webcourse/mainpage.aspx (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://website.fgu.edu.tw/zh_tw/Student (官方學生資源)"
+    ]
+  },
+  {
+    "name": "佛光大學 Moodle 學習平台",
+    "url": "https://moodle.fgu.edu.tw/",
+    "schools": [
+      "1050"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "佛光大學",
+    "category": [
+      "lms"
+    ],
+    "features": "自 114-1 起使用的 Moodle 線上教學平台。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：Moodle；113-2 前另用舊平台。",
+    "evidence": [
+      "https://moodle.fgu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://website.fgu.edu.tw/zh_tw/Student (校方列出新舊平台適用學期)"
+    ]
+  },
+  {
+    "name": "佛光大學數位學習平台（113-2 前）",
+    "url": "https://elearn.fgu.edu.tw/",
+    "schools": [
+      "1050"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "佛光大學",
+    "category": [
+      "lms"
+    ],
+    "features": "提供 113-2 以前的數位課程。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方已指向新 Moodle 平台；此筆標記舊平台，不代表歷史內容不可存取。 本次直連：HTTP 403。",
+    "evidence": [
+      "https://elearn.fgu.edu.tw/ (直接請求：HTTP 403)",
+      "https://website.fgu.edu.tw/zh_tw/Student (校方區分 113-2 前及 114-1 後)"
+    ]
+  },
+  {
+    "name": "康寧大學課表查詢",
+    "url": "https://ec.ukn.edu.tw/Schedule/queryschedule.aspx",
+    "schools": [
+      "1079"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "康寧大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "獨立的課表查詢入口。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://ec.ukn.edu.tw/Schedule/queryschedule.aspx (直接開啟公開頁面，未登入)",
+      "https://web.ukn.edu.tw/files/11-1000-381.php?Lang=zh-tw (校方學生系統總表)"
+    ]
+  },
+  {
+    "name": "課程綱要與歷年教學計畫",
+    "url": "http://203.71.63.13/academic/pubinfo/pubinfomain.asp",
+    "schools": [
+      "1079"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "康寧大學",
+    "category": [
+      "syllabus"
+    ],
+    "features": "查閱課程綱要及歷年教學計畫。",
+    "loginRequired": "unknown",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "官方連結以 IP 和 HTTP 公布，非臆測網域。",
+    "evidence": [
+      "http://203.71.63.13/academic/pubinfo/pubinfomain.asp (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://web.ukn.edu.tw/files/11-1000-381.php?Lang=zh-tw (校方原始連結)"
+    ]
+  },
+  {
+    "name": "康寧大學課程地圖系統",
+    "url": "http://portfolio.knjc.edu.tw/coursemap/intro.html",
+    "schools": [
+      "1079"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "康寧大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "校方公開的課程地圖連結。",
+    "loginRequired": "unknown",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "保留校方使用的舊網域。 本次直連：連線或回應逾時；不代表已永久停用。",
+    "evidence": [
+      "http://portfolio.knjc.edu.tw/coursemap/intro.html (直接請求：連線或回應逾時)",
+      "https://web.ukn.edu.tw/files/11-1000-381.php?Lang=zh-tw (學校學生系統總表)"
+    ]
+  },
+  {
+    "name": "康寧大學網路選課",
+    "url": "http://talk.ukn.edu.tw/class_redi/class.php",
+    "schools": [
+      "1079"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "康寧大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生辦理網路選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "http://talk.ukn.edu.tw/class_redi/class.php (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://web.ukn.edu.tw/files/11-1000-381.php?Lang=zh-tw (校方網路選課連結)"
+    ]
+  },
+  {
+    "name": "Moodle 數位學習平台（專科部）",
+    "url": "http://moodle2.ukn.edu.tw/",
+    "schools": [
+      "1079"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "康寧大學",
+    "category": [
+      "lms"
+    ],
+    "features": "康寧專科部的 Moodle 教學平台。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "專科部與大學部有不同主機。",
+    "evidence": [
+      "http://moodle2.ukn.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://web.ukn.edu.tw/files/11-1000-381.php?Lang=zh-tw (校方明列兩個 Moodle 入口)"
+    ]
+  },
+  {
+    "name": "Moodle 數位學習平台（大學部）",
+    "url": "http://e-learning.ukn.edu.tw/",
+    "schools": [
+      "1079"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "康寧大學",
+    "category": [
+      "lms"
+    ],
+    "features": "康寧大學部的 Moodle 教學平台。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "專科部與大學部有不同主機。",
+    "evidence": [
+      "http://e-learning.ukn.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://web.ukn.edu.tw/files/11-1000-381.php?Lang=zh-tw (校方明列兩個 Moodle 入口)"
+    ]
+  },
+  {
+    "name": "馬偕醫學大學課程資訊",
+    "url": "https://academic.mmu.edu.tw/xmdoc/cont?xsmsid=0Q014344673447724351",
+    "schools": [
+      "1085"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "馬偕醫學大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "教務處公布全校課表、選課指引和課程資訊。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "115-1 全校課表見教務處最新資訊；舊 coinfo.asp 入口回錯誤頁。",
+    "evidence": [
+      "https://academic.mmu.edu.tw/xmdoc/cont?xsmsid=0Q014344673447724351 (直接開啟公開頁面，未登入)",
+      "https://academic.mmu.edu.tw/ (教務處列 115-1 學生選課指引與全校課表)"
+    ]
+  },
+  {
+    "name": "馬偕醫學大學選課系統",
+    "url": "https://selcos.mmu.edu.tw/",
+    "schools": [
+      "1085"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "馬偕醫學大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "本校學生登入辦理初選及加退選。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "115-1 選課作業有官方公告。",
+    "evidence": [
+      "https://selcos.mmu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://academic.mmu.edu.tw/ (教務處連結及選課公告)"
+    ]
+  },
+  {
+    "name": "馬偕醫學大學課程地圖",
+    "url": "https://coursemap.mmu.edu.tw/",
+    "schools": [
+      "1085"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "馬偕醫學大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "展示課程地圖，另外提供登入功能。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://coursemap.mmu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.mmc.edu.tw/xmdoc/cont?xsmsid=0O299603235625479956 (馬偕醫學大學學生入口)"
+    ]
+  },
+  {
+    "name": "校際選課平台（外校生）",
+    "url": "https://selcrosscos.mmu.edu.tw/",
+    "schools": [
+      "1085"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "馬偕醫學大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "外校生經獨立校際選課平台送出申請。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "教務處有平台啟用公告。",
+    "evidence": [
+      "https://selcrosscos.mmu.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://academic.mmu.edu.tw/xmdoc/cont?xsmsid=0P273362982385142603&sid=0Q243599822602272358 (外校生校際選課平台啟用公告)"
+    ]
+  },
+  {
+    "name": "馬偕醫學大學數位學習平台",
+    "url": "https://moodle.mmu.edu.tw/",
+    "schools": [
+      "1085"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "馬偕醫學大學",
+    "category": [
+      "lms"
+    ],
+    "features": "數位教學和課程空間，首頁可見平台公告與登入。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：Moodle；另列 Teams 同步教室。",
+    "evidence": [
+      "https://moodle.mmu.edu.tw/ (直連驗證系統入口，未使用校內帳號)"
+    ]
+  },
+  {
+    "name": "馬偕醫學大學全校課程查詢",
+    "url": "https://portal.mmu.edu.tw/VC2/global_cos.aspx?Lang=EN",
+    "schools": [
+      "1085"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "馬偕醫學大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "公開依系所、課程、教師、時間和大綱關鍵字查詢課程。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "中英文入口；不是教務處學期課表附件索引。",
+    "evidence": [
+      "https://portal.mmu.edu.tw/VC2/global_cos.aspx?Lang=EN (直接連線檢查：HTTP 200，未使用校內帳號)",
+      "https://ltc.mmu.edu.tw/files/file_pool/1/0Q156520225278149799/115%E7%A2%A9%E5%B0%88%E7%8F%AD%E7%A0%94%E7%A9%B6%E7%94%9F%E6%89%8B%E5%86%8A.pdf (115 學年度研究生手冊說明課綱查詢)"
+    ]
+  },
+  {
+    "name": "中信金融管理學院學生資訊系統",
+    "url": "https://ap01.ctbc.edu.tw/",
+    "schools": [
+      "1125"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中信金融管理學院",
+    "category": [
+      "course_query",
+      "enrollment"
+    ],
+    "features": "登入學生資訊系統後查課、加退選及印選課確認單。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "115-1 選課公告仍明列此入口。",
+    "evidence": [
+      "https://ap01.ctbc.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://reg-acad.ctbc.edu.tw/選課/ (115-1 開課與選課入口)",
+      "https://acad.ctbc.edu.tw/p/406-1002-42914%2Cr11.php?Lang=zh-tw (登入與課程查詢操作)"
+    ]
+  },
+  {
+    "name": "中信金融管理學院全校課表",
+    "url": "https://acad.ctbc.edu.tw/p/406-1002-46205%2Cr11.php?Lang=zh-tw",
+    "schools": [
+      "1125"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中信金融管理學院",
+    "category": [
+      "course_query"
+    ],
+    "features": "教務處公開 115-1 各學制全校課表附件。",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "搜尋索引可見 115-1 全校課表；本次直連 TLS 憑證驗證失敗，未讀取附件。不代表永久停用。",
+    "evidence": [
+      "https://acad.ctbc.edu.tw/p/406-1002-46205%2Cr11.php?Lang=zh-tw (直接請求：TLS 憑證驗證失敗)",
+      "https://reg-acad.ctbc.edu.tw/選課/ (新生網站導向 115-1 全校課表)"
+    ]
+  },
+  {
+    "name": "DILA 教務系統",
+    "url": "https://ecampus.dila.edu.tw/ddb/",
+    "schools": [
+      "1196"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "法鼓文理學院",
+    "category": [
+      "course_query",
+      "enrollment"
+    ],
+    "features": "全校課程查詢提供訪客登入；學生校務與選課功能須身分驗證。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "登入頁明示可用 GUEST 帳號、無需密碼；未使用任何校內帳號。",
+    "evidence": [
+      "https://ecampus.dila.edu.tw/ddb/LoginDDB.aspx (確認教務系統登入頁及訪客登入提示)",
+      "https://www.dila.edu.tw/node/12848 (院方課程查詢入口)"
+    ]
+  },
+  {
+    "name": "法鼓文理學院數位學習系統",
+    "url": "https://moodle2.dila.edu.tw/",
+    "schools": [
+      "1196"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "法鼓文理學院",
+    "category": [
+      "lms"
+    ],
+    "features": "校內 Moodle 課程與數位教學資源。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：Moodle。",
+    "evidence": [
+      "https://moodle2.dila.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://it.dila.edu.tw/faq/5 (官方資訊服務的 Moodle 入口)"
+    ]
+  },
+  {
+    "name": "全校課程查詢系統",
+    "url": "https://coursemap.nou.edu.tw/mp.asp?mp=1",
+    "schools": [
+      "0A01"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立空中大學",
+    "category": [
+      "course_query",
+      "course_map"
+    ],
+    "features": "查詢學期開課及各系全校課程地圖。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "官方學生入口同時以「開課課程查詢」與「全校課程地圖」連到同一系統。 查閱 robots.txt：HTTP 404；無法據此判定爬取規則。",
+    "evidence": [
+      "https://coursemap.nou.edu.tw/mp.asp?mp=1 (直接開啟公開頁面，未登入)",
+      "https://www.nou.edu.tw/Home/Student (兩個入口指向同一網址)",
+      "https://coursemap.nou.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "教務行政資訊系統",
+    "url": "https://noustud.nou.edu.tw/home/home00/self_login",
+    "schools": [
+      "0A01"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立空中大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生登入後選課、查成績與學籍。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://noustud.nou.edu.tw/home/home00/self_login (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.nou.edu.tw/Home/Student (校方列明功能)"
+    ]
+  },
+  {
+    "name": "國立空中大學數位學習平臺暨課程博覽",
+    "url": "https://uu.nou.edu.tw/",
+    "schools": [
+      "0A01"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立空中大學",
+    "category": [
+      "lms"
+    ],
+    "features": "數位教學、線上課程、作業繳交及課程博覽。",
+    "loginRequired": "partial",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方另提供直接登入路徑。 本次直連：HTTP 403；不代表已永久停用。",
+    "evidence": [
+      "https://uu.nou.edu.tw/ (直接請求：HTTP 403)",
+      "https://www.nou.edu.tw/Home/Student (官方描述平台功能)",
+      "https://uu.nou.edu.tw/mooc/login.php (官方學生頁列出的直接登入)"
+    ]
+  },
+  {
+    "name": "高雄市立空中大學授課大綱",
+    "url": "https://sas.ouk.edu.tw/Scheme/index.aspx",
+    "schools": [
+      "3A01"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "高雄市立空中大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "對外查詢課程名稱及授課大綱。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "robots.txt 未回傳可識別的爬蟲指令。",
+    "evidence": [
+      "https://sas.ouk.edu.tw/Scheme/index.aspx (直接開啟公開頁面，未登入)",
+      "https://www.ouk.edu.tw/SchoolInformation/LearningInfo (課程大綱入口)",
+      "https://sas.ouk.edu.tw/robots.txt (檢查網站的爬蟲指令)"
+    ]
+  },
+  {
+    "name": "高雄市立空中大學選課系統",
+    "url": "https://select.ouk.edu.tw/",
+    "schools": [
+      "3A01"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "高雄市立空中大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "需登入的空大網路選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://select.ouk.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.ouk.edu.tw/SchoolInformation/LearningInfo (學習資訊頁列網路選課)"
+    ]
+  },
+  {
+    "name": "高雄市立空中大學數位學習平台 3.0",
+    "url": "https://eeclass3.ouk.edu.tw/",
+    "schools": [
+      "3A01"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "高雄市立空中大學",
+    "category": [
+      "lms"
+    ],
+    "features": "提供教學空間及線上學習，首頁公開部分資源。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：ee-class；學校標示 111-2 啟用。",
+    "evidence": [
+      "https://eeclass3.ouk.edu.tw/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.ouk.edu.tw/SchoolInformation/LearningInfo (官方網路教學 3.0 入口)"
+    ]
+  },
+  {
+    "name": "開設課表與課程內容",
+    "url": "https://alumnus.tbts.edu.tw/info/class.php",
+    "schools": [
+      "1R02"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "基督教台灣浸會神學院",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "校務資訊公開專區按學年度列出課表與課程內容。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "文件型公開資料，非即時查詢；索引可讀。",
+    "evidence": [
+      "https://alumnus.tbts.edu.tw/info/class.php (直接開啟公開頁面，未登入)",
+      "https://alumnus.tbts.edu.tw/info/basicdata.php (專區導覽列開設課表與課程內容)"
+    ]
+  },
+  {
+    "name": "臺北基督學院開課與師資資訊",
+    "url": "https://www.cct.edu.tw/SF/sf.html",
+    "schools": [
+      "1R03"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北基督學院",
+    "category": [
+      "course_query",
+      "course_map"
+    ],
+    "features": "公開近四年課程規劃表、歷年實際開課一覽及師資資訊。",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "搜尋索引含 114-2 開課一覽；直連 HTTP 500，未驗證附件。不代表永久停用。",
+    "evidence": [
+      "https://www.cct.edu.tw/SF/sf.html (直接請求：HTTP 500)",
+      "https://www.cct.edu.tw/Administration/aao/aao.html (教務處亦列開課課程和學期課表)"
+    ]
+  },
+  {
+    "name": "臺北基督學院課程說明",
+    "url": "https://www.cct.edu.tw/Administration/aao/course_elec/課程說明.pdf",
+    "schools": [
+      "1R03"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北基督學院",
+    "category": [
+      "syllabus"
+    ],
+    "features": "雙語 PDF 列出課程編碼、名稱、學分及大綱。",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "搜尋索引有雙語課程說明；直連 HTTP 500，未讀取完整 PDF。",
+    "evidence": [
+      "https://www.cct.edu.tw/Administration/aao/course_elec/課程說明.pdf (直接請求：HTTP 500)",
+      "https://www.cct.edu.tw/Administration/aao/aao.html (教務處列課程說明)"
+    ]
+  },
+  {
+    "name": "臺北基督學院 TronClass 數位學習平台",
+    "url": "https://cct.tronclass.com/",
+    "schools": [
+      "1R03"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北基督學院",
+    "category": [
+      "lms"
+    ],
+    "features": "校方連結至託管的 TronClass 數位教學。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：TronClass，校方專屬子網域。",
+    "evidence": [
+      "https://cct.tronclass.com/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.cct.edu.tw/Administration/aao/aao.html (教務處直接連到 TronClass)"
+    ]
+  },
+  {
+    "name": "台灣神學研究學院課程時間表",
+    "url": "https://www.tgst.edu.tw/p/406-1001-8723,r40.php?Lang=zh-tw",
+    "schools": [
+      "1R05"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "台灣神學研究學院",
+    "category": [
+      "course_query"
+    ],
+    "features": "教務處公告神學碩士班 115-1 時間表；另有神學研道學碩士班課表。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "文件型學期課表，未見全校動態查課入口。",
+    "evidence": [
+      "https://www.tgst.edu.tw/p/406-1001-8723,r40.php?Lang=zh-tw (直接開啟公開頁面，未登入)",
+      "https://www.tgst.edu.tw/ (首頁列兩份 115-1 課表)",
+      "https://www.tgst.edu.tw/p/406-1001-8642,r40.php?Lang=zh-tw (神學研道學碩士班課表)"
+    ]
+  },
+  {
+    "name": "台灣神學研究學院數位學習平台",
+    "url": "https://learning.tgst.edu.tw/",
+    "schools": [
+      "1R05"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "台灣神學研究學院",
+    "category": [
+      "lms"
+    ],
+    "features": "對外提供部分課程目錄及登入入口，校內使用 Moodle 教學空間。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "產品：Moodle。moodle.tgst.edu.tw 另顯示同校登入畫面；未確認是否為不同實例，暫不重複計數。",
+    "evidence": [
+      "https://learning.tgst.edu.tw/ (直連驗證校名及 Moodle 登入功能)",
+      "https://learning.tgst.edu.tw/course/index.php?categoryid=17 (免登入檢視課程目錄)",
+      "https://moodle.tgst.edu.tw/ (同校 Moodle 登入頁)"
+    ]
+  },
+  {
+    "name": "一貫道崇德學院課程規劃",
+    "url": "https://www.iktcds.edu.tw/Chong-De-School/course-planning.htm",
+    "schools": [
+      "1R06"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "一貫道崇德學院",
+    "category": [
+      "course_map"
+    ],
+    "features": "依入學年度公開研究所課程規劃表。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "PDF 與 XLS 檔案索引，頁面可見 114 級。",
+    "evidence": [
+      "https://www.iktcds.edu.tw/Chong-De-School/course-planning.htm (直接開啟公開頁面，未登入)"
+    ]
+  },
+  {
+    "name": "一貫道崇德學院課表及教學大綱",
+    "url": "https://www.iktcds.edu.tw/Chong-De-School/curriculum.htm",
+    "schools": [
+      "1R06"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "一貫道崇德學院",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "官方教務處目錄公開學期課表，另設教學大綱分頁。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "課表與大綱為同一網站的並列靜態目錄，未見動態查詢。",
+    "evidence": [
+      "https://www.iktcds.edu.tw/Chong-De-School/curriculum.htm (直接開啟公開頁面，未登入)",
+      "https://www.iktcds.edu.tw/Chong-De-School/syllabus.htm (大綱分頁)"
+    ]
+  },
+  {
+    "name": "一貫道崇德學院網路選課單",
+    "url": "https://www.iktcds.edu.tw/Chong-De-School/online-course-selection-list.htm",
+    "schools": [
+      "1R06"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "一貫道崇德學院",
+    "category": [
+      "enrollment"
+    ],
+    "features": "官方按年級發布網路選課表單。",
+    "loginRequired": "unknown",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "教務處列出的部分選課單由 Google Forms 託管；未送出選課。",
+    "evidence": [
+      "https://www.iktcds.edu.tw/Chong-De-School/online-course-selection-list.htm (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.iktcds.edu.tw/Chong-De-School/Office-Academic-Affairs.htm (教務處列網路表單連結)"
+    ]
+  },
+  {
+    "name": "南神神學院課程資訊",
+    "url": "https://www.ttcs.edu.tw/data.php?id=969&tpl=5",
+    "schools": [
+      "1R07"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "台灣基督長老教會南神神學院",
+    "category": [
+      "course_query",
+      "syllabus",
+      "course_map"
+    ],
+    "features": "教務處課程資訊、課程規劃與學期課表。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開文件，無須登入該頁。",
+    "evidence": [
+      "https://www.ttcs.edu.tw/data.php?id=969&tpl=5 (直接開啟公開頁面，未登入)",
+      "https://www.ttcs.edu.tw/data.php?id=959&tpl=5 (教務處列課程資訊)"
+    ]
+  },
+  {
+    "name": "南神神學院校務系統（TTC）",
+    "url": "https://www.ttcs-sso.org.tw/TTC/",
+    "schools": [
+      "1R07"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "台灣基督長老教會南神神學院",
+    "category": [
+      "enrollment"
+    ],
+    "features": "南神神學院的校務系統入口。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "官方入口區分 TTC、FTTC、FTTCS、TTCS；此筆只收錄 TTC。",
+    "evidence": [
+      "https://www.ttcs-sso.org.tw/TTC/ (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.ttcs.edu.tw/data.php?id=959&tpl=5 (南神神學院學生入口)",
+      "https://www.ttcs.org.tw/services (四個校務系統代號說明)"
+    ]
+  },
+  {
+    "name": "中華福音神學研究學院課務註冊",
+    "url": "https://www.ces.edu.tw/教務處/課務註冊/",
+    "schools": [
+      "1R08"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中華福音神學研究學院",
+    "category": [
+      "course_query"
+    ],
+    "features": "公布學期課務資訊與選課連結。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "網站同時服務華神不同學制；此筆只計研究學院。",
+    "evidence": [
+      "https://www.ces.edu.tw/教務處/課務註冊/ (直接開啟公開頁面，未登入)"
+    ]
+  },
+  {
+    "name": "華神學生選課系統",
+    "url": "https://portal.ces.edu.tw/ASIS/B2KPortal/Default.aspx",
+    "schools": [
+      "1R08"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "中華福音神學研究學院",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生登入辦理選課。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系統登入畫面；未接觸學生資料。",
+    "evidence": [
+      "https://portal.ces.edu.tw/ASIS/B2KPortal/Default.aspx (直接開啟入口；HTTP 回應成功，未登入)",
+      "https://www.ces.edu.tw/教務處/課務註冊/ (校方直接連到學生選課系統)"
+    ]
+  },
+  {
+    "name": "唯心聖教學院課表及課綱",
+    "url": "https://www.wxsjc.edu.tw/page/1141101",
+    "schools": [
+      "1R09"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "唯心聖教學院",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "公開學年學期的課表及教學大綱。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://www.wxsjc.edu.tw/page/1141101 (直接開啟公開頁面，未登入)",
+      "https://www.wxsjc.edu.tw/ (官網列課表及課綱)"
+    ]
+  },
+  {
+    "name": "唯心聖教學院課程規劃",
+    "url": "https://www.wxsjc.edu.tw/page/3-1-5-1",
+    "schools": [
+      "1R09"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "唯心聖教學院",
+    "category": [
+      "course_map"
+    ],
+    "features": "官網公開研究課程規劃。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "靜態頁，不是互動式修課地圖。",
+    "evidence": [
+      "https://www.wxsjc.edu.tw/page/3-1-5-1 (直接開啟公開頁面，未登入)",
+      "https://www.wxsjc.edu.tw/ (官網課務導覽)"
+    ]
+  },
+  {
+    "name": "福智佛教學院課程表與課程大綱",
+    "url": "https://www.bwbc.edu.tw/iad/course-description/curriculum/",
+    "schools": [
+      "1R10"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "福智佛教學院",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "教務處提供課程表及教學大綱分類。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "靜態頁，課表及大綱是同一網站的並列頁。",
+    "evidence": [
+      "https://www.bwbc.edu.tw/iad/course-description/curriculum/ (直接開啟公開頁面，未登入)",
+      "https://www.bwbc.edu.tw/iad/course-description/syllabus/ (公開課程大綱頁)"
+    ]
+  },
+  {
+    "name": "福智佛教學院課程藍圖",
+    "url": "https://www.bwbc.edu.tw/iad/course/",
+    "schools": [
+      "1R10"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "福智佛教學院",
+    "category": [
+      "course_map"
+    ],
+    "features": "教務處公開課程藍圖及課程規劃。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "",
+    "evidence": [
+      "https://www.bwbc.edu.tw/iad/course/ (直接開啟公開頁面，未登入)",
+      "https://www.bwbc.edu.tw/iad/course-description/curriculum/ (學院教務目錄)"
+    ]
+  }
+]

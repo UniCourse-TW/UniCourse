@@ -1,15 +1,30 @@
 import { defineCrawler, type HttpClient, type Offering } from '@unicourse/crawler-kit';
-import { addArchivedEnrollment, catalogArchives, enrollmentArchives, readArchiveRows, type CourseArchive } from './archive.ts';
+import {
+  addArchivedEnrollment, addArchivedRequirements, catalogArchives, enrollmentArchives, normalizeArchiveRows, readArchiveRows,
+  requirementArchives, selectTermRows, type CourseArchive
+} from './archive.ts';
 import { parseDepartments, parseOfferings, sourceUrl } from './parse.ts';
 
 const downloadUrl = 'https://nthu-courses-proxy.philosophysis.workers.dev/';
 const departmentUrl = 'https://curricul.site.nthu.edu.tw/p/406-1208-290466,r7880.php?Lang=zh-tw';
 
-async function fetchArchive(http: HttpClient, archive: CourseArchive, term: string) {
+async function fetchSheet(http: HttpClient, archive: CourseArchive, term: string, log: (message: string) => void) {
   const response = await http.fetch(archive.url);
   if (!response.ok) throw new Error(`NTHU: archive for ${term} returned HTTP ${response.status}`);
   const rows = await readArchiveRows(Buffer.from(await response.arrayBuffer()), archive.sheet);
-  return parseOfferings(rows, term, new Map(), archive.url);
+  if (!archive.multiTerm) return rows;
+  const { rows: selected, unidentified } = selectTermRows(rows, term);
+  if (archive.ignoreEnglishTitle) for (const row of selected) row['英文課名'] = '';
+  if (unidentified) log(`skipped ${unidentified} rows without a full 科號 (serial number only)`);
+  return selected;
+}
+
+async function fetchArchive(http: HttpClient, archive: CourseArchive, term: string, log: (message: string) => void, requirements?: CourseArchive) {
+  const rows = await fetchSheet(http, archive, term, log);
+  if (requirements) {
+    addArchivedRequirements(rows, await fetchSheet(http, requirements, term, log), requirements.url);
+  }
+  return parseOfferings(normalizeArchiveRows(rows), term, new Map(), archive.url);
 }
 
 export const crawler = defineCrawler({
@@ -20,8 +35,9 @@ export const crawler = defineCrawler({
     let offerings: Offering[];
     let requests = 0;
     if (archive) {
-      requests += 1;
-      offerings = await fetchArchive(http, archive, term);
+      const requirements = requirementArchives[term];
+      requests += requirements ? 2 : 1;
+      offerings = await fetchArchive(http, archive, term, log, requirements);
     } else {
       const courses = await http.json(downloadUrl);
       let departments = new Map<string, string>();
@@ -36,7 +52,7 @@ export const crawler = defineCrawler({
     const enrollment = enrollmentArchives[term];
     if (enrollment) {
       requests += 1;
-      addArchivedEnrollment(offerings, await fetchArchive(http, enrollment, term), enrollment.url);
+      addArchivedEnrollment(offerings, await fetchArchive(http, enrollment, term, log), enrollment.url);
     }
     log(`read ${offerings.length} offerings in ${requests} requests before retries`);
     const missingDepartments = new Set(offerings.filter(({ department }) => !department).map(({ departmentCode }) => departmentCode));

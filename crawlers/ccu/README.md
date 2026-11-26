@@ -24,8 +24,36 @@ no link uses its department listing as the source. Set `CCU_FETCH_SYLLABI=1` and
 (or smaller) to fetch the English title and description when available; full runs do not request
 individual syllabi or attachments.
 
-The same department listings support `114-2`, `114-1`, `113-2`, and `113-1` via `yearterm` (e.g. `114_2`).
+The same department listings support every term from `105-1` through `114-2` via `yearterm` (e.g. `114_2`).
 The crawler checks the selected term and each returned row's 開課學年度, with the explicit empty-table exception above.
+
+## Historical terms (ten-year backfill, run 2026-11-27)
+
+Each department page's `yearterm` selector lists archived terms: `cd=I001` goes back to 97-1 and
+`cd=1104` to 93-1 (older terms exist at the source, but only 105-1 onwards were crawled to cover ten
+academic years). The page layout, table headers, `課程代碼` format (`NNNNNNN_NN`) and period labels
+are identical in 105-1 and 115-1, so no parser change was needed; `src/samples/department-I001-105-1.html`
+is a trimmed real 105-1 page used by a test (includes a row without syllabus link). In older terms some
+rows have no syllabus link (e.g. 105-1: 25 of 2,061), which falls back to the department listing as
+`sourceUrl`. Enrollment is not published for any term, so no snapshot has `enrolled`.
+
+Caveats: the department directory is the *current* list (134 departments), so units that were
+dissolved or renamed before 115 do not appear and their historical offerings are absent. Departments
+that did not exist yet show no option for the term and contribute nothing (departments with offerings:
+93 in 105-1 growing to 109 in 114-2). Summer terms (`_3`) appear in the `I001` selector only up to 103-3, so none were crawled for 105+. All terms used 135 sequential requests (one directory + 134 departments).
+
+| Term | Offerings | Seconds | Term | Offerings | Seconds |
+| --- | --- | --- | --- | --- | --- |
+| 105-1 | 2,061 | 55 | 110-1 | 2,006 | 55 |
+| 105-2 | 1,949 | 55 | 110-2 | 1,933 | 55 |
+| 106-1 | 2,053 | 56 | 111-1 | 2,055 | 57 |
+| 106-2 | 1,944 | 55 | 111-2 | 1,905 | 55 |
+| 107-1 | 2,058 | 56 | 112-1 | 2,025 | 56 |
+| 107-2 | 1,972 | 55 | 112-2 | 1,924 | 57 |
+| 108-1 | 2,033 | 58 | 113-1 | 2,036 | ~55 |
+| 108-2 | 1,917 | 55 | 113-2 | 1,984 | ~55 |
+| 109-1 | 2,035 | 55 | 114-1 | 2,042 | ~55 |
+| 109-2 | 1,916 | 55 | 114-2 | 1,975 | ~55 |
 
 | Source field | Snapshot field | Mapping notes |
 | --- | --- | --- |

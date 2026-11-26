@@ -59,6 +59,20 @@ test('understands compact periods, ranges, and parenthesized weekdays', () => {
   ]);
 });
 
+test('parses the loose 105-1 markup and keeps the noon period M', () => {
+  const offerings = Offering.array().parse(parseList(sample('list-105-1.html'), '1051'));
+  assert.deepEqual(offerings.map((row) => row.courseCode), ['1970@1051', '1986@1051']);
+  const [lecture, noon] = offerings;
+  assert.equal(lecture.titleEn, 'Seminar on Entrepreneurs');
+  assert.deepEqual(lecture.instructors, ['謝士滄', '王精文', '林谷合']);
+  assert.equal(lecture.grade, undefined);
+  assert.equal(lecture.enrolled, 290);
+  assert.deepEqual(noon.schedule, [{ day: 2, periods: ['3', '4', 'M'], location: 'SC103' }]);
+  assert.equal(noon.enrolled, 93);
+  assert.equal(noon.notes, '節次M上課時間為12:00-13:00');
+  assert.deepEqual(parseSchedule(['4-M'], []), []);
+});
+
 test('extracts the short description from the syllabus', () => {
   assert.match(parseDescription(sample('syllabus-5412.html')) ?? '', /^全球的永續性/);
 });

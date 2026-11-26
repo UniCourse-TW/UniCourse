@@ -43,7 +43,11 @@ export const DEGREES: IdName[] = [
   { id: '1', name: '大學部' },
   { id: '3', name: '碩士班' },
   { id: '4', name: '博士班' },
-  { id: '5', name: '進修學士班' }
+  { id: '5', name: '進修學士班' },
+  // Not in the UI drop-down, but for 105-1…112-1 `GetDeptList` degree 2 returns 通識核心課/通識中心 (the evening
+  // general-education classes, e.g. `通識－人文(夜)(H)`), which no other degree lists. Empty from 112-2 on.
+  // Degree 8 (資電學院, 105-1…111-2) only repeats rows already listed under degree 1.
+  { id: '2', name: '學制2' }
 ];
 
 /** ASMX JSON services answer either the bare object or `{ d: ... }`; errors come back as `{ Message }`. */
@@ -170,6 +174,9 @@ export interface BuildInput {
 const yesNo = (value: string | null | undefined) =>
   value === '是' || value === 'Y' ? true : value === '否' || value === 'N' ? false : undefined;
 
+/** Terms before ~105 publish blanks as `無` (上課方式) or ` ~` (開課期程, empty date range); treat them as missing. */
+const placeholderToUndefined = (value: string | undefined) => (value === undefined || value === '無' || /^[~\s]*$/.test(value) ? undefined : value);
+
 const unique = <T>(values: (T | undefined)[]) => [...new Set(values.filter((v): v is T => v !== undefined))];
 
 /** Group rows by 選課代碼 and map them to snapshot offerings. */
@@ -204,8 +211,8 @@ export function buildOfferings(input: BuildInput): Offering[] {
       期中考: yesNo(item.scr_examid),
       期末考: yesNo(item.scr_examfn),
       提前考: yesNo(item.scr_exambf),
-      上課方式: oneLine(item.scr_ldl),
-      開課期程: oneLine(item.scr_date),
+      上課方式: placeholderToUndefined(oneLine(item.scr_ldl)),
+      開課期程: placeholderToUndefined(oneLine(item.scr_date)),
       'EMI課程': yesNo(item.scr_english),
       unt_ls: unique(rows.map((r) => (r.item.unt_ls === null || r.item.unt_ls === undefined ? undefined : String(r.item.unt_ls)))).join(',')
     }) as Record<string, string | number | boolean>;

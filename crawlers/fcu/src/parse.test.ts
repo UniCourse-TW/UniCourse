@@ -133,6 +133,43 @@ test('buildOfferings maps the sample rows into valid offerings', async () => {
   assert.equal(tba.scheduleText, '(一)00 待排');
 });
 
+test('old term (105-1): hidden degree 2 evening general-education rows and blank placeholders', async () => {
+  const old = await sample<{
+    units: IdName[];
+    degree2_XC: FcuResult;
+    degree1_CI: FcuResult;
+  }>('old-term-105-1.json');
+  const rows: CollectedRow[] = [
+    ...old.degree2_XC.items!.map((item) => ({
+      degree: DEGREES.find((d) => d.id === '2')!,
+      college: { id: 'XC', name: '通識核心課' },
+      item
+    })),
+    ...old.degree1_CI.items!.map((item) => ({ degree: DEGREES[0], college: { id: 'CI', name: '資電學院' }, item }))
+  ];
+  const units = new Map(old.units.map((u) => [u.id, u.name] as const));
+  const offerings = buildOfferings({ year: 105, sms: 1, rows, units, languages: new Map(), englishTitles: new Map() });
+  for (const offering of offerings) Offering.parse(offering);
+  const night = offerings.find((o) => o.sourceId === '3628')!;
+  assert.equal(night.departmentCode, 'XC01');
+  assert.equal(night.extra?.班級代碼, 'XC01220');
+  assert.deepEqual(night.schedule, [{ day: 3, periods: ['13', '14'], location: '資電107' }]);
+  assert.match(night.sourceUrl, /courseid=10513628$/);
+  // Row published with period `00` (time not scheduled) keeps no schedule but still maps.
+  assert.equal(offerings.find((o) => o.sourceId === '2398')!.schedule, undefined);
+  // Blank placeholders from older terms are dropped rather than copied.
+  const blank = buildOfferings({
+    year: 104,
+    sms: 1,
+    rows: [{ degree: DEGREES[0], college: { id: 'CI', name: '資電學院' }, item: { ...old.degree1_CI.items![0], scr_ldl: '無', scr_date: ' ~' } }],
+    units,
+    languages: new Map(),
+    englishTitles: new Map()
+  })[0];
+  assert.equal(blank.extra?.上課方式, undefined);
+  assert.equal(blank.extra?.開課期程, undefined);
+});
+
 test('ASMX helpers', async () => {
   assert.deepEqual(unwrapAsmx({ d: [1] }, 'x'), [1]);
   assert.throws(() => unwrapAsmx({ Message: '處理此要求時發生錯誤。', StackTrace: '' }, 'x'), /server error/);

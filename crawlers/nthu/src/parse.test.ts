@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { Offering } from '@unicourse/crawler-kit';
-import { addArchivedEnrollment, catalogArchives, normalizeArchiveRows } from './archive.ts';
+import {
+  addArchivedEnrollment, addArchivedRequirements, catalogArchives, normalizeArchiveRows, requirementArchives, selectTermRows
+} from './archive.ts';
 import { parseDepartments, parseOfferings } from './parse.ts';
 
 const sample = JSON.parse(readFileSync(new URL('./samples/courses.json', import.meta.url), 'utf8'));
@@ -84,4 +86,57 @@ test('joins archived counts by course identity without adding archived-only clas
   assert.equal(catalog[0].extra?.選課人數來源, url);
   assert.equal(catalog[1].enrolled, undefined);
   assert.equal(catalog.length, 2);
+});
+
+const sampleRows = (name: string) => JSON.parse(readFileSync(new URL(`./samples/${name}`, import.meta.url), 'utf8'));
+
+test('reads the 105–107 workbook: one row per instructor, serial-only rows, padded names, joined requirements', () => {
+  const { rows, unidentified } = selectTermRows(sampleRows('archive-104-107.json'), '106-1');
+  assert.equal(unidentified, 1);
+  assert.equal(rows.length, 2);
+  for (const row of rows) row['英文課名'] = '';
+  const url = requirementArchives['106-1']!.url;
+  addArchivedRequirements(rows, sampleRows('requirements-105-107.json'), url);
+  const [first] = Offering.array().parse(parseOfferings(normalizeArchiveRows(rows), '106-1', new Map(), catalogArchives['106-1']!.url));
+  assert.equal(first.sourceId, '10610ANTH651000');
+  assert.equal(first.titleEn, undefined);
+  assert.equal(first.department, '人類所');
+  assert.equal(first.enrolled, 14);
+  assert.equal(first.capacity, undefined);
+  assert.equal(first.schedule, undefined);
+  assert.equal(first.requirementText, 'ANTH106M  必\tGPTS106P  選\tANTH106D  選');
+  assert.equal(first.requirement, undefined);
+  assert.equal(first.extra?.課程屬性, '研究所');
+  assert.equal(first.extra?.必選修來源, url);
+  assert.throws(() => selectTermRows(sampleRows('archive-104-107.json'), '108-1'), /no rows for 108-1/);
+});
+
+test('merges instructor rows, trims padded names and drops organisation placeholders', () => {
+  const base = sampleRows('archive-104-107.json')[0];
+  const rows = [
+    { ...base, 教師: '許瀞文' }, { ...base, 教師: '沈  琪' }, { ...base, 教師: 'TIGP Program' },
+    { ...base, 教師: 'BME／CHE' }, { ...base, 教師: '許瀞文' }
+  ];
+  const [course] = parseOfferings(normalizeArchiveRows(rows), '106-1', new Map());
+  assert.deepEqual(course.instructors, ['許瀞文', '沈琪']);
+  const conflicting = [{ ...base, 教師: 'A' }, { ...base, 教師: 'B', 總人數: '99' }];
+  assert.throws(() => parseOfferings(normalizeArchiveRows(conflicting), '106-1', new Map()), /duplicate sourceId/);
+});
+
+test('reads the 104 sheet with its English title and the 108–112 layouts', () => {
+  const rows = sampleRows('archive-104-107.json').filter((row: Record<string, string>) => row['學年'] === '104');
+  const [ee] = parseOfferings(normalizeArchiveRows(rows), '104-1', new Map());
+  assert.equal(ee.titleEn, 'English: Comprehension & Speech I');
+  assert.equal(ee.department, '電機工程學系');
+  const [aes, remote] = parseOfferings(normalizeArchiveRows(sampleRows('archive-108-110.json')), '108-1', new Map());
+  assert.equal(aes.sourceId, '10810AES 510000');
+  assert.equal(aes.enrolled, 16);
+  assert.equal(aes.requirement, 'required');
+  assert.equal(aes.capacity, undefined);
+  assert.deepEqual(aes.schedule, [{ day: 3, periods: ['7', '8'], location: '醫環401' }]);
+  assert.equal(remote.language, '英');
+  const { rows: later } = selectTermRows(sampleRows('archive-111-112.json'), '112-1');
+  const [first] = parseOfferings(normalizeArchiveRows(later), '112-1', new Map());
+  assert.equal(first.department, '分析與環境科學研究所');
+  assert.ok(first.enrolled !== undefined);
 });

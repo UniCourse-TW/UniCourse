@@ -17,6 +17,8 @@
     running them with `lang: 'en'` also returns the English course title.
   - `baseOptions = { lang: 'cht' | 'en', year: 115, sms: 1 }`; `--term 115-1` maps to `year 115, sms 1`.
   - `114-2`, `114-1`, `113-2`, and `113-1` are all available using the same request fields in both language views.
+  - Older terms use the same endpoints and fields (see "Past terms" below). `init.yearList` only lists 107…116, but
+    the services answer for older years too, so the crawler no longer rejects a year that is missing from it.
 - **Syllabus (optional):** `https://coursesearch02.fcu.edu.tw/CourseOutline.aspx?lang=cht&courseid={year}{sms}{選課代碼}`
   redirects to `ilearntools.fcu.edu.tw/W320104/W320104_SyllabusFullVer.aspx?token=…`, whose SPA posts the token
   to `W320104_syllabus.aspx/GetCourseDetail`. Enable with `FCU_FETCH_SYLLABUS=1` to fill `description`.
@@ -93,3 +95,29 @@ browser renders it); the instructor names are not repeated there.
 - No `通識` requirement value: 通識 courses are labelled `選修`/`必修` by the school; `extra.開課學院`
   (`通識中心`) identifies them.
 - Summer terms (`sms` 3/4) are not supported; `--term 115-3` fails loudly.
+
+## Past terms (10-year backfill, 2026-11-27)
+
+Snapshots exist for **105-1 … 114-2** (20 terms) plus the current 115-1; history files are git-ignored under
+`snapshots/history/fcu-<term>.json`.
+
+- **Oldest term:** 105-1 is the oldest one backfilled (the task goal). The services answer much further back —
+  probes returned rows for 90-1, 95-1, 98-1, 100-1, 102-1, 103-1, 104-1 (CI 學院, degree 1) — so older terms are
+  available if wanted; they were not crawled. `init.yearList` only lists 107…116 (the UI drop-down), so the
+  crawler logs instead of rejecting years outside that list.
+- **Same endpoints and fields for every year.** The 14 language queries still work in old terms; only the
+  `GetType2Result` rows are repeated per 開課班級 (e.g. 105-1 中文 returns 4683 rows for ~4300 offerings), which
+  the language map collapses by 選課代碼. About 60 offerings per old term (碩士論文/專班 research courses) are not
+  returned by any language query and therefore have no `language` (left out, not guessed).
+- **Hidden degree `2` (105-1 … 112-1):** `GetDeptList` with `degree: '2'` lists 通識核心課 (`XC`, later `GE`), the
+  evening general-education classes (`通識－人文(夜)(H)`, …, 31–53 offerings per term). They are in no other degree
+  list, so `DEGREES` now includes it (`extra.學制 = "學制2"`, the label is a placeholder because the site publishes
+  no name). Empty from 112-2 on. Degree `8` (資電學院 專班, 105-1 … 111-2) only repeats rows already under degree 1.
+- **College lists change per term** (e.g. 工程與科學學院 `CA`/創能學院 `CC`/通識中心 `GE` from 110, 經管學院 `MB` for
+  碩士班 in 105): the crawler always walks `GetDeptList`, so no per-term configuration is needed.
+- **Blank placeholders:** very old terms (at least 104-1) publish `上課方式 = 無` and `開課期程 = " ~"`; these are
+  dropped from `extra`. 105-1…112-2 only show `課堂教學`/`全學期` or the 111+ delivery modes as before.
+- `enrolled` (`scr_acptcnt`) is present for every offering in every term (all terms: enrolled count = offerings).
+- Offering counts: ~4300 in 105/106/107 (incl. 夜間通識), ~3600–3800 from 108 on; request volume 94–102 per term
+  (1 init + 5 `GetDeptList` + 2 per 學院 + 14 language queries), 47–54 s at kit defaults. Per-term numbers are in
+  `snapshots/.backfill/validation-10y-fcu.log`.

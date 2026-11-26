@@ -1,0 +1,1115 @@
+[
+  {
+    "name": "大學校院課程資源網",
+    "url": "https://ucourse-tvc.yuntech.edu.tw/webu/index.aspx",
+    "schools": [],
+    "scope": "national",
+    "operator": "government",
+    "operatorName": "教育部（委託國立雲林科技大學課程工作小組維運）",
+    "category": [
+      "course_query",
+      "syllabus",
+      "aggregator",
+      "open_data"
+    ],
+    "features": "全國大學校院開課資料查詢：找課程、找科系、找通識、找學校、找主題、找活動，可依學年、學制、地區、課名、教師、課綱關鍵字檢索並合併查詢技專課程網",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "各校以填報程式上傳課程資料；學年選單涵蓋 86–115 學年（含暑期）。ucourse-tvc 主機從本機連線被 reset（ECONNRESET），但同一套 web_nu 頁面可經 course-tvc.yuntech.edu.tw/web_nu/ 存取。全國最完整的官方跨校課程資料源，UniCourse 可作為補漏或對照來源。",
+    "evidence": [
+      "https://course-tvc.yuntech.edu.tw/web_nu/search_course.aspx (curl 200，頁面「找課程-大學校院課程資源網」，學年選單 115…86)",
+      "WebSearch 結果 ucourse-tvc.yuntech.edu.tw/webu/index.aspx（課程工作小組 05-5372747, ddpc@yuntech.edu.tw）",
+      "https://ucourse-tvc.yuntech.edu.tw/webu/index.aspx (2026-11-27 curl/WebFetch 均 ECONNRESET)"
+    ]
+  },
+  {
+    "name": "技職校院課程資源網",
+    "url": "https://course-tvc.yuntech.edu.tw/web_nt/search_course.aspx",
+    "schools": [],
+    "scope": "national",
+    "operator": "government",
+    "operatorName": "教育部技職司（國立雲林科技大學維運）",
+    "category": [
+      "course_query",
+      "syllabus",
+      "aggregator"
+    ],
+    "features": "科技大學、技術學院、專科學校課程查詢（含暑修課程），與大學校院課程資源網共用入口「大學暨技專校院．課程資源網」",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "入口 https://course-tvc.yuntech.edu.tw/ 標題為「大學暨技專校院．課程資源網」，頁面為 Big5 編碼。各校教務處常引導學生用此站找暑修課。",
+    "evidence": [
+      "https://course-tvc.yuntech.edu.tw/ (curl 200，頁面文字「大學暨技專校院．課程資源網」)",
+      "https://course-tvc.yuntech.edu.tw/web_nt/search_course.aspx (curl 200)",
+      "https://academicaffairs.hdut.edu.tw/p/406-1002-2383,r71.php (學校公告引用技職課程資源網查暑修)"
+    ]
+  },
+  {
+    "name": "大專校院校務資訊公開平臺",
+    "url": "https://udb.moe.edu.tw/",
+    "schools": [],
+    "scope": "national",
+    "operator": "government",
+    "operatorName": "教育部",
+    "category": [
+      "open_data",
+      "other"
+    ],
+    "features": "全國大專校院校務統計與名錄；105 年起增列各校「課程資訊」連結，校14 表列出每校課程、採購及校務資訊公開網址",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本身不存課程明細，只連到各校課程網；校14 表可作為 150 校官方課程網址的權威清單。",
+    "evidence": [
+      "https://udb.moe.edu.tw/ (curl 200，「大專校院校務資訊公開平臺暨大專校院一覽表」)",
+      "https://udb.moe.edu.tw/udata/DetailReportList/%E6%A0%A1%E5%8B%99%E9%A1%9E/SirdIRWebsiteList/Index (curl 200，「校14.學校課程、採購及校務資訊公開網址-以「校」統計」)",
+      "https://depart.moe.edu.tw/ed2200/News_Content.aspx?n=90774906111B0527&s=3919D1345A930060 (教育部新聞：校務資訊公開平臺增列課程資訊)"
+    ]
+  },
+  {
+    "name": "政府資料開放平臺：公立大專校院各校課程、採購及校務資訊公告網址",
+    "url": "https://data.gov.tw/datasets/search?qs=8190",
+    "schools": [],
+    "scope": "national",
+    "operator": "government",
+    "operatorName": "教育部高等教育司",
+    "category": [
+      "open_data"
+    ],
+    "features": "開放資料集（CSV），欄位含學年度、學校代碼、學校名稱、課程資訊公開網址等；另有私立大專校院版本",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "只提供各校課程網址，不含課程明細。未能從搜尋結果取得資料集固定 ID，只確認出現在 data.gov.tw 搜尋列表；內容與 udb 校14 表同源。",
+    "evidence": [
+      "https://data.gov.tw/datasets/search?qs=8190 (WebSearch 結果列出此資料集名稱與欄位)",
+      "https://tw.datagove.com/opendata.aspx?page=7&q=&sn=3255738147 (私立版本鏡像)"
+    ]
+  },
+  {
+    "name": "大專校院校園開放資料（試辦）蒐集平台",
+    "url": "https://opendata.cc-isac.org/",
+    "schools": [],
+    "scope": "national",
+    "operator": "government",
+    "operatorName": "教育部校務行政e化交流服務計畫（台灣學術網路危機處理中心 TACERT/ISAC）",
+    "category": [
+      "open_data"
+    ],
+    "features": "各校填報校園開放資料的管理系統；111 年蒐集項目含「課程表」，截至 110 年 10 月約 100 校參與",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "首頁是「開放資料管理系統」登入畫面（聯絡人 isac_jill@mail.isac.org.tw），未找到公開下載課程表的頁面；是否對外釋出待確認。",
+    "evidence": [
+      "https://opendata.cc-isac.org/ (curl 200，「開放資料管理系統 / 大專校院校園開放資料(試辦) 蒐集平台」)",
+      "https://ir.nutc.edu.tw/p/412-1045-11864.php (學校公告：大專校院 Opendata 平台填報)"
+    ]
+  },
+  {
+    "name": "大專校院就業職能平台 UCAN",
+    "url": "https://ucan.moe.edu.tw/",
+    "schools": [],
+    "scope": "national",
+    "operator": "government",
+    "operatorName": "教育部",
+    "category": [
+      "course_map",
+      "other"
+    ],
+    "features": "職涯興趣與職能診斷；提供「教學規劃發展」工具讓學校依職涯路徑與共通職能建置課程地圖",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "多校課程地圖系統以 UCAN 為資料來源，例如屏科大 ucancm.npust.edu.tw「課程地圖管理系統」頁尾標示 UCAN。",
+    "evidence": [
+      "https://ucan.moe.edu.tw/ (curl 200，「首頁-大專校院就業職能平台」)",
+      "https://ucan.moe.edu.tw/application/application_2_2_1.aspx (WebSearch：教學規劃發展)",
+      "https://ucancm.npust.edu.tw/ (WebSearch：屏科大課程地圖頁尾以 UCAN 為資料來源)"
+    ]
+  },
+  {
+    "name": "ColleGo! 大學選才與高中育才輔助系統",
+    "url": "https://collego.edu.tw/",
+    "schools": [],
+    "scope": "national",
+    "operator": "government",
+    "operatorName": "教育部",
+    "category": [
+      "other"
+    ],
+    "features": "給高中生的學群、學類、學系探索平台，介紹各大學校系學習內容與選才方向",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校系層級資訊，不是課程層級；列入作為升學端的全國平台參考。",
+    "evidence": [
+      "https://collego.edu.tw/ (curl 200，標題 ColleGo!)"
+    ]
+  },
+  {
+    "name": "edu磨課師+ 教育部線上學習平臺",
+    "url": "https://moocs.moe.edu.tw/moocs/",
+    "schools": [],
+    "scope": "national",
+    "operator": "government",
+    "operatorName": "教育部",
+    "category": [
+      "lms",
+      "aggregator"
+    ],
+    "features": "教育部的線上課程（MOOCs）平台，彙集各校與機構開設的磨課師課程",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "瀏覽免登入，修課需註冊。",
+    "evidence": [
+      "https://moocs.moe.edu.tw/ (curl 200，轉址 /moocs/，標題「edu磨課師+｜教育部線上學習平臺」)"
+    ]
+  },
+  {
+    "name": "臺灣通識網 General Education TW",
+    "url": "http://get.aca.ntu.edu.tw/",
+    "schools": [],
+    "scope": "national",
+    "operator": "government",
+    "operatorName": "教育部高教司（國立臺灣大學承辦）",
+    "category": [
+      "course_query",
+      "syllabus",
+      "aggregator"
+    ],
+    "features": "97 年啟用的全國通識教育資源平台，含課程資料庫、教師資料庫、通識實務全景，可查各校通識課程與開放課程",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2026-11-27 以 http 與 https 連線皆逾時（25 秒 timeout）；YouTube 頻道「臺灣通識網General Education TW-開放式課程GET」仍在。若要查全國通識課，現在可改用大學校院課程資源網「找通識」。",
+    "evidence": [
+      "http://get.aca.ntu.edu.tw/ (curl: Connection timed out)",
+      "https://www.dgbas.gov.tw/public/Data/9103113373671.pdf (教育部「全國通識網」啟用公告)",
+      "https://www.youtube.com/channel/UCYTy5Z26SqI-FyqsETzKMOg/playlists (官方頻道)"
+    ]
+  },
+  {
+    "name": "TOCEC 台灣開放式課程暨教育聯盟",
+    "url": "https://www.tocec.org.tw/",
+    "schools": [],
+    "scope": "national",
+    "operator": "community",
+    "operatorName": "台灣開放式課程暨教育聯盟（各大學組成）",
+    "category": [
+      "aggregator",
+      "other"
+    ],
+    "features": "台灣各大學開放式課程（OCW）與開放教育的聯盟入口",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "首頁可連（200），但頁面內容多由 JS 載入，未確認最近更新日期。",
+    "evidence": [
+      "https://www.tocec.org.tw/ (curl 200，標題「TOCEC 官方首頁」)"
+    ]
+  },
+  {
+    "name": "ewant 育網開放教育平台",
+    "url": "https://www.ewant.org/",
+    "schools": [],
+    "scope": "national",
+    "operator": "official",
+    "operatorName": "國立陽明交通大學 開放教育推動中心",
+    "category": [
+      "lms",
+      "aggregator"
+    ],
+    "features": "2013 年成立的台灣第一個 MOOCs 平台（Moodle 架構），提供各校磨課師課程、微學程證書，部分課程可經實體考試抵學分",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與 TaiwanLIFE 透過 Moodle 共享課程，兩平台合計曾與約 80 所大學簽約、400+ 門課。",
+    "evidence": [
+      "https://www.ewant.org/ (curl 200，「首頁 | ewant 育網開放教育平台」)",
+      "https://zh.wikipedia.org/zh-tw/Ewant",
+      "https://acea.aeust.edu.tw/p/404-1053-24552.php (亞東科大公告使用 ewant 與 TaiwanLIFE)"
+    ]
+  },
+  {
+    "name": "TaiwanLIFE 臺灣全民學習平臺",
+    "url": "https://taiwanlife.org/",
+    "schools": [
+      "0A01"
+    ],
+    "scope": "national",
+    "operator": "official",
+    "operatorName": "國立空中大學",
+    "category": [
+      "lms",
+      "aggregator"
+    ],
+    "features": "2014 年上線的全民 MOOCs 平台，提供一般線上課程與非正規學分班，通過可取得學分證明",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與 ewant 共享課程。",
+    "evidence": [
+      "https://taiwanlife.org/ (curl 200，「TaiwanLIFE 臺灣全民學習平台」)",
+      "https://tldc.ttu.edu.tw/p/16-1003-21052.php (大同大學整理的磨課師平台介紹)"
+    ]
+  },
+  {
+    "name": "OpenEdu 中華開放教育平台",
+    "url": "https://www.openedu.tw/",
+    "schools": [
+      "1007"
+    ],
+    "scope": "national",
+    "operator": "official",
+    "operatorName": "逢甲大學／中華開放教育聯盟",
+    "category": [
+      "lms",
+      "aggregator"
+    ],
+    "features": "開放式線上課程平台，收錄教育部補助科技課程、大學程式設計、大學新鮮人、高中生等專區，約 500 門課",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2022 年工作坊稱 ewant、OpenEdu、TaiwanLIFE 為三大平台。",
+    "evidence": [
+      "https://www.openedu.tw/ (curl 200，「首頁 | 中華開放教育平台」)",
+      "https://announce.ndhu.edu.tw/message_6/1656034428/%E7%A3%A8%E8%AA%B2%E5%B8%AB%E5%B9%B3%E5%8F%B0%E8%AA%B2%E7%A8%8B%E7%87%9F%E9%81%8B%E5%B7%A5%E4%BD%9C%E5%9D%8A.pdf (東華大學工作坊文件)"
+    ]
+  },
+  {
+    "name": "ShareCourse 學聯網",
+    "url": "https://www.sharecourse.net/",
+    "schools": [
+      "0002"
+    ],
+    "scope": "national",
+    "operator": "company",
+    "operatorName": "捷鎏科技（與國立清華大學合作）",
+    "category": [
+      "lms",
+      "aggregator"
+    ],
+    "features": "2012 年成立的中文 MOOCs 平台，收錄多所大學開設的線上課程",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "首頁 200 但內容由 JS 渲染，未取得目前課程數。",
+    "evidence": [
+      "https://www.sharecourse.net/ (curl 200)",
+      "https://cte.web.shu.edu.tw/3648 (世新大學教發中心 MOOCs 平台整理)"
+    ]
+  },
+  {
+    "name": "台灣聯合大學系統（台聯大）",
+    "url": "https://www.ust.edu.tw/",
+    "schools": [
+      "0002",
+      "0007",
+      "0008",
+      "0001"
+    ],
+    "scope": "multi_school",
+    "operator": "official",
+    "operatorName": "台灣聯合大學系統辦公室",
+    "category": [
+      "enrollment",
+      "other"
+    ],
+    "features": "清大、陽明交大、中央、政大四校聯盟；相互承認學分與教師資格，提供跨校選課、經典通識系列講座、校車",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "每學年跨校選課約 1,700 人次，92 學年至 2023 年累計超過 3.4 萬人次。政大 110 學年起加入學期中跨校選課。跨校選課透過各校自己的系統與申請單，沒有獨立的全系統選課平台。",
+    "evidence": [
+      "https://www.ust.edu.tw/Senate_Integration1.aspx (curl 200，教務整合頁面文字含跨校選課人次)",
+      "https://www.nccu.edu.tw/p/426-1000-59.php?Lang=zh-tw (政大台聯大專區)"
+    ]
+  },
+  {
+    "name": "臺灣綜合大學系統（臺綜大）",
+    "url": "https://www.tcus.edu.tw/",
+    "schools": [
+      "0005",
+      "0006",
+      "0009",
+      "0013"
+    ],
+    "scope": "multi_school",
+    "operator": "official",
+    "operatorName": "臺灣綜合大學系統",
+    "category": [
+      "enrollment",
+      "other"
+    ],
+    "features": "成大、中興、中山、中正四校聯盟；100-2 學期起學士班跨校選課免學分費，另有跨校輔系雙主修與校際選課公告",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "首頁有 2026-11 最新消息與「踏溯台南」校際選課公告；選課走各校系統與紙本校際選課單。",
+    "evidence": [
+      "https://www.tcus.edu.tw/ (curl 200，最新消息 17/Nov/2026)",
+      "https://www.nsysu.edu.tw/p/404-1000-49313.php?Lang=zh-tw (中山：臺綜大學士班跨校選課免繳學分費)",
+      "https://oaa.nchu.edu.tw/zh-tw/news-detail/content-p.243 (中興：臺綜大校際選課資訊)"
+    ]
+  },
+  {
+    "name": "臺北聯合大學系統（北聯大）臺北聯大課程",
+    "url": "https://ustp.ntpu.edu.tw/info/8",
+    "schools": [
+      "0025",
+      "0017",
+      "1028",
+      "0012"
+    ],
+    "scope": "multi_school",
+    "operator": "official",
+    "operatorName": "臺北聯合大學系統（國立臺北大學維運網站）",
+    "category": [
+      "enrollment",
+      "course_query",
+      "other"
+    ],
+    "features": "北科、北大、北醫、海大四校聯盟；課程頁整合四校課程查詢、外語授課課程與學生系統登入連結，另有學分學程／微學程",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "日間部互選免學分費；多數用紙本「臺北聯合大學系統校際選課申請表」，部分通識課線上選。",
+    "evidence": [
+      "https://ustp.ntpu.edu.tw/info/8 (curl 200，「臺北聯合大學系統 :: 臺北聯大課程,Course」)",
+      "https://oaa.ntut.edu.tw/p/412-1008-12844.php?Lang=zh-tw (北科校際選課說明)"
+    ]
+  },
+  {
+    "name": "國立臺灣大學系統（臺大系統）",
+    "url": "https://ntusystem.ntu.edu.tw/",
+    "schools": [
+      "0003",
+      "0004",
+      "0022"
+    ],
+    "scope": "multi_school",
+    "operator": "official",
+    "operatorName": "國立臺灣大學系統（臺大、臺師大、臺科大）",
+    "category": [
+      "enrollment",
+      "other"
+    ],
+    "features": "臺大、臺師大、臺科大三校系統；103 學年起校際選課，學生可直接在所屬學校選課系統選到三校開放課程，另有跨校輔系、雙主修",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "ntusystem.ntu.edu.tw 目前是「境外招生資訊網」；跨校選課規定在各校教務處頁面。113 學年跨校選課 8,810 人次，十年累計 6.6 萬人次。",
+    "evidence": [
+      "https://ntusystem.ntu.edu.tw/ (curl 200，轉址 /zh-TW/announcements，「國立臺灣大學系統｜境外招生資訊網」)",
+      "https://www.aa.ntnu.edu.tw/zh_tw/selectives/Dayschool/Intercollegiate (curl 200，臺師大「校際選課（臺灣大學系統）」)",
+      "https://www.ettoday.net/news/20250810/3012071.htm (跨校選課人次統計)"
+    ]
+  },
+  {
+    "name": "優久大學聯盟 校際教務系統（校際選課）",
+    "url": "https://course.ttu.edu.tw/u9/",
+    "schools": [
+      "1022",
+      "1028",
+      "1016",
+      "1007",
+      "1004",
+      "1015",
+      "1003",
+      "1001",
+      "1005",
+      "1002",
+      "1017",
+      "1008",
+      "1006"
+    ],
+    "scope": "multi_school",
+    "operator": "official",
+    "operatorName": "優久大學聯盟（大同大學架設）",
+    "category": [
+      "enrollment",
+      "course_query"
+    ],
+    "features": "優久聯盟校際選課平台：查詢各校開放課程、註冊校際選課帳號、網路加退選，每人每學期最多 2 門",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "已公布 115-1 日程（帳號註冊 115/08/10–08/26）；開學日列出大同、北醫、銘傳、逢甲、中原、世新、東吳、東海、淡江、輔仁、實踐、靜宜、文化 13 校。系統不檢查衝堂。",
+    "evidence": [
+      "https://course.ttu.edu.tw/u9/ (curl 200，「優久大學聯盟 校際教務系統」，115學年度第1學期日程)",
+      "https://athx.acad.tku.edu.tw/get_page?news_id=20260105103525&t=news (淡江 2026-01 公告)"
+    ]
+  },
+  {
+    "name": "南區區域教學資源中心跨校課程公共平台",
+    "url": "https://cross-school.nkust.edu.tw/",
+    "schools": [],
+    "scope": "multi_school",
+    "operator": "official",
+    "operatorName": "南區區域教學資源中心（國立高雄科技大學）",
+    "category": [
+      "enrollment",
+      "course_query"
+    ],
+    "features": "南區大學校院跨校課程與學分互認的公共平台",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "首頁可連；參與學校名單未在首頁列出。",
+    "evidence": [
+      "https://cross-school.nkust.edu.tw/ (curl 200，「南區區域教學資源中心跨校課程公共平台」)"
+    ]
+  },
+  {
+    "name": "北區技專校院教學資源中心 聯合課程平台（跨校選課）",
+    "url": "http://140.124.9.87/public/toElectCourseStep1.do",
+    "schools": [],
+    "scope": "multi_school",
+    "operator": "official",
+    "operatorName": "北區技專校院教學資源中心（國立臺北科技大學）",
+    "category": [
+      "enrollment",
+      "course_query"
+    ],
+    "features": "北區 33 所技專校院的聯合課程平台，日間部學生跨校選修通識等課程免學分費、學分互認",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2026-11-27 IP 位址網址連線逾時；更早的 www.ctle.ntut.edu.tw/trc/course_search.jsp 已無 DNS。資料多為 2007–2015 年。",
+    "evidence": [
+      "http://140.124.9.87/public/toElectCourseStep1.do (curl timeout)",
+      "http://www.cust.edu.tw/www/post/ezshow3.php?id=5568 (中華科大公告：聯合課程平台開放跨校選課)",
+      "https://acadsys.ntunhs.edu.tw/periodical-enews/views/fullArticlePage.php?id=604&period=114 (北護校訊：北區教學資源中心跨校選課)"
+    ]
+  },
+  {
+    "name": "TronClass 暢課",
+    "url": "https://www.tronclass.com/",
+    "schools": [
+      "1005",
+      "1015",
+      "1017",
+      "1001",
+      "1008"
+    ],
+    "scope": "multi_school",
+    "operator": "company",
+    "operatorName": "台灣智園有限公司（WisdomGarden）",
+    "category": [
+      "lms"
+    ],
+    "features": "行動化數位學習平台：課程公告、教材、作業、測驗、點名、學習分析，可自校務系統自動匯入課程",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "淡江 2016 年導入、世新 113 學年導入、實踐兩校區、東海與靜宜皆使用；另有 iOS/Android App。",
+    "evidence": [
+      "https://www.tronclass.com/ (curl 200，「TronClass｜AI-Native Learning Platform」)",
+      "https://www.itmonth.org.tw/edTech/product-detail/386 (淡江導入案例)",
+      "https://cc.web.shu.edu.tw/lis113021/ (世新導入公告)"
+    ]
+  },
+  {
+    "name": "ee-class 易課學習管理系統",
+    "url": "https://tw.formosasoft.com/p/ee-class",
+    "schools": [
+      "1045",
+      "1040",
+      "1069",
+      "0052",
+      "3A01"
+    ],
+    "scope": "multi_school",
+    "operator": "company",
+    "operatorName": "台灣數位學習科技（Formosasoft），大塚資訊代理",
+    "category": [
+      "lms"
+    ],
+    "features": "以課程為基礎的翻轉教室／MOOC 學習管理系統（前身 iLMS），廠商稱為數十所大學採用",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "嶺東、建國、修平、屏東大學（2025-02 上線 eeclass.nptu.edu.tw）、高雄市立空大使用；各校網址多為 eeclass.<校>.edu.tw。",
+    "evidence": [
+      "https://tw.formosasoft.com/p/ee-class (curl 200，「ee-class + EverCam | 台灣數位學習科技」)",
+      "https://tld.nptu.edu.tw/p/406-1068-183436,r892.php?Lang=zh-tw (屏大換平台公告)",
+      "https://eeclass.ltu.edu.tw/ (WebSearch 結果：嶺東 ee-class)"
+    ]
+  },
+  {
+    "name": "智慧大師 Wisdom Master 教學平台",
+    "url": "https://www.sun.net.tw/",
+    "schools": [
+      "0A01",
+      "0052",
+      "0032"
+    ],
+    "scope": "multi_school",
+    "operator": "company",
+    "operatorName": "旭聯科技（SUN NET Technologies）",
+    "category": [
+      "lms"
+    ],
+    "features": "大專校院常用的數位學習平台（WM3／Wisdom Master Pro），附「旭聯智慧大師 行動學習」App",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "宣傳頁稱學校市佔率超過 70%（未註明年份，未證實）。空大、屏東大學、聯合大學仍推廣使用其 App。",
+    "evidence": [
+      "https://www.sun.net.tw/ (curl 200，「旭聯科技SUNNET」)",
+      "https://apps.apple.com/us/app/%E6%97%AD%E8%81%AF%E6%99%BA%E6%85%A7%E5%A4%A7%E5%B8%AB-%E8%A1%8C%E5%8B%95%E5%AD%B8%E7%BF%92/id556802608 (App Store，1.19.10 新增聯合大學登入)",
+      "https://www2.nou.edu.tw/tainan/List.aspx?uid=164&pid=109 (空大台南中心說明)"
+    ]
+  },
+  {
+    "name": "Moodle",
+    "url": "https://moodle.org/",
+    "schools": [],
+    "scope": "multi_school",
+    "operator": "community",
+    "operatorName": "Moodle HQ／開源社群",
+    "category": [
+      "lms"
+    ],
+    "features": "開源學習管理系統，台灣許多大學課程平台與 ewant、TaiwanLIFE 皆以 Moodle 架設",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/moodle/moodle",
+    "notes": "moodle.org 對 curl 回 403「Moodle challenge」（防機器人頁），站點仍在。",
+    "evidence": [
+      "https://moodle.org/ (curl 403，Moodle challenge 頁)",
+      "https://zh.wikipedia.org/zh-tw/Ewant (ewant 基於 Moodle)"
+    ]
+  },
+  {
+    "name": "OPT 歐趴糖",
+    "url": "https://www.1111opt.com.tw/",
+    "schools": [],
+    "scope": "national",
+    "operator": "company",
+    "operatorName": "1111 人力銀行",
+    "category": [
+      "review",
+      "aggregator",
+      "forum"
+    ],
+    "features": "全台大學課程評價查詢：課程內容、老師、評分方式、考試／報告／點名比重、甜涼度、考古題，另有各校選課懶人包",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "網站自稱約 56,015 篇課程評價、1,586 份考古題、114 所學校；選課懶人包涵蓋全台 50 所大學。與 TUN 大學網同屬 1111。",
+    "evidence": [
+      "https://www.1111opt.com.tw/ (curl 200，「專屬大學生的課程評價查詢網 | OPT 歐趴糖」)",
+      "https://www.1111opt.com.tw/periodical/11164851 (全台50所大學選課懶人包)"
+    ]
+  },
+  {
+    "name": "TUN 大學網 課程評價",
+    "url": "https://university.1111.com.tw/index.asp",
+    "schools": [],
+    "scope": "national",
+    "operator": "company",
+    "operatorName": "1111 人力銀行",
+    "category": [
+      "review",
+      "forum",
+      "other"
+    ],
+    "features": "大學生入口網，「我是大學生」區含課程評價、選課秘技、學長姐選課經驗分享",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2025 年 9 月報導累積超過 52,922 筆課程評價，涵蓋全國大專院校。tun.com.tw 對 curl 回 Cloudflare 403，實際站在 university.1111.com.tw。",
+    "evidence": [
+      "https://university.1111.com.tw/index.asp (curl 200，「TUN 大學網｜引領你闖蕩大學生活」)",
+      "https://udn.com/news/story/6928/8998314 (評價數量報導)"
+    ]
+  },
+  {
+    "name": "UrSchool",
+    "url": "https://urschool.org/",
+    "schools": [],
+    "scope": "national",
+    "operator": "company",
+    "operatorName": "UrSchool 團隊",
+    "category": [
+      "review",
+      "forum"
+    ],
+    "features": "大學校系與教授評價平台，以老師為單位列評價（甜度、涼度、教學方式），資料較多的是台大、清大、交大、成大、政大、台科大、台師大、輔仁、淡江",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2026-11-27 首頁只剩 Apache「Index of /」；NCKU-Evaluator README（2026-11）說 urschool.org 已於 2026 年初停止服務，資料停在 2025-06。WHOIS 到期日 2026-08-30。",
+    "evidence": [
+      "https://urschool.org/ (curl 200，標題「Index of /」)",
+      "https://github.com/ncchen99/NCKU-Evaluator (README：urschool.org 已在 2026 年初停止服務)",
+      "https://www.whois.com/whois/URSCHOOL.ORG"
+    ]
+  },
+  {
+    "name": "Dcard 各校看板／#選課雷達",
+    "url": "https://www.dcard.tw/",
+    "schools": [],
+    "scope": "national",
+    "operator": "company",
+    "operatorName": "狄卡科技（Dcard）",
+    "category": [
+      "forum",
+      "review"
+    ],
+    "features": "大學生匿名論壇，各校看板以 #選課雷達 標籤徵集課程評價（課名、年份、老師、好過指數、推薦指數）",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "評價分散在各校看板，沒有統一資料庫；Dcard 對 curl 回 Cloudflare 403。淡江、成大、東華等校看板都有選課雷達活動。",
+    "evidence": [
+      "https://www.dcard.tw/ (curl 403，Cloudflare 驗證頁)",
+      "https://www.dcard.tw/f/ncku/p/255901225 (成大板 #選課雷達 112-2 課程評價募集)",
+      "https://www.dcard.tw/f/freshman/p/253027667 (課程評價網站大彙整)"
+    ]
+  },
+  {
+    "name": "PTT 批踢踢實業坊 各校課程板",
+    "url": "https://www.ptt.cc/bbs/index.html",
+    "schools": [],
+    "scope": "national",
+    "operator": "community",
+    "operatorName": "批踢踢實業坊",
+    "category": [
+      "forum",
+      "review"
+    ],
+    "features": "BBS 論壇，各校分類下有課程板（如 NTUcourse 用 [評價]/[通識] 標籤），是早期課程評價主要來源",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "多數第三方評價網（如想鑑你 NTU Rating、NCKU 相關工具）都曾爬 PTT 課程板。",
+    "evidence": [
+      "https://www.ptt.cc/bbs/index.html (curl 200，熱門看板)",
+      "https://www.ptt.cc/cls/997 (curl 200，臺大分類看板含 NTUcourse)"
+    ]
+  },
+  {
+    "name": "CrossLink 臺大、臺科大、臺師大選課模擬",
+    "url": "https://www.crosslink.tw/",
+    "schools": [
+      "0003",
+      "0022",
+      "0004"
+    ],
+    "scope": "multi_school",
+    "operator": "student",
+    "operatorName": "YI FENG（前身 NTUST.CC 台科大選課模擬系統）",
+    "category": [
+      "course_query",
+      "schedule_planner",
+      "aggregator",
+      "forum"
+    ],
+    "features": "臺大系統三校課程合併查詢、選課模擬、找同修課同學、詢問課程",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "課程資料涵蓋 100-1 到 115-1，列表最後更新 2026/11/26；Facebook 登入後可模擬選課。是 UniCourse 最接近的跨校同類產品之一。",
+    "evidence": [
+      "https://www.crosslink.tw/courses (curl 200，學年選單到 115學年第一學期，最後更新 2026/11/26)"
+    ]
+  },
+  {
+    "name": "Colorgy 課表",
+    "url": "https://colorgy.io/",
+    "schools": [],
+    "scope": "national",
+    "operator": "company",
+    "operatorName": "Colorgy（台科大學生創業團隊）",
+    "category": [
+      "schedule_planner",
+      "aggregator",
+      "forum"
+    ],
+    "features": "大學生課表 App，選校後自動匯入課程，曾宣稱收錄近 100（後稱 151）所大學課程資料，並有同課同學社交功能",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "app_ios",
+    "repo": "https://github.com/colorgy",
+    "notes": "Crunchbase 標示永久關閉；約 2017–2020 間下架。colorgy.io 現在轉址到無關的博弈網站（guitartabs.co.in），不要連結。",
+    "evidence": [
+      "https://colorgy.io/ (curl 轉址至 https://guitartabs.co.in/ 無關網站)",
+      "https://www.crunchbase.com/organization/colorgy (permanently closed)",
+      "https://www.bnext.com.tw/article/38699/BN-2016-02-15-181102-117 (數位時代報導)",
+      "https://www.dcard.tw/f/ntust/p/231777071 (Colorgy怎麼了?)"
+    ]
+  },
+  {
+    "name": "課務通 - AI匯入課表・行事曆・校園公告",
+    "url": "https://apps.apple.com/tw/app/id6761055559",
+    "schools": [],
+    "scope": "national",
+    "operator": "student",
+    "operatorName": "FENG-CHIANG CHANG",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "iOS 課表 App，用 AI 解析各校教務系統課表、可選已支援學校或自訂設定，含行事曆、校園公告、小工具",
+    "loginRequired": "unknown",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "app_ios",
+    "repo": null,
+    "notes": "2026 年 9 月仍有更新（1.0.6）；支援學校清單只在 App 內，商店頁未列。",
+    "evidence": [
+      "https://apps.apple.com/tw/app/id6761055559 (curl 200，App Store 頁)"
+    ]
+  },
+  {
+    "name": "不揪？- 儲存、分享課表",
+    "url": "https://apps.apple.com/tw/app/id6740519975",
+    "schools": [],
+    "scope": "national",
+    "operator": "student",
+    "operatorName": "HSIN-CHE CHUNG",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "iOS 課表儲存與分享 App，加好友看彼此課表與目前是否有課，支援全台大學、科技大學的節次時間",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "app_ios",
+    "repo": null,
+    "notes": "手動輸入課表，不自動匯入課程資料；最初支援清交成政等 7 校，後擴充台大系統、中原與科大節次。",
+    "evidence": [
+      "https://apps.apple.com/tw/app/id6740519975 (curl 200，App Store 頁)",
+      "https://www.dcard.tw/f/ntu/p/258031874 (作者 Dcard 發表文)"
+    ]
+  },
+  {
+    "name": "UniCourse 查課",
+    "url": "https://unicourse.observe.tw/",
+    "schools": [
+      "0003",
+      "0002",
+      "0007",
+      "0001",
+      "0004",
+      "0006",
+      "0013",
+      "1007",
+      "0028"
+    ],
+    "scope": "multi_school",
+    "operator": "community",
+    "operatorName": "UniCourse-TW",
+    "category": [
+      "course_query",
+      "aggregator",
+      "review",
+      "forum",
+      "api"
+    ],
+    "features": "跨校課程目錄（Rust + SvelteKit），以各校公開課程網爬蟲每晚更新，含課程評分與討論區",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/UniCourse-TW/UniCourse",
+    "notes": "即本專案。2026-11-27 正式站涵蓋 9 校 × 113-1…115-1：臺大、清大、陽明交大、政大、臺師大、中興、中正、逢甲、北藝大；中央（robots 禁止）、臺藝大（需登入）、成大（CAPTCHA）未上線。",
+    "evidence": [
+      "https://unicourse.observe.tw/ (curl 200，標題「查課｜UniCourse」)",
+      "https://github.com/UniCourse-TW/UniCourse (本 repo origin)"
+    ]
+  },
+  {
+    "name": "UniCourse（舊版，unicourse.tw）",
+    "url": "https://unicourse.tw/",
+    "schools": [
+      "0004"
+    ],
+    "scope": "multi_school",
+    "operator": "student",
+    "operatorName": "UniCourse-TW",
+    "category": [
+      "course_query",
+      "forum",
+      "api"
+    ],
+    "features": "開源課程平台，課程／教師／開課單位三維搜尋加論壇；最早以臺師大為主，曾爬技職課程資源網",
+    "loginRequired": "unknown",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/UniCourse-TW/realm",
+    "notes": "unicourse.tw 現在 DNS 解析失敗；舊前端 unicourse.pages.dev 仍回 200。相關 repo：Backend（2023-02）、API-Spec、NTNU-Course、course-tvc-crawler（爬 course-tvc.yuntech.edu.tw，2023-02）。",
+    "evidence": [
+      "https://unicourse.tw/ (curl: Could not resolve host)",
+      "https://unicourse.pages.dev/ (curl 200，標題 UniCourse)",
+      "https://github.com/UniCourse-TW/Backend",
+      "https://github.com/UniCourse-TW/course-tvc-crawler"
+    ]
+  },
+  {
+    "name": "WZCR｜臺灣大學課程評分",
+    "url": "https://github.com/csc20021001/wzcr",
+    "schools": [],
+    "scope": "national",
+    "operator": "student",
+    "operatorName": "csc20021001（WZUNAA）",
+    "category": [
+      "review",
+      "course_query",
+      "aggregator"
+    ],
+    "features": "跨校課程查詢與五項 0–100 評分（學習收穫、作業量、考試難度、給分、點名），課程以「課程＋教師」為評分卡",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/csc20021001/wzcr",
+    "notes": "README：學校選單 42 所大學，39 所已載入官方課表，約 20 萬門課、42 萬筆授課紀錄，範圍 106–115 學年；臺藝大、空大、高餐未收。Next.js + Cloudflare D1，Google 登入。原站網址未在 repo 公開，未找到線上版。",
+    "evidence": [
+      "https://github.com/csc20021001/wzcr (gh api：pushed 2026-10-14，README 內容)"
+    ]
+  },
+  {
+    "name": "Colorgy 各校課程爬蟲（crawler-*-course）",
+    "url": "https://github.com/colorgy",
+    "schools": [],
+    "scope": "national",
+    "operator": "company",
+    "operatorName": "Colorgy",
+    "category": [
+      "api",
+      "open_data"
+    ],
+    "features": "Colorgy 組織下約 81 個 course 相關 repo，各校一個課程爬蟲（台大、清大、交大、成大、政大、淡江、逢甲、輔仁…）",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/colorgy",
+    "notes": "多數最後更新 2015–2016，少數 2019–2021；另有教科書出版社爬蟲。可作為各校舊版課程網結構的歷史參考。",
+    "evidence": [
+      "https://github.com/colorgy (gh api orgs/colorgy/repos：81 個名稱含 course 的 repo)"
+    ]
+  },
+  {
+    "name": "CrawlerMaster 臺灣大專院校課程爬蟲",
+    "url": "https://github.com/Yukaii/CrawlerMaster",
+    "schools": [],
+    "scope": "national",
+    "operator": "community",
+    "operatorName": "Yukaii、Neson 等（Colorgy 貢獻者）",
+    "category": [
+      "api",
+      "open_data"
+    ],
+    "features": "整合台灣各校課程爬蟲的 Rails 專案，附「臺灣各校課程爬蟲列表」與爬蟲開發指南",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/Yukaii/CrawlerMaster",
+    "notes": "最後 push 2016-09；授權 MIT（Copyright Colorgy）。",
+    "evidence": [
+      "https://github.com/Yukaii/CrawlerMaster (gh api：pushed 2016-09-05，README)"
+    ]
+  },
+  {
+    "name": "NTUTBox Template API（各大學課程節次模板）",
+    "url": "https://github.com/poterpan/ntutbox-template-api",
+    "schools": [
+      "0022",
+      "0003",
+      "0004",
+      "0005",
+      "0007",
+      "0002",
+      "1035",
+      "0009",
+      "1028",
+      "1009",
+      "0008",
+      "1041",
+      "0006",
+      "0023",
+      "1019",
+      "0001",
+      "1048",
+      "1007",
+      "0053",
+      "1001",
+      "1010",
+      "0012",
+      "1005",
+      "0013",
+      "1004",
+      "0024",
+      "1002",
+      "0020",
+      "1027",
+      "1015",
+      "1073",
+      "1006",
+      "1037",
+      "1017",
+      "0050",
+      "1078",
+      "1023"
+    ],
+    "scope": "multi_school",
+    "operator": "student",
+    "operatorName": "poterpan（北科盒子 NTUTBox）",
+    "category": [
+      "api",
+      "schedule_planner"
+    ],
+    "features": "公開 API 提供台灣各大學上課節次定義，供北科盒子課表 App 使用，歡迎 PR 新增學校",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/poterpan/ntutbox-template-api",
+    "notes": "https://api.ntutbox.com/schedule/templates 回傳 42 個模板（37 所學校）；北科盒子 App 本身是北科大專用（https://ntutbox.com）。",
+    "evidence": [
+      "https://api.ntutbox.com/schedule/templates (curl 200，42 templates)",
+      "https://ntutbox.com/ (curl 200，「北科盒子 NTUTBox — 北科大學生的智慧課表 App」)"
+    ]
+  },
+  {
+    "name": "Tw-open-course-catcher",
+    "url": "https://github.com/u-tung/Tw-open-course-catcher",
+    "schools": [
+      "0003",
+      "0002",
+      "0007"
+    ],
+    "scope": "multi_school",
+    "operator": "student",
+    "operatorName": "u-tung",
+    "category": [
+      "open_data"
+    ],
+    "features": "爬取台灣各大學開放式課程（OCW）的 Python 爬蟲，含章節與影片連結",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/u-tung/Tw-open-course-catcher",
+    "notes": "支援台大、清華、交大 OCW；最後 push 2023-03。",
+    "evidence": [
+      "https://github.com/u-tung/Tw-open-course-catcher (gh api：pushed 2023-03-27，README)"
+    ]
+  },
+  {
+    "name": "coding101-CozePlay-2025 課程推薦機器人",
+    "url": "https://github.com/Kitty-Wu91/coding101-CozePlay-2025",
+    "schools": [],
+    "scope": "national",
+    "operator": "student",
+    "operatorName": "Kitty-Wu91",
+    "category": [
+      "open_data",
+      "other"
+    ],
+    "features": "用 Python 爬蟲整理台灣各大學公開課程資料，接 Coze 工作流做課程推薦聊天機器人",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/Kitty-Wu91/coding101-CozePlay-2025",
+    "notes": "README 幾乎是空的，涵蓋學校不明；homepage 指向 coze.com bot；最後 push 2025-03。",
+    "evidence": [
+      "https://github.com/Kitty-Wu91/coding101-CozePlay-2025 (gh api：description 與 pushed 2025-03-19)"
+    ]
+  },
+  {
+    "name": "Awesome Taiwan Security Course",
+    "url": "https://github.com/fei3363/Awesome-Taiwan-Security-Course",
+    "schools": [],
+    "scope": "national",
+    "operator": "community",
+    "operatorName": "fei3363",
+    "category": [
+      "aggregator",
+      "other"
+    ],
+    "features": "收集台灣各大學、社團與計畫的資安實務課程、簡報與連結（含臺大／臺科大／交大三校合開資安課）",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/fei3363/Awesome-Taiwan-Security-Course",
+    "notes": "主題型跨校課程清單（208 stars）；最後 push 2023-09。",
+    "evidence": [
+      "https://github.com/fei3363/Awesome-Taiwan-Security-Course (gh api：README)"
+    ]
+  }
+]

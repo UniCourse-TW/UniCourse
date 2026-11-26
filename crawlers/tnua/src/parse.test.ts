@@ -53,3 +53,15 @@ test('extracts the course description without the rest of the syllabus', () => {
   assert.doesNotMatch(description ?? '', /評分標準/);
   assert.equal(parseIntroduction({ d: null }), undefined);
 });
+
+test('maps old-term rows from a unit that is absent from the department dropdown', () => {
+  const rows = parseSearch(JSON.parse(sample('search-109-2-ca071.json')));
+  assert.ok(rows.length > 0);
+  for (const row of rows) {
+    const offering = Offering.parse(toOffering(row, '1092', { code: 'CA071' }));
+    assert.match(offering.sourceId, /^1092-071/);
+    assert.equal(offering.departmentCode, 'CA071');
+    assert.equal(offering.department, undefined);
+    assert.equal(typeof offering.enrolled, 'number');
+  }
+});

@@ -1,0 +1,2548 @@
+[
+  {
+    "name": "NTUCourse Neo",
+    "url": "https://ncn.pages.dev/",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "NTUCourse-Neo（GitHub org；jc-hiroto、swh00tw 等臺大學生）",
+    "category": [
+      "course_query",
+      "schedule_planner"
+    ],
+    "features": "重新設計的臺大課程查詢與排課介面（Course Schedule – Re-imagined）",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/NTUCourse-Neo/ncn-frontend",
+    "notes": "前端 repo 最後 push 2022-12-23、landing 2023-07；原服務網址 course.myntu.me 現 TLS 失敗，ncn.pages.dev 僅剩 landing page。臺大官方新課程網（course.ntu.edu.tw）英文名亦稱 NTU Course NEO，兩者關係未經證實。",
+    "evidence": [
+      "https://ncn.pages.dev/ (curl 200, title 'NTUCourse Neo')",
+      "https://course.myntu.me/ (curl TLS error)",
+      "gh api repos/NTUCourse-Neo/ncn-frontend (pushed 2022-12-23, 34★)",
+      "https://dzoo.ntu.edu.tw/projects/Rdv2VAa/?name=ntucourse-neo (Dzoo NTU 專案頁)"
+    ]
+  },
+  {
+    "name": "想鑑你 NTU Rating",
+    "url": "https://rating.myntu.me/",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "臺大資工、電機學生（開發者張維哲等）",
+    "category": [
+      "review",
+      "forum",
+      "schedule_planner"
+    ],
+    "features": "臺大課程評價論壇：課程搜尋、四項指標評分、匿名評價、收藏與模擬排課",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "需 ntu mail 驗證才能發文；課程頁顯示 Last Offered Semester 115-1，2026-01 仍有新評價。Facebook：ntuRating。",
+    "evidence": [
+      "https://rating.myntu.me/ (curl 200, title '想鑑你 NTU Rating')",
+      "https://rating.myntu.me/course-overview/62e6c8b044b8e1922ab54f6a (課程頁顯示 115-1)",
+      "web search: Dcard 臺大板「台大課程評價查詢大彙整」"
+    ]
+  },
+  {
+    "name": "NTU Sweety Course",
+    "url": "https://ntusweety.herokuapp.com/",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "臺大資工學生（PTT ACEgolden，2014）",
+    "category": [
+      "review",
+      "schedule_planner",
+      "grade_distribution"
+    ],
+    "features": "拖曳空堂找課、一鍵匯入預選、自動搜尋 PTT 評價、歷年成績分布",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2014 年上線；Heroku 網址現回 404 'No such app'；同名 Chrome 擴充（ljphfdooobennbjpbkfioadeeaajcioc）已下架（Extpose 標 delisted，最後更新 2017-04-08）。",
+    "evidence": [
+      "https://ntusweety.herokuapp.com/ (curl 404 No such app)",
+      "https://www.ptt.cc/bbs/NTU/M.1408043094.A.8B3.html (PTT 發表文)",
+      "https://chromewebstore.google.com/detail/ljphfdooobennbjpbkfioadeeaajcioc (商店頁已無標題=下架)"
+    ]
+  },
+  {
+    "name": "PTT NTUcourse 看板",
+    "url": "https://www.ptt.cc/bbs/NTUcourse/index.html",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "community",
+    "operatorName": "PTT 批踢踢實業坊（板主為臺大學生）",
+    "category": [
+      "review",
+      "forum"
+    ],
+    "features": "臺大課程心得、評價與徵求筆記的 BBS 看板",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "最新非置底文章 2026-08-13。",
+    "evidence": [
+      "https://www.ptt.cc/bbs/NTUcourse/index.html (curl 200; 最新文 M.* 時間戳 2026-08-13)"
+    ]
+  },
+  {
+    "name": "台大課程評價小幫手",
+    "url": "https://chromewebstore.google.com/detail/haencenjhfgkhnjhmjmlnmcongkgjapm",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "jschang19",
+    "category": [
+      "review"
+    ],
+    "features": "在臺大課程網課程頁一鍵彙整 PTT、Dcard、NTU Rating 評價",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "browser_extension",
+    "repo": "https://github.com/jschang19/ntu-course-review-extension",
+    "notes": "Chrome 商店 v1.0.1、905 users、最後更新 2022-12-31；依賴作者後端 API ntucourse-api.jcshawn.com，未驗證是否仍運作。",
+    "evidence": [
+      "https://chromewebstore.google.com/detail/haencenjhfgkhnjhmjmlnmcongkgjapm (curl: 905 users, Updated December 31, 2022)",
+      "gh api repos/jschang19/ntu-course-review-extension (pushed 2023-01-01)"
+    ]
+  },
+  {
+    "name": "NTU Grade Viewer（台大課程網成績分布插件）",
+    "url": "https://github.com/weiiiii0622/NTU-Grade-Viewer",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "weiiiii0622",
+    "category": [
+      "grade_distribution"
+    ],
+    "features": "Chrome 插件，在臺大課程網顯示各課程歷年成績分布",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/weiiiii0622/NTU-Grade-Viewer",
+    "notes": "repo 最後 push 2025-05-23；成績資料為群眾填報。",
+    "evidence": [
+      "gh api repos/weiiiii0622/NTU-Grade-Viewer (pushed 2025-05-23)",
+      "web search: Dcard 臺大板「台大課程網成績比例 Chrome 插件」"
+    ]
+  },
+  {
+    "name": "NTU_ScoreSharing（MINS）",
+    "url": "https://chromewebstore.google.com/detail/ibpfdaflfpdimokpjfaknocbjfcobide",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "MINS（cin-yi-wei）",
+    "category": [
+      "grade_distribution"
+    ],
+    "features": "在課程查詢頁加入歷年平均 GPA 欄位，交換條件為上傳自己的修課成績",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "browser_extension",
+    "repo": "https://github.com/cin-yi-wei/mins",
+    "notes": "v2.1.0（2021-07-14）、259 users；商店頁現已無內容，疑似下架；GPLv3。",
+    "evidence": [
+      "https://chromewebstore.google.com/detail/ibpfdaflfpdimokpjfaknocbjfcobide (curl 200 但標題空白=下架)",
+      "gh api repos/cin-yi-wei/mins (pushed 2021-07-13)"
+    ]
+  },
+  {
+    "name": "NTU課表轉桌布",
+    "url": "https://chromewebstore.google.com/detail/ecgkdpafjhjamknmjemhghhgdopinmjc",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "unknown",
+    "operatorName": "unknown",
+    "category": [
+      "other"
+    ],
+    "features": "讀取臺大課程網選課結果並轉成手機桌布",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "browser_extension",
+    "repo": null,
+    "notes": "v1.1.0、150 users、2026-09-15 更新；需登入臺大選課系統才讀得到課表。",
+    "evidence": [
+      "https://chromewebstore.google.com/detail/ecgkdpafjhjamknmjemhghhgdopinmjc (curl: 150 users, Updated September 15, 2026)"
+    ]
+  },
+  {
+    "name": "Browser-NTU-course-search",
+    "url": "https://github.com/CindyLinz/Browser-NTU-course-search",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "CindyLinz",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "台大選課網站輔助工具：依已加入課表在搜尋頁標示已選或衝堂",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/CindyLinz/Browser-NTU-course-search",
+    "notes": "repo 最後 push 2025-08-21。",
+    "evidence": [
+      "gh api repos/CindyLinz/Browser-NTU-course-search (pushed 2025-08-21)"
+    ]
+  },
+  {
+    "name": "khò-ji̍t 課日",
+    "url": "https://github.com/bobby1030/khojit",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "bobby1030",
+    "category": [
+      "other"
+    ],
+    "features": "把臺大課程網預選清單轉成 .ics 匯入行事曆",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/bobby1030/khojit",
+    "notes": "repo 最後 push 2022-02-13。",
+    "evidence": [
+      "gh api repos/bobby1030/khojit (pushed 2022-02-13)"
+    ]
+  },
+  {
+    "name": "NTU Course Calendar",
+    "url": "https://annie04082020.github.io/ntu-course-calendar/",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "Annie04082020",
+    "category": [
+      "other"
+    ],
+    "features": "讀取臺大課程網資料匯出 .ics，並提供 iOS Scriptable／Android 桌面小工具",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/Annie04082020/ntu-course-calendar",
+    "notes": "repo 最後 push 2026-09-15。",
+    "evidence": [
+      "gh api repos/Annie04082020/ntu-course-calendar (pushed 2026-09-15)",
+      "web search: 'NTU Course Calendar' GitHub"
+    ]
+  },
+  {
+    "name": "台大選課輔助程式",
+    "url": "https://ntucourse.ericyu.org/",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "ericyu",
+    "category": [
+      "course_query",
+      "schedule_planner"
+    ],
+    "features": "臺大課程查詢與排課輔助網頁",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/ericyu/ntucourse",
+    "notes": "網站可連線，頁面僅見 108-2／110-1 學期字樣；repo 最後 push 2020-02-02，推定停更。",
+    "evidence": [
+      "https://ntucourse.ericyu.org/ (curl 200, title '選課輔助程式'; 頁面最新學期字樣 1101)",
+      "gh api repos/ericyu/ntucourse (pushed 2020-02-02, 12★)"
+    ]
+  },
+  {
+    "name": "NTU Course Bot 台大課程機器人",
+    "url": "https://www.fb.com/ntucoursebot/",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "alvinbhou / CryoliteZ",
+    "category": [
+      "course_query"
+    ],
+    "features": "跨平台聊天機器人（Messenger 等），依 GPA 排序課程並連結課程網，資料取自 NTU Sweety Course",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/alvinbhou/NTU-Course-Bot",
+    "notes": "repo 最後 push 2023-02-27；資料來源 NTU Sweety 已停止。",
+    "evidence": [
+      "gh api repos/alvinbhou/NTU-Course-Bot (pushed 2023-02-27)",
+      "web search: CryoliteZ/NTU-Course-Bot"
+    ]
+  },
+  {
+    "name": "台大課程喵喵（NTUCourseCat）",
+    "url": "https://hackmd.io/@ruby0322/rJCEPIUCF",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "ruby0322",
+    "category": [
+      "course_query"
+    ],
+    "features": "LINE bot 查詢臺大課程，後端利用課程網系所查詢頁",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "line_bot",
+    "repo": null,
+    "notes": "僅找到 HackMD 開發說明（標題 NTUCourseCat Repo），未找到可用的 bot 帳號或 repo。",
+    "evidence": [
+      "https://hackmd.io/@ruby0322/rJCEPIUCF (curl 200)"
+    ]
+  },
+  {
+    "name": "NTU Unofficial App",
+    "url": "https://apps.apple.com/us/app/ntu-unofficial-app/id6758853060",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "HSIN-CHE CHUNG",
+    "category": [
+      "other"
+    ],
+    "features": "iOS App：學期成績、課表、NTU COOL 作業截止追蹤、校園天氣",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "app_ios",
+    "repo": null,
+    "notes": "2026 年上架（v2.0 3/9）；Flutter 開發；需輸入臺大帳密（非 SSO），Dcard 有使用者提出帳密疑慮。",
+    "evidence": [
+      "https://apps.apple.com/us/app/ntu-unofficial-app/id6758853060 (curl 200)",
+      "web search: Dcard 臺大板「自己做了一個 NTU App」"
+    ]
+  },
+  {
+    "name": "NTNUx 課程查詢系統",
+    "url": "https://ntnux.org/",
+    "schools": [
+      "0004"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "NTNUx（GitHub org）",
+    "category": [
+      "course_query",
+      "schedule_planner"
+    ],
+    "features": "更快、行動裝置友好的臺師大課程查詢，含選課時程與官方系統連結",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/NTNUx/NTNUx",
+    "notes": "頁面含 115-1 資料；repo 最後 push 2026-11-23。",
+    "evidence": [
+      "https://ntnux.org/ (curl 200, title 'NTNUx｜課程查詢系統', 含 115-1)",
+      "gh api repos/NTNUx/NTNUx (pushed 2026-11-23)"
+    ]
+  },
+  {
+    "name": "師大好排課 NTNU Scheduler Pro",
+    "url": "https://ntnu-scheduler-pro.pages.dev/",
+    "schools": [
+      "0004"
+    ],
+    "scope": "school",
+    "operator": "unknown",
+    "operatorName": "unknown",
+    "category": [
+      "schedule_planner",
+      "review",
+      "forum"
+    ],
+    "features": "拖曳排課、衝堂偵測、課程論壇、學長姐甜涼評分與 AI 評價統整",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "需使用者自官方『開課資料匯出』匯入；評價來源含 FB 師大選課交流社團與 1111 歐趴糖。頁面含 111–113 學期字樣。",
+    "evidence": [
+      "https://ntnu-scheduler-pro.pages.dev/ (curl 200, meta description)",
+      "web search: '師大好排課'"
+    ]
+  },
+  {
+    "name": "NTNU Course Planner（shiraga1094）",
+    "url": "https://shiraga1094.github.io/NTNUCoursePlanner/",
+    "schools": [
+      "0004"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "shiraga1094",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "臺師大課程排課系統",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/shiraga1094/NTNUCoursePlanner",
+    "notes": "repo 最後 push 2026-11-13；頁面見 113-1 字樣。",
+    "evidence": [
+      "https://shiraga1094.github.io/NTNUCoursePlanner/ (curl 200)",
+      "gh api repos/shiraga1094/NTNUCoursePlanner"
+    ]
+  },
+  {
+    "name": "師大課程排隊網站",
+    "url": "https://github.com/aisu-programming/NTNU-Course-Queuing-Website",
+    "schools": [
+      "0004"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "aisu-programming",
+    "category": [
+      "enrollment"
+    ],
+    "features": "師大課程排隊（候補）網站前後端",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/aisu-programming/NTNU-Course-Queuing-Website",
+    "notes": "repo 最後 push 2022-10-07；未見線上服務。",
+    "evidence": [
+      "gh api repos/aisu-programming/NTNU-Course-Queuing-Website (pushed 2022-10-07)"
+    ]
+  },
+  {
+    "name": "NYCU 課程探索 · Course Explorer（非官方）",
+    "url": "https://timetable.nycu.tw/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "unknown",
+    "operatorName": "unknown",
+    "category": [
+      "course_query",
+      "schedule_planner"
+    ],
+    "features": "依領域、教師、時間、校區與大綱篩選課程，收藏並以連結分享課表，顯示選課熱度與『寶藏課』",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "頁面含 1151（115-1）資料，資料整理自公開課表，聲明與學校無關。",
+    "evidence": [
+      "https://timetable.nycu.tw/ (curl 200, meta description, 含 1151)"
+    ]
+  },
+  {
+    "name": "交大課程助理",
+    "url": "https://nctucourse.louisif.me/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "gamerslouis",
+    "category": [
+      "schedule_planner",
+      "other"
+    ],
+    "features": "選課模擬、課表匯出圖片、GPA 計算、依空堂搜尋通識",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/gamerslouis/nctucourse",
+    "notes": "NYCU OAuth 登入；repo 最後 push 2026-08-02（37★）。",
+    "evidence": [
+      "https://nctucourse.louisif.me/ (curl 200)",
+      "gh api repos/gamerslouis/nctucourse (pushed 2026-08-02)"
+    ]
+  },
+  {
+    "name": "NYCU 選課助手",
+    "url": "https://chromewebstore.google.com/detail/miaebenciplpjnmbfnhibkkgfeiciijn",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "nycu-portal（GitHub org）",
+    "category": [
+      "schedule_planner",
+      "course_query"
+    ],
+    "features": "Chrome 擴充：AI 搜尋、課表建立與匯出、收藏管理",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "browser_extension",
+    "repo": "https://github.com/nycu-portal/Course_Registration",
+    "notes": "v3.3.0、50 users、2026-06-16 更新。",
+    "evidence": [
+      "https://chromewebstore.google.com/detail/miaebenciplpjnmbfnhibkkgfeiciijn (curl: 50 users, Updated June 16, 2026)",
+      "gh api repos/nycu-portal/Course_Registration"
+    ]
+  },
+  {
+    "name": "NYCU 預排課程匯入",
+    "url": "https://chromewebstore.google.com/detail/looiljidkdllkbabaiamgeblekkdgfef",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "engelyu",
+    "category": [
+      "enrollment",
+      "course_query"
+    ],
+    "features": "跨院系直接搜尋課程並一鍵加入預排／正式選課、我的課表",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "browser_extension",
+    "repo": "https://github.com/engelyu/nycucourse-extension",
+    "notes": "v0.15.0、6 users、2026-10-04 更新。",
+    "evidence": [
+      "https://chromewebstore.google.com/detail/looiljidkdllkbabaiamgeblekkdgfef (curl: Updated October 4, 2026)",
+      "gh api repos/engelyu/nycucourse-extension (pushed 2026-10-01)"
+    ]
+  },
+  {
+    "name": "NYCU Timetable 選課模擬系統",
+    "url": "https://huskyee.github.io/NYCU_Timetable/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "Huskyee",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "搜尋課程、衝堂標色、加入課表並下載圖片",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/Huskyee/NYCU_Timetable",
+    "notes": "網站可連線，repo 最後 push 2023-02-14，資料學期未確認。",
+    "evidence": [
+      "https://huskyee.github.io/NYCU_Timetable/ (curl 200)",
+      "gh api repos/Huskyee/NYCU_Timetable"
+    ]
+  },
+  {
+    "name": "NCTU+",
+    "url": "https://plus.nctu.edu.tw/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "nctuplus（GitHub org，交大學生）",
+    "category": [
+      "review",
+      "schedule_planner",
+      "forum"
+    ],
+    "features": "交大課程評價（涼度、甜度、深度）、排課與考古題分享",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/nctuplus/nctuplus",
+    "notes": "plus.nctu.edu.tw 與 nctuplus.hopto.org 皆 DNS 無法解析；主 repo 最後 push 2021-02-16（70★）。",
+    "evidence": [
+      "https://plus.nctu.edu.tw/ (curl: Could not resolve host)",
+      "gh api repos/nctuplus/nctuplus (pushed 2021-02-16)",
+      "https://github.com/Cycatz/awesome-nctu (列入排課選課相關)"
+    ]
+  },
+  {
+    "name": "NCTUwU 交大選課模擬器",
+    "url": "http://uwu.nctu.moe/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "splitline",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "選課模擬、課表匯出圖片、分享匯入課表",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/splitline/NCTUwU",
+    "notes": "uwu.nctu.moe 現轉址到 nycu.moe（交大 VTuber 社），服務已不在；repo 最後 push 2020-09-07。",
+    "evidence": [
+      "http://uwu.nctu.moe/ (curl → https://nycu.moe/ 'VTuber 社')",
+      "gh api repos/splitline/NCTUwU (pushed 2020-09-07)"
+    ]
+  },
+  {
+    "name": "NiceCourseToU 交大一站式選課",
+    "url": "https://solrz.github.io/nice-course-to-u/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "solrz",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "交大選課助手網頁",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/solrz/nice-course-to-u",
+    "notes": "頁面可連線；repo 最後 push 2020-09-10。",
+    "evidence": [
+      "https://solrz.github.io/nice-course-to-u/ (curl 200)",
+      "gh api repos/solrz/nice-course-to-u"
+    ]
+  },
+  {
+    "name": "交大預排課表小工具",
+    "url": "https://lys0829.github.io/NCTUPreTimetable/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "lys0829",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "預排課表工具",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/lys0829/NCTUPreTimetable",
+    "notes": "repo 最後 push 2026-11-26。",
+    "evidence": [
+      "https://lys0829.github.io/NCTUPreTimetable/ (curl 200, title '交大預排課表')",
+      "gh api repos/lys0829/NCTUPreTimetable"
+    ]
+  },
+  {
+    "name": "NCTU Timetable+",
+    "url": "https://timetable.csy54.tw/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "unknown",
+    "operatorName": "unknown",
+    "category": [
+      "course_query"
+    ],
+    "features": "交大課程時間表增強版",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "DNS 無法解析；僅見於 awesome-nctu 清單。",
+    "evidence": [
+      "https://timetable.csy54.tw/ (curl: Could not resolve host)",
+      "https://github.com/Cycatz/awesome-nctu"
+    ]
+  },
+  {
+    "name": "交大個人助理",
+    "url": "https://course.nctu.xyz/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "unknown",
+    "operatorName": "unknown",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "交大選課／個人助理",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "DNS 無法解析；僅見於 awesome-nctu 清單。",
+    "evidence": [
+      "https://course.nctu.xyz/ (curl: Could not resolve host)",
+      "https://github.com/Cycatz/awesome-nctu"
+    ]
+  },
+  {
+    "name": "PTT NCTU-Teacher 看板",
+    "url": "https://www.ptt.cc/bbs/NCTU-Teacher/index.html",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "community",
+    "operatorName": "PTT 批踢踢實業坊",
+    "category": [
+      "review",
+      "forum"
+    ],
+    "features": "交大教師與課程評價看板",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "最新非置底文章 2026-10-09。",
+    "evidence": [
+      "https://www.ptt.cc/bbs/NCTU-Teacher/index.html (curl 200; 最新文 2026-10-09)"
+    ]
+  },
+  {
+    "name": "awesome-nctu",
+    "url": "https://github.com/Cycatz/awesome-nctu",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "Cycatz",
+    "category": [
+      "other"
+    ],
+    "features": "交大相關網站與資源彙整清單（含排課選課工具）",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/Cycatz/awesome-nctu",
+    "notes": "最後 push 2026-04-21；但其中多數選課工具連結已失效。",
+    "evidence": [
+      "gh api repos/Cycatz/awesome-nctu (pushed 2026-04-21)"
+    ]
+  },
+  {
+    "name": "NTHUMods",
+    "url": "https://nthumods.com/",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "nthumodifications（GitHub org，清大學生）",
+    "category": [
+      "course_query",
+      "schedule_planner",
+      "grade_distribution",
+      "review"
+    ],
+    "features": "課程大綱與歷年評分查詢、課表規劃、畢業學分規劃、校車時刻",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/nthumodifications/courseweb",
+    "notes": "repo 最後 push 2026-11-26（91★）；部分功能需登入。",
+    "evidence": [
+      "https://nthumods.com/ (curl 200, meta description)",
+      "gh api repos/nthumodifications/courseweb (pushed 2026-11-26)"
+    ]
+  },
+  {
+    "name": "清大選課助手 NTHU Course Selection Assistant",
+    "url": "https://chromewebstore.google.com/detail/amljcdhkpahlpbfniijlgknmdecajoel",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "unknown",
+    "operatorName": "unknown",
+    "category": [
+      "schedule_planner",
+      "review"
+    ],
+    "features": "視覺化時間篩選、即時選課人數、衝堂偵測、Dcard/NTHUMods/Opass 評價連結",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "browser_extension",
+    "repo": null,
+    "notes": "v1.3.0、83 users、2026-09-18 更新；聲明資料皆在瀏覽器端處理。",
+    "evidence": [
+      "https://chromewebstore.google.com/detail/amljcdhkpahlpbfniijlgknmdecajoel (curl: 83 users, Updated September 18, 2026)"
+    ]
+  },
+  {
+    "name": "清大選課管家",
+    "url": "https://chromewebstore.google.com/detail/nihfemnmeopfggpfdfjjfjclpimfchlk",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "T & J（兩位清大資工學生）",
+    "category": [
+      "schedule_planner",
+      "enrollment"
+    ],
+    "features": "課程搜尋、清單一鍵送出選課、依修課紀錄推薦課程",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "browser_extension",
+    "repo": null,
+    "notes": "v0.98 最後更新 2018-08-21；商店頁現已無內容（疑似下架）。",
+    "evidence": [
+      "https://chromewebstore.google.com/detail/nihfemnmeopfggpfdfjjfjclpimfchlk (curl 200 但標題空白)",
+      "web search: Dcard 清華板「清大選課管家」"
+    ]
+  },
+  {
+    "name": "清大簡易選課",
+    "url": "https://nthu-courses.github.io/",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "pp253",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "重新設計的清爽選課介面",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/pp253/nthu-select-courses",
+    "notes": "GitHub Pages 現 404；repo 最後 push 2023-01-03。",
+    "evidence": [
+      "https://nthu-courses.github.io/ (curl 404)",
+      "gh api repos/pp253/nthu-select-courses"
+    ]
+  },
+  {
+    "name": "NTHUcourse 清大課程",
+    "url": "https://nthucourse.com/",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "unknown",
+    "operatorName": "unknown",
+    "category": [
+      "grade_distribution",
+      "course_query"
+    ],
+    "features": "歷年課程平均 GPA／標準差、餘額與中籤機率",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "DNS 無法解析；搜尋快照顯示資料停在 111 上。",
+    "evidence": [
+      "https://nthucourse.com/ (curl: Could not resolve host)",
+      "web search: 'NTHU 成績分佈 歷年 課程'"
+    ]
+  },
+  {
+    "name": "NTHU_Course（henryyang42）",
+    "url": "http://nthu-course.cf/",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "henryyang42",
+    "category": [
+      "course_query"
+    ],
+    "features": "清大課程查詢網站",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/henryyang42/NTHU_Course",
+    "notes": "網域無法解析；repo 最後 push 2018-07-18。",
+    "evidence": [
+      "http://nthu-course.cf/ (curl: Could not resolve host)",
+      "gh api repos/henryyang42/NTHU_Course"
+    ]
+  },
+  {
+    "name": "nthu-course-grade-data-downloader",
+    "url": "https://github.com/edge-runner913/nthu-course-grade-data-downloader",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "edge-runner913",
+    "category": [
+      "grade_distribution"
+    ],
+    "features": "下載校務系統歷年課程平均與標準差（無成績分布）",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/edge-runner913/nthu-course-grade-data-downloader",
+    "notes": "最後 push 2026-10-09；需校務系統帳號。",
+    "evidence": [
+      "gh api repos/edge-runner913/nthu-course-grade-data-downloader"
+    ]
+  },
+  {
+    "name": "PTT NTHU_Course 看板",
+    "url": "https://www.ptt.cc/bbs/NTHU_Course/index.html",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "community",
+    "operatorName": "PTT 批踢踢實業坊",
+    "category": [
+      "review",
+      "forum"
+    ],
+    "features": "清大選課心得與考古題分享看板",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "最新非置底文章 2025-11-07，發文量低。",
+    "evidence": [
+      "https://www.ptt.cc/bbs/NTHU_Course/index.html (curl 200; 最新文 2025-11-07)"
+    ]
+  },
+  {
+    "name": "NCKU HUB",
+    "url": "https://nckuhub.com/",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "成大學生（Nick Liao、Derek Chen、Davin Lin 等）",
+    "category": [
+      "review",
+      "schedule_planner"
+    ],
+    "features": "課程心得與評分（收穫、甜度、涼度）、模擬課表、餘額追蹤選課小幫手",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "瀏覽免登入，寫評價與小幫手需 Google 登入；2026-07 上線的 ncku.net 仍列為主要課程評價平台。",
+    "evidence": [
+      "https://nckuhub.com/ (curl 200, title 'NCKU HUB｜資訊改善校園')",
+      "https://ncku.net/ (列出 NCKU HUB)"
+    ]
+  },
+  {
+    "name": "NCKU++ 成功大學課程資訊及選課系統",
+    "url": "https://wavjaby.github.io/NCKUpp/",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "WavJaby",
+    "category": [
+      "course_query",
+      "schedule_planner",
+      "enrollment"
+    ],
+    "features": "整合成大課程查詢、NCKU HUB、UrSchool；課表、志願排序、成績查詢",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/WavJaby/NCKUpp",
+    "notes": "現轉址 git.wavjaby.com/NCKUpp；repo 最後 push 2025-02-24（47★），登入後可連動選課。",
+    "evidence": [
+      "https://wavjaby.github.io/NCKUpp/ (curl → git.wavjaby.com/NCKUpp/ 200)",
+      "gh api repos/WavJaby/NCKUpp"
+    ]
+  },
+  {
+    "name": "NCKU-Evaluator",
+    "url": "https://github.com/ncchen99/NCKU-Evaluator",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "ncchen99",
+    "category": [
+      "review"
+    ],
+    "features": "Chrome 擴充：在成大選課系統注入 UrSchool 與 NCKU HUB 評價",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/ncchen99/NCKU-Evaluator",
+    "notes": "需開發者模式載入；repo 最後 push 2026-11-18（37★）。UrSchool 本站目前已無法使用。",
+    "evidence": [
+      "gh api repos/ncchen99/NCKU-Evaluator (pushed 2026-11-18)"
+    ]
+  },
+  {
+    "name": "NCKU 選課模擬器",
+    "url": "https://vincent550102.github.io/NCKU-Classboard-Simulator/",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "Vincent550102",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "成大課表模擬",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/Vincent550102/NCKU-Classboard-Simulator",
+    "notes": "頁面可連線；repo 最後 push 2022-07-24。",
+    "evidence": [
+      "https://vincent550102.github.io/NCKU-Classboard-Simulator/ (curl 200)",
+      "gh api repos/Vincent550102/NCKU-Classboard-Simulator"
+    ]
+  },
+  {
+    "name": "NCKU Course Extended",
+    "url": "https://chromewebstore.google.com/detail/igimiakkkmfanmpcdocbikkkolgibcea",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "simba-fs",
+    "category": [
+      "other"
+    ],
+    "features": "成大選課系統擴充，目前僅記住篩選條件",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "browser_extension",
+    "repo": "https://github.com/simbafs/NCKU-Extended",
+    "notes": "v1.1、6 users、2022-06-23 更新；repo 已封存。",
+    "evidence": [
+      "https://chromewebstore.google.com/detail/igimiakkkmfanmpcdocbikkkolgibcea (curl: Updated June 23, 2022)",
+      "gh api repos/simbafs/NCKU-Extended (archived)"
+    ]
+  },
+  {
+    "name": "ncku-course 共享成績分佈圖",
+    "url": "https://github.com/simbafs/ncku-course",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "simbafs",
+    "category": [
+      "grade_distribution"
+    ],
+    "features": "共享成大課程成績分布圖",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/simbafs/ncku-course",
+    "notes": "repo 最後 push 2023-08-03。",
+    "evidence": [
+      "gh api repos/simbafs/ncku-course"
+    ]
+  },
+  {
+    "name": "成大選課小幫手（festime）",
+    "url": "https://ncku-select-course-helper.herokuapp.com/",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "festime",
+    "category": [
+      "course_query"
+    ],
+    "features": "抓取成大官方課程資料提供較易用的查詢",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/festime/NCKU-select-course-helper",
+    "notes": "Heroku 404；repo 最後 push 2015-08-28。",
+    "evidence": [
+      "https://ncku-select-course-helper.herokuapp.com/ (curl 404)",
+      "gh api repos/festime/NCKU-select-course-helper"
+    ]
+  },
+  {
+    "name": "ncku.net 成大學生資訊入口",
+    "url": "https://ncku.net/",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "unknown",
+    "operatorName": "unknown",
+    "category": [
+      "other"
+    ],
+    "features": "成大學生資訊入口：校園消息、常用平台連結（含 NCKU HUB）與新手指南",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "2026-07-21 上線。",
+    "evidence": [
+      "https://ncku.net/ (curl 200, meta description)"
+    ]
+  },
+  {
+    "name": "NCCU Course Rate Tool",
+    "url": "https://chromewebstore.google.com/detail/njgippngjeffflfigibgnibajdgbnhec",
+    "schools": [
+      "0001"
+    ],
+    "scope": "school",
+    "operator": "unknown",
+    "operatorName": "unknown",
+    "category": [
+      "review",
+      "schedule_planner"
+    ],
+    "features": "在 qrysub 課程查詢頁顯示 101-1 起同名同師課程評價、歷年通識初選排名與課表預覽",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "browser_extension",
+    "repo": null,
+    "notes": "v0.4.1、414 users、最後更新 2024-08-19（逾一年）。",
+    "evidence": [
+      "https://chromewebstore.google.com/detail/njgippngjeffflfigibgnibajdgbnhec (curl: 414 users, Updated August 19, 2024)"
+    ]
+  },
+  {
+    "name": "政大開評器",
+    "url": "https://chromewebstore.google.com/detail/penjfohglnhbiaigbmgaiaidhdaegpmi",
+    "schools": [
+      "0001"
+    ],
+    "scope": "school",
+    "operator": "unknown",
+    "operatorName": "unknown",
+    "category": [
+      "review"
+    ],
+    "features": "在政大課程查詢『相關資訊』頁一鍵搜尋並摘要 Dcard 課程評價",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "browser_extension",
+    "repo": null,
+    "notes": "v1.0.1、173 users、最後更新 2024-08-20；說明站 sites.google.com/view/nccu-opener 現需 Google 登入。",
+    "evidence": [
+      "https://chromewebstore.google.com/detail/penjfohglnhbiaigbmgaiaidhdaegpmi (curl: 173 users, Updated August 20, 2024)",
+      "web search: Dcard 政大板「查詢課程評價最簡單的方法」"
+    ]
+  },
+  {
+    "name": "政大課程評價網",
+    "url": "https://course-nccu.com/",
+    "schools": [
+      "0001"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "2021 資料庫系統專題學生（HackMD wwwnnn）",
+    "category": [
+      "review"
+    ],
+    "features": "政大課程評價與課程資源分享，限 @g.nccu.edu.tw 帳號",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "目前 curl 陷入 302 無限轉址（→ /opennccu@gmail.com），服務疑似失效。",
+    "evidence": [
+      "https://course-nccu.com/ (curl: Maximum redirects followed)",
+      "https://hackmd.io/@wwwnnn/rkFlfACjt (使用說明)"
+    ]
+  },
+  {
+    "name": "nccu-timetable",
+    "url": "https://justin-code.io/timetab/",
+    "schools": [
+      "0001"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "JustinHsu1019",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "把政大課程查詢『我的追蹤清單』視覺化為課表",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/JustinHsu1019/nccu-timetable",
+    "notes": "頁面可連線；repo 最後 push 2024-10-30。",
+    "evidence": [
+      "https://justin-code.io/timetab/ (curl 200)",
+      "gh api repos/JustinHsu1019/nccu-timetable"
+    ]
+  },
+  {
+    "name": "nccu-course-mcp",
+    "url": "https://github.com/yyu0310/nccu-course-mcp",
+    "schools": [
+      "0001"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "yyu0310",
+    "category": [
+      "api",
+      "course_query"
+    ],
+    "features": "MCP server：搜尋政大課程、檢查衝堂、讀取大綱",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/yyu0310/nccu-course-mcp",
+    "notes": "資料來源 qrysub.nccu.edu.tw；最後 push 2026-09-20。",
+    "evidence": [
+      "gh api repos/yyu0310/nccu-course-mcp"
+    ]
+  },
+  {
+    "name": "NCCUCourse scripts",
+    "url": "https://github.com/andyjjrt/NCCUCourse",
+    "schools": [
+      "0001"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "andyjjrt",
+    "category": [
+      "api",
+      "open_data"
+    ],
+    "features": "政大課程爬蟲腳本集",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/andyjjrt/NCCUCourse",
+    "notes": "最後 push 2024-08-25。",
+    "evidence": [
+      "gh api repos/andyjjrt/NCCUCourse"
+    ]
+  },
+  {
+    "name": "中興大學選課小幫手（iach526526）",
+    "url": "https://iach526526.github.io/NCHU_Course_Selector/",
+    "schools": [
+      "0006"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "iach526526（fork 自 EricYang801）",
+    "category": [
+      "course_query",
+      "schedule_planner"
+    ],
+    "features": "關鍵字／系所／教師搜尋、即時衝堂課表；每日 06:00 GitHub Actions 爬取官方 JSON",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/iach526526/NCHU_Course_Selector",
+    "notes": "涵蓋學士、碩博、進修部、在職專班、通識體育；最後 push 2026-11-26。上游 EricYang801/NCHU_Course_Selector 最後 push 2026-01-06。",
+    "evidence": [
+      "https://iach526526.github.io/NCHU_Course_Selector/ (curl 200, title '中興大學選課小幫手')",
+      "gh api repos/iach526526/NCHU_Course_Selector (fork of EricYang801)"
+    ]
+  },
+  {
+    "name": "中興選課小幫手（學生會）",
+    "url": "http://course.nchusg.org/",
+    "schools": [
+      "0006"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "中興大學學生會資訊部、資訊社",
+    "category": [
+      "schedule_planner",
+      "course_query"
+    ],
+    "features": "雙主修介面、全學制選課模擬、課綱查詢、中籤率與剩餘名額",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/david30907d/CoursePickingHelper",
+    "notes": "course.nchusg.org 與 campass.com.tw 皆無法解析；repo 最後 push 2018-12-14。",
+    "evidence": [
+      "http://course.nchusg.org (curl: Could not resolve host)",
+      "gh api repos/david30907d/CoursePickingHelper",
+      "web search: facebook.com/CoursePickingHelper"
+    ]
+  },
+  {
+    "name": "nchu-academic-navigator",
+    "url": "https://github.com/yuanting0117a/nchu-academic-navigator",
+    "schools": [
+      "0006"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "yuanting0117a",
+    "category": [
+      "course_map",
+      "schedule_planner"
+    ],
+    "features": "中興畢業學分與修課路徑規劃，可匯入官方課程查詢 Excel/CSV",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/yuanting0117a/nchu-academic-navigator",
+    "notes": "最後 push 2026-11-23；支援 114、115 學年入學。",
+    "evidence": [
+      "gh api repos/yuanting0117a/nchu-academic-navigator"
+    ]
+  },
+  {
+    "name": "CCU Class",
+    "url": "https://ccuclass.com/",
+    "schools": [
+      "0013"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "中正傳播、資工學生",
+    "category": [
+      "schedule_planner",
+      "course_query"
+    ],
+    "features": "中正排課網站，支援拖曳時段搜尋與依教師搜尋",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "Dcard 中正板約一個月前仍有人推薦；SPA 頁面無法讀出學期。",
+    "evidence": [
+      "https://ccuclass.com/ (curl 200, title 'CCU Class')",
+      "web search: Dcard 中正板「新學期將至，CCU Class 帶著新功能回來了」"
+    ]
+  },
+  {
+    "name": "CCU PLUS",
+    "url": "https://ccu.plus/",
+    "schools": [
+      "0013"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "中正學生",
+    "category": [
+      "review"
+    ],
+    "features": "中正課程評價系統",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "可連線但為 SPA，無法確認更新時間。",
+    "evidence": [
+      "https://ccu.plus/ (curl 200, title 'CCU PLUS')",
+      "web search: Dcard 中正板「給新生～選課評論網站」"
+    ]
+  },
+  {
+    "name": "TAT-CCU",
+    "url": "https://github.com/KoukeNeko/TAT-CCU",
+    "schools": [
+      "0013"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "KoukeNeko",
+    "category": [
+      "other"
+    ],
+    "features": "中正非官方 App：課表、eCourse2 與校務系統（iOS/macOS/Android/Windows）",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/KoukeNeko/TAT-CCU",
+    "notes": "最後 push 2026-11-24。",
+    "evidence": [
+      "gh api repos/KoukeNeko/TAT-CCU"
+    ]
+  },
+  {
+    "name": "中正大學選課指北",
+    "url": "https://hackmd.io/@9csp0i8WTXeQR0wGNdul9A/CCU_course",
+    "schools": [
+      "0013"
+    ],
+    "scope": "school",
+    "operator": "community",
+    "operatorName": "中正學生共筆",
+    "category": [
+      "review"
+    ],
+    "features": "中正課程心得共筆（甜度、點名等）",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "HackMD 共筆，更新時間未確認。",
+    "evidence": [
+      "web search: '中正大學 選課 學生 工具 課程評價'"
+    ]
+  },
+  {
+    "name": "NCU Course Finder",
+    "url": "https://ncucf.zetaraku.dev/",
+    "schools": [
+      "0008"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "zetaraku（Raku Zeta）",
+    "category": [
+      "course_query",
+      "schedule_planner"
+    ],
+    "features": "直覺易用的中央大學課程瀏覽與搜尋（Vue 3）",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/zetaraku/NCU-Course-Finder-v6",
+    "notes": "最後 push 2026-08-24（27★）；資料抓取 NCU-Course-Finder-DataFetcher(-v2)。",
+    "evidence": [
+      "https://ncucf.zetaraku.dev/ (curl 200, title 'NCU Course Finder')",
+      "gh api repos/zetaraku/NCU-Course-Finder-v6"
+    ]
+  },
+  {
+    "name": "NCU 智慧選課模擬",
+    "url": "https://dr-xyz.github.io/ncu-course-helper/",
+    "schools": [
+      "0008"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "Dr-XYZ",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "中央選課模擬：爬蟲、必修檢查、選課限制、課表匯出圖片",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/Dr-XYZ/ncu-course-helper",
+    "notes": "頁面含 114-2、115-1；最後 push 2026-11-26。",
+    "evidence": [
+      "https://dr-xyz.github.io/ncu-course-helper/ (curl 200, title 'NCU 智慧選課模擬')",
+      "gh api repos/Dr-XYZ/ncu-course-helper"
+    ]
+  },
+  {
+    "name": "NCU-Plus course-fetcher",
+    "url": "https://github.com/NCU-Plus/course-fetcher",
+    "schools": [
+      "0008"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "NCU-Plus（GitHub org）",
+    "category": [
+      "api",
+      "open_data"
+    ],
+    "features": "從中央排課系統抓課程並更新 open API 資料庫",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/NCU-Plus/course-fetcher",
+    "notes": "最後 push 2023-08-30。",
+    "evidence": [
+      "gh api repos/NCU-Plus/course-fetcher"
+    ]
+  },
+  {
+    "name": "FCU Course Search 逢甲大學課程檢索",
+    "url": "https://fcu-course-search.yencheng.dev/",
+    "schools": [
+      "1007"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "ridemountainpig（YenCheng）",
+    "category": [
+      "course_query"
+    ],
+    "features": "課程檢索、通識餘額查詢、追蹤課程",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/ridemountainpig/fcu-course-search",
+    "notes": "舊網址 fcu-course-search.zeabur.app 現 502；最後 push 2026-10-18（23★）；另有 App 版 repo fcu-course-search-app（2024-05）。",
+    "evidence": [
+      "https://fcu-course-search.yencheng.dev/ (curl 200)",
+      "gh api repos/ridemountainpig/fcu-course-search"
+    ]
+  },
+  {
+    "name": "Course Search 選課小幫手（逢甲）",
+    "url": "https://fcu-coursesearch.com/",
+    "schools": [
+      "1007"
+    ],
+    "scope": "school",
+    "operator": "unknown",
+    "operatorName": "unknown",
+    "category": [
+      "schedule_planner",
+      "review"
+    ],
+    "features": "上傳課表 PDF 與目標學分，結合難度指標與 AI 產生推薦課表，可聊天調整",
+    "loginRequired": "unknown",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "網站可連線，開發者與更新時間未知。",
+    "evidence": [
+      "https://fcu-coursesearch.com/ (curl 200, meta description)"
+    ]
+  },
+  {
+    "name": "FCUCourse 逢甲課程評價查詢",
+    "url": "https://github.com/fcu-d0588813/FCUCourse",
+    "schools": [
+      "1007"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "fcu-d0588813",
+    "category": [
+      "review"
+    ],
+    "features": "逢甲課程評價查詢",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/fcu-d0588813/FCUCourse",
+    "notes": "最後 push 2019-10-31。",
+    "evidence": [
+      "gh api repos/fcu-d0588813/FCUCourse"
+    ]
+  },
+  {
+    "name": "北科課程好朋友",
+    "url": "https://ntut-course.gnehs.net/",
+    "schools": [
+      "0025"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "gnehs（勝勝）",
+    "category": [
+      "course_query",
+      "schedule_planner",
+      "course_map"
+    ],
+    "features": "課程搜尋、班級課表、我的課表衝堂檢查、課程標準、微學程、退選率、空教室、iOS widget",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/gnehs/ntut-course-web",
+    "notes": "顯示 115 上；資料可回溯 106 學年；爬蟲 gnehs/ntut-course-crawler-node 最後 push 2026-11-25。",
+    "evidence": [
+      "https://ntut-course.gnehs.net/ (curl 200)",
+      "gh api repos/gnehs/ntut-course-web (pushed 2026-11-18, 35★)"
+    ]
+  },
+  {
+    "name": "北科課程查詢（非官方，tntrock）",
+    "url": "https://ntut-course.allenyen.net/",
+    "schools": [
+      "0025"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "tntrock（allenyen）",
+    "category": [
+      "course_query",
+      "schedule_planner",
+      "api"
+    ],
+    "features": "關鍵字、系所與時段交叉篩選、教學大綱、空教室、退選率、我的課表；資料每日更新，並提供靜態 API",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/tntrock/ntut-course-web",
+    "notes": "頁面含 115-1；靜態 API tntrock.github.io/ntut-course-crawler；最後 push 2026-11-26。",
+    "evidence": [
+      "https://ntut-course.allenyen.net/ (curl 200, 含 115-1)",
+      "https://tntrock.github.io/ntut-course-crawler/ (curl 200)",
+      "gh api repos/tntrock/ntut-course-web"
+    ]
+  },
+  {
+    "name": "TAT 北科生活",
+    "url": "https://play.google.com/store/apps/details?id=club.ntut.npc.tat",
+    "schools": [
+      "0025"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "NEO-TAT（北科程式設計研究社 NPC）",
+    "category": [
+      "other"
+    ],
+    "features": "北科學生 App：課表、教室、成績、行事曆、免輸入登入 i 學園",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "app_android",
+    "repo": "https://github.com/NEO-TAT/tat_flutter",
+    "notes": "Android/iOS；repo 最後 push 2026-04-08（51★）。",
+    "evidence": [
+      "https://play.google.com/store/apps/details?id=club.ntut.npc.tat (curl 200)",
+      "gh api repos/NEO-TAT/tat_flutter"
+    ]
+  },
+  {
+    "name": "Project Tattoo 北科校園助手",
+    "url": "https://ntut.app/",
+    "schools": [
+      "0025"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "NTUT-NPC",
+    "category": [
+      "other"
+    ],
+    "features": "TAT 的現代化重寫：課表、成績查詢、i 學園掃碼登入",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/NTUT-NPC/tattoo",
+    "notes": "最後 push 2026-11-23。",
+    "evidence": [
+      "https://ntut.app/ (curl 200)",
+      "gh api repos/NTUT-NPC/tattoo"
+    ]
+  },
+  {
+    "name": "北科盒子 排課系統",
+    "url": "https://github.com/poterpan/ntutbox-course",
+    "schools": [
+      "0025"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "poterpan",
+    "category": [
+      "course_query",
+      "schedule_planner"
+    ],
+    "features": "公開免登入課程查詢與排課規劃（資料管線）",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/poterpan/ntutbox-course",
+    "notes": "最後 push 2026-11-26；未找到公開網址。",
+    "evidence": [
+      "gh api repos/poterpan/ntutbox-course"
+    ]
+  },
+  {
+    "name": "TaipeiTechApp",
+    "url": "https://github.com/AlanChiou/TaipeiTechApp",
+    "schools": [
+      "0025"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "AlanChiou",
+    "category": [
+      "other"
+    ],
+    "features": "北科課表、學分查詢 Android App",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/AlanChiou/TaipeiTechApp",
+    "notes": "repo 已封存，最後 push 2017-02-27。",
+    "evidence": [
+      "gh api repos/AlanChiou/TaipeiTechApp (archived)"
+    ]
+  },
+  {
+    "name": "台科大 TAT",
+    "url": "https://apps.apple.com/tw/app/id6479219269",
+    "schools": [
+      "0022"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "morris13579",
+    "category": [
+      "other"
+    ],
+    "features": "臺科學生 App：課表、成績等",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "app_ios",
+    "repo": "https://github.com/morris13579/tat_ntust",
+    "notes": "repo 最後 push 2026-09-14（27★）。",
+    "evidence": [
+      "https://apps.apple.com/tw/app/id6479219269 (curl 200)",
+      "gh api repos/morris13579/tat_ntust"
+    ]
+  },
+  {
+    "name": "Taiwan-Tech-GPA-Saviour",
+    "url": "https://github.com/splitline/Taiwan-Tech-GPA-Saviour",
+    "schools": [
+      "0022"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "splitline",
+    "category": [
+      "grade_distribution"
+    ],
+    "features": "快速查詢臺科歷年課程成績分布",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/splitline/Taiwan-Tech-GPA-Saviour",
+    "notes": "原網址 ㎬.taiwan-te.ch 無法解析；最後 push 2023-02-02。",
+    "evidence": [
+      "gh api repos/splitline/Taiwan-Tech-GPA-Saviour"
+    ]
+  },
+  {
+    "name": "NTUST-CourseHelper",
+    "url": "https://github.com/splitline/NTUST-CourseHelper",
+    "schools": [
+      "0022"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "splitline",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "協助臺科學生選課的小工具",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/splitline/NTUST-CourseHelper",
+    "notes": "最後 push 2019-06-12。",
+    "evidence": [
+      "gh api repos/splitline/NTUST-CourseHelper"
+    ]
+  },
+  {
+    "name": "course-compass",
+    "url": "https://github.com/hezhen0816/course-compass",
+    "schools": [
+      "0022"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "hezhen0816",
+    "category": [
+      "course_query",
+      "schedule_planner",
+      "course_map"
+    ],
+    "features": "臺科非官方修課規劃：課程查詢、排課與學分追蹤（Web + iOS）",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/hezhen0816/course-compass",
+    "notes": "最後 push 2026-11-26。",
+    "evidence": [
+      "gh api repos/hezhen0816/course-compass"
+    ]
+  },
+  {
+    "name": "臺科新生懶人包（選課篇）",
+    "url": "https://rookie.ntust.org/article/course-select/",
+    "schools": [
+      "0022"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "NTUST-OpenSource",
+    "category": [
+      "other"
+    ],
+    "features": "學生共同維護的新生指南，整理 115-1 選課時程與工具（myNTUST 等）",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/NTUST-OpenSource/freshman",
+    "notes": "最後 push 2026-11-24。",
+    "evidence": [
+      "https://rookie.ntust.org/article/course-select/ (curl 200)",
+      "gh api repos/NTUST-OpenSource/freshman"
+    ]
+  },
+  {
+    "name": "中山選課助手 V6",
+    "url": "https://nsysu-opendev.github.io/NSYSUCourseSelectorV6/",
+    "schools": [
+      "0009"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "NSYSU-OpenDev",
+    "category": [
+      "course_query",
+      "schedule_planner"
+    ],
+    "features": "快速查詢中山課程資訊與排課（第六代）",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/NSYSU-OpenDev/NSYSUCourseSelectorV6",
+    "notes": "最後 push 2026-11-24；舊版 NSYSUSelectorHelper 仍可連線。",
+    "evidence": [
+      "https://nsysu-opendev.github.io/NSYSUCourseSelectorV6/ (curl 200)",
+      "gh api repos/NSYSU-OpenDev/NSYSUCourseSelectorV6"
+    ]
+  },
+  {
+    "name": "NSYSU Course API",
+    "url": "https://nsysu-opendev.github.io/NSYSUCourseAPI/",
+    "schools": [
+      "0009"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "NSYSU-OpenDev",
+    "category": [
+      "api",
+      "open_data"
+    ],
+    "features": "中山選課列表 API（含驗證碼辨識模型）",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/NSYSU-OpenDev/NSYSUCourseAPI",
+    "notes": "最後 push 2026-11-26；另有 dennischu0116-boop/nsysu-course-api 提供 111下–115上歷史資料。",
+    "evidence": [
+      "https://nsysu-opendev.github.io/NSYSUCourseAPI/ (curl 200)",
+      "gh api repos/NSYSU-OpenDev/NSYSUCourseAPI"
+    ]
+  },
+  {
+    "name": "國立臺北大學選課大全 NTPU Course",
+    "url": "https://no21.ntpu.org/",
+    "schools": [
+      "0017"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "網遇北大、臺北大學學生會、臺北大學課程討論版",
+    "category": [
+      "review"
+    ],
+    "features": "匿名課程心得，依課名、教師、流水號搜尋，難度與推薦星等",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "頁面見 115-2 等學期字樣，評價多集中在 2023–2024。",
+    "evidence": [
+      "https://no21.ntpu.org/ (curl 200)",
+      "web search: '臺北大學 選課大全'"
+    ]
+  },
+  {
+    "name": "NTPU LINE Bot（ntpu-linebot-go）",
+    "url": "https://ntpubot.garyellow.dev/",
+    "schools": [
+      "0017"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "garyellow",
+    "category": [
+      "course_query"
+    ],
+    "features": "LINE bot：查近期與歷年課程、以描述語意搜尋大綱、學程與聯絡資訊",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "line_bot",
+    "repo": "https://github.com/garyellow/ntpu-linebot-go",
+    "notes": "最後 push 2026-11-25。",
+    "evidence": [
+      "gh api repos/garyellow/ntpu-linebot-go (homepage ntpubot.garyellow.dev)",
+      "web search: '選課 LINE bot 大學'"
+    ]
+  },
+  {
+    "name": "TKU Course Application（淡江選課驗證碼幫手）",
+    "url": "https://tkucourseapplication.github.io/",
+    "schools": [
+      "1005"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "tku.course.assistant",
+    "category": [
+      "enrollment"
+    ],
+    "features": "淡江選課 Chrome 擴充：自動登入與依序加選",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "browser_extension",
+    "repo": null,
+    "notes": "網站可連線，更新時間未知。",
+    "evidence": [
+      "https://tkucourseapplication.github.io/ (curl 200)",
+      "web search: Dcard 淡江板「淺談選課小幫手」"
+    ]
+  },
+  {
+    "name": "TKUschedule",
+    "url": "https://github.com/CHANG-CHIH-SHU/TKUschedule",
+    "schools": [
+      "1005"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "CHANG-CHIH-SHU",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "淡江課程排課工具",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/CHANG-CHIH-SHU/TKUschedule",
+    "notes": "最後 push 2026-06-11。",
+    "evidence": [
+      "gh api repos/CHANG-CHIH-SHU/TKUschedule"
+    ]
+  },
+  {
+    "name": "ClassIn 輔大選課資訊交流平台",
+    "url": "https://classin.info/",
+    "schools": [
+      "1002"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "輔大學生（站長已畢業）",
+    "category": [
+      "review"
+    ],
+    "features": "輔大修課評價查詢與分享",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "站長已畢業不再維護，保留舊評價；最新學期字樣 112-2。",
+    "evidence": [
+      "https://classin.info/ (curl 200, 含 112 2)",
+      "web search: '輔大 選課 評價 網站'"
+    ]
+  },
+  {
+    "name": "PTT FJU_class 看板",
+    "url": "https://www.ptt.cc/bbs/FJU_class/index.html",
+    "schools": [
+      "1002"
+    ],
+    "scope": "school",
+    "operator": "community",
+    "operatorName": "PTT 批踢踢實業坊",
+    "category": [
+      "review",
+      "forum"
+    ],
+    "features": "輔大課程評價看板",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "最新非置底文章 2022-07-06。",
+    "evidence": [
+      "https://www.ptt.cc/bbs/FJU_class/index.html (curl 200; 最新文 2022-07-06)"
+    ]
+  },
+  {
+    "name": "東吳課程評價",
+    "url": "https://scucourse.net/",
+    "schools": [
+      "1003"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "東吳學生",
+    "category": [
+      "review"
+    ],
+    "features": "東吳課程評價網站",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "可連線（SPA），更新時間未知；另一站東吳歐趴指南 scupass.com 已無法解析。",
+    "evidence": [
+      "https://scucourse.net/ (curl 200, title '東吳課程評價')",
+      "https://scupass.com/ (curl: Could not resolve host)"
+    ]
+  },
+  {
+    "name": "中原大學選課大全（coursenote）",
+    "url": "https://cycucoursewiki.info/",
+    "schools": [
+      "1004"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "atitan",
+    "category": [
+      "review"
+    ],
+    "features": "中原課程評價（選課大全新版）",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/atitan/coursenote",
+    "notes": "網域無法解析；repo 已封存（2020-07）。",
+    "evidence": [
+      "https://cycucoursewiki.info/ (curl: Could not resolve host)",
+      "gh api repos/atitan/coursenote (archived)"
+    ]
+  },
+  {
+    "name": "中原選課小幫手",
+    "url": "https://github.com/y252328/CYCU-Course-Selection-Helper",
+    "schools": [
+      "1004"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "y252328",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "中原選課輔助",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/y252328/CYCU-Course-Selection-Helper",
+    "notes": "repo 已封存（2018-08）。",
+    "evidence": [
+      "gh api repos/y252328/CYCU-Course-Selection-Helper (archived)"
+    ]
+  },
+  {
+    "name": "東海選課模擬器（THC）",
+    "url": "https://thc.ttymayor.com/",
+    "schools": [
+      "1001"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "ttymayor",
+    "category": [
+      "schedule_planner",
+      "course_query"
+    ],
+    "features": "東海課程資訊與課表模擬，可分享課表",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/ttymayor/thu-course-frontend",
+    "notes": "Vercel 對 curl 回 429 安全檢查；repo 最後 push 2026-11-09（13★）。",
+    "evidence": [
+      "https://thc.ttymayor.com (curl 429 Vercel Security Checkpoint)",
+      "gh api repos/tantuyutty/thu-course-frontend"
+    ]
+  },
+  {
+    "name": "自己的課表自己排 2.0（KeBiau）",
+    "url": "https://2yc.tw/KeBiau/",
+    "schools": [
+      "0021"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "x3388638",
+    "category": [
+      "schedule_planner",
+      "review"
+    ],
+    "features": "暨大排課表、換課平台、課程評價平台",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/x3388638/KeBiau",
+    "notes": "網站可連線；repo 最後 push 2023-03-02（23★）。",
+    "evidence": [
+      "https://2yc.tw/KeBiau/ (curl 200)",
+      "gh api repos/x3388638/KeBiau"
+    ]
+  },
+  {
+    "name": "暨大排課表",
+    "url": "https://course.snsd0805.com/",
+    "schools": [
+      "0021"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "snsd0805",
+    "category": [
+      "schedule_planner",
+      "course_query"
+    ],
+    "features": "暨大課程查詢、衝堂篩選、科系與通識分類",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/snsd0805/NCNU_Course",
+    "notes": "最後 push 2026-07-16（27★）。",
+    "evidence": [
+      "https://course.snsd0805.com/ (curl 200)",
+      "gh api repos/snsd0805/NCNU_Course"
+    ]
+  },
+  {
+    "name": "嘉大選課輔助器",
+    "url": "https://tony11306.github.io/Chiayi-university-course-selection-support/",
+    "schools": [
+      "0018"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "tony11306",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "衝堂鎖定、課表預覽、篩選、學分計算",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": null,
+    "notes": "可連線；作者另有嘉義大學課表產生器（repo 最後 push 2024-02）。",
+    "evidence": [
+      "https://tony11306.github.io/Chiayi-university-course-selection-support/ (curl 200)",
+      "https://home.gamer.com.tw/artwork.php?sn=5342422 (作者介紹)"
+    ]
+  },
+  {
+    "name": "TAINAN選｜南大選課評價",
+    "url": "https://nutnselect.com/",
+    "schools": [
+      "0036"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "NoZ915",
+    "category": [
+      "review",
+      "course_query"
+    ],
+    "features": "臺南大學非官方選課評價系統",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/NoZ915/tainan-select",
+    "notes": "最後 push 2026-11-24。",
+    "evidence": [
+      "https://nutnselect.com/ (curl 200)",
+      "gh api repos/NoZ915/tainan-select"
+    ]
+  },
+  {
+    "name": "NKUST Course Radar",
+    "url": "https://nkust.zeabur.app/",
+    "schools": [
+      "0053"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "mlgzackfly",
+    "category": [
+      "review",
+      "course_query"
+    ],
+    "features": "高科大課程查詢與匿名評價",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/mlgzackfly/NKUST-Cource-radar",
+    "notes": "網站回 502；repo 最後 push 2026-03-16。",
+    "evidence": [
+      "https://nkust.zeabur.app (curl 502)",
+      "gh api repos/mlgzackfly/NKUST-Cource-radar"
+    ]
+  },
+  {
+    "name": "明志科技大學選課小幫手",
+    "url": "https://mcut-course.com/",
+    "schools": [
+      "1041"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "itshenrywu",
+    "category": [
+      "course_query",
+      "schedule_planner",
+      "course_map"
+    ],
+    "features": "全校課表查詢、預排與衝堂檢查、畢業學分門檻",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/itshenrywu/mcut-course-v2",
+    "notes": "v2 最後 push 2026-11-23。",
+    "evidence": [
+      "https://mcut-course.com/ (curl 200)",
+      "gh api repos/itshenrywu/mcut-course-v2"
+    ]
+  },
+  {
+    "name": "北護助手 NTUNHS-Assistant",
+    "url": "https://github.com/Chinlinlee/NTUNHS-Assistant",
+    "schools": [
+      "0046"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "Chinlinlee",
+    "category": [
+      "grade_distribution",
+      "schedule_planner"
+    ],
+    "features": "北護課表、成績、成績分佈圖、課程查詢、模擬課表",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/Chinlinlee/NTUNHS-Assistant",
+    "notes": "最後 push 2024-03-08。",
+    "evidence": [
+      "gh api repos/Chinlinlee/NTUNHS-Assistant"
+    ]
+  },
+  {
+    "name": "宜大 App（niu_app）",
+    "url": "https://github.com/mpeilun/niu_app",
+    "schools": [
+      "0031"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "mpeilun",
+    "category": [
+      "other"
+    ],
+    "features": "宜大學生 App：數位學習、分數、課表、畢業門檻、選課",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/mpeilun/niu_app",
+    "notes": "最後 push 2023-09-20。",
+    "evidence": [
+      "gh api repos/mpeilun/niu_app"
+    ]
+  },
+  {
+    "name": "國立臺中科技大學 課表",
+    "url": "https://nutc.tershi.com/",
+    "schools": [
+      "0050"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "mmm25002500",
+    "category": [
+      "course_query"
+    ],
+    "features": "重視 UI/UX 的中科大課表查詢",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/mmm25002500/Nutc-class-timetable",
+    "notes": "網站可連線；repo 最後 push 2023-07-12。",
+    "evidence": [
+      "https://nutc.tershi.com/ (curl 200)",
+      "gh api repos/mmm25002500/Nutc-class-timetable"
+    ]
+  },
+  {
+    "name": "大同課表轉換平台",
+    "url": "https://rainyu.dev/ttu-timetable/",
+    "schools": [
+      "1022"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "RainYu0510",
+    "category": [
+      "other"
+    ],
+    "features": "大同大學 HTML 課表轉 ICS、課表編輯",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/RainYu0510/ttu-timetable",
+    "notes": "最後 push 2026-11-12。",
+    "evidence": [
+      "https://rainyu.dev/ttu-timetable/ (curl 200)",
+      "gh api repos/RainYu0510/ttu-timetable"
+    ]
+  },
+  {
+    "name": "大同大學課程評價網（TTUCourse）",
+    "url": "https://github.com/TTUCourse/TTUCourse",
+    "schools": [
+      "1022"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "TTUCourse（GitHub org）",
+    "category": [
+      "review"
+    ],
+    "features": "大同大學課程評價網",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/TTUCourse/TTUCourse",
+    "notes": "最後 push 2015-11-29。",
+    "evidence": [
+      "gh api repos/TTUCourse/TTUCourse"
+    ]
+  },
+  {
+    "name": "NCUE 課程查詢模擬選課",
+    "url": "https://github.com/yoychen/ncue-curriculum-chrome-extension",
+    "schools": [
+      "0015"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "yoychen",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "彰師大課程查詢模擬選課 Chrome 擴充",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/yoychen/ncue-curriculum-chrome-extension",
+    "notes": "最後 push 2016-06-26。",
+    "evidence": [
+      "gh api repos/yoychen/ncue-curriculum-chrome-extension"
+    ]
+  },
+  {
+    "name": "德明課程評價論壇（takming-forum）",
+    "url": "https://takming-forum.sao-x.com/",
+    "schools": [
+      "1057"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "sao-coding",
+    "category": [
+      "review",
+      "forum"
+    ],
+    "features": "課程評價與二手書交流",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": "https://github.com/sao-coding/takming-forum-web",
+    "notes": "網站回 402（託管欠費）；repo 最後 push 2025-05-31。",
+    "evidence": [
+      "https://takming-forum.sao-x.com (curl 402)",
+      "gh api repos/sao-coding/takming-forum-web"
+    ]
+  },
+  {
+    "name": "亞洲大學課表下載工具 KoiLiSu",
+    "url": "https://toka.dev/koilisu/kobeu",
+    "schools": [
+      "1048"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "zisunny104",
+    "category": [
+      "other"
+    ],
+    "features": "亞大學生課表 PDF／Excel 批次下載",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/zisunny104/kobeu",
+    "notes": "最後 push 2026-11-02。",
+    "evidence": [
+      "https://toka.dev/koilisu/kobeu (curl 200)",
+      "gh api repos/zisunny104/kobeu"
+    ]
+  },
+  {
+    "name": "高科大課程課表檢視",
+    "url": "https://github.com/JunTeng1113/nkust-course-timetable",
+    "schools": [
+      "0053"
+    ],
+    "scope": "school",
+    "operator": "student",
+    "operatorName": "JunTeng1113",
+    "category": [
+      "schedule_planner"
+    ],
+    "features": "Chrome 外掛：把高科大『歷年課程查詢』結果排成週課表並依節次篩選",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "github",
+    "repo": "https://github.com/JunTeng1113/nkust-course-timetable",
+    "notes": "最後 push 2026-09-08。",
+    "evidence": [
+      "gh api repos/JunTeng1113/nkust-course-timetable"
+    ]
+  }
+]

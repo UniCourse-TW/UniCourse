@@ -47,13 +47,20 @@ function gridUrl(ctx: CrawlContext, deptCode: string) {
   return `${BASE}CofopdlCtrl?${params}`;
 }
 
+// Logical requests issued by this crawler (kit-internal 429/5xx retries are not counted).
+let requests = 0;
+function get(ctx: CrawlContext, url: string, init?: { headers?: Record<string, string> }) {
+  requests += 1;
+  return ctx.http.text(url, init);
+}
+
 async function openSession(ctx: CrawlContext) {
-  await ctx.http.text(ENTRY);
+  await get(ctx, ENTRY);
 }
 
 async function fetchDept(ctx: CrawlContext, code: string): Promise<RawCourse[]> {
   for (let attempt = 1; ; attempt += 1) {
-    const body = await ctx.http.text(gridUrl(ctx, code), { headers: XHR });
+    const body = await get(ctx, gridUrl(ctx, code), { headers: XHR });
     try {
       return parseGrid(body).List;
     } catch (error) {
@@ -70,7 +77,8 @@ export const crawler = defineCrawler({
   http: { timeoutMs: 120_000 },
   async crawl(ctx) {
     await openSession(ctx);
-    const deptBody = await ctx.http.text(
+    const deptBody = await get(
+      ctx,
       `${BASE}CofnameCtrl?action=cof&type=chn&year=${ctx.year}&term=${ctx.semester}`,
       { headers: XHR }
     );
@@ -124,7 +132,7 @@ export const crawler = defineCrawler({
       await Promise.all(
         selected.map(async (row) => {
           try {
-            const brief = parseSyllabusBrief(await ctx.http.text(syllabusUrl(row)));
+            const brief = parseSyllabusBrief(await get(ctx, syllabusUrl(row)));
             if (brief) briefs.set(row.serial_no, brief);
           } catch (error) {
             ctx.log(`syllabus ${row.serial_no} failed: ${(error as Error).message}`);
@@ -134,6 +142,7 @@ export const crawler = defineCrawler({
       ctx.log(`${briefs.size} syllabus descriptions`);
     }
 
+    ctx.log(`requests: ${requests}`);
     const offerings: Offering[] = selected.map((row) => toOffering(row, { description: briefs.get(row.serial_no) }));
     return offerings;
   }

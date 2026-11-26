@@ -43,6 +43,9 @@ test('subTime parsing', () => {
     { day: 4, periods: ['7', '8'] }
   ]);
   assert.deepEqual(parseSubTime('六AB1'), [{ day: 6, periods: ['A', 'B', '1'] }]);
+  // `H` is the last evening period (e.g. 一FGH on in-service master's programs).
+  assert.deepEqual(parseSubTime('一FGH'), [{ day: 1, periods: ['F', 'G', 'H'] }]);
+  assert.deepEqual(parseSubTime('二EFGH'), [{ day: 2, periods: ['E', 'F', 'G', 'H'] }]);
   assert.equal(parseSubTime('未定或彈性'), undefined);
   assert.equal(parseSubTime(''), undefined);
 });
@@ -102,6 +105,32 @@ test('API rows map to valid offerings', async () => {
   for (const offering of offerings) {
     for (const [key, value] of Object.entries(offering)) assert.notEqual(value, '', key);
   }
+});
+
+test('old-term (105-1) rows use the same format', async () => {
+  const rows = await sample<NccuCourse[]>('course-zh-1051.json');
+  const offerings = rows.map((row) => Offering.parse(toOffering(row)));
+  const bySource = new Map(offerings.map((o) => [o.sourceId, o]));
+
+  const law = bySource.get('358920001')!;
+  assert.equal(law.title, '金融法專題研究（四）');
+  assert.equal(law.credits, 2);
+  assert.equal(law.requirement, 'elective');
+  assert.deepEqual(law.schedule, [{ day: 5, periods: ['3', '4'], location: '商館260305' }]);
+  assert.equal(law.notes, '與法律系合開');
+  assert.equal(law.extra?.info, '教室異動於2016/09/14;');
+  assert.match(law.syllabusUrl!, /\/teaschm\/1051\/schmPrv\.jsp-yy=105&smt=1/);
+
+  const russian = bySource.get('504032021')!;
+  assert.deepEqual(
+    russian.schedule?.map((m) => [m.day, m.periods]),
+    [[3, ['1', '2']], [5, ['1', '2']]]
+  );
+  assert.equal(russian.requirement, 'required');
+
+  const general = bySource.get('405936001')!;
+  assert.equal(general.requirement, 'general');
+  assert.equal(general.extra?.lmtKind, '跨領域(社會、自然)');
 });
 
 test('syllabus page yields description and capacity', async () => {

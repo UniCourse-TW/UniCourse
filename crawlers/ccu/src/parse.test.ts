@@ -44,3 +44,18 @@ test('enriches the offering from the public syllabus without importing attachmen
   assert.equal(titleEn, 'Folklore and Iconography');
   assert.match(description, /^概論民俗圖像/);
 });
+
+test('parses an archived 2016 term page (105-1) and keeps rows without a syllabus link', () => {
+  const html = sample('department-I001-105-1.html');
+  const listUrl = new URL(`${sourceUrl}?cd=I001&yearterm=105_1`);
+  const courses = parseDepartment(html, listUrl, 105, 1);
+  assert.equal(Offering.array().parse(courses).length, 2);
+  const [linked, unlinked] = courses;
+  assert.equal(linked.syllabusUrl, `https://ecourse2.ccu.edu.tw/local/syllabus/syllabus.php?year=105&term=1&course_no=${linked.sourceId}`);
+  assert.equal(unlinked.sourceId, '7101133_45');
+  assert.equal(unlinked.syllabusUrl, undefined);
+  assert.equal(unlinked.sourceUrl, listUrl.href);
+  assert.deepEqual(unlinked.schedule, [{ day: 5, periods: ['2', '3'] }]);
+  assert.equal(unlinked.enrolled, undefined);
+  assert.throws(() => parseDepartment(html, listUrl, 106, 1), /requested term/);
+});

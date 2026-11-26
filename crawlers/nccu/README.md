@@ -47,6 +47,33 @@ The API silently truncates every answer at **500 rows**, so the crawler walks th
 115-1: **63 requests (1 + 36 zh-TW + 26 en), ~25 s, 2932 offerings**. With `NCCU_SYLLABUS=1` add one request per offering
 (~2900 more, roughly 20 minutes at the default rate).
 
+## Past terms
+
+`semesterlist_c.json` lists every term from **100-1** to the current one, and the same API serves all of them
+with `:sem=<y><s>` (e.g. `1051`); no other endpoint or parameter is needed. History was backfilled for
+**105-1 … 114-2** (20 terms) on 2026-11-27; 100-1 … 104-2 are also served but were outside the backfill target.
+
+```
+corepack pnpm --filter @unicourse/crawler-nccu crawl -- --term 105-1 --out ../../snapshots/history/nccu-105-1.json
+```
+
+- Format: identical JSON fields from 105-1 onwards (sample `src/samples/course-zh-1051.json`); UTF-8, same
+  `subTime` grammar, same `＠備註:` / `＠異動資訊:` prefixes. No parser changes were needed for old terms beyond
+  accepting period `H`, which also occurs in current terms.
+- Volume: **50–63 requests and 21–27 s per term**, ~2800–3060 offerings. No leaf query hit the 500-row cap in any
+  term (the unit tree never had to split; three weekdays (four in 111-1) split into `:dsec` buckets, as for 115-1). The lower request count for 105-1 … 106-2 is the English pass skipping leaves whose rows were already titled).
+- `unit.json` only has today's unit tree. Units that existed in older terms but were merged or renamed are
+  still covered because the weekday × time-of-day sweep and the `未定或彈性` keyword do not depend on units; rows
+  are de-duplicated by `subNum` and filtered to the requested `y`/`s`.
+- Older terms have more offerings without a syllabus page (105-1: 280 of 3059 use the `emptyforqry` placeholder,
+  114-2: 10) and more `未定或彈性` schedules (105-1: 259, 114-2: 111). These are left without
+  `syllabusUrl` / `schedule`, as published.
+- Isolated rows have empty source fields (e.g. 107-2 `103869001` has no 學分, 開課系級 or teacher); the fields are
+  omitted rather than guessed.
+- No `enrolled` in any term (the API does not publish 選課人數); `subRemainUrl` links to a live 餘額 page on the
+  enrolment system and is not used.
+- Run log: `snapshots/.backfill/validation-10y-nccu.log`.
+
 ## Field mapping
 
 | NCCU field (zh-TW API) | snapshot field | notes |
@@ -58,7 +85,7 @@ The API silently truncates every answer at **500 rows**, so the crawler walks th
 | `subGde` | `department` | 開課系級 as published (may include the grade, e.g. `韓文碩一韓文碩二`). |
 | `subPoint` | `credits` | `"3.0"` → `3`. |
 | `subKind` / `lmtKind` | `requirement`, `requirementText` | `requirementText` is `subKind` (必修/選修/群修) or, when empty, `lmtKind`. Any `lmtKind` (人文通識, 跨領域(人文、社會), …) means `general`; otherwise `requirementFromText(subKind)`; 群修 maps to `other`. |
-| `subTime` | `schedule` | `三D56` → `{day: 3, periods: ['D','5','6']}`; `一CD四78` → two meetings. Periods are NCCU labels `A B 1 2 3 4 C D 5 6 7 8 E F G`. `未定或彈性` → no `schedule`. |
+| `subTime` | `schedule` | `三D56` → `{day: 3, periods: ['D','5','6']}`; `一CD四78` → two meetings. Periods are NCCU labels `A B 1 2 3 4 C D 5 6 7 8 E F G H` (`H` is the last evening period, e.g. `一FGH`; ~40–60 offerings per term). `未定或彈性` → no `schedule`. |
 | `subClassroom` | `schedule[].location` | Only when there is exactly one meeting: the API gives one room string for all meetings (sometimes several rooms run together, e.g. `大仁200102大仁200401資科電腦室`). |
 | `subTime` + `subClassroom` | `scheduleText` | Raw, joined with a space. |
 | `langTpe` | `language` | e.g. `中文`, `英文`, `日文`. |
@@ -77,4 +104,4 @@ The API silently truncates every answer at **500 rows**, so the crawler walks th
 - No `grade` or `campus` (single campus); `classCode` is not split out of `subNum`.
 - `schedule[].location` is missing for multi-meeting offerings (see above); the raw text is in `scheduleText`.
 - Instructors are Chinese names only (the `en` API has romanised names; not used).
-- The API serves only terms listed in `semesterlist_c.json`; the crawler throws if a term returns nothing.
+- The API serves only terms listed in `semesterlist_c.json` (100-1 onwards); the crawler throws if a term returns nothing.

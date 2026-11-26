@@ -24,7 +24,7 @@ export function parseSchedule(time: string[], rooms: string[]): Meeting[] {
     return line.split(/[,，、;；\s]+/).filter(Boolean);
   });
   return blocks.flatMap((block, index) => {
-    const parts = /^(?:([1-7])|[(（]([一二三四五六日天])[)）])\s*([1-9A-D,，、\s-]+)$/iu.exec(block);
+    const parts = /^(?:([1-7])|[(（]([一二三四五六日天])[)）])\s*([1-9A-DM,，、\s-]+)$/iu.exec(block);
     if (!parts) return [];
     const day = parts[1] ? Number(parts[1]) : days.indexOf(parts[2].replace('天', '日')) + 1;
     const tokens = parts[3].trim().toUpperCase().split(/[,，、\s]+/);
@@ -34,7 +34,9 @@ export function parseSchedule(time: string[], rooms: string[]): Meeting[] {
       if (!/^[1-9A-D]-[1-9A-D]$/.test(token)) return [];
       return [...periodOrder.slice(periodOrder.indexOf(first), periodOrder.indexOf(last) + 1)];
     });
-    if (periods.length === 0 || tokens.some((token) => !/^(?:[1-9A-D]+|[1-9A-D]-[1-9A-D])$/.test(token))) return [];
+    // `M` is the noon period (between 4 and 5); published course notes in past terms define it as
+    // 12:00/12:10-13:00; the current form legend no longer lists it. Ranges never span it.
+    if (periods.length === 0 || tokens.some((token) => !/^(?:[1-9A-DM]+|[1-9A-D]-[1-9A-D])$/.test(token))) return [];
     const location = rooms.length === 1 ? rooms[0] : rooms.length === blocks.length ? rooms[index] : undefined;
     return [compact({ day, periods: [...new Set(periods)], location: location === '*' ? undefined : location })];
   });

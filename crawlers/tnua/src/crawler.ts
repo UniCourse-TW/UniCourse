@@ -1,6 +1,10 @@
 import { defineCrawler, type Offering } from '@unicourse/crawler-kit';
 import { advancedUrl, parseFilters, parseIntroduction, parseSearch, toOffering } from './parse.ts';
 
+// Units whose courses the site publishes (DepName 071, 105-1…109-2) but that the department dropdown never lists.
+// The English-filter discovery below only finds them when they offer an English course, so always query them.
+const supplementalUnits = ['CA071'];
+
 export const crawler = defineCrawler({
   school: 'tnua',
   source: { name: '北藝大課程查詢（含課程大綱）', url: advancedUrl },
@@ -39,7 +43,21 @@ export const crawler = defineCrawler({
       if (ctx.limit && offerings.size >= ctx.limit) break;
     }
 
-    for (const row of await search('', true)) {
+    // Units missing from the dropdown: the supplemental list plus any unit seen in the English-filter rows (their
+    // DepName holds the unit code; query `CA<DepName>`). The unit name stays unset because the site publishes none.
+    const englishRows = await search('', true);
+    const known = new Set(departments.map((department) => department.code));
+    const hidden = [...new Set([...supplementalUnits, ...englishRows.map((row) => `CA${row.DepName.trim()}`)])]
+      .filter((code) => /^CA\w+$/.test(code) && !known.has(code));
+    for (const code of hidden) {
+      for (const row of await search(code, false)) {
+        const offering = toOffering(row, sourceTerm, { code });
+        if (offerings.has(offering.sourceId)) throw new Error(`TNUA: duplicate offering ${offering.sourceId}`);
+        offerings.set(offering.sourceId, offering);
+      }
+    }
+
+    for (const row of englishRows) {
       const sourceId = row.CourseID.trim();
       const offering = offerings.get(sourceId);
       if (offering) offering.language = '全英語授課';

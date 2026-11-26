@@ -1,0 +1,87 @@
+{
+ "units": [
+  {
+   "name": "通識核心",
+   "id": "XC01"
+  }
+ ],
+ "degree2_XC": {
+  "total": 2,
+  "items": [
+   {
+    "scr_selcode": "3628",
+    "sub_id3": "GHUL208",
+    "sub_name": "英美文學欣賞",
+    "scr_credit": 2,
+    "scj_scr_mso": "選修",
+    "scr_examid": "否",
+    "scr_examfn": "否",
+    "scr_exambf": "否",
+    "cls_name": "通識－人文(夜)(H)",
+    "scr_period": "(三)13-14 資電107 劉森堯",
+    "scr_precnt": 60,
+    "scr_acptcnt": 49,
+    "scr_remarks": "是否列入畢業學分請至各系確認。詳情  請參閱「通識課程選課須知」。",
+    "unt_ls": 8888,
+    "cls_id": "XC01220",
+    "sub_id": "GH019",
+    "scr_dup": "001",
+    "scr_ldl": "課堂教學",
+    "scr_english": "N",
+    "scr_teacher": "劉森堯",
+    "scr_date": "全學期"
+   },
+   {
+    "scr_selcode": "3629",
+    "sub_id3": "GHUE202",
+    "sub_name": "倫理價值與生命哲學",
+    "scr_credit": 2,
+    "scj_scr_mso": "選修",
+    "scr_examid": "否",
+    "scr_examfn": "否",
+    "scr_exambf": "否",
+    "cls_name": "通識－人文(夜)(H)",
+    "scr_period": "(四)11-12 資電104 黃登煌",
+    "scr_precnt": 74,
+    "scr_acptcnt": 59,
+    "scr_remarks": "是否列入畢業學分請至各系確認。詳情  請參閱「通識課程選課須知」。「倫理學概論」課程名稱自102學年度第2學期起異動為「倫理價值與生命哲學」，此二科目（為同一科目）重複修習只採計二學分。",
+    "unt_ls": 8888,
+    "cls_id": "XC01220",
+    "sub_id": "GH043",
+    "scr_dup": "001",
+    "scr_ldl": "課堂教學",
+    "scr_english": "N",
+    "scr_teacher": "黃登煌",
+    "scr_date": "全學期"
+   }
+  ]
+ },
+ "degree1_CI": {
+  "total": 1,
+  "items": [
+   {
+    "scr_selcode": "2398",
+    "sub_id3": "CIEE421",
+    "sub_name": "教學學習實務(一)",
+    "scr_credit": 0,
+    "scj_scr_mso": "選修",
+    "scr_examid": "否",
+    "scr_examfn": "否",
+    "scr_exambf": "否",
+    "cls_name": "資電學院綜合班",
+    "scr_period": "(五)00       袁世一",
+    "scr_precnt": 60,
+    "scr_acptcnt": 128,
+    "scr_remarks": null,
+    "unt_ls": 4500,
+    "cls_id": "CI00101",
+    "sub_id": "96202",
+    "scr_dup": "001",
+    "scr_ldl": "課堂教學",
+    "scr_english": "N",
+    "scr_teacher": "袁世一",
+    "scr_date": "全學期"
+   }
+  ]
+ }
+}

@@ -127,3 +127,19 @@ test('syllabus brief', async () => {
   assert.match(brief!, /^在當代哲學的課程架構中，邏輯是必備的基礎學科/);
   assert.equal(parseSyllabusBrief('<html></html>'), undefined);
 });
+
+test('old-term (105-1) grid rows use the same format', async () => {
+  const grid = parseGrid(await sample('grid-105-1.json'));
+  verifyGridTerm(grid.List, 105, 1);
+  const [noTime, timed] = grid.List.map((row) => toOffering(row));
+  // 服務學習 rows carry 0 credits and no meeting time.
+  assert.equal(noTime.credits, 0);
+  assert.equal(noTime.schedule, undefined);
+  assert.equal(noTime.enrolled, 26);
+  // Older terms label the main campus 本部 and end time_inf with a trailing comma.
+  assert.deepEqual(timed.schedule, [{ day: 2, periods: ['6', '7'], location: '本部 教9樓綜合教室' }]);
+  assert.equal(timed.campus, '本部');
+  assert.equal(timed.enrolled, 50);
+  assert.equal(timed.capacity, 50);
+  Offering.parse(timed);
+});

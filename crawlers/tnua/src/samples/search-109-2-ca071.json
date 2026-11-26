@@ -1,0 +1,69 @@
+{
+  "d": {
+    "__type": "CourseSearch.CourseSearchWS.Return",
+    "ExtensionData": {},
+    "Status": 0,
+    "Log": "查尋成功!",
+    "ReturnDatas": {
+      "ExtensionData": {},
+      "Year": [],
+      "Dept": [],
+      "Class": [
+        {
+          "ExtensionData": {},
+          "Year": "109",
+          "Term": "2",
+          "CourseID": "1092-0710001",
+          "CourseName": "跨藝實務 &nbsp Interdisciplinary Practicum",
+          "Teacher": "林姿瑩",
+          "Field": "專業實務",
+          "Type": "選項必修",
+          "Credit": "2",
+          "Sect": "(二)7,8",
+          "UpLimit": "12",
+          "Remark": "密集授課，授課時段詳見課程大綱。",
+          "Room": "B116",
+          "SumSelected": "15",
+          "DepName": "071",
+          "Target": "不開放 &nbsp 學期"
+        },
+        {
+          "ExtensionData": {},
+          "Year": "109",
+          "Term": "2",
+          "CourseID": "1092-0710002",
+          "CourseName": "全球音樂產業趨勢 II &nbsp Profile of Music Industry & Business Worldwide II",
+          "Teacher": "袁永興",
+          "Field": "",
+          "Type": "選修",
+          "Credit": "1",
+          "Sect": "(二)5,6",
+          "UpLimit": "16",
+          "Remark": "1.人工配班。\n2.密集授課，授課時段詳見課程大綱。",
+          "Room": "B305",
+          "SumSelected": "12",
+          "DepName": "071",
+          "Target": "不開放 &nbsp 學期"
+        },
+        {
+          "ExtensionData": {},
+          "Year": "109",
+          "Term": "2",
+          "CourseID": "1092-0710003",
+          "CourseName": "音樂祭策展企畫 &nbsp Curatorial Planning of Music Performance",
+          "Teacher": "林家樑",
+          "Field": "",
+          "Type": "選修",
+          "Credit": "1",
+          "Sect": "(二)10,11,12",
+          "UpLimit": "40",
+          "Remark": "1.密集授課，授課時段詳見課程大綱。 \n2.開放音樂系10名同學修習。",
+          "Room": "B305",
+          "SumSelected": "31",
+          "DepName": "071",
+          "Target": "其他 &nbsp 學期"
+        }
+      ]
+    }
+  }
+}

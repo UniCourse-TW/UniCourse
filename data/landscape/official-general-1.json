@@ -1,0 +1,3352 @@
+[
+  {
+    "name": "全校課程查詢系統",
+    "url": "https://qrysub.nccu.edu.tw/",
+    "schools": [
+      "0001"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立政治大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "api"
+    ],
+    "features": "依學期、開課單位與關鍵字查課，並連結公開教學大綱。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "網站前端使用 JSON 查詢介面，非另有承諾的開放 API。 qrysub.nccu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。 es.nccu.edu.tw 的 robots.txt 同樣回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://qrysub.nccu.edu.tw/（系統入口或官方指引）",
+      "https://aca.nccu.edu.tw/zh/服務項目/課程相關資訊/教學大綱（教務處指引）",
+      "https://qrysub.nccu.edu.tw/assets/api/semesterlist_c.json（公開學期清單）",
+      "https://qrysub.nccu.edu.tw/robots.txt（本次查核）",
+      "https://es.nccu.edu.tw/robots.txt（前端查詢主機規則實測）"
+    ]
+  },
+  {
+    "name": "全校課程清單（Excel）",
+    "url": "https://newdoc.nccu.edu.tw/teaschm/CoursesList.xlsx",
+    "schools": [
+      "0001"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立政治大學",
+    "category": [
+      "open_data"
+    ],
+    "features": "下載全校開課清單 Excel。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "整學期檔案，不是歷年封存目錄。 newdoc.nccu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://newdoc.nccu.edu.tw/teaschm/CoursesList.xlsx（系統入口或官方指引）",
+      "https://qrysub.nccu.edu.tw/（全校查詢入口及課程清單來源）",
+      "https://newdoc.nccu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "政大選課系統",
+    "url": "https://selectcourse.nccu.edu.tw/regcourse/",
+    "schools": [
+      "0001"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立政治大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內帳號登入後登記、加退選及查看結果。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "selectcourse.nccu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://selectcourse.nccu.edu.tw/regcourse/（系統入口或官方指引）",
+      "https://i.nccu.edu.tw/（愛政大登入入口）",
+      "https://selectcourse.nccu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖",
+    "url": "https://cis.nccu.edu.tw/coursemap/students/index.aspx",
+    "schools": [
+      "0001"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立政治大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "提供修課規劃的學生課程地圖。",
+    "loginRequired": "unknown",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "依教務處連結辨識，未登入測試個人化功能。 cis.nccu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://cis.nccu.edu.tw/coursemap/students/index.aspx（系統入口或官方指引）",
+      "https://aca.nccu.edu.tw/zh/（教務處課程地圖連結）",
+      "https://cis.nccu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立政治大學 Moodle 數位學習平台",
+    "url": "https://moodle45.nccu.edu.tw/",
+    "schools": [
+      "0001"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立政治大學",
+    "category": [
+      "lms"
+    ],
+    "features": "Moodle 4.5 提供校內課程教材、作業及評量。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "舊 Moodle 網址導向本平台。 moodle45.nccu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /；另有其他規則。",
+    "evidence": [
+      "https://moodle45.nccu.edu.tw/（系統入口或官方指引）",
+      "https://moodle.nccu.edu.tw/（舊入口的實測轉址）",
+      "https://moodle45.nccu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "各系開課／全校開課清單",
+    "url": "https://www.ccxp.nthu.edu.tw/ccxp/INQUIRE/JH/6/6.2/6.2.3/JH623001.php",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立清華大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "公開依學期與系所查詢清大開課及課綱。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "隸屬校務資訊系統的免登入查詢。 www.ccxp.nthu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /、Allow: /ccxp/INQUIRE/$。 例外僅為入口精確路徑，不涵蓋這個系所查詢子頁。",
+    "evidence": [
+      "https://www.ccxp.nthu.edu.tw/ccxp/INQUIRE/JH/6/6.2/6.2.3/JH623001.php（系統入口或官方指引）",
+      "https://curricul.site.nthu.edu.tw/p/406-1208-290365,r7880.php?Lang=zh-tw（課務組查課及課綱指引）",
+      "https://www.ccxp.nthu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "全校課程整合查詢",
+    "url": "https://curricul.site.nthu.edu.tw/p/404-1208-318709.php?Lang=zh-tw",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立清華大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "依關鍵字查找清大課程，整合官方開課資料。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與傳統依系所及全校清單並行；此頁是整合查詢的官方入口。 curricul.site.nthu.edu.tw：robots.txt 的 User-agent: * 規則包含 Allow: /。",
+    "evidence": [
+      "https://curricul.site.nthu.edu.tw/p/404-1208-318709.php?Lang=zh-tw（系統入口或官方指引）",
+      "https://curricul.site.nthu.edu.tw/（課務組近期上線公告）",
+      "https://curricul.site.nthu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "校務資訊系統",
+    "url": "https://www.ccxp.nthu.edu.tw/ccxp/INQUIRE/",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立清華大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "登入校務資訊系統辦理選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "同站另有不需登入的課程查詢功能。 www.ccxp.nthu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /、Allow: /ccxp/INQUIRE/$。",
+    "evidence": [
+      "https://www.ccxp.nthu.edu.tw/ccxp/INQUIRE/（系統入口或官方指引）",
+      "https://curricul.site.nthu.edu.tw/p/404-1208-181535.php?Lang=zh-tw（課務組選課說明）",
+      "https://www.ccxp.nthu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立清華大學 eeclass 數位學習平台",
+    "url": "https://eeclass.nthu.edu.tw/",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立清華大學",
+    "category": [
+      "lms"
+    ],
+    "features": "ee-class 平台供師生使用課程教材與教學活動。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "eeclass.nthu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /media/s/、Disallow: /km/s/、Disallow: /*.mp4$。",
+    "evidence": [
+      "https://eeclass.nthu.edu.tw/（系統入口或官方指引）",
+      "https://www.nthu.edu.tw/elearning（校方數位學習平台目錄）",
+      "https://eeclass.nthu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "eLearn 數位學習平台",
+    "url": "https://elearn.nthu.edu.tw/",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立清華大學",
+    "category": [
+      "lms"
+    ],
+    "features": "校方列出的 eLearn 教學平台。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方數位學習頁同時列出 eeclass，不能僅由並列判定遷移完成。 elearn.nthu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://elearn.nthu.edu.tw/（系統入口或官方指引）",
+      "https://www.nthu.edu.tw/elearning（校方平台目錄）",
+      "https://elearn.nthu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程開放資料",
+    "url": "https://curricul.site.nthu.edu.tw/p/404-1208-111356.php?Lang=zh-tw#json",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立清華大學",
+    "category": [
+      "open_data"
+    ],
+    "features": "課務組公布當期整學期 JSON 匯出與開放資料說明。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "當期 JSON 為滾動更新，歷年課表另有 Excel 檔。 curricul.site.nthu.edu.tw：robots.txt 的 User-agent: * 規則包含 Allow: /。",
+    "evidence": [
+      "https://curricul.site.nthu.edu.tw/p/404-1208-111356.php?Lang=zh-tw#json（系統入口或官方指引）",
+      "https://curricul.site.nthu.edu.tw/p/404-1208-308552.php?Lang=zh-tw（當期下載入口）",
+      "https://curricul.site.nthu.edu.tw/p/404-1208-306821.php?Lang=zh-tw（歷年課程工作簿）",
+      "https://curricul.site.nthu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖 Course map（學習科學與科技研究所）",
+    "url": "https://lst.site.nthu.edu.tw/p/412-1369-3834.php?Lang=zh-tw",
+    "schools": [
+      "0002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立清華大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "研究所公開提供學習科學與科技課程地圖。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系所級示例，非全校地圖。 lst.site.nthu.edu.tw：robots.txt 對 User-agent: * 列出 Allow: /。",
+    "evidence": [
+      "https://lst.site.nthu.edu.tw/p/412-1369-3834.php?Lang=zh-tw（實測系統入口或官方指引）",
+      "https://lst.site.nthu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "臺大課程網",
+    "url": "https://course.ntu.edu.tw/",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "schedule_planner"
+    ],
+    "features": "新版入口提供全校查課、課綱與預選課表。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "首頁另連正式選課系統；公開查課與帳號功能不同。 course.ntu.edu.tw：robots.txt 的 User-agent: * 規則包含 Allow: /、Disallow: /api/、Disallow: /_next/。",
+    "evidence": [
+      "https://course.ntu.edu.tw/（系統入口或官方指引）",
+      "https://nol.ntu.edu.tw/nol/coursesearch/index.php（仍可開啟的舊版查詢介面）",
+      "https://course.ntu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "NTU Online 臺大課程網（舊版查詢）",
+    "url": "https://nol.ntu.edu.tw/nol/coursesearch/index.php",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "傳統課程查詢介面可按學期、系所及課名查找課程。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與 course.ntu.edu.tw 介面並存。 nol.ntu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://nol.ntu.edu.tw/nol/coursesearch/index.php（系統入口或官方指引）",
+      "https://www.ntu.edu.tw/（校首頁的舊版課程網連結）",
+      "https://nol.ntu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "臺大選課系統",
+    "url": "https://if177.aca.ntu.edu.tw/",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "於公告的選課期間以校內帳號辦理選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "非選課期間可能不開放選課功能。 if177.aca.ntu.edu.tw：robots.txt 回傳 HTML，未取得可辨識的規則。 announcement.aca.ntu.edu.tw：robots.txt 回傳 HTML，未取得可辨識的規則。",
+    "evidence": [
+      "https://if177.aca.ntu.edu.tw/（系統入口或官方指引）",
+      "https://course.ntu.edu.tw/（新版課程網列出的選課入口與時段）",
+      "https://if177.aca.ntu.edu.tw/robots.txt（本次查核）",
+      "https://announcement.aca.ntu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "臺大課程地圖",
+    "url": "https://coursemap.aca.ntu.edu.tw/course_map_all/",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "透過各學院與系所查看修課規劃。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "新版課程網仍有連結；未確認各系地圖的最近更新。 coursemap.aca.ntu.edu.tw：robots.txt 回傳 HTML，未取得可辨識的規則。 announcement.aca.ntu.edu.tw：robots.txt 回傳 HTML，未取得可辨識的規則。",
+    "evidence": [
+      "https://coursemap.aca.ntu.edu.tw/course_map_all/（系統入口或官方指引）",
+      "https://course.ntu.edu.tw/（臺大課程地圖連結）",
+      "https://coursemap.aca.ntu.edu.tw/robots.txt（本次查核）",
+      "https://announcement.aca.ntu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "NTU COOL 數位教學平臺",
+    "url": "https://cool.ntu.edu.tw/",
+    "schools": [
+      "0003"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣大學",
+    "category": [
+      "lms"
+    ],
+    "features": "Canvas 架構的數位教學平台，支援教材、作業與討論。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "一般課程透過臺大帳號登入，公開頁面不代表所有課程開放。 cool.ntu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /page_views/。",
+    "evidence": [
+      "https://cool.ntu.edu.tw/（系統入口或官方指引）",
+      "https://www.ntu.edu.tw/campus/campus.html（校方學習資源）",
+      "https://cool.ntu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程查詢（日間學制）",
+    "url": "https://courseap2.itc.ntnu.edu.tw/acadmOpenCourse/index.jsp",
+    "schools": [
+      "0004"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣師範大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "查日間班各學期開課與課程綱要。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "在職專班與 EMBA 有獨立查詢入口。 courseap2.itc.ntnu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://courseap2.itc.ntnu.edu.tw/acadmOpenCourse/index.jsp（系統入口或官方指引）",
+      "https://www.ntnu.edu.tw/static.php?id=student（在校生服務列出兩類查詢）",
+      "https://courseap2.itc.ntnu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程查詢（在職專班暨 EMBA 班）",
+    "url": "https://courseap2.itc.ntnu.edu.tw/acadmPOpenCourse/",
+    "schools": [
+      "0004"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣師範大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "查在職專班及 EMBA 開課。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "courseap2.itc.ntnu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://courseap2.itc.ntnu.edu.tw/acadmPOpenCourse/（系統入口或官方指引）",
+      "https://www.ntnu.edu.tw/static.php?id=student（在校生分流入口）",
+      "https://courseap2.itc.ntnu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "師大課程地圖",
+    "url": "https://courseap.itc.ntnu.edu.tw/NtnuCurriculumMap/",
+    "schools": [
+      "0004"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣師範大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "師大修業課程地圖。",
+    "loginRequired": "unknown",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "courseap.itc.ntnu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://courseap.itc.ntnu.edu.tw/NtnuCurriculumMap/（系統入口或官方指引）",
+      "https://www.ntnu.edu.tw/static.php?id=student（校方課程地圖連結）",
+      "https://courseap.itc.ntnu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "學生選課系統",
+    "url": "https://cos1s.ntnu.edu.tw/AasEnrollStudent",
+    "schools": [
+      "0004"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣師範大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內學生依年級、學制分流登入後選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本網址為大一入口；大二至大四、研究生及在職專班入口見在校生頁。 cos1s.ntnu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://cos1s.ntnu.edu.tw/AasEnrollStudent（系統入口或官方指引）",
+      "https://www.ntnu.edu.tw/static.php?id=student（各年級實際選課入口）",
+      "https://www.aa.ntnu.edu.tw/zh_tw/selectives/Dayschool（教務處選課專區）",
+      "https://cos1s.ntnu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "Moodle 數位學習平台",
+    "url": "https://moodle3.ntnu.edu.tw/",
+    "schools": [
+      "0004"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣師範大學",
+    "category": [
+      "lms"
+    ],
+    "features": "師大 Moodle 提供師生教材、作業等課堂資源。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "moodle3.ntnu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://moodle3.ntnu.edu.tw/（系統入口或官方指引）",
+      "https://www.ntnu.edu.tw/static.php?id=student（在校生平台連結）",
+      "https://moodle3.ntnu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "成功大學課程資訊及選課系統",
+    "url": "https://course.ncku.edu.tw/index.php?c=portal",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立成功大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "enrollment"
+    ],
+    "features": "公開查詢開課與課綱，校內學生登入辦理選課。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "歷年查詢有另一子網域；查詢可開啟不表示可自動擷取。 course.ncku.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://course.ncku.edu.tw/index.php?c=portal（系統入口或官方指引）",
+      "https://cid-acad.ncku.edu.tw/（課務組連結）",
+      "https://course-query.acad.ncku.edu.tw/index.php?c=qry11215&lang=cht（歷年查詢入口）",
+      "https://course.ncku.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "全校課程地圖",
+    "url": "https://course-map.ncku.edu.tw/",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立成功大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "公開瀏覽成大課程地圖，個人化功能使用成功入口帳號。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "舊課務組網址轉往專用課程地圖主機；未確認最近更新。 course-map.ncku.edu.tw：robots.txt 回傳 HTTP 404。",
+    "evidence": [
+      "https://course-map.ncku.edu.tw/（實測系統入口）",
+      "https://cid-acad.ncku.edu.tw/（課務組全校地圖連結）",
+      "https://course-map.ncku.edu.tw/robots.txt（本次查核）",
+      "http://course-query.acad.ncku.edu.tw/crm/course_map（原列入口）"
+    ]
+  },
+  {
+    "name": "課程大綱上網",
+    "url": "http://class-qry.acad.ncku.edu.tw/syllabus",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立成功大學",
+    "category": [
+      "syllabus"
+    ],
+    "features": "教務處另設的課綱上網入口。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "教師維護端；學生公開閱讀走課程查詢，不是同一功能。 本次未能開啟此入口（HTTP 403），不代表官方已宣告停用。 class-qry.acad.ncku.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /syllabus/uploads、Disallow: /syllabus/download、Disallow: /syllabus/ext4.2、Disallow: /syllabus/log、Disallow: /syllabus/test。",
+    "evidence": [
+      "http://class-qry.acad.ncku.edu.tw/syllabus（系統入口或官方指引）",
+      "https://cid-acad.ncku.edu.tw/（課務組列為課程大綱上網）",
+      "http://class-qry.acad.ncku.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "成功大學數位學習平臺",
+    "url": "https://moodle.ncku.edu.tw/",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立成功大學",
+    "category": [
+      "lms"
+    ],
+    "features": "NCKU Moodle 提供教材、點名、作業與線上評量。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "moodle.ncku.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://moodle.ncku.edu.tw/（系統入口或官方指引）",
+      "https://moodle.ncku.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "成功大學各學期課程",
+    "url": "https://data.ncku.edu.tw/dataset/8d6462ee513f1c1a601506265cc9f674",
+    "schools": [
+      "0005"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立成功大學",
+    "category": [
+      "open_data"
+    ],
+    "features": "校方開放資料平台提供 105-1 至 107-2 開課 CSV。",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "資料最後更新於 2019 年；資料集仍可瀏覽，但未持續更新。 data.ncku.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /dataset/rate/、Disallow: /revision/、Disallow: /dataset/*/history、Disallow: /api/、Crawl-Delay: 10。",
+    "evidence": [
+      "https://data.ncku.edu.tw/dataset/8d6462ee513f1c1a601506265cc9f674（系統入口或官方指引）",
+      "https://data.ncku.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "中興大學課程查詢",
+    "url": "https://onepiece.nchu.edu.tw/cofsys/plsql/crseqry_home",
+    "schools": [
+      "0006"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中興大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "依系所及學期查詢歷年開課，並由結果查看課程大綱。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "另有綜合查詢。 onepiece.nchu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://onepiece.nchu.edu.tw/cofsys/plsql/crseqry_home（系統入口或官方指引）",
+      "https://oaa.nchu.edu.tw/course（課務組入口）",
+      "https://onepiece.nchu.edu.tw/cofsys/plsql/crseqry_all（綜合查詢）",
+      "https://onepiece.nchu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "興大入口（教務系統）",
+    "url": "https://portal.nchu.edu.tw/",
+    "schools": [
+      "0006"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中興大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校園入口登入後進入教務系統辦理選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "portal.nchu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://portal.nchu.edu.tw/（系統入口或官方指引）",
+      "https://www.nchu.edu.tw/user/id/1/mid/1010（在校生用選課入口）",
+      "https://portal.nchu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "iLearning3.0 數位教學平台",
+    "url": "https://lms2020.nchu.edu.tw/",
+    "schools": [
+      "0006"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中興大學",
+    "category": [
+      "lms"
+    ],
+    "features": "由教發中心維護的校內數位教學平台。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "lms2020.nchu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /media/s/、Disallow: /km/s/、Disallow: /*.mp4$。",
+    "evidence": [
+      "https://lms2020.nchu.edu.tw/（系統入口或官方指引）",
+      "https://www.nchu.edu.tw/user/id/1/mid/1010（校方註明平台名稱及維護單位）",
+      "https://lms2020.nchu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖（智慧創意工程學士學位學程）",
+    "url": "https://upice.nchu.edu.tw/course_map.php",
+    "schools": [
+      "0006"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中興大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "單一學程公開列出修課領域及地圖。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系所級示例，非全校地圖。 upice.nchu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://upice.nchu.edu.tw/course_map.php（系統入口或官方指引）",
+      "https://upice.nchu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立陽明交通大學課程時間表",
+    "url": "https://timetable.nycu.edu.tw/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立陽明交通大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "api"
+    ],
+    "features": "依學期、開課單位或特定條件查課及大綱。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "介面透過表單請求取得 JSON；非對外承諾的開放 API。 timetable.nycu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://timetable.nycu.edu.tw/（系統入口或官方指引）",
+      "https://newstudents.nycu.edu.tw/university/m4/enroll/（新生入學指引列出的課程時間表）",
+      "https://timetable.nycu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "陽明交通大學課程選課系統",
+    "url": "https://cos.nycu.edu.tw/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立陽明交通大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生選課及加退選的登入入口。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "cos.nycu.edu.tw：robots.txt 的 User-agent: * 未列非空的存取限制。",
+    "evidence": [
+      "https://cos.nycu.edu.tw/（系統入口或官方指引）",
+      "https://newstudents.nycu.edu.tw/university/m4/enroll/（教務處新生選課指引）",
+      "https://cos.nycu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "e3 數位學習平台",
+    "url": "https://e3.nycu.edu.tw/",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立陽明交通大學",
+    "category": [
+      "lms"
+    ],
+    "features": "陽明交大 e3 課程與教學活動平台。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "新生指引明列入口；未登入。 本次未能開啟此入口（timed out），不代表官方已宣告停用。 e3.nycu.edu.tw：robots.txt 無法取得（timed out），未判定規則。",
+    "evidence": [
+      "https://e3.nycu.edu.tw/（系統入口或官方指引）",
+      "https://newstudents.nycu.edu.tw/university/m4/enroll/（校方選課指引直接連結 e3）",
+      "https://e3.nycu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖（管理科學系）",
+    "url": "https://ms.nycu.edu.tw/zh_tw/download/map",
+    "schools": [
+      "0007"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立陽明交通大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "管科系公開提供課程地圖。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系所級示例，非全校地圖。 ms.nycu.edu.tw：robots.txt 回傳 HTTP 200，未見可辨識的存取規則。",
+    "evidence": [
+      "https://ms.nycu.edu.tw/zh_tw/download/map（系統入口或官方指引）",
+      "https://ms.nycu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "中央大學選課系統／課程查詢",
+    "url": "https://cis.ncu.edu.tw/Course/main/query/byKeywords",
+    "schools": [
+      "0008"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中央大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "enrollment"
+    ],
+    "features": "公開依關鍵字或開課單位查課表及詳細資料，學生登入後選課。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "教務處列 /Course/ 為選課系統，與供管理者使用的 CourseMgr 不同。 cis.ncu.edu.tw：robots.txt 對 User-agent: * 列出 Disallow: / 及其他服務例外，未允許 /Course/。",
+    "evidence": [
+      "https://cis.ncu.edu.tw/Course/main/query/byKeywords（系統入口或官方指引）",
+      "https://cis.ncu.edu.tw/robots.txt（本次查核）",
+      "https://pdc.adm.ncu.edu.tw/p/412-1019-1763.php?Lang=zh-tw（課務組區分選課與課務管理系統）",
+      "https://cis.ncu.edu.tw/Course/main/news/announce（選課系統入口）"
+    ]
+  },
+  {
+    "name": "課務資訊網課程地圖",
+    "url": "https://course.ncu.edu.tw/p/412-1014-82.php?Lang=zh-tw",
+    "schools": [
+      "0008"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中央大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "中大課務資訊網集中呈現課程地圖資源。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "course.ncu.edu.tw：robots.txt 的 User-agent: * 規則包含 Allow: /。",
+    "evidence": [
+      "https://course.ncu.edu.tw/p/412-1014-82.php?Lang=zh-tw（系統入口或官方指引）",
+      "https://course.ncu.edu.tw/（課務資訊網主選單）",
+      "https://course.ncu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立中央大學「新 ee-class 系統」",
+    "url": "https://ncueeclass.ncu.edu.tw/",
+    "schools": [
+      "0008"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中央大學",
+    "category": [
+      "lms"
+    ],
+    "features": "ee-class 平台支援校內課程與教學活動。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "ncueeclass.ncu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /media/s/、Disallow: /km/s/、Disallow: /*.mp4$。",
+    "evidence": [
+      "https://ncueeclass.ncu.edu.tw/（系統入口或官方指引）",
+      "https://eeclass2.ncu.edu.tw/（新 ee-class 登入入口）",
+      "https://ncueeclass.ncu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立中山大學選課系統",
+    "url": "http://selcrs.nsysu.edu.tw/",
+    "schools": [
+      "0009"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中山大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "enrollment"
+    ],
+    "features": "校內登入選課，公開查當期及歷年課表。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "selcrs.nsysu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。 selcrs.nsysu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "http://selcrs.nsysu.edu.tw/（系統入口或官方指引）",
+      "https://www.nsysu.edu.tw/p/412-1000-1287.php（在校生頁分列當期及歷年查課）",
+      "https://oaa.nsysu.edu.tw/p/412-1003-3276.php?Lang=zh-tw（教務處課務入口）",
+      "http://selcrs.nsysu.edu.tw/robots.txt（本次查核）",
+      "https://selcrs.nsysu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "中山網路大學",
+    "url": "https://elearn.nsysu.edu.tw/",
+    "schools": [
+      "0009"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中山大學",
+    "category": [
+      "lms"
+    ],
+    "features": "中山校內數位課程與教學活動平台。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系統頁面標示 Moodle。 elearn.nsysu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /、Allow: /$。",
+    "evidence": [
+      "https://elearn.nsysu.edu.tw/（系統入口或官方指引）",
+      "https://www.nsysu.edu.tw/p/412-1000-1287.php（在校生頁列出中山網路大學）",
+      "https://elearn.nsysu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程結構圖",
+    "url": "https://oaa.nsysu.edu.tw/p/412-1003-16338.php?Lang=zh-tw",
+    "schools": [
+      "0009"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中山大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "中山大學教務處公布的課程結構圖入口。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "結構圖是修業規劃，不是逐班開課清單。 oaa.nsysu.edu.tw：robots.txt 對 User-agent: * 列出 Allow: /。",
+    "evidence": [
+      "https://oaa.nsysu.edu.tw/p/412-1003-16338.php?Lang=zh-tw（實測系統入口或官方指引）",
+      "https://oaa.nsysu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "各類課程資料查詢系統",
+    "url": "https://academic.ntou.edu.tw/p/412-1005-1126-1.php",
+    "schools": [
+      "0012"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣海洋大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "教務處公開入口分列當學期及歷年課表查詢。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "資料查詢實際進入 ais.ntou.edu.tw；課綱可用性依課程而異。 academic.ntou.edu.tw：robots.txt 的 User-agent: * 規則包含 Allow: /。",
+    "evidence": [
+      "https://academic.ntou.edu.tw/p/412-1005-1126-1.php（系統入口或官方指引）",
+      "https://www.ntou.edu.tw/identity/student（海大在校生服務頁）",
+      "https://academic.ntou.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "教務資訊系統 v4",
+    "url": "https://academics.ntou.edu.tw/system/",
+    "schools": [
+      "0012"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣海洋大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內登入後進入選課等教務作業。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "academics.ntou.edu.tw：robots.txt 回傳 HTML，未取得可辨識的規則。",
+    "evidence": [
+      "https://academics.ntou.edu.tw/system/（系統入口或官方指引）",
+      "https://academic.ntou.edu.tw/（海大教務處服務入口）",
+      "https://academics.ntou.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "學習 e-Go 課程地圖查詢系統",
+    "url": "http://classmap.ntou.edu.tw/",
+    "schools": [
+      "0012"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣海洋大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "海大校方學習入口連結全校課程地圖，對照課程、核心能力與職種。",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "學習 e-Go 確有列全校地圖入口，但本次開啟逾時，不代表官方已停用。 classmap.ntou.edu.tw：robots.txt 無法取得（逾時）。",
+    "evidence": [
+      "http://classmap.ntou.edu.tw/（實測系統入口）",
+      "https://academic.ntou.edu.tw/p/412-1005-1126-1.php（教務處掛載的地圖入口）",
+      "http://classmap.ntou.edu.tw/robots.txt（本次查核）",
+      "https://www.ntou.edu.tw/e-go（原列入口）"
+    ]
+  },
+  {
+    "name": "TronClass 教學平台",
+    "url": "https://tronclass.ntou.edu.tw/",
+    "schools": [
+      "0012"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣海洋大學",
+    "category": [
+      "lms"
+    ],
+    "features": "TronClass 提供課程教材、互動和評量。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "tronclass.ntou.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /、Allow: /$。",
+    "evidence": [
+      "https://tronclass.ntou.edu.tw/（系統入口或官方指引）",
+      "https://ctl.ntou.edu.tw/p/412-1105-12156.php（教學中心平台及操作指引）",
+      "https://tronclass.ntou.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "eCourse2 教學課程系統",
+    "url": "https://ecourse2.ccu.edu.tw/local/syllabus/syllabus_dep.php",
+    "schools": [
+      "0013"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中正大學",
+    "category": [
+      "lms",
+      "course_query",
+      "syllabus"
+    ],
+    "features": "Moodle 架構的教學平台，另公開系所課程與教學大綱。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本網址是免登入的系所課綱，校內 Moodle 課室另需登入。 ecourse2.ccu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://ecourse2.ccu.edu.tw/local/syllabus/syllabus_dep.php（實測系統入口）",
+      "https://www.ccu.edu.tw/p/426-1000-1.php（校方常用系統目錄）",
+      "https://ecourse2.ccu.edu.tw/robots.txt（本次查核）",
+      "https://ecourse2.ccu.edu.tw/autologin.php（原列入口）"
+    ]
+  },
+  {
+    "name": "選課系統 iCCU",
+    "url": "https://www026220.ccu.edu.tw/",
+    "schools": [
+      "0013"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中正大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "中正學生登入查詢與辦理選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "www026220.ccu.edu.tw：robots.txt 的 User-agent: * 未列非空的存取限制。",
+    "evidence": [
+      "https://www026220.ccu.edu.tw/（系統入口或官方指引）",
+      "https://www.ccu.edu.tw/p/426-1000-1.php（常用系統的選課連結）",
+      "https://www026220.ccu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖",
+    "url": "http://coursemap.ccu.edu.tw/",
+    "schools": [
+      "0013"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立中正大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "中正大學課程地圖入口。",
+    "loginRequired": "unknown",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本次未能開啟此入口（timed out），不代表官方已宣告停用。 coursemap.ccu.edu.tw：robots.txt 無法取得（timed out），未判定規則。",
+    "evidence": [
+      "http://coursemap.ccu.edu.tw/（系統入口或官方指引）",
+      "https://www.ccu.edu.tw/p/426-1000-1.php（校方課程地圖連結）",
+      "http://coursemap.ccu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課務查詢（網路選課）",
+    "url": "https://sso.nknu.edu.tw/Staff/CourseEnrollInfo/CourseEnrollInfo.aspx",
+    "schools": [
+      "0014"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立高雄師範大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "高師大選課及開課資訊查詢頁。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開頁與單一登入並存；未測需登入的詳細項目。 sso.nknu.edu.tw：robots.txt 回傳 HTML，未取得可辨識的規則。",
+    "evidence": [
+      "https://sso.nknu.edu.tw/Staff/CourseEnrollInfo/CourseEnrollInfo.aspx（系統入口或官方指引）",
+      "https://sso.nknu.edu.tw/CourseMap/showList.aspx（同平台課務查詢連結）",
+      "https://sso.nknu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "網路選課系統",
+    "url": "https://sso.nknu.edu.tw/AcademicAffairs/SelectCourse/default.aspx",
+    "schools": [
+      "0014"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立高雄師範大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "高師大學生自單一登入網路資訊平台辦理選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "sso.nknu.edu.tw：robots.txt 回傳 HTML，未取得可辨識的規則。",
+    "evidence": [
+      "https://sso.nknu.edu.tw/AcademicAffairs/SelectCourse/default.aspx（系統入口或官方指引）",
+      "https://sso.nknu.edu.tw/FreshmanInfo/indexFull.aspx（新生教務資訊）",
+      "https://sso.nknu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程核心能力一覽",
+    "url": "https://sso.nknu.edu.tw/CourseMap/showList.aspx",
+    "schools": [
+      "0014"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立高雄師範大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "依學院系所查看課程及核心能力對應。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "sso.nknu.edu.tw：robots.txt 回傳 HTML，未取得可辨識的規則。",
+    "evidence": [
+      "https://sso.nknu.edu.tw/CourseMap/showList.aspx（系統入口或官方指引）",
+      "https://c.nknu.edu.tw/aca/（教務處提供課程地圖操作手冊）",
+      "https://sso.nknu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "高師大數位學習專區",
+    "url": "https://moocs.nknu.edu.tw/moodle/",
+    "schools": [
+      "0014"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立高雄師範大學",
+    "category": [
+      "lms"
+    ],
+    "features": "高師大校首頁列出的 Moodle 數位學習站。",
+    "loginRequired": "partial",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "屬數位學習專區，未確認是否全校一般課程的主要 LMS。 本次未能開啟此入口（timed out），不代表官方已宣告停用。 moocs.nknu.edu.tw：robots.txt 無法取得（timed out），未判定規則。",
+    "evidence": [
+      "https://moocs.nknu.edu.tw/moodle/（系統入口或官方指引）",
+      "https://w3.nknu.edu.tw/（校首頁的數位學習專區連結）",
+      "https://moocs.nknu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "開課查詢",
+    "url": "https://webap0.ncue.edu.tw/deanv2/other/ob010",
+    "schools": [
+      "0015"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立彰化師範大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "免登入按學年、學期查詢彰師大開課。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "webap0.ncue.edu.tw：robots.txt 無法取得（Exceeded maximum allowed redirects.），未判定規則。",
+    "evidence": [
+      "https://webap0.ncue.edu.tw/deanv2/other/ob010（系統入口或官方指引）",
+      "https://acadaff.ncue.edu.tw/var/file/2/1002/img/958/course.html（選課專區並列公開查詢及學生登入）",
+      "https://webap0.ncue.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "彰師大教務系統",
+    "url": "https://webap2s.ncue.edu.tw/curri/stuEntry.html",
+    "schools": [
+      "0015"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立彰化師範大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內學籍及網路選課的學生入口。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "webap2s.ncue.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://webap2s.ncue.edu.tw/curri/stuEntry.html（系統入口或官方指引）",
+      "https://www.ncue.edu.tw/p/412-1000-860.php?Lang=zh-tw（在校生教務系統連結）",
+      "https://webap2s.ncue.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "新雲端學院",
+    "url": "https://tronclass.ncue.edu.tw/",
+    "schools": [
+      "0015"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立彰化師範大學",
+    "category": [
+      "lms"
+    ],
+    "features": "彰師大 TronClass 教學平台。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "tronclass.ncue.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /、Allow: /$。",
+    "evidence": [
+      "https://tronclass.ncue.edu.tw/（系統入口或官方指引）",
+      "https://www.ncue.edu.tw/p/412-1000-860.php?Lang=zh-tw（校方在校生頁列為新雲端學院）",
+      "https://tronclass.ncue.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖（師資培育中心）",
+    "url": "https://practiceweb.ncue.edu.tw/p/412-1007-675.php?Lang=zh-tw",
+    "schools": [
+      "0015"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立彰化師範大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "依入學年度提供師資培育教育專業課程地圖。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "師資培育中心服務，非全校所有系所；本頁所列地圖更新時間未達活動判定門檻。 practiceweb.ncue.edu.tw：robots.txt 對 User-agent: * 列出 Allow: /。",
+    "evidence": [
+      "https://practiceweb.ncue.edu.tw/p/412-1007-675.php?Lang=zh-tw（實測系統入口或官方指引）",
+      "https://practiceweb.ncue.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程查詢系統",
+    "url": "http://sea.cc.ntpu.edu.tw/pls/dev_stud/course_query_all.chi_main",
+    "schools": [
+      "0017"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "免登入查詢臺北大學開課及課程大綱。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方 HTTPS 連結交握失敗；改用同路徑 HTTP 可開啟。 sea.cc.ntpu.edu.tw：robots.txt 對 User-agent: * 列出 Disallow: /，例外 /index.html、/admin_new.htm、/courseQuery.html，不包括本筆 PLS 路徑。",
+    "evidence": [
+      "http://sea.cc.ntpu.edu.tw/pls/dev_stud/course_query_all.chi_main（實測系統入口）",
+      "https://new.ntpu.edu.tw/（校首頁課程查詢連結）",
+      "http://sea.cc.ntpu.edu.tw/robots.txt（本次查核）",
+      "https://sea.cc.ntpu.edu.tw/pls/dev_stud/course_query_all.chi_main（原列入口）"
+    ]
+  },
+  {
+    "name": "課程地圖",
+    "url": "http://sea.cc.ntpu.edu.tw/pls/eval/cmap_3sys.main",
+    "schools": [
+      "0017"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "公開依系所與學年度查閱修課規劃。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方 HTTPS 連結交握失敗；改用同路徑 HTTP 可開啟。 sea.cc.ntpu.edu.tw：robots.txt 對 User-agent: * 列出 Disallow: /，例外 /index.html、/admin_new.htm、/courseQuery.html，不包括本筆 PLS 路徑。",
+    "evidence": [
+      "http://sea.cc.ntpu.edu.tw/pls/eval/cmap_3sys.main（實測系統入口）",
+      "https://new.ntpu.edu.tw/oaa/course-selection（教務處課務連結）",
+      "http://sea.cc.ntpu.edu.tw/robots.txt（本次查核）",
+      "https://sea.cc.ntpu.edu.tw/pls/eval/cmap_3sys.main（原列入口）"
+    ]
+  },
+  {
+    "name": "國立臺北大學學生資訊系統",
+    "url": "http://ohs01.ntpu.edu.tw/student_new.htm",
+    "schools": [
+      "0017"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生登入後進入課務與選課服務。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "實測 HTTP 可開啟；相同網址的 HTTPS 交握失敗。未登入。 ohs01.ntpu.edu.tw：robots.txt 對 User-agent: * 列出 Disallow: /。",
+    "evidence": [
+      "http://ohs01.ntpu.edu.tw/student_new.htm（實測系統入口）",
+      "https://new.ntpu.edu.tw/oaa/course-selection（教務處選課專區）",
+      "http://ohs01.ntpu.edu.tw/robots.txt（本次查核）",
+      "https://ohs01.ntpu.edu.tw/student_new.htm（原列入口）"
+    ]
+  },
+  {
+    "name": "數位學苑 3.0",
+    "url": "https://lms3.ntpu.edu.tw/",
+    "schools": [
+      "0017"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北大學",
+    "category": [
+      "lms"
+    ],
+    "features": "國立臺北大學校內教學、課程活動與測驗平台。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系統頁面標示 Moodle。 lms3.ntpu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://lms3.ntpu.edu.tw/（系統入口或官方指引）",
+      "https://new.ntpu.edu.tw/students（校方在校生頁）",
+      "https://new.ntpu.edu.tw/（校首頁近期維護與操作研習公告）",
+      "https://lms3.ntpu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "全校課程查詢",
+    "url": "https://web085003.adm.ncyu.edu.tw/pub_course.aspx",
+    "schools": [
+      "0018"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立嘉義大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "免登入查全校課程及課綱資料。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "web085003.adm.ncyu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /；另有其他規則。",
+    "evidence": [
+      "https://web085003.adm.ncyu.edu.tw/pub_course.aspx（系統入口或官方指引）",
+      "https://website.ncyu.edu.tw/academic（教務處列為全校課程查詢）",
+      "https://web085003.adm.ncyu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "校務行政系統",
+    "url": "https://web085004.adm.ncyu.edu.tw/",
+    "schools": [
+      "0018"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立嘉義大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生校務登入後辦理選課與教務。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "web085004.adm.ncyu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://web085004.adm.ncyu.edu.tw/（系統入口或官方指引）",
+      "https://website.ncyu.edu.tw/register/Subject?nodeId=38129（教務處選課流程）",
+      "https://web085004.adm.ncyu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖",
+    "url": "https://web085004.adm.ncyu.edu.tw/webcourse/Map_School.aspx?MapYear=114",
+    "schools": [
+      "0018"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立嘉義大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "公開按學年與學系查閱課程規劃。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "教務處本次列出 114 學年度地圖。 web085004.adm.ncyu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://web085004.adm.ncyu.edu.tw/webcourse/Map_School.aspx?MapYear=114（系統入口或官方指引）",
+      "https://website.ncyu.edu.tw/academic（課程地圖連結）",
+      "https://web085004.adm.ncyu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "學習地圖",
+    "url": "https://guides.ncyu.edu.tw/Map_DeptList.aspx?year=112",
+    "schools": [
+      "0018"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立嘉義大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "教務處另列的嘉大各系學習地圖。",
+    "loginRequired": false,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方連結以 112 學年度為參數，與校務系統課程地圖分開。 本次未能開啟此入口（HTTP 403），不代表官方已宣告停用。 guides.ncyu.edu.tw：robots.txt 回傳 HTTP 403；未取得規則。",
+    "evidence": [
+      "https://guides.ncyu.edu.tw/Map_DeptList.aspx?year=112（系統入口或官方指引）",
+      "https://website.ncyu.edu.tw/academic（學習地圖連結）",
+      "https://guides.ncyu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "輔助教學平台",
+    "url": "https://ecourse.ncyu.edu.tw/",
+    "schools": [
+      "0018"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立嘉義大學",
+    "category": [
+      "lms"
+    ],
+    "features": "嘉大課堂教材與教學活動平台。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系統頁面標示 Moodle。 ecourse.ncyu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://ecourse.ncyu.edu.tw/（系統入口或官方指引）",
+      "https://www.ncyu.edu.tw/（校首頁輔助教學平台連結）",
+      "https://ecourse.ncyu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程查詢系統",
+    "url": "http://course.nuk.edu.tw/QueryCourse/QueryCourse.asp",
+    "schools": [
+      "0019"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立高雄大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "公開依學年、學期與單位查開課。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "course.nuk.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /。 course.nuk.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /。",
+    "evidence": [
+      "http://course.nuk.edu.tw/QueryCourse/QueryCourse.asp（系統入口或官方指引）",
+      "https://www.nuk.edu.tw/p/412-1000-654.php?Lang=zh-tw（學生服務頁直接連結）",
+      "http://course.nuk.edu.tw/robots.txt（本次查核）",
+      "https://course.nuk.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "學生選課系統",
+    "url": "http://course.nuk.edu.tw/",
+    "schools": [
+      "0019"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立高雄大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "高雄大學學生登入選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "course.nuk.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /。 course.nuk.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /。",
+    "evidence": [
+      "http://course.nuk.edu.tw/（系統入口或官方指引）",
+      "https://www.nuk.edu.tw/p/412-1000-654.php?Lang=zh-tw（學生服務分列教務、課程查詢和選課）",
+      "http://course.nuk.edu.tw/robots.txt（本次查核）",
+      "https://course.nuk.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "NUK I-Course 智慧選課引導系統",
+    "url": "https://icourse.nuk.edu.tw/auth/signIn",
+    "schools": [
+      "0019"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立高雄大學",
+    "category": [
+      "course_map",
+      "schedule_planner"
+    ],
+    "features": "校方列出的智慧選課引導服務。",
+    "loginRequired": true,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "需要登入；不是一般公開開課查詢。 icourse.nuk.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://icourse.nuk.edu.tw/auth/signIn（系統入口或官方指引）",
+      "https://www.nuk.edu.tw/p/412-1000-654.php?Lang=zh-tw（校方命名及入口）",
+      "https://icourse.nuk.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "Moodle 教學平台 4.0",
+    "url": "https://elearningv4.nuk.edu.tw/",
+    "schools": [
+      "0019"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立高雄大學",
+    "category": [
+      "lms"
+    ],
+    "features": "高雄大學 Moodle 4 教學平台。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "elearningv4.nuk.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://elearningv4.nuk.edu.tw/（系統入口或官方指引）",
+      "https://www.nuk.edu.tw/p/412-1000-654.php?Lang=zh-tw（學生端平台連結）",
+      "https://elearningv4.nuk.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "全校課程查詢",
+    "url": "https://sys.ndhu.edu.tw/aa/class/course/Default.aspx",
+    "schools": [
+      "0020"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立東華大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "免登入依學期與開課學系查詢東華開課及課綱。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "sys.ndhu.edu.tw：robots.txt 有特定代理規則，未見 User-agent: *。",
+    "evidence": [
+      "https://sys.ndhu.edu.tw/aa/class/course/Default.aspx（系統入口或官方指引）",
+      "https://www.ndhu.edu.tw/p/412-1000-8827.php?Lang=zh-tw（在校生全校課程查詢入口）",
+      "https://sys.ndhu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "校務資訊系統學生單一登入",
+    "url": "https://sys.ndhu.edu.tw/INC/SSO_RWD/Login.aspx?sel=st&lang=tw",
+    "schools": [
+      "0020"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立東華大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生從單一登入進入網路選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "sys.ndhu.edu.tw：robots.txt 有特定代理規則，未見 User-agent: *。",
+    "evidence": [
+      "https://sys.ndhu.edu.tw/INC/SSO_RWD/Login.aspx?sel=st&lang=tw（系統入口或官方指引）",
+      "https://www.ndhu.edu.tw/p/412-1000-8827.php?Lang=zh-tw（校方指示網路選課走單一登入）",
+      "https://sys.ndhu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "學士班學程選課輔助及畢業初審系統",
+    "url": "https://web.ndhu.edu.tw/aa/graduate/Login.aspx",
+    "schools": [
+      "0020"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立東華大學",
+    "category": [
+      "course_map",
+      "schedule_planner"
+    ],
+    "features": "協助東華學士班學生規劃學程選課與預查畢業條件。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "個人化學程工具，非公開課程地圖。 本次未能開啟此入口（timed out），不代表官方已宣告停用。 web.ndhu.edu.tw：robots.txt 無法取得（timed out），未判定規則。",
+    "evidence": [
+      "https://web.ndhu.edu.tw/aa/graduate/Login.aspx（系統入口或官方指引）",
+      "https://www.ndhu.edu.tw/p/412-1000-8827.php?Lang=zh-tw（校方系統名稱及入口）",
+      "https://web.ndhu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "東華 e 學苑",
+    "url": "https://elearn4.ndhu.edu.tw/moodle/",
+    "schools": [
+      "0020"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立東華大學",
+    "category": [
+      "lms"
+    ],
+    "features": "東華大學 Moodle 課室。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "本次未能開啟此入口（timed out），不代表官方已宣告停用。 elearn4.ndhu.edu.tw：robots.txt 無法取得（timed out），未判定規則。",
+    "evidence": [
+      "https://elearn4.ndhu.edu.tw/moodle/（系統入口或官方指引）",
+      "https://www.ndhu.edu.tw/（校首頁直接連結）",
+      "https://elearn4.ndhu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "iNCNU 新世代校務系統",
+    "url": "https://sis.ncnu.edu.tw/",
+    "schools": [
+      "0021"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立暨南國際大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "暨大新世代校務登入入口，校內選課屬教務服務。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "未登入核驗選課子頁或公開查課功能。 sis.ncnu.edu.tw：robots.txt 的 User-agent: * 未列非空的存取限制。",
+    "evidence": [
+      "https://sis.ncnu.edu.tw/（系統入口或官方指引）",
+      "https://moodle.ncnu.edu.tw/（校方 Moodle 首頁連至新世代校務系統）",
+      "https://sis.ncnu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立暨南國際大學課程資訊網",
+    "url": "https://moodle.ncnu.edu.tw/",
+    "schools": [
+      "0021"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立暨南國際大學",
+    "category": [
+      "lms"
+    ],
+    "features": "Moodle 課程資訊網公開列課，課程教學活動通常需登入。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "首頁另指向 108–113 學年度的舊站；公開列課不等於完整教務課表。 moodle.ncnu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://moodle.ncnu.edu.tw/（系統入口或官方指引）",
+      "https://moodle.ncnu.edu.tw/course/index.php（Moodle 課程目錄）",
+      "https://moodle.ncnu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "校務系統學生及訪客專用簡易版",
+    "url": "https://ccweb6.ncnu.edu.tw/student/aspmaker_course_opened_detail_viewsrch.php",
+    "schools": [
+      "0021"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立暨南國際大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "暨大舊版校務系統提供公開開課明細搜尋及本學期開課列表。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "新世代校務登入與此訪客查詢是不同介面；未確認公開完整課綱。 ccweb6.ncnu.edu.tw：robots.txt 回傳 HTTP 404。",
+    "evidence": [
+      "https://ccweb6.ncnu.edu.tw/student/aspmaker_course_opened_detail_viewsrch.php（實測系統入口或官方指引）",
+      "https://ccweb6.ncnu.edu.tw/student/current_semester_opened_listlist.php?cmd=resetall（本學期開設課程公開列表）",
+      "https://programming.im.ncnu.edu.tw/ccNcnu/function_public.html（校方訪客使用說明）",
+      "https://ccweb6.ncnu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立暨南國際大學課程資訊網（108–113 年）",
+    "url": "https://moodle108-113.ncnu.edu.tw/",
+    "schools": [
+      "0021"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立暨南國際大學",
+    "category": [
+      "lms"
+    ],
+    "features": "校方保留 108–113 學年度 Moodle 教學資料，當期課程已改在新版站。",
+    "loginRequired": "partial",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "可開啟的歷史平台，非目前課程維護入口。 moodle108-113.ncnu.edu.tw：robots.txt 回傳 HTTP 404。",
+    "evidence": [
+      "https://moodle108-113.ncnu.edu.tw/（實測系統入口或官方指引）",
+      "https://moodle.ncnu.edu.tw/（新版平台公告並明列歷史站）",
+      "https://moodle108-113.ncnu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "學士班課程地圖（應用材料及光電工程學系）",
+    "url": "https://amoe.ncnu.edu.tw/p/405-1021-35956,c2214.php?Lang=zh-tw",
+    "schools": [
+      "0021"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立暨南國際大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "公開暨大應材光電系學士班 115 學年度的修課地圖。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系所級示例，並非全校地圖。 amoe.ncnu.edu.tw：robots.txt 對 User-agent: * 列出 Allow: /。",
+    "evidence": [
+      "https://amoe.ncnu.edu.tw/p/405-1021-35956,c2214.php?Lang=zh-tw（實測課程地圖及學年度附件）",
+      "https://amoe.ncnu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程暨課程大綱查詢",
+    "url": "https://selcrs1.tnua.edu.tw/CourseSearch/HomeCatalogue.aspx",
+    "schools": [
+      "0028"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北藝術大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "依學期、開課單位或進階條件查北藝大課程及大綱。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "selcrs1.tnua.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://selcrs1.tnua.edu.tw/CourseSearch/HomeCatalogue.aspx（系統入口或官方指引）",
+      "https://w3.tnua.edu.tw/student/（在校生頁）",
+      "https://selcrs1.tnua.edu.tw/CourseSearch/AdvancedSearch.aspx（公開進階查詢）",
+      "https://selcrs1.tnua.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "教務系統",
+    "url": "https://acad6.tnua.edu.tw/NEWB2K/B2KEIPPortal/",
+    "schools": [
+      "0028"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北藝術大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內登入辦理北藝大網路選課等教務作業。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "入口路徑標示 NEWB2K，未由路徑推定廠商。 acad6.tnua.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://acad6.tnua.edu.tw/NEWB2K/B2KEIPPortal/（系統入口或官方指引）",
+      "https://w3.tnua.edu.tw/student/（校方教務系統連結與預選公告）",
+      "https://acad6.tnua.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "新藝學園－數位學習平臺",
+    "url": "https://eclass.tnua.edu.tw/",
+    "schools": [
+      "0028"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北藝術大學",
+    "category": [
+      "lms"
+    ],
+    "features": "北藝大校內課堂的數位學習入口。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "eclass.tnua.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /media/s/、Disallow: /km/s/、Disallow: /*.mp4$。",
+    "evidence": [
+      "https://eclass.tnua.edu.tw/（系統入口或官方指引）",
+      "https://w3.tnua.edu.tw/student/（校方在校生頁）",
+      "https://eclass.tnua.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "北藝大課程地圖",
+    "url": "https://coursemap.tnua.edu.tw/",
+    "schools": [
+      "0028"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北藝術大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "公開瀏覽北藝大各類課程修業地圖。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "站點可開啟，未確認最近更新。 coursemap.tnua.edu.tw：robots.txt 回傳 HTTP 404。",
+    "evidence": [
+      "https://coursemap.tnua.edu.tw/（實測系統入口或官方指引）",
+      "https://coursemap.tnua.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "校務行政系統（選課及成績）",
+    "url": "https://uaap.ntua.edu.tw/ntua/",
+    "schools": [
+      "0029"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣藝術大學",
+    "category": [
+      "course_query",
+      "enrollment"
+    ],
+    "features": "登入後辦理選課及查全校課表、成績。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "未確認普通學制全校免登入查課入口；與推廣學分班必須區分。 uaap.ntua.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /。",
+    "evidence": [
+      "https://uaap.ntua.edu.tw/ntua/（系統入口或官方指引）",
+      "https://aca.ntua.edu.tw/article.aspx?ca=32&id=32（教務處選課及成績系統）",
+      "https://aca.ntua.edu.tw/upload/file/202606080354423D.pdf（教務處 2026 選課操作說明）",
+      "https://uaap.ntua.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖",
+    "url": "https://aca.ntua.edu.tw/catalog.aspx?ca=300",
+    "schools": [
+      "0029"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣藝術大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "彙整臺藝大各系課程地圖及修業規劃連結。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "不是逐學期的開課班次資料。 aca.ntua.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://aca.ntua.edu.tw/catalog.aspx?ca=300（系統入口或官方指引）",
+      "https://aca.ntua.edu.tw/（教務處課程地圖導覽）",
+      "https://aca.ntua.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "推廣教育中心學分課程",
+    "url": "https://eec.ntua.edu.tw/Course/Credit",
+    "schools": [
+      "0029"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣藝術大學",
+    "category": [
+      "course_query"
+    ],
+    "features": "公開列出臺藝大推廣學士、碩士學分課程。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "報名另需登入；本筆僅指查詢，不含普通學制或非學分班。 eec.ntua.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://eec.ntua.edu.tw/Course/Credit（系統入口或官方指引）",
+      "https://eec.ntua.edu.tw/PastCourse/Search（前期課程公開查詢）",
+      "https://eec.ntua.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "台藝大網路學園",
+    "url": "https://elearning.ntua.edu.tw/",
+    "schools": [
+      "0029"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣藝術大學",
+    "category": [
+      "lms"
+    ],
+    "features": "臺藝大數位學習平台。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "以校內平台名稱辨識，未登入。 本次未能開啟此入口（HTTP 403），不代表官方已宣告停用。 elearning.ntua.edu.tw：robots.txt 回傳 HTTP 403；未取得規則。",
+    "evidence": [
+      "https://elearning.ntua.edu.tw/（系統入口或官方指引）",
+      "https://www.ntua.edu.tw/eAdministration（臺藝大行政服務頁）",
+      "https://elearning.ntua.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "臺東大學校務系統",
+    "url": "https://infosys.nttu.edu.tw/",
+    "schools": [
+      "0030"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺東大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "course_map",
+      "enrollment"
+    ],
+    "features": "公開查課、週課表與課程地圖，學生登入辦理選課。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "同一服務下的公開查課與選課入口合併列出。 infosys.nttu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://infosys.nttu.edu.tw/（系統入口或官方指引）",
+      "https://www.nttu.edu.tw/p/426-1000-15.php?Lang=zh-tw（校方在校生入口）",
+      "https://infosys.nttu.edu.tw/n_CourseBase_Select/CourseListPublic.aspx（公開課程查詢）",
+      "https://infosys.nttu.edu.tw/n_CoursePublic/CourseMap.aspx（課程地圖）",
+      "https://infosys.nttu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "網路學園",
+    "url": "https://eclass2.nttu.edu.tw/",
+    "schools": [
+      "0030"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺東大學",
+    "category": [
+      "lms"
+    ],
+    "features": "臺東大學的數位教學入口。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "在校生頁也列 eclass 子網域別名。 eclass2.nttu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /media/s/、Disallow: /km/s/、Disallow: /*.mp4$。",
+    "evidence": [
+      "https://eclass2.nttu.edu.tw/（系統入口或官方指引）",
+      "https://www.nttu.edu.tw/p/426-1000-15.php?Lang=zh-tw（學校列出的網路學園）",
+      "https://eclass2.nttu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "NIU Course Search",
+    "url": "https://academic.niu.edu.tw/p/412-1003-967.php",
+    "schools": [
+      "0031"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立宜蘭大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "教務處按學期列出課程查詢，涵蓋 115-1 及歷年。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "各學期連至 acade.niu.edu.tw 的公開查課頁。 academic.niu.edu.tw：robots.txt 的 User-agent: * 規則包含 Allow: /。",
+    "evidence": [
+      "https://academic.niu.edu.tw/p/412-1003-967.php（系統入口或官方指引）",
+      "https://academic.niu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖",
+    "url": "https://academic.niu.edu.tw/var/file/3/1003/img/220/114166495.htm",
+    "schools": [
+      "0031"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立宜蘭大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "宜蘭大學教務處提供各系課程地圖資源。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "academic.niu.edu.tw：robots.txt 的 User-agent: * 規則包含 Allow: /。",
+    "evidence": [
+      "https://academic.niu.edu.tw/var/file/3/1003/img/220/114166495.htm（系統入口或官方指引）",
+      "https://academic.niu.edu.tw/p/412-1003-456.php（教務處課程及選課導覽）",
+      "https://academic.niu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "宜大校園單一入口（網路選課）",
+    "url": "https://ccsys.niu.edu.tw/SSO/",
+    "schools": [
+      "0031"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立宜蘭大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "校內學生從單一入口登入選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "ccsys.niu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /。 ccsys1.niu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://ccsys.niu.edu.tw/SSO/（系統入口或官方指引）",
+      "https://www.niu.edu.tw/（校首頁在校學生連結）",
+      "https://academic.niu.edu.tw/p/412-1003-468.php（本學年選課說明）",
+      "https://ccsys.niu.edu.tw/robots.txt（本次查核）",
+      "https://ccsys1.niu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "宜大 M 園區",
+    "url": "https://euni.niu.edu.tw/",
+    "schools": [
+      "0031"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立宜蘭大學",
+    "category": [
+      "lms"
+    ],
+    "features": "宜大 Moodle 課程平台，訪客可見入口與學習指引，課堂活動須登入。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開首頁有 115-1 公告。 euni.niu.edu.tw：robots.txt 回傳 HTTP 404。",
+    "evidence": [
+      "https://euni.niu.edu.tw/（實測系統入口或官方指引）",
+      "https://euni.niu.edu.tw/mod/page/view.php?id=9768（平台首頁列出的數位學習使用說明）",
+      "https://euni.niu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立聯合大學校務資訊系統",
+    "url": "https://eap10.nuu.edu.tw/Login.aspx?logintype=S",
+    "schools": [
+      "0032"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立聯合大學",
+    "category": [
+      "course_query",
+      "enrollment"
+    ],
+    "features": "學生登入選課；訪客入口可不輸入帳密開啟課程檢索。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "使用校方列出的外校身分入口，未輸入帳密即以訪客進入，可開啟課程檢索表單。 eap10.nuu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://eap10.nuu.edu.tw/Login.aspx?logintype=S（系統入口或官方指引）",
+      "https://curr.nuu.edu.tw/p/404-1076-11586.php（課務組課程資訊及操作說明）",
+      "https://curr.nuu.edu.tw/p/404-1076-16887.php（學生與外校選課入口）",
+      "https://eap10.nuu.edu.tw/robots.txt（本次查核）",
+      "https://eap10.nuu.edu.tw/Login.aspx?logintype=V（免輸入帳密的訪客入口）",
+      "https://eap10.nuu.edu.tw/S0100/S0132/T01320201.aspx?sys_id=S00&sys_pid=T01320201（實測可由訪客開啟的課程檢索表單）"
+    ]
+  },
+  {
+    "name": "聯合數位學園",
+    "url": "https://elearning.nuu.edu.tw/",
+    "schools": [
+      "0032"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立聯合大學",
+    "category": [
+      "lms"
+    ],
+    "features": "國立聯合大學聯合數位學園的線上教學入口。",
+    "loginRequired": "unknown",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "入口與課程探索此次均回傳 HTTP 403，未登入測試，不代表官方已宣告停用。 elearning.nuu.edu.tw：robots.txt 同樣回傳 HTTP 403。",
+    "evidence": [
+      "https://elearning.nuu.edu.tw/（實測系統入口或官方指引）",
+      "https://elearning.nuu.edu.tw/mooc/explorer.php（搜尋索引保留的課程探索分頁）",
+      "https://elearning.nuu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖（通識教育中心）",
+    "url": "https://tlc.nuu.edu.tw/p/403-1058-696-1.php?Lang=zh-tw",
+    "schools": [
+      "0032"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立聯合大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "聯合大學通識教育中心的課程地圖頁。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "通識範圍，非全校各系。 tlc.nuu.edu.tw：robots.txt 對 User-agent: * 列出 Allow: /。",
+    "evidence": [
+      "https://tlc.nuu.edu.tw/p/403-1058-696-1.php?Lang=zh-tw（實測系統入口或官方指引）",
+      "https://tlc.nuu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程資訊系統",
+    "url": "https://ap.tnnua.edu.tw/CourseInfo/CourseList.aspx",
+    "schools": [
+      "0035"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺南藝術大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "course_map"
+    ],
+    "features": "南藝大公開按學期查課，並有同系統的課程地圖。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "ap.tnnua.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://ap.tnnua.edu.tw/CourseInfo/CourseList.aspx（系統入口或官方指引）",
+      "https://acad.tnnua.edu.tw/p/412-1003-84.php?Lang=zh-tw（教務處學生專區）",
+      "https://ap.tnnua.edu.tw/CourseInfo/Course_Map.aspx（同系統地圖）",
+      "https://ap.tnnua.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "學生資訊系統",
+    "url": "https://ap.tnnua.edu.tw/StdInfo/",
+    "schools": [
+      "0035"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺南藝術大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生登入南藝大學生資訊系統辦理網路選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "ap.tnnua.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://ap.tnnua.edu.tw/StdInfo/（實測學生資訊系統登入入口）",
+      "https://acad.tnnua.edu.tw/p/412-1003-3112.php?Lang=zh-tw（教務處選課流程說明）",
+      "https://ap.tnnua.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "Moodle 數位學習平台",
+    "url": "https://elearning.tnnua.edu.tw/",
+    "schools": [
+      "0035"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺南藝術大學",
+    "category": [
+      "lms"
+    ],
+    "features": "南藝大 Moodle 教學入口。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "elearning.tnnua.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://elearning.tnnua.edu.tw/（系統入口或官方指引）",
+      "https://acad.tnnua.edu.tw/p/412-1003-84.php?Lang=zh-tw（教務處學生專區）",
+      "https://elearning.tnnua.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立臺南大學課程網站 E-Course",
+    "url": "https://ecourse.nutn.edu.tw/",
+    "schools": [
+      "0036"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺南大學",
+    "category": [
+      "lms",
+      "course_query",
+      "syllabus"
+    ],
+    "features": "臺南大學數位課程網站並提供全校公開課程大綱。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "公開大綱目前可查 115-1，課程教學功能另需登入。 ecourse.nutn.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://ecourse.nutn.edu.tw/（系統入口或官方指引）",
+      "https://ecourse.nutn.edu.tw/public/tea_preview_list.aspx（115-1 公開課綱一覽）",
+      "https://web.nutn.edu.tw/（校首頁連結）",
+      "https://ecourse.nutn.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖",
+    "url": "https://newcoursemap.nutn.edu.tw/",
+    "schools": [
+      "0036"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺南大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "臺南大學課程網站所連的課程地圖。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "newcoursemap.nutn.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://newcoursemap.nutn.edu.tw/（系統入口或官方指引）",
+      "https://ecourse.nutn.edu.tw/（E-Course 課程地圖連結）",
+      "https://newcoursemap.nutn.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程資訊與選課系統",
+    "url": "https://academics.nutn.edu.tw/Course/",
+    "schools": [
+      "0036"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺南大學",
+    "category": [
+      "course_query",
+      "enrollment"
+    ],
+    "features": "新版課程資訊入口提供免登入開課查詢，學生登入後辦理選課。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "舊 /SelSys/ 回傳 HTTP 503 並指向新版入口。 academics.nutn.edu.tw：robots.txt 回傳 HTTP 404。",
+    "evidence": [
+      "https://academics.nutn.edu.tw/Course/（實測系統入口）",
+      "https://academics.nutn.edu.tw/SelSys/guide/flow_fresh.html（校方選課流程與先行查課說明）",
+      "https://academics.nutn.edu.tw/robots.txt（本次查核）",
+      "https://academics.nutn.edu.tw/SelSys/（原列入口）",
+      "https://academics.nutn.edu.tw/Course/Qry/cos（公開開課查詢）",
+      "https://academics.nutn.edu.tw/Course/Sel/login（學生登入選課）"
+    ]
+  },
+  {
+    "name": "iNTUE 校務整合資訊系統",
+    "url": "https://nsa.ntue.edu.tw/",
+    "schools": [
+      "0037"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北教育大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "enrollment"
+    ],
+    "features": "提供免登入公開課表查詢，學生透過校園帳號進入網路選課。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "nsa.ntue.edu.tw：robots.txt 的 User-agent: * 未列非空的存取限制。",
+    "evidence": [
+      "https://nsa.ntue.edu.tw/（系統入口或官方指引）",
+      "https://www.ntue.edu.tw/p/412-1000-2402.php?Lang=zh-tw（校方標示網路選課及公開課表功能）",
+      "https://nsa.ntue.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "通識課程地圖",
+    "url": "https://cge.ntue.edu.tw/p/412-1006-4730.php?Lang=zh-tw",
+    "schools": [
+      "0037"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北教育大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "公開呈現北教大通識課程的修課規劃。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "通識教育中心地圖，非全校所有系所。 cge.ntue.edu.tw：robots.txt 的 User-agent: * 規則包含 Allow: /。",
+    "evidence": [
+      "https://cge.ntue.edu.tw/p/412-1006-4730.php?Lang=zh-tw（系統入口或官方指引）",
+      "https://cge.ntue.edu.tw/p/412-1006-2378.php?Lang=zh-tw（通識課程資訊與學生專區）",
+      "https://cge.ntue.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "Moodle 教學平台",
+    "url": "https://md.ntue.edu.tw/",
+    "schools": [
+      "0037"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北教育大學",
+    "category": [
+      "lms"
+    ],
+    "features": "北教大 Moodle 教學平台。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "md.ntue.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://md.ntue.edu.tw/（系統入口或官方指引）",
+      "https://www.ntue.edu.tw/p/412-1000-2402.php?Lang=zh-tw（校方在校學生服務）",
+      "https://md.ntue.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "智慧大師教學平台",
+    "url": "https://wm.ntue.edu.tw/",
+    "schools": [
+      "0037"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北教育大學",
+    "category": [
+      "lms"
+    ],
+    "features": "校方列出的智慧大師教學平台。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方註明限校內瀏覽。 本次未能開啟此入口（[Errno -5] No address associated with hostname），不代表官方已宣告停用。 wm.ntue.edu.tw：robots.txt 無法取得（[Errno -5] No address associated with hostname），未判定規則。",
+    "evidence": [
+      "https://wm.ntue.edu.tw/（系統入口或官方指引）",
+      "https://www.ntue.edu.tw/p/412-1000-2402.php?Lang=zh-tw（校方註明校內限制）",
+      "https://wm.ntue.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "教學魔法師教學平台",
+    "url": "https://imagic.ntue.edu.tw/magic/",
+    "schools": [
+      "0037"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺北教育大學",
+    "category": [
+      "lms"
+    ],
+    "features": "校方列出的教學魔法師教學平台。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方註明限校內瀏覽。 本次未能開啟此入口（[Errno -2] Name or service not known），不代表官方已宣告停用。 imagic.ntue.edu.tw：robots.txt 無法取得（[Errno -2] Name or service not known），未判定規則。",
+    "evidence": [
+      "https://imagic.ntue.edu.tw/magic/（系統入口或官方指引）",
+      "https://www.ntue.edu.tw/p/412-1000-2402.php?Lang=zh-tw（校方註明校內限制）",
+      "https://imagic.ntue.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "臺中教育大學教務系統",
+    "url": "https://ecs.ntcu.edu.tw/",
+    "schools": [
+      "0039"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺中教育大學",
+    "category": [
+      "course_query",
+      "enrollment"
+    ],
+    "features": "學生登入辦理選課等課務，並另提供免登入開課查詢。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "ecs.ntcu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://ecs.ntcu.edu.tw/（系統入口或官方指引）",
+      "https://oaa.ntcu.edu.tw/（教務處服務頁）",
+      "https://ecs.ntcu.edu.tw/robots.txt（本次查核）",
+      "https://ecs.ntcu.edu.tw/pub/TchSchedule_Search.aspx（免登入開課查詢）"
+    ]
+  },
+  {
+    "name": "國立臺中教育大學課程地圖",
+    "url": "https://careerweb.ntcu.edu.tw/CourseMap/Map/Index.aspx",
+    "schools": [
+      "0039"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺中教育大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "依系所瀏覽或下載中教大課程地圖。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "另連至舊版課程地圖。 careerweb.ntcu.edu.tw：robots.txt 對 User-agent: * 列出 Disallow: /。",
+    "evidence": [
+      "https://careerweb.ntcu.edu.tw/CourseMap/Map/Index.aspx（實測系統入口或官方指引）",
+      "https://www.ntcu.edu.tw/Tag?ID=8&portal=1（校方學生頁列為課程地圖系統）",
+      "https://careerweb.ntcu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "E 化教學系統",
+    "url": "https://elearning.ntcu.edu.tw/",
+    "schools": [
+      "0039"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺中教育大學",
+    "category": [
+      "lms"
+    ],
+    "features": "中教大學生入口所列 E 化教學系統。",
+    "loginRequired": "unknown",
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "外部實測回傳 HTTP 403，未測登入、不代表官方已宣告停用。 elearning.ntcu.edu.tw：robots.txt 回傳 HTTP 403。",
+    "evidence": [
+      "https://elearning.ntcu.edu.tw/（實測系統入口或官方指引）",
+      "https://www.ntcu.edu.tw/Tag?ID=8&portal=1（校方在校學生服務連結）",
+      "https://elearning.ntcu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國體大校園入口網",
+    "url": "https://one.ntsu.edu.tw/portal/",
+    "schools": [
+      "0044"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立體育大學",
+    "category": [
+      "course_query",
+      "enrollment"
+    ],
+    "features": "校方指引從校園入口網登入查課及選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方同時另列課程大綱的校外入口。 one.ntsu.edu.tw：robots.txt 回傳 HTTP 500；未取得規則。",
+    "evidence": [
+      "https://one.ntsu.edu.tw/portal/（系統入口或官方指引）",
+      "https://aca.ntsu.edu.tw/p/404-1004-62036.php?Lang=zh-tw（教務處課程查詢說明）",
+      "https://aca.ntsu.edu.tw/p/406-1004-66873,r4.php?Lang=zh-tw（115-2 選課公告）",
+      "https://one.ntsu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程大綱",
+    "url": "http://192.83.181.141/ntsu/outside.aspx?mainPage=QQBwAHAAbABpAGMAYQB0AGkAbwBuAC8AVABLAEUALwBQAFIARwAvAFAAUgBHADEAMQAwADAAXwAuAGEAcwBwAHgAPwBwAHIAbwBnAGMAZAA9AFAAUgBHADEAMQAwADAA",
+    "schools": [
+      "0044"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立體育大學",
+    "category": [
+      "syllabus"
+    ],
+    "features": "國體大校方另列的公用課程大綱查詢。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "校方連至 IP 的 HTTP 入口，未假定與校園入口網的權限相同。 192.83.181.141：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "http://192.83.181.141/ntsu/outside.aspx?mainPage=QQBwAHAAbABpAGMAYQB0AGkAbwBuAC8AVABLAEUALwBQAFIARwAvAFAAUgBHADEAMQAwADAAXwAuAGEAcwBwAHgAPwBwAHIAbwBnAGMAZAA9AFAAUgBHADEAMQAwADAA（系統入口或官方指引）",
+      "https://rpage.ntsu.edu.tw/p/412-1000-61.php?Lang=zh-tw（在校學生頁上的課程大綱連結）",
+      "http://192.83.181.141/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "eeclass 數位學習系統 3.0",
+    "url": "https://eeclass2.ntsu.edu.tw/",
+    "schools": [
+      "0044"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立體育大學",
+    "category": [
+      "lms"
+    ],
+    "features": "國體大 ee-class 3.0 數位課堂。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "eeclass2.ntsu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /media/s/、Disallow: /km/s/、Disallow: /*.mp4$。",
+    "evidence": [
+      "https://eeclass2.ntsu.edu.tw/（系統入口或官方指引）",
+      "https://rpage.ntsu.edu.tw/p/412-1000-61.php?Lang=zh-tw（在校學生頁直接連結）",
+      "https://eeclass2.ntsu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國體大教務處課程地圖",
+    "url": "https://aca.ntsu.edu.tw/p/412-1004-3028.php?Lang=zh-tw",
+    "schools": [
+      "0044"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立體育大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "國體大教務處的公開課程地圖資源。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "未確認最近一年的地圖更新。 aca.ntsu.edu.tw：robots.txt 對 User-agent: * 列出 Allow: /。",
+    "evidence": [
+      "https://aca.ntsu.edu.tw/p/412-1004-3028.php?Lang=zh-tw（實測系統入口或官方指引）",
+      "https://aca.ntsu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立金門大學校務系統",
+    "url": "https://select.nqu.edu.tw/",
+    "schools": [
+      "0048"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立金門大學",
+    "category": [
+      "course_query",
+      "course_map",
+      "enrollment"
+    ],
+    "features": "學生登入選課；校方教務處另提供訪客登入查課及課程規劃。",
+    "loginRequired": true,
+    "status": "inactive",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "訪客仍須登入，未登入查證；不列為完全免登入。 本次未能開啟此入口（[SSL: UNSAFE_LEGACY_RENEGOTIATION_DISABLED] unsafe legacy renegotiation disabled (_ssl.c:1082)），不代表官方已宣告停用。 select.nqu.edu.tw：robots.txt 無法取得（[SSL: UNSAFE_LEGACY_RENEGOTIATION_DISABLED] unsafe legacy renegotiation disabled (_ssl.c:1082)），未判定規則。",
+    "evidence": [
+      "https://select.nqu.edu.tw/（系統入口或官方指引）",
+      "https://cc.nqu.edu.tw/p/404-1009-1371.php?Lang=zh-tw（計網中心公布的校務系統入口）",
+      "https://teach.nqu.edu.tw/p/412-1001-1688.php?Lang=zh-tw（教務處課程查詢及訪客操作說明）",
+      "https://select.nqu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "e-Campus 網路學習平台",
+    "url": "https://ecampus.nqu.edu.tw/eCampus3P/Learn/LoginPage2/product_login.aspx",
+    "schools": [
+      "0048"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立金門大學",
+    "category": [
+      "lms"
+    ],
+    "features": "金門大學 e-Campus 教學平台，手冊另說明訪客身分。",
+    "loginRequired": "partial",
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "登入頁標示 inService；未確認最近一年的課程更新。 ecampus.nqu.edu.tw：robots.txt 回傳 HTML，未取得可辨識規則。",
+    "evidence": [
+      "https://ecampus.nqu.edu.tw/eCampus3P/Learn/LoginPage2/product_login.aspx（實測系統入口或官方指引）",
+      "https://ecampus.nqu.edu.tw/eCampus3P/learn/UserManual/Student/index.htm（學生及訪客使用手冊）",
+      "https://ecampus.nqu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "新一代校務系統（課程查詢）",
+    "url": "https://school.ntus.edu.tw/ntupes/outside.aspx?mainPage=LwBBAHAAcABsAGkAYwBhAHQAaQBvAG4ALwBUAEsARQAvAFQASwBFADUAMAAvAFQASwBFADUAMAAxADAAXwAuAGEAcwBwAHgA",
+    "schools": [
+      "0049"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣體育運動大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "公開查詢臺灣體大開課資料。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "school.ntus.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://school.ntus.edu.tw/ntupes/outside.aspx?mainPage=LwBBAHAAcABsAGkAYwBhAHQAaQBvAG4ALwBUAEsARQAvAFQASwBFADUAMAAvAFQASwBFADUAMAAxADAAXwAuAGEAcwBwAHgA（系統入口或官方指引）",
+      "https://www.ntus.edu.tw/index.php?act=article&code=detail&ids=331（校方新生選課頁提供公開連結）",
+      "https://school.ntus.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立臺灣體育運動大學校園資訊入口網",
+    "url": "https://portal.ntus.edu.tw/index.do",
+    "schools": [
+      "0049"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣體育運動大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生從校園入口登入新一代校務系統辦理選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "portal.ntus.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://portal.ntus.edu.tw/index.do（系統入口或官方指引）",
+      "https://www.ntus.edu.tw/index.php?act=article&code=detail&ids=331（校方新生選課指引）",
+      "https://portal.ntus.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "數位學習平台",
+    "url": "https://el.ntus.edu.tw/",
+    "schools": [
+      "0049"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣體育運動大學",
+    "category": [
+      "lms"
+    ],
+    "features": "臺灣體大校方數位教學平台。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系統頁面標示 Moodle。 el.ntus.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://el.ntus.edu.tw/（系統入口或官方指引）",
+      "https://www.ntus.edu.tw/（校首頁平台連結）",
+      "https://el.ntus.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖（競技運動學院教學組）",
+    "url": "https://cosp.ntus.edu.tw/index.php?code=list&ids=628",
+    "schools": [
+      "0049"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立臺灣體育運動大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "臺灣體大競技運動學院教學組公開 115 學年度等課程地圖。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "此頁為指定單位範圍，不視為全校課程地圖。 cosp.ntus.edu.tw：robots.txt 對 User-agent: * 列出 Disallow: /，另允許首頁及 /index.php。",
+    "evidence": [
+      "https://cosp.ntus.edu.tw/index.php?code=list&ids=628（實測課程地圖及學年度附件）",
+      "https://cosp.ntus.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "校務行政系統",
+    "url": "https://webap.nptu.edu.tw/Web/Secure/default.aspx?&SIndex=7",
+    "schools": [
+      "0052"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立屏東大學",
+    "category": [
+      "course_query",
+      "enrollment"
+    ],
+    "features": "免登入可依學期查教室、班級及教師課表；網路選課由學生登入。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "含 SIndex=7 的入口實測可直接進入 115-1 公開課表，不帶參數則進入校務登入頁；未確認公開課綱。 webap.nptu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://webap.nptu.edu.tw/Web/Secure/default.aspx?&SIndex=7（系統入口或官方指引）",
+      "https://cud.nptu.edu.tw/?Lang=zh-tw（課務組課程／課表指引）",
+      "https://webap.nptu.edu.tw/robots.txt（本次查核）",
+      "https://webap.nptu.edu.tw/Web/Secure/default.aspx（不帶參數的校務行政登入入口）"
+    ]
+  },
+  {
+    "name": "課程地圖（各系所）",
+    "url": "https://cud.nptu.edu.tw/p/412-1065-5695.php?Lang=zh-tw",
+    "schools": [
+      "0052"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立屏東大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "屏大課務組公開彙整各院系課程地圖。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "另有課程規劃及課程學習手冊。 cud.nptu.edu.tw：robots.txt 的 User-agent: * 規則包含 Allow: /。",
+    "evidence": [
+      "https://cud.nptu.edu.tw/p/412-1065-5695.php?Lang=zh-tw（系統入口或官方指引）",
+      "https://cud.nptu.edu.tw/p/412-1065-6417.php?Lang=zh-tw（各系所課程規劃在另一頁）",
+      "https://cud.nptu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "國立屏東大學 ee-Class 數位學習平台",
+    "url": "https://eeclass.nptu.edu.tw/",
+    "schools": [
+      "0052"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "國立屏東大學",
+    "category": [
+      "lms"
+    ],
+    "features": "供課堂教材、作業及其他教學活動使用的 ee-Class 平台。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "eeclass.nptu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /media/s/、Disallow: /km/s/、Disallow: /*.mp4$。",
+    "evidence": [
+      "https://eeclass.nptu.edu.tw/（系統入口或官方指引）",
+      "https://eeclass.nptu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程快速查詢",
+    "url": "http://shcourse.utaipei.edu.tw/utaipei/ag_pro/ag304_index.jsp",
+    "schools": [
+      "3002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北市立大學",
+    "category": [
+      "course_query",
+      "syllabus"
+    ],
+    "features": "臺北市立大學校首頁列出的公開查課入口。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "shcourse.utaipei.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /。 shcourse.utaipei.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /。",
+    "evidence": [
+      "http://shcourse.utaipei.edu.tw/utaipei/ag_pro/ag304_index.jsp（系統入口或官方指引）",
+      "https://www.utaipei.edu.tw/（校首頁學生專區具名直連）",
+      "http://shcourse.utaipei.edu.tw/robots.txt（本次查核）",
+      "https://shcourse.utaipei.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "校務系統",
+    "url": "https://my.utaipei.edu.tw/utaipei/index_sky.html",
+    "schools": [
+      "3002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北市立大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "北市大學生登入後由校務系統選課。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "my.utaipei.edu.tw：robots.txt 回傳 HTML，未取得可辨識的規則。",
+    "evidence": [
+      "https://my.utaipei.edu.tw/utaipei/index_sky.html（系統入口或官方指引）",
+      "https://curr.utaipei.edu.tw/p/412-1032-40.php?Lang=zh-tw（課務組選課系統教學）",
+      "https://www.utaipei.edu.tw/p/407-1000-210-1.php?Lang=zh-tw（在校生校務系統連結）",
+      "https://my.utaipei.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "臺北市立大學 ee-class 易課平台",
+    "url": "https://eeclass.utaipei.edu.tw/",
+    "schools": [
+      "3002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北市立大學",
+    "category": [
+      "lms"
+    ],
+    "features": "學期課堂的數位教材與互動平台。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "eeclass.utaipei.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /media/s/、Disallow: /km/s/、Disallow: /*.mp4$。",
+    "evidence": [
+      "https://eeclass.utaipei.edu.tw/（系統入口或官方指引）",
+      "https://www.utaipei.edu.tw/（校首頁平台連結）",
+      "https://eeclass.utaipei.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "自主學習平台 tms+",
+    "url": "https://tms.utaipei.edu.tw/",
+    "schools": [
+      "3002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北市立大學",
+    "category": [
+      "lms"
+    ],
+    "features": "北市大另設 tms+ 自主學習平台。",
+    "loginRequired": "partial",
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "與正規課堂使用的 ee-class 分列。 tms.utaipei.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://tms.utaipei.edu.tw/（系統入口或官方指引）",
+      "https://www.utaipei.edu.tw/（校首頁同時列出 tms+ 與 ee-class）",
+      "https://tms.utaipei.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "師資培育課程地圖",
+    "url": "https://cte.utaipei.edu.tw/p/412-1013-6832.php?Lang=zh-tw",
+    "schools": [
+      "3002"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "臺北市立大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "臺北市立大學師培中心公開的修課架構。",
+    "loginRequired": false,
+    "status": "unknown",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "僅師資培育範圍，非全校課程地圖。 cte.utaipei.edu.tw：robots.txt 對 User-agent: * 列出 Allow: /。",
+    "evidence": [
+      "https://cte.utaipei.edu.tw/p/412-1013-6832.php?Lang=zh-tw（實測系統入口或官方指引）",
+      "https://cte.utaipei.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "東海大學課程資訊網",
+    "url": "https://course.thu.edu.tw/home",
+    "schools": [
+      "1001"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "東海大學",
+    "category": [
+      "course_query",
+      "syllabus",
+      "schedule_planner"
+    ],
+    "features": "公開按開課單位或類別找課程、大綱，並可模擬課表。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "首頁顯示 115-1，另有英語授課及 TAICA 等查詢。 course.thu.edu.tw：robots.txt 回傳 HTML，未取得可辨識的規則。",
+    "evidence": [
+      "https://course.thu.edu.tw/home（系統入口或官方指引）",
+      "https://course.thu.edu.tw/view-dept/115/1/（115-1 開課單位一覽）",
+      "https://course.thu.edu.tw/simulate（模擬課表）",
+      "https://course.thu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "東海大學師生資訊系統",
+    "url": "https://fsis.thu.edu.tw/wwwteac/pubsub/fsis.php",
+    "schools": [
+      "1001"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "東海大學",
+    "category": [
+      "enrollment"
+    ],
+    "features": "學生透過師生資訊系統登入後辦理網路選課等教務作業。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "學生登入連至 student.next.thu.edu.tw 的校方登入流程。 fsis.thu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。",
+    "evidence": [
+      "https://fsis.thu.edu.tw/wwwteac/pubsub/fsis.php（系統入口或官方指引）",
+      "https://fsis.thu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "iLearn 數位平台",
+    "url": "https://ilearn.thu.edu.tw/",
+    "schools": [
+      "1001"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "東海大學",
+    "category": [
+      "lms"
+    ],
+    "features": "東海大學使用 Moodle 的 iLearn 數位教學平台。",
+    "loginRequired": true,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "ilearn.thu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /、Allow: /$。",
+    "evidence": [
+      "https://ilearn.thu.edu.tw/（系統入口或官方指引）",
+      "https://ilearn.thu.edu.tw/robots.txt（本次查核）"
+    ]
+  },
+  {
+    "name": "課程地圖（電機工程學系）",
+    "url": "https://ee.thu.edu.tw/front/Curriculum_and_/University/Course_map/pages.php?ID=dGh1X2VlJkNvdXJzZV9tYXA=",
+    "schools": [
+      "1001"
+    ],
+    "scope": "school",
+    "operator": "official",
+    "operatorName": "東海大學",
+    "category": [
+      "course_map"
+    ],
+    "features": "東海電機系公開課程地圖及下載檔。",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "系所級示例，非全校地圖；含 115 學年度地圖。 ee.thu.edu.tw：robots.txt 回傳 HTTP 404。",
+    "evidence": [
+      "https://ee.thu.edu.tw/front/Curriculum_and_/University/Course_map/pages.php?ID=dGh1X2VlJkNvdXJzZV9tYXA=（實測系統入口或官方指引）",
+      "https://ee.thu.edu.tw/robots.txt（本次查核）"
+    ]
+  }
+]
