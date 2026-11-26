@@ -80,7 +80,7 @@
     return site.schools.map((code) => institutionsByCode.get(code)?.name ?? code).join('、');
   }
 
-  const thirdColumns: TableColumn<Site>[] = [
+  const allThirdColumns: TableColumn<Site>[] = [
     { id: 'site', label: '網站', value: (site) => site.name, sortable: true, width: '15rem' },
     { id: 'schools', label: '學校', value: schoolsOf, sortable: true, width: '11rem' },
     { id: 'category', label: '功能', value: (site) => site.category.map((c) => categoryLabels[c]).join('、') },
@@ -89,6 +89,9 @@
     { id: 'status', label: '狀態', value: (site) => statusLabels[site.status], sortable: true, width: '5.5rem' },
     { id: 'policy', label: '收錄策略', value: (site) => indexPolicyLabels[indexPolicy(site)], width: '6rem' }
   ];
+  /** When every listed site has the same policy, the column says nothing; the section dek states it once. */
+  let onePolicy = $derived(new Set(data.thirdParty.map((site) => indexPolicy(site))).size <= 1);
+  let thirdColumns = $derived(onePolicy ? allThirdColumns.filter((column) => column.id !== 'policy') : allThirdColumns);
 
   let totalBySystem = $derived(data.bySystem.map((row) => row.active + row.inactive + row.unknown));
   const pct = (part: number, total: number) => (total ? (part / total) * 100 : 0);
@@ -110,7 +113,7 @@
   />
 </svelte:head>
 
-<div class="landscape" class:hydrated>
+<div class="landscape" class:hydrated id="top">
   <header class="page-head">
     <div class="title-row">
       <h1>臺灣大專校院課程網站總覽</h1>
@@ -125,6 +128,26 @@
       · 狀態為當日探測結果
       {#if !data.crawl}· <span class="warn">各校收錄狀態暫時無法取得</span>{/if}
     </p>
+    <!-- Two audiences, two shortcuts: students look up their own school, maintainers scan the tables. -->
+    <nav class="routes" aria-label="快速前往">
+      <!-- With JavaScript the select jumps to the school's anchor; without it, the form filters by the name. -->
+      <form method="GET" action="/landscape" class="jump" onsubmit={(event) => { if (hydrated) event.preventDefault(); }}>
+        <label class="jump-field">
+          <span>找我的學校</span>
+          <select name="q" bind:this={schoolJump} onchange={jumpToSchool}>
+            <option value="">選擇學校，直接跳到該校網站…</option>
+            {#each data.schools as school (school.code)}<option value={hydrated ? school.id : school.name}>{school.name}</option>{/each}
+          </select>
+        </label>
+        {#if !hydrated}<button type="submit" class="apply small">前往</button>{/if}
+      </form>
+      <span class="route-links">
+        <a href="#third-party">第三方網站</a>
+        {#if data.cross.length}<a href="#cross">跨校平台</a>{/if}
+        <a href="#schools-title">各校清單</a>
+        <a href="/schools">UniCourse 收錄狀態</a>
+      </span>
+    </nav>
   </header>
 
   <div class="toolbar">
@@ -164,13 +187,14 @@
           </label>
         </div>
       </details>
-      <button type="submit" class="apply" aria-busy={updating || undefined}>套用</button>
+      <!-- Without JavaScript 套用 submits; with it, every change applies itself, so the button goes away. -->
+      {#if !hydrated}<button type="submit" class="apply">套用</button>{/if}
       {#if filtered}<a class="clear" href="/landscape">清除</a>{/if}
     </form>
     <p class="result" role="status" aria-live="polite">
       {#if updating}<span class="dot" aria-hidden="true"></span>更新中…
-      {:else if filtered}符合 <strong class="ui-tabular">{number.format(data.shownSites)}</strong> / {number.format(data.totalSites)} 個系統{#if hydrated} · 改變條件會自動套用{/if}
-      {:else}已盤點 {number.format(data.totalSites)} 個系統{#if hydrated} · 改變條件會自動套用{/if}{/if}
+      {:else if filtered}符合 <strong class="ui-tabular">{number.format(data.shownSites)}</strong> / {number.format(data.totalSites)} 個系統{#if hydrated} · 條件已即時套用{/if}
+      {:else}已盤點 {number.format(data.totalSites)} 個系統{#if hydrated} · 輸入或選擇條件會即時篩選{/if}{/if}
     </p>
     {#if filtered}
       <div class="chips" role="group" aria-label="已套用的篩選">
@@ -214,12 +238,12 @@
                   aria-label={`${row.label}：運作中 ${row.active}、停止 ${row.inactive}、不明 ${row.unknown}，共 ${total} 個`}>
                   <span class="seg active" style:inline-size={`${pct(row.active, total)}%`}>{#if pct(row.active, total) >= 14}{pctLabel(row.active, total)}{/if}</span>
                   <span class="seg inactive" style:inline-size={`${pct(row.inactive, total)}%`}>{#if pct(row.inactive, total) >= 14}{pctLabel(row.inactive, total)}{/if}</span>
-                  <span class="seg unknown" style:inline-size={`${pct(row.unknown, total)}%`}>{#if pct(row.unknown, total) >= 14}{pctLabel(row.unknown, total)}{/if}</span>
+                  <span class="seg unknown" style:inline-size={`${pct(row.unknown, total)}%`}></span>
                 </span>
                 <span class="stack-values ui-tabular" aria-hidden="true">
-                  <span class="v active"><i></i>{row.active}</span>
-                  <span class="v inactive"><i></i>{row.inactive}</span>
-                  <span class="v unknown"><i></i>{row.unknown}</span>
+                  <span class="v active"><i></i>運作 {row.active}</span>
+                  <span class="v inactive"><i></i>停止 {row.inactive}</span>
+                  <span class="v unknown"><i></i>不明 {row.unknown}</span>
                 </span>
               </li>
             {/each}
@@ -237,10 +261,14 @@
     </div>
 
     <section aria-labelledby="third-party" class="third">
-      <SectionHeader id="third-party" level={2} title="第三方查課網站"
-        description="學生、社群與公司做的評價、排課、成績分布與彙整服務。「收錄策略」是 UniCourse 對該站內容的處理方式：只提供連結，或依站方 robots 允許索引不超過 120 字的摘要。">
-        {#snippet actions()}<a class="action" href="/terms#reviews">收錄原則</a>{/snippet}
-      </SectionHeader>
+      <div class="third-head">
+        <SectionHeader id="third-party" level={2} title="第三方查課網站"
+          description={onePolicy
+            ? `學生、社群與公司做的評價、排課、成績分布與彙整服務。以下網站 UniCourse 都${indexPolicyLabels[indexPolicy(data.thirdParty[0] ?? { url: '' })]}，不複製內容。`
+            : '學生、社群與公司做的評價、排課、成績分布與彙整服務。「收錄策略」是 UniCourse 對該站內容的處理方式：只提供連結，或依站方 robots 允許索引不超過 120 字的摘要。'} />
+        <a class="action" href="/terms#reviews">收錄原則</a>
+      </div>
+      <div class="third-table">
       <DataTable caption={thirdRows.length < data.thirdParty.length ? `第三方查課網站，共 ${number.format(data.thirdParty.length)} 個，先列出運作中的前 ${THIRD_PREVIEW} 個` : `第三方查課網站，共 ${number.format(data.thirdParty.length)} 個`} columns={thirdColumns}
         rows={thirdRows} rowKey={(site) => site.url} rowHeaderColumn="site" stickyColumn="site"
         rowHref={(site) => site.url} clientSort minWidth="58rem" maxHeight="none">
@@ -263,6 +291,19 @@
           <span>這組篩選沒有第三方網站。</span>
         {/snippet}
       </DataTable>
+      </div>
+      <!-- Phones: one short row per site with the two things a student checks first (status, login). -->
+      <ul class="third-rows" aria-label="第三方查課網站">
+        {#each thirdRows as site (site.url)}
+          <li>
+            <a class="third-name" href={site.url} rel="noopener external">{site.name}<span aria-hidden="true"> ↗</span></a>
+            <Badge tone={siteTones[site.status]} label={statusLabels[site.status]} dot />
+            <span class="third-meta">{schoolsOf(site)} · {loginLabel(site.loginRequired)} · {site.category.map((c) => categoryLabels[c]).join('、')}</span>
+          </li>
+        {:else}
+          <li class="third-empty">這組篩選沒有第三方網站。</li>
+        {/each}
+      </ul>
       {#if thirdRows.length < data.thirdParty.length}
         <p class="table-foot">
           {#if hydrated}
@@ -288,17 +329,7 @@
       <SectionHeader id="schools-title" level={2} title="各校"
         description={`依教育部學校代碼排序，${filtered ? '只列出符合篩選的學校' : '沒有盤點到網站的學校也列出'}；收錄狀態與「各校收錄狀態」頁一致。`}>
         {#snippet actions()}
-          <!-- With JavaScript the select jumps to the school's anchor; without it, the form filters by the name. -->
-          <form method="GET" action="/landscape" class="jump" onsubmit={(event) => { if (hydrated) event.preventDefault(); }}>
-            <label class="jump-field">
-              <span>找我的學校</span>
-              <select name="q" bind:this={schoolJump} onchange={jumpToSchool}>
-                <option value="">選擇學校…</option>
-                {#each data.schools as school (school.code)}<option value={hydrated ? school.id : school.name}>{school.name}</option>{/each}
-              </select>
-            </label>
-            {#if !hydrated}<button type="submit" class="apply small">前往</button>{/if}
-          </form>
+          <a class="action" href="#top">↑ 回頁首找學校</a>
           <a class="action" href="/schools">各校收錄狀態</a>
         {/snippet}
       </SectionHeader>
@@ -375,8 +406,7 @@
     z-index: 5;
     display: grid;
     gap: var(--space-2);
-    margin-inline: calc(-1 * var(--space-2));
-    padding: var(--space-2) var(--space-2) var(--space-3);
+    padding: var(--space-2) 0 var(--space-3);
     border-block-end: 1px solid var(--line);
     background: var(--bg);
   }
@@ -437,7 +467,6 @@
     touch-action: manipulation;
   }
   .apply { color: var(--on-brand); background: var(--brand); cursor: pointer; }
-  .apply[aria-busy='true'] { opacity: 0.6; cursor: progress; }
   .apply.small { min-block-size: 2.25rem; }
   .clear:hover { background: var(--brand-wash); }
   :is(.apply, .clear, .action):focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
@@ -447,10 +476,19 @@
   .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
   /* Charts: stacked status bars per system and a ranked bar list. */
-  .viz { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--space-3); }
+  .viz { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--space-3); align-items: start; }
+  .routes { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: center; margin-block-start: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .route-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); font-size: var(--t-base); font-weight: 600; }
+  .route-links a { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); text-underline-offset: 0.15em; }
+  .routes .jump-field { min-block-size: var(--target-min); border-color: var(--brand); }
+  .routes .jump-field span { color: var(--brand-ink); font-size: var(--t-base); }
+  .routes .jump-field select { min-block-size: var(--target-min); max-inline-size: 20rem; }
+  .third-head { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: end; justify-content: space-between; }
+  .third-head > :global(:first-child) { flex: 1 1 32rem; min-inline-size: 0; }
+  .third-rows { display: none; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
   .panel { display: grid; gap: var(--space-3); align-content: start; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); min-inline-size: 0; }
   .stack { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; font-size: var(--t-base); }
-  .stack li { display: grid; grid-template-columns: 7.5rem 1fr 9.5rem; gap: var(--space-2); align-items: center; }
+  .stack li { display: grid; grid-template-columns: 7.5rem 1fr 13rem; gap: var(--space-2); align-items: center; }
   .stack-label { color: var(--ink-2); font-size: var(--t-sm); }
   .stack-label small { color: var(--muted); font-size: var(--t-xs); }
   .track { display: flex; block-size: 18px; overflow: hidden; border-radius: 3px; background: var(--chip); }
@@ -459,7 +497,7 @@
   .seg.inactive, .legend i.inactive, .v.inactive i { background: var(--down); }
   /* Unknown is a pale hatched fill, so it neither dominates nor competes with the red. */
   .seg.unknown, .legend i.unknown, .v.unknown i { color: var(--ink-2); background: repeating-linear-gradient(135deg, var(--axis) 0 3px, var(--chip) 3px 7px); }
-  .stack-values { display: flex; gap: var(--space-2); justify-content: flex-end; color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
+  .stack-values { display: flex; gap: var(--space-3); justify-content: flex-end; color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
   .v { display: inline-flex; align-items: center; gap: 4px; }
   .v i { display: inline-block; inline-size: 8px; block-size: 8px; border-radius: 2px; }
   .v.active { color: var(--ink); font-weight: 600; }
@@ -533,9 +571,17 @@
     .search { flex: 1 1 7rem; }
     .more summary, .apply { flex: none; }
     .fields { flex-basis: 100%; padding-block-start: var(--space-2); }
-    /* Table cells ignore max-width, so the sticky first column is pinned to the family's 9.5 rem here. */
-    .third :global(th.sticky), .third :global(td.sticky) { inline-size: 9.5rem !important; }
-    .third .site-cell small { display: none; }
+    /* The wide table becomes short rows: name + status, then schools · login · functions. */
+    .third-table { display: none; }
+    .third-rows { display: block; }
+    .third-rows li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); }
+    .third-rows li:last-child { border-block-end: 0; }
+    .third-name { display: inline-flex; align-items: center; min-block-size: 2.25rem; color: var(--brand-ink); font-weight: 600; overflow-wrap: anywhere; }
+    .third-rows .third-empty { display: block; color: var(--muted); }
+    .third-meta { grid-column: 1 / -1; color: var(--ink-2); font-size: var(--t-sm); }
+    .routes { padding: var(--space-2) var(--space-3); }
+    .routes .jump { flex: 1 1 100%; }
+    .stack-values { justify-content: flex-start; font-size: var(--t-base); }
     .fields > :global(.field) { flex: 1 1 45%; }
     .stack li { grid-template-columns: minmax(0, 1fr) auto; }
     .stack li .track { grid-column: 1 / -1; }

@@ -33,15 +33,16 @@
                   {schoolNames[post.school] ?? post.school}{#if post.courseCode}&nbsp;<span class="mono">{post.courseCode}</span>{/if}
                 </a>
               {/if}
-              {#if showAuthor || post.tags.length}
-                <span class="by">
-                  {#if showAuthor}<a class="over author" href={profileHref(post.author.username)}>{authorName(post.author)}</a>{/if}
-                  {#each post.tags as tag (tag)}<a class="over tag" href={forumHref({ tag })}>#{tag}</a>{/each}
-                </span>
-              {/if}
             </p>
             <h3 id="{id}-{post.id}"><a class="title" href={postHref(post.id)}>{post.title}</a></h3>
             {#if post.excerpt.trim()}<p class="excerpt">{oneLine(post.excerpt)}</p>{/if}
+            {#if showAuthor || post.tags.length}
+              <!-- Author and tags come after the summary, so the category and course lead the row. -->
+              <p class="by">
+                {#if showAuthor}<a class="over author" href={profileHref(post.author.username)}>{authorName(post.author)}</a>{/if}
+                {#each post.tags as tag (tag)}<a class="over tag" href={forumHref({ tag })}>#{tag}</a>{/each}
+              </p>
+            {/if}
           </div>
           <dl class="stats">
             <div class="replies"><dt>回覆</dt><dd class="num">{post.replyCount}</dd></div>
@@ -92,11 +93,12 @@
   }
   .kicker a { color: var(--ink-2); text-decoration: none; }
   .kicker a:hover { color: var(--brand-ink); text-decoration: underline; }
-  /* Author and tags form one group after a separator dot, so the context link stands on its own. */
-  .by { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; }
-  .by::before { content: '·'; color: var(--axis); }
-  .kicker .author::before { content: '@'; color: var(--muted); }
-  .kicker .tag { color: var(--muted); }
+  /* Author and tags share one muted line under the summary; spacing, not bullet characters, separates them. */
+  .by { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; margin-block-start: 0.125rem !important; font-size: var(--t-sm); line-height: 1.5; }
+  .by a { color: var(--muted); text-decoration: none; }
+  .by a:hover { color: var(--brand-ink); text-decoration: underline; }
+  .by .author { color: var(--ink-2); }
+  .by .author::before { content: '@'; color: var(--muted); }
   /* Links above the stretched title link stay clickable on their own. */
   .over { position: relative; z-index: 1; }
   h3 { margin-block: 0.125rem 0 !important; font-size: var(--t-md) !important; font-weight: 600 !important; letter-spacing: 0 !important; line-height: 1.45 !important; }

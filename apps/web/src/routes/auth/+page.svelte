@@ -2,7 +2,7 @@
   import { enhance } from '$app/forms';
   import { onMount } from 'svelte';
   import '$lib/community-ui.css';
-  import { ISSUES_URL } from '$lib/institutions';
+  import { PRIVATE_REPORT_URL } from '$lib/legal-contact';
   import type { SubmitFunction } from '@sveltejs/kit';
   import type { PageProps } from './$types';
 
@@ -113,7 +113,7 @@
           </div>
         </div>
         <button class="cm-btn block" aria-busy={submitting} disabled={submitting}>{submitting ? '登入中…' : '登入'}</button>
-        <p class="recover">忘記密碼？目前無法自行重設，請到 <a href={ISSUES_URL} rel="noopener external">GitHub issues</a> 留下帳號名稱（不要附密碼），由維護者協助。</p>
+        <p class="recover">忘記密碼？目前還不能自行重設。請用<a href={PRIVATE_REPORT_URL} rel="noopener external">私密回報</a>告訴維護者你的帳號名稱（只有維護者看得到；不要附密碼），我們會協助重設。</p>
       </form>
     {:else}
       <form method="POST" action="?/register" class="cm-form" use:enhance={submit} novalidate={hydrated || undefined}>
@@ -195,7 +195,9 @@
     text-decoration: none;
   }
   .tabs a:hover { color: var(--ink); }
-  .tabs a[aria-current='page'] { color: var(--brand-ink); background: var(--panel-raised); box-shadow: 0 1px 2px rgb(0 0 0 / 0.12), inset 0 0 0 1px var(--axis); }
+  /* The current tab is filled with the brand wash and underlined in brand, so it reads in both themes. */
+  .tabs a[aria-current='page'] { color: var(--brand-ink); background: var(--brand-wash); box-shadow: inset 0 -3px 0 var(--brand), inset 0 0 0 1px color-mix(in srgb, var(--brand) 35%, transparent); }
+  .tabs a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
 
   /* The toggle lives inside the field: a 44 px target that does not stretch the label row. */
   .password { position: relative; display: flex; }
@@ -235,6 +237,7 @@
   .cm-form .cm-btn { margin-block-start: var(--space-1); }
   .terms, .recover { color: var(--muted); font-size: var(--t-sm); line-height: 1.5; }
   .recover { margin-block-start: var(--space-1) !important; }
+  .recover a { font-weight: 600; }
   .after {
     margin-block-start: var(--space-4) !important;
     padding-block-start: var(--space-3);
@@ -248,6 +251,5 @@
     .auth { padding-block: 0; }
     /* On phones the card is the page: no frame drawn inside the page gutter. */
     .card { padding: 0; border: 0; background: transparent; }
-    .logo { display: none; }
   }
 </style>

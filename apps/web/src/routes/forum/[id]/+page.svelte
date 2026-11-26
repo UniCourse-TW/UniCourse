@@ -68,6 +68,8 @@
       ? { title: form.title ?? item.title, content: form.content ?? item.content }
       : { title: item.title, content: item.content };
   const edited = (item: Item) => item.updatedAt !== item.createdAt;
+  /** Blank lines (any number of them) separate paragraphs; single line breaks stay inside one. */
+  const paragraphs = (text: string) => text.trim().split(/\n[ \t]*\n\s*/);
 </script>
 
 <svelte:head>
@@ -147,8 +149,8 @@
       <a href={forumHref({ school: post.school })}>{schoolName}</a>
       {#if post.courseCode}
         <span class="sep" aria-hidden="true">/</span>
-        {#if course?.offering}
-          <a class="mono" href="/courses/{course.offering.id}" title="{course.offering.title} 課程頁">{post.courseCode}</a>
+        {#if course?.summary}
+          <a class="mono" href="/courses/{course.summary.id}" title="{course.summary.title} 課程頁">{post.courseCode}</a>
         {:else}
           <a class="mono" href={forumHref({ school: post.school, courseCode: post.courseCode })}>{post.courseCode}</a>
         {/if}
@@ -170,42 +172,55 @@
         {#if edited(post)}<span class="sep">·</span><span title="最後編輯 {dateTime(post.updatedAt)}">已編輯</span>{/if}
       </p>
       <!-- User text is plain text: escaped by Svelte, line breaks preserved. -->
-      <div class="content">{post.content}</div>
+      <div class="content">{#each paragraphs(post.content) as paragraph, index (index)}<p>{paragraph}</p>{/each}</div>
       {@render controls(post, '文章')}
     </article>
 
     {#if course}
       <aside class="course" aria-labelledby="course-card-title">
         <h2 id="course-card-title" class="eyebrow">這門課</h2>
-        {#if course.offering}
-          {@const offering = course.offering}
+        {#if course.summary}
+          {@const summary = course.summary}
           <p class="course-title">
-            <a href="/courses/{offering.id}">{offering.title}</a>
-            <span class="mono code">{offering.courseCode}</span>
-            {#if offering.isDemo}<Badge label="示範" tone="demo" />{/if}
+            <a href="/courses/{summary.id}">{summary.title}</a>
+            <span class="mono code">{summary.courseCode}</span>
+            {#if summary.isDemo}<Badge label="示範" tone="demo" />{/if}
           </p>
-          <p class="sub">{[offering.schoolName, offering.department, offering.instructors.join('、')].filter(Boolean).join(' · ')}</p>
+          <p class="sub">{[summary.schoolName, summary.department].filter(Boolean).join(' · ')}</p>
           <!-- Phones get the key numbers on one line; the grid below is for wider screens. -->
-          <p class="brief num" aria-hidden="true">
-            {offering.term}<span class="sep">·</span>{offering.enrolled != null ? fmt.format(offering.enrolled) : '—'} / {offering.capacity != null ? fmt.format(offering.capacity) : '—'}
-            {#if course.rating?.average != null}<span class="sep">·</span><span class="star">★</span> {course.rating.average.toFixed(1)}{/if}
+          <p class="brief num">
+            收錄 {summary.terms} 個學期{#if summary.enrolledTotal != null}<span class="sep">·</span>歷年 {fmt.format(summary.enrolledTotal)} 人次{/if}
+            <span class="sep">·</span>{#if course.rating && course.rating.count > 0}<span class="star" aria-hidden="true">★</span> {course.rating.average?.toFixed(1)}（{course.rating.count} 則）{:else}尚無評價{/if}
           </p>
           <dl class="facts">
-            <div><dt>最新學期</dt><dd class="num">{offering.term}</dd></div>
             <div>
-              <dt>修課／上限</dt>
-              <dd class="num">{offering.enrolled != null ? fmt.format(offering.enrolled) : '—'} / {offering.capacity != null ? fmt.format(offering.capacity) : '—'}</dd>
+              <dt>收錄學期</dt>
+              <dd class="num">{summary.terms} 個學期{#if summary.terms > 1}<small>{summary.firstTerm}–{summary.latestTerm}</small>{/if}</dd>
             </div>
             <div>
-              <dt>評價</dt>
+              <dt>歷年修課</dt>
+              <dd class="num">{#if summary.enrolledTotal != null}{fmt.format(summary.enrolledTotal)} <small>人次</small>{:else}<span title="校方未公布修課人數">—</span>{/if}</dd>
+            </div>
+            <div>
+              <dt>{summary.latestTerm} 修課／名額</dt>
               <dd class="num">
-                {#if course.rating?.average != null}<span class="star" aria-hidden="true">★</span> {course.rating.average.toFixed(1)}
-                  <small>（{course.rating.count} 則）</small>{:else}—{/if}
+                <span class="nowrap">{#if summary.latestEnrolled != null}{fmt.format(summary.latestEnrolled)}{:else}<span title="校方未公布修課人數">—</span>{/if}
+                / {#if summary.latestCapacity != null}{fmt.format(summary.latestCapacity)}{:else}<span title="校方未公布名額">—</span>{/if}</span>
+                <small>{summary.latestSections > 1 ? `${summary.latestSections} 個班次合計` : '1 個班次'}</small>
               </dd>
             </div>
-            <div><dt>已收錄</dt><dd class="num">{course.terms} 個學期</dd></div>
+            <div>
+              <dt>同學評價</dt>
+              <dd class="num">
+                {#if course.rating && course.rating.count > 0}<span class="star" aria-hidden="true">★</span> {course.rating.average?.toFixed(1)}
+                  <small>{course.rating.count < 3 ? `目前僅 ${course.rating.count} 則` : `${course.rating.count} 則`}</small>{:else}尚無評價{/if}
+              </dd>
+            </div>
           </dl>
-          <a class="cm-btn secondary block" href="/courses/{offering.id}">查看課程 <span aria-hidden="true">→</span></a>
+          {#if summary.instructors.length}
+            <p class="sub teachers">{summary.latestTerm} 授課：{summary.instructors.join('、')}{#if summary.instructorCount > summary.instructors.length}<span class="nowrap"> 等 {summary.instructorCount} 位</span>{/if}</p>
+          {/if}
+          <a class="cm-btn secondary block" href="/courses/{summary.id}">查看課程 <span aria-hidden="true">→</span></a>
         {:else}
           <p class="sub">
             {schoolName} <span class="mono">{post.courseCode}</span> 不在目前收錄的課程中。
@@ -213,6 +228,9 @@
           </p>
         {/if}
         <!-- Open on desktop by CSS; phones collapse the list so the first reply stays in reach. -->
+        {#if course.otherCount === 0}
+          <p class="sub none others-empty">這門課還沒有其他討論。<a href={forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}>到這門課的討論區</a></p>
+        {:else}
         <details class="others-box">
           <summary class="eyebrow others-title">其他討論（{course.otherCount}）</summary>
           {#if course.others.length}
@@ -227,10 +245,9 @@
             {#if course.otherCount > course.others.length}
               <a class="all" href={forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}>看全部 {course.otherCount} 篇 →</a>
             {/if}
-          {:else}
-            <p class="sub none">這門課還沒有其他討論。<a href={forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}>到這門課的討論區</a></p>
           {/if}
         </details>
+        {/if}
       </aside>
     {/if}
 
@@ -249,7 +266,7 @@
                   <span class="sep">·</span><time class="num" datetime={reply.createdAt}>{shortDateTime(reply.createdAt)}</time>
                   {#if edited(reply)}<span class="sep">·</span>已編輯{/if}
                 </p>
-                <div class="content">{reply.content}</div>
+                <div class="content">{#each paragraphs(reply.content) as paragraph, index (index)}<p>{paragraph}</p>{/each}</div>
                 {@render controls(reply, '回覆')}
               </article>
             </li>
@@ -313,9 +330,10 @@
     margin-block-start: var(--space-4);
     font-size: var(--t-md);
     line-height: var(--leading-prose);
-    white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
+  .content p { margin: 0; white-space: pre-wrap; }
+  .content p + p { margin-block-start: 0.75em; }
 
   .controls { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-1); align-items: center; margin-block-start: var(--space-4); }
   .manage-sep { inline-size: 1px; block-size: 1.25rem; margin-inline: var(--space-2); background: var(--line); }
@@ -400,11 +418,14 @@
   .others-box > summary::-webkit-details-marker { display: none; }
   .others-box::details-content { display: block; content-visibility: visible; }
   .none a { margin-inline-start: var(--space-1); font-weight: 600; }
-  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin: var(--space-3) 0; }
+  .facts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); margin: var(--space-3) 0 var(--space-2); }
+  .teachers { margin-block-end: var(--space-3) !important; }
+  .nowrap { white-space: nowrap; }
+  .others-empty { margin-block-start: var(--space-4) !important; padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
   .facts div { padding: var(--space-2); border-radius: var(--radius-control); background: var(--panel-raised); border: 1px solid var(--line); }
   dt { color: var(--muted); font-size: var(--t-xs); }
   dd { margin: 0; font-weight: 600; }
-  dd small { color: var(--muted); font-weight: 400; font-size: var(--t-xs); }
+  dd small { display: block; color: var(--muted); font-weight: 400; font-size: var(--t-xs); }
   .star { color: var(--warn); }
   .others { display: grid; gap: var(--space-2); margin: var(--space-2) 0 0; padding: 0; list-style: none; }
   .others a { display: block; font-weight: 600; line-height: 1.45; text-decoration: none; }
@@ -433,7 +454,7 @@
     /* Phone card: title line, one line of numbers, a button; the rest folds away. */
     .course { padding: var(--space-3) var(--space-4); }
     .brief { display: block; margin-block-start: var(--space-2) !important; color: var(--ink-2); font-size: var(--t-base); font-weight: 600; }
-    .facts { display: none; }
+    .facts, .teachers { display: none; }
     .course .cm-btn.block { inline-size: auto; min-inline-size: 10rem; margin-block-start: var(--space-2); }
     .others-box { margin-block-start: var(--space-3); padding-block-start: var(--space-2); }
     .others-box > summary { display: flex; align-items: center; justify-content: space-between; min-block-size: var(--target-min); cursor: pointer; pointer-events: auto; }

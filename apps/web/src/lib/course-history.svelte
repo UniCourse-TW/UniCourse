@@ -49,11 +49,18 @@
     return `/?${new URLSearchParams({ q: courseCode, school, term })}`;
   }
 
-  function yearLabel(term: string, index: number) {
-    const [year, semester] = term.split('-');
-    if (index === 0 || semester === '1') return year;
-    return '';
-  }
+  /** Consecutive chart slots of one academic year, so each year label is centred under its terms. */
+  let yearGroups = $derived.by(() => {
+    const groups: { year: string; span: number }[] = [];
+    for (const slot of slots) {
+      const year = slot.term.split('-')[0];
+      const last = groups.at(-1);
+      if (last?.year === year) last.span += 1;
+      else groups.push({ year, span: 1 });
+    }
+    return groups;
+  });
+  let multiSection = $derived(rows.some((row) => row.offeringCount > 1));
 </script>
 
 <div class="history" style:--max-rows={initialRows}>
@@ -65,7 +72,7 @@
             <strong class="ui-mono">{focus.term}</strong>
             <span>修課 <b class="ui-tabular">{displayValue(focus.enrolled)}</b>{#if focus.enrolled != null} 人{/if}</span>
             <span>名額 <b class="ui-tabular">{displayValue(focus.capacity)}</b></span>
-            {#if focus.current}<span class="tag">本頁</span>{/if}
+            {#if focus.current}<span class="tag">本班所在學期</span>{/if}
           {/if}
         </span>
         <span class="legend" aria-hidden="true">
@@ -103,14 +110,13 @@
             {/each}
           </div>
           <div class="x ui-tabular" style:--slots={slots.length} class:dense={years > 6}>
-            {#each slots as slot, index (slot.term)}
-              {@const label = yearLabel(slot.term, index)}
-              <span class:odd={label !== '' && Number(label) % 2 === 1}>{label}</span>
+            {#each yearGroups as group, index (index)}
+              <span class="year" class:odd={Number(group.year) % 2 === 1} style:grid-column={`span ${group.span}`}>{group.year}</span>
             {/each}
           </div>
         </div>
       </div>
-      <p class="note">x 軸為學年度，每格一個學期{#if gaps}；空格是該學期沒有開課紀錄{/if}{#if hasUnpublished}；「·」表示有開課但未公布人數與名額{/if}。多班次的學期為各班加總。</p>
+      <p class="note">x 軸為學年度，每格一個學期（上、下學期依序排列）{#if gaps}；空格是該學期沒有開課紀錄{/if}{#if hasUnpublished}；「·」表示有開課但未公布人數與名額{/if}。多班次的學期為各班加總。</p>
     </figure>
   {/if}
 
@@ -125,7 +131,7 @@
           <tr>
             <th scope="col">學期</th>
             <th scope="col">授課教師</th>
-            <th scope="col" class="num">修課人數／名額</th>
+            <th scope="col" class="num">修課人數／名額{#if multiSection}<span class="unit">（全班次合計）</span>{/if}</th>
             <th scope="col">班次</th>
           </tr>
         </thead>
@@ -221,7 +227,8 @@
   .slot.active .fill { background: var(--brand-ink); }
   .slot .none { inset-block-end: 2px; inline-size: auto; color: var(--muted); font-size: var(--t-sm); line-height: 1; }
   .x { display: grid; grid-template-columns: repeat(var(--slots), minmax(0.75rem, 1fr)); min-inline-size: calc(var(--slots) * 0.75rem); margin-block-start: var(--space-1); color: var(--muted); font-size: var(--t-xs); line-height: 1.2; }
-  .x span { white-space: nowrap; overflow: visible; }
+  .x span { white-space: nowrap; overflow: visible; text-align: center; border-inline-start: 1px solid var(--line); }
+  .x span:first-child { border-inline-start: 0; }
   .note { margin: var(--space-2) 0 0; color: var(--muted); font-size: var(--t-xs); line-height: 1.5; }
 
   .frame { position: relative; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); overflow: hidden; }
@@ -236,6 +243,8 @@
   tbody tr.current > th { box-shadow: inset 3px 0 0 var(--brand); }
   .num { text-align: end; }
   .names { min-inline-size: 6rem; overflow-wrap: anywhere; }
+  .names .count { white-space: nowrap; }
+  thead .unit { font-weight: 500; }
   .cell-bar { display: flex; gap: var(--space-2); align-items: center; justify-content: end; }
   .track { position: relative; flex: 0 0 4.5rem; block-size: 10px; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .track > span { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: inherit; }
@@ -260,15 +269,28 @@
 
   @media (max-width: 40rem) {
     .chart { padding-inline: var(--space-3); }
-    .x.dense span.odd { visibility: hidden; }
-    th, td { padding-inline: var(--space-2); }
-    .track { flex-basis: 2rem; }
-    .value { min-inline-size: 4.5rem; }
-    .names { min-inline-size: 4.5rem; }
+    .x.dense span.odd { color: transparent; }
+    /* Each term becomes a two-line row (term + numbers, then teachers + sections), so nothing is
+       clipped at 390 px and no horizontal scroll is needed. */
+    table, tbody { display: block; }
+    thead { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    tbody tr { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--space-3); padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); }
+    tbody tr:last-child { border-block-end: 0; }
+    tbody tr > * { padding: 0; border: 0; }
+    tbody tr.current > th { box-shadow: none; }
+    tbody tr.current { box-shadow: inset 3px 0 0 var(--brand); }
+    tbody th { grid-row: 1; grid-column: 1; align-self: center; }
+    td.num { grid-row: 1; grid-column: 2; align-self: center; }
+    .names { grid-row: 2; grid-column: 1 / -1; }
+    .sections { grid-row: 3; grid-column: 1 / -1; }
+    .names { min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); }
+    .track { flex: 1 1 auto; max-inline-size: 8rem; }
+    .value { min-inline-size: 0; }
     .name + .name { display: none; }
+    .sections { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; white-space: normal; }
     .sections.multi .section:not(:has(.here)) { display: none; }
     .history .narrow-only { display: inline-flex; }
-    .sections { white-space: nowrap; }
-    .section { margin-inline-end: var(--space-1); }
+    .section { margin-inline-end: 0; }
+    .sections a, .here { min-block-size: var(--target-min); }
   }
 </style>

@@ -28,6 +28,8 @@
 
   /** Reviews shown before「查看全部」. */
   const initialReviews = 4;
+  /** Fewer ratings than this are called out as too few to lean on. */
+  const sparseBelow = 3;
 
   let count = $derived(ratings?.stats.count ?? 0);
   let largest = $derived(Math.max(1, ...(ratings?.stats.histogram ?? [])));
@@ -56,12 +58,14 @@
   {#if !ratings}
     <p class="error" role="alert">評價暫時無法載入，請稍後再試。課程資料不受影響。</p>
   {:else}
-    <div class="summary">
-      <p class="average">
-        <strong class="num">{averageScore(ratings.stats.average)}</strong>
-        {#if count > 0}<span class="stars big" aria-hidden="true">{stars(rounded)}</span>{/if}
-        <span class="count">{count} 則評價</span>
-      </p>
+    <div class="summary" class:empty={count === 0}>
+      {#if count > 0}
+        <p class="average">
+          <strong class="num">{averageScore(ratings.stats.average)}</strong>
+          <span class="stars big" aria-hidden="true">{stars(rounded)}</span>
+          <span class="count" class:sparse={count < sparseBelow}>{count < sparseBelow ? `目前僅 ${count} 則評價` : `${count} 則評價`}</span>
+        </p>
+      {/if}
       {#if count > 0}
         <!-- Histogram from 5 stars down to 1 star, on one shared scale. -->
         <dl class="histogram" aria-label="評分分布">
@@ -77,9 +81,16 @@
           {/each}
         </dl>
       {:else}
-        <p class="first">還沒有人評價這門課，成為第一個？</p>
+        <div class="first">
+          <p class="lead">尚無評價</p>
+          <p>還沒有人評價這門課。修過的話，給個 1–5 分、寫兩句上課方式或作業量，就能幫到下一位同學。</p>
+          {#if !user}<p><a class="cta" href={loginHref(`${page.url.pathname}#ratings`)}>登入後成為第一個評分 →</a></p>{/if}
+        </div>
       {/if}
     </div>
+    {#if count > 0 && count < sparseBelow}
+      <p class="sparse-note">評價還很少，平均分容易被單一意見左右，僅供參考。{#if user && !ratings.mine}修過這門課？<a href="#rate-form">加上你的評分 ↓</a>{:else if !user}修過這門課？<a href={loginHref(`${page.url.pathname}#ratings`)}>登入後加上你的評分</a>{/if}</p>
+    {/if}
 
     {#if ratings.list.length}
       <ul class="list" class:collapsible={ratings.list.length > initialReviews} aria-label="同學評價">
@@ -102,7 +113,7 @@
     {/if}
 
     {#if user}
-      <details class="mine" open={editorOpen}>
+      <details class="mine" id="rate-form" open={editorOpen}>
         <summary>
           {#if ratings.mine}
             <span>我的評價：<span class="stars" aria-hidden="true">{stars(ratings.mine.score)}</span> {ratings.mine.score} 分</span><span class="edit">編輯</span>
@@ -174,7 +185,13 @@
   .bar { display: block; block-size: 10px; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .bar span { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); }
   .bar-count { color: var(--ink-2); text-align: end; }
-  .first { color: var(--ink-2); font-weight: 600; }
+  .summary.empty { grid-template-columns: minmax(0, 1fr); }
+  .average .count.sparse { color: var(--ink); font-weight: 600; }
+  .first { display: grid; gap: var(--space-1); color: var(--ink-2); font-size: var(--t-base); }
+  .first .lead { color: var(--ink); font-size: var(--t-lg); font-weight: 650; }
+  .first .cta { font-weight: 650; }
+  .sparse-note { margin-block-start: calc(-1 * var(--space-2)) !important; padding: var(--space-2) var(--space-3); border-inline-start: 3px solid var(--warn); background: var(--warn-wash); color: var(--ink); font-size: var(--t-sm); }
+  .sparse-note a { margin-inline-start: var(--space-1); font-weight: 650; }
 
   .list { display: grid; margin: 0; padding: 0; list-style: none; border-block-start: 1px solid var(--line); }
   .list li { padding-block: var(--space-3); border-block-end: 1px solid var(--line); }

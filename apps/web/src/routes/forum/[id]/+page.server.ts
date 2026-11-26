@@ -1,6 +1,8 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { UNAVAILABLE, apiMessage } from '$lib/community-messages';
+import { publishedCapacity } from '$lib/course-history';
 import { catalog } from '$lib/server/catalog';
+import type { CourseHistory } from '@unicourse/api-client';
 import { field, requireUser } from '$lib/server/community-forms';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -21,31 +23,51 @@ export const load: PageServerLoad = async ({ fetch, params }) => {
 };
 
 /**
- * The 這門課 card: the newest offering of the thread's course, its rating summary and other
- * threads about it. `null` when the thread names no course; `offering: null` when the code is
- * not in the catalog (the page then shows the code as text only). Failures degrade quietly.
+ * The 這門課 card: the cross-term course of the thread (the same `/api/courses/{school}/{courseCode}`
+ * numbers the course page shows), its rating summary and other threads about it. `null` when the
+ * thread names no course; `summary: null` when the code is not in the catalog (the page then shows the
+ * code as text only). Failures degrade quietly.
  */
 async function courseContext(client: ReturnType<typeof catalog>, post: { id: number; school?: string | null; courseCode?: string | null }) {
   const { school, courseCode } = post;
   if (!school || !courseCode) return null;
-  const [offerings, stats, threads] = await Promise.all([
-    client.GET('/api/courses', { params: { query: { school, q: courseCode } } }).then((r) => r.data).catch(() => undefined),
-    client
-      .GET('/api/courses/{school}/{courseCode}/ratings/stats', { params: { path: { school, courseCode } } })
-      .then((r) => r.data)
-      .catch(() => undefined),
+  const path = { params: { path: { school, courseCode } } };
+  const [history, stats, threads] = await Promise.all([
+    client.GET('/api/courses/{school}/{courseCode}', path).then((r) => r.data).catch(() => undefined),
+    client.GET('/api/courses/{school}/{courseCode}/ratings/stats', path).then((r) => r.data).catch(() => undefined),
     client.GET('/api/posts', { params: { query: { school, courseCode } } }).then((r) => r.data).catch(() => undefined)
   ]);
-  const matches = (offerings ?? [])
-    .filter((offering) => offering.courseCode.toLowerCase() === courseCode.toLowerCase())
-    .sort((a, b) => b.term.localeCompare(a.term, 'en', { numeric: true }));
   const others = (threads?.posts ?? []).filter((other) => other.id !== post.id);
   return {
-    offering: matches[0] ?? null,
-    terms: new Set(matches.map((offering) => offering.term)).size,
+    summary: history ? courseSummary(history) : null,
     rating: stats ?? null,
     others: others.slice(0, 4).map(({ id, title, type, replyCount }) => ({ id, title, type, replyCount })),
     otherCount: threads ? Math.max(0, threads.total - 1) : others.length
+  };
+}
+
+/** Only the few numbers the card shows; the API returns every section of every term. */
+function courseSummary(history: CourseHistory) {
+  const latest = history.terms[0];
+  const newest = latest?.offerings[0];
+  if (!latest || !newest) return null;
+  const instructors = [...new Set(latest.offerings.flatMap((offering) => offering.instructors))];
+  return {
+    id: history.latestActiveOfferingId ?? newest.id,
+    title: history.title,
+    courseCode: history.courseCode,
+    schoolName: history.schoolName,
+    department: history.department ?? newest.department ?? null,
+    isDemo: newest.isDemo,
+    terms: history.totals.terms,
+    firstTerm: history.terms.at(-1)?.term ?? latest.term,
+    enrolledTotal: history.totals.enrolledTotal,
+    latestTerm: latest.term,
+    latestSections: latest.offerings.length,
+    latestEnrolled: latest.enrolled,
+    latestCapacity: publishedCapacity(latest.capacity),
+    instructors: instructors.slice(0, 2),
+    instructorCount: instructors.length
   };
 }
 
