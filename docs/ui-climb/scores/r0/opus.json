@@ -1,0 +1,501 @@
+{
+  "judge": "opus",
+  "round": 0,
+  "pages": [
+    {
+      "id": "home",
+      "scores": {
+        "task": 6,
+        "hierarchy": 5,
+        "density": 4,
+        "viz": 2,
+        "family": 4,
+        "type": 6,
+        "mobile": 6,
+        "theme": 2,
+        "a11y": 6,
+        "states": 5,
+        "copy": 6,
+        "feel": 6
+      },
+      "mean": 4.83,
+      "top_issues": [
+        "Ranking (desktop+phone) is an <ol> of cards with the count inside a lavender pill ('累計修課人數 113') at the far right; replace with a table: 40 px # column, course+school column, right-aligned tabular 修課人數 with a same-scale brand bar, 開課學期數 column",
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "No masthead/summary: page opens with a bare h1 '大學課程搜尋' and no brand line, update time or stat tiles; the coverage summary is a single 13 px line under the list ('目前收錄 9 校、2 個學期'); move it up as 4–5 stat tiles + '更新於…台北時間' dek",
+        "Two separate filter forms (search card + '排行範圍' select with outline 套用 button) compete above the fold; on phone the ranking starts only at ~y=1290 px. Make the ranking scope a chip row and keep one toolbar",
+        "Footer floats mid-viewport on desktop (使用條款/隱私權政策 only, no 資料與透明度 column); adopt the family two-column footer",
+        "Every row is demo data with a '示範' badge and 4 of 7 rows read '人數與名額未公布' — the ranking shows nothing rankable; hide unranked rows or rank only rows with a number and show '—' with a note"
+      ],
+      "keep": [
+        "Clear '示範' warn badge and the honest note that 名額 substitutes for 修課人數",
+        "Search toolbar with labelled select-fields is already one row on desktop"
+      ]
+    },
+    {
+      "id": "search",
+      "scores": {
+        "task": 5,
+        "hierarchy": 5,
+        "density": 3,
+        "viz": 1,
+        "family": 4,
+        "type": 6,
+        "mobile": 6,
+        "theme": 2,
+        "a11y": 6,
+        "states": 5,
+        "copy": 5,
+        "feel": 6
+      },
+      "mean": 4.5,
+      "top_issues": [
+        "Results (desktop) are full-width cards showing only title + school·term·code; no credits, teacher, time, enrolment. Use the storyboard results table (sticky course column, right-aligned numbers, sort headers) on desktop and dense cards with all fields on phone",
+        "No result count or query echo: heading is the generic '搜尋結果'; replace with '搜尋「資料」· 2 筆・全部學期' and add school/term chips with counts",
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Nav highlights 首頁 while on search, and the only exit is '返回課程總覽' (which is the same page); remove it or turn it into '清除搜尋'",
+        "Phone: the 4-control form card occupies the first 820 px, results start below the fold; collapse school/term into a '篩選 +' <details> after the first search"
+      ],
+      "keep": [
+        "Keyword stays in the input after search",
+        "Demo disclaimer line in warn colour above results"
+      ]
+    },
+    {
+      "id": "search-empty",
+      "scores": {
+        "task": 5,
+        "hierarchy": 5,
+        "density": 5,
+        "viz": null,
+        "family": 4,
+        "type": 6,
+        "mobile": 6,
+        "theme": 2,
+        "a11y": 6,
+        "states": 4,
+        "copy": 6,
+        "feel": 6
+      },
+      "mean": 5.0,
+      "top_issues": [
+        "Empty state is one plain sentence left-aligned under '搜尋結果'; per states.md use a centred empty block: bold '找不到「zzzz-no-such-course」的課程' + 13 px hint + actions '查全部學期' / '清除篩選'",
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "'返回課程總覽' is the only action and is ambiguous (there is no page called 課程總覽 in the nav); rename to the nav term or drop",
+        "Lots of dead space below (desktop 800 px viewport ends at ~y=520 with footer floating); give the empty block suggestions (popular searches, school list link)"
+      ],
+      "keep": [
+        "Copy already suggests changing keyword, school or term"
+      ]
+    },
+    {
+      "id": "course",
+      "scores": {
+        "task": 6,
+        "hierarchy": 5,
+        "density": 5,
+        "viz": 4,
+        "family": 4,
+        "type": 6,
+        "mobile": 5,
+        "theme": 2,
+        "a11y": 6,
+        "states": 5,
+        "copy": 6,
+        "feel": 6
+      },
+      "mean": 5.0,
+      "top_issues": [
+        "Summary-before-detail is missing: the hero is a 13-row label/value list (學校…年級) in one long card; pull 學分/必選修/人數上限/評價/開課學期 into 5 stat tiles and put 校方網站/課綱 as header actions (desktop+phone)",
+        "No history chart and no external reviews section at all — the storyboard's 歷年長條圖 and 外部評論 block are absent; course phone page is 4374 px of single-column text",
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Rating form dominates: full-width '更新評價' purple button stacked over a full-width red-outline '刪除我的評價'; make them inline (primary + text-danger) and collapse the form behind '修改我的評價'",
+        "'其他校方欄位' table splits 50/50 so labels sit far from values (desktop); use the same 96 px label column as the fact list",
+        "Phone nav (390 px): 56 px logo + nav row is ~110 px tall logged-out and wraps to 3 rows (首頁 學校 論壇 @user / 設定 登出) when logged in; collapse to a 60 px bar with icon search + menu"
+      ],
+      "keep": [
+        "Rating histogram with 5 bars drawn to one scale and a big 4.0 average",
+        "Missing values shown as '—' (附註)",
+        "'最近匯入' timestamp on the page"
+      ]
+    },
+    {
+      "id": "schools",
+      "scores": {
+        "task": 7,
+        "hierarchy": 6,
+        "density": 6,
+        "viz": 2,
+        "family": 5,
+        "type": 6,
+        "mobile": 5,
+        "theme": 2,
+        "a11y": 6,
+        "states": 6,
+        "copy": 6,
+        "feel": 5
+      },
+      "mean": 5.17,
+      "top_issues": [
+        "No coverage visual: the storyboard's per-school 學年覆蓋熱度條 is absent; '收錄學期數 / 班次數' is plain text. Add a seq-colour term strip per row",
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Phone: 7-column table scrolls horizontally but the school column is not sticky, so after scrolling the status has no row label; make 學校 sticky at 9.5 rem",
+        "Row rhythm breaks where '官網' wraps under long names (國立臺灣海洋大學, 技職校院 rows) and 138 '尚未開始' rows of '— — —' bury the 12 meaningful ones; default-sort by status or collapse '尚未開始' groups",
+        "Status chips at top are not clickable filters and the separate 4-control form needs '篩選' submit; make chips toggle filters and add sortable headers",
+        "Inconsistent data shown: 國立政治大學/臺灣大學/中興/中正 are '已收錄' but show '—' terms and '—' update; either show their numbers or label them differently"
+      ],
+      "keep": [
+        "Real table with group rows (一般大學 66 所 / 技職校院 73 所)",
+        "Status badges in family semantic colours",
+        "Phone hint '表格可左右捲動查看更多欄位。'"
+      ]
+    },
+    {
+      "id": "school",
+      "scores": {
+        "task": 5,
+        "hierarchy": 5,
+        "density": 4,
+        "viz": 2,
+        "family": 4,
+        "type": 6,
+        "mobile": 6,
+        "theme": 2,
+        "a11y": 6,
+        "states": 5,
+        "copy": 5,
+        "feel": 6
+      },
+      "mean": 4.67,
+      "top_issues": [
+        "Key numbers are tiny lavender pills (開課班次 5 / 課程 4 / 學期 2); replace with stat tiles and add a per-term bar chart so missing terms are visible",
+        "開課單位 is a 3-up card grid with only 'N 班次 · N 門課程'; use a table with a same-scale proportion bar and in-page search (112 departments won't fit as cards)",
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Breadcrumb says '課程總覽' while the nav says 首頁, and the nav doesn't highlight 學校 on a school page; align terms and aria-current",
+        "No header meta (city, type, status badge, 更新於) and no link back to /schools status; '搜尋這所學校的課程' is an underlined text link rather than a header action"
+      ],
+      "keep": [
+        "Bilingual school title",
+        "Short, clean single-column phone layout"
+      ]
+    },
+    {
+      "id": "department",
+      "scores": {
+        "task": 5,
+        "hierarchy": 5,
+        "density": 4,
+        "viz": 2,
+        "family": 4,
+        "type": 6,
+        "mobile": 6,
+        "theme": 2,
+        "a11y": 6,
+        "states": 5,
+        "copy": 5,
+        "feel": 6
+      },
+      "mean": 4.67,
+      "top_issues": [
+        "Offerings are cards that repeat '國立清華大學 · 示範數學系' on every row; switch to a per-term table (課名, 課號/班次, 學分, 必選修, 時間, 教師, 人數) without the redundant school/department",
+        "Raw period codes 'T3T4R3' / 'M3M4' leak into the list while the course page shows '週二 第 3、4 節'; reuse the decoded format",
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Header card has only '共 3 個開課班次'; add stat tiles (班次/課程/學期/教師) and term pills to jump between 115-1 / 114-2",
+        "No nav highlight and breadcrumb root '課程總覽' differs from nav '首頁'"
+      ],
+      "keep": [
+        "Term grouping with clear '115-1 學期' subheads",
+        "Breadcrumb exists and links school"
+      ]
+    },
+    {
+      "id": "instructor",
+      "scores": {
+        "task": 5,
+        "hierarchy": 5,
+        "density": 4,
+        "viz": 2,
+        "family": 4,
+        "type": 6,
+        "mobile": 6,
+        "theme": 2,
+        "a11y": 6,
+        "states": 5,
+        "copy": 5,
+        "feel": 6
+      },
+      "mean": 4.67,
+      "top_issues": [
+        "Each offering card links the instructor's own name ('· 王示範') back to this page; drop the self-link and the repeated school name",
+        "Same raw period codes 'T3T4R3' / 'M3M4' as department; decode them",
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Counts as small pills; add tiles and a term timeline (sparkline/bars of offerings per term) plus the course ratings average per course",
+        "Cards instead of a table for a numeric, multi-term list; use the department table component"
+      ],
+      "keep": [
+        "Header lists 授課學期 and 開課單位 links",
+        "Term grouping"
+      ]
+    },
+    {
+      "id": "forum",
+      "scores": {
+        "task": 6,
+        "hierarchy": 6,
+        "density": 5,
+        "viz": null,
+        "family": 5,
+        "type": 6,
+        "mobile": 5,
+        "theme": 2,
+        "a11y": 6,
+        "states": 5,
+        "copy": 6,
+        "feel": 6
+      },
+      "mean": 5.27,
+      "top_issues": [
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Phone: logged-in nav wraps to 2 rows and the 3-control filter card + '發表文章' disclosure push the first post to y≈1280 px; collapse filters into a chip row + '篩選 +'",
+        "Post card keeps the raw blank line in the excerpt ('想請問修過的同學：' empty line '1. 每週…'), wasting height; collapse whitespace and clamp to 2 lines",
+        "Heading '最新文章（1）' has no sort control (最新/熱門) and the category chips (提問/心得) aren't available as one-tap filters",
+        "Dek '內容以純文字顯示。' is implementation copy; say what users find here and link posting rules"
+      ],
+      "keep": [
+        "Type badge 提問 + linked course context on each card",
+        "Meta line with replies and score"
+      ]
+    },
+    {
+      "id": "thread",
+      "scores": {
+        "task": 6,
+        "hierarchy": 5,
+        "density": 5,
+        "viz": null,
+        "family": 4,
+        "type": 6,
+        "mobile": 5,
+        "theme": 2,
+        "a11y": 6,
+        "states": 5,
+        "copy": 7,
+        "feel": 6
+      },
+      "mean": 5.18,
+      "top_issues": [
+        "'編輯' and '刪除' each sit on their own 48 px line under the vote row (desktop+phone), so a 1-line reply takes ~190 px; put them inline as small text actions on the meta line",
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Pill-shaped ▲推 / ▼噓 buttons with filled purple 'pressed' state read as daisyUI capsules the design language bans; use the family 38 px rectangle buttons and show the count between with tabular nums",
+        "Reply composer is a bare empty textarea with no placeholder, counter or login hint; add placeholder + '0 / 2000 字' like the course rating form",
+        "Header context line ('國立清華大學 DEMO201 的討論 · 查看課程') wraps awkwardly on phone; make it a breadcrumb"
+      ],
+      "keep": [
+        "推/噓 terminology fits Taiwanese users",
+        "Clear h1 and reply count heading"
+      ]
+    },
+    {
+      "id": "auth",
+      "scores": {
+        "task": 8,
+        "hierarchy": 7,
+        "density": 7,
+        "viz": null,
+        "family": 6,
+        "type": 7,
+        "mobile": 7,
+        "theme": 2,
+        "a11y": 6,
+        "states": 5,
+        "copy": 7,
+        "feel": 6
+      },
+      "mean": 6.18,
+      "top_issues": [
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Redundant paths: segmented 登入/註冊 tabs plus '還沒有帳號？建立帳號' link plus the nav '登入／註冊' button (not marked current); keep tabs + one link",
+        "No visible error/loading state in the shot; ensure role=alert error and button busy state ('登入中…')",
+        "Inputs have no placeholders/autocomplete hints and no show-password toggle; add them",
+        "Card floats with the footer directly beneath at desktop; centre vertically or add a short value line ('登入後可評分、發文')"
+      ],
+      "keep": [
+        "Compact centred card with labelled 44 px inputs",
+        "Segmented control clearly shows current mode"
+      ]
+    },
+    {
+      "id": "auth-register",
+      "scores": {
+        "task": 8,
+        "hierarchy": 7,
+        "density": 7,
+        "viz": null,
+        "family": 6,
+        "type": 7,
+        "mobile": 7,
+        "theme": 2,
+        "a11y": 7,
+        "states": 5,
+        "copy": 7,
+        "feel": 6
+      },
+      "mean": 6.27,
+      "top_issues": [
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Helper text under 帳號 is long and wraps to 2 lines on phone; shorten to '3–32 字元：英數或底線，註冊後不能改'",
+        "No inline validation shown; show per-field error under the input with aria-describedby",
+        "Agreement line '註冊即表示同意使用條款與隱私權政策' sits below the 註冊 button; move it above the button",
+        "Nav '登入／註冊' button not marked as current page"
+      ],
+      "keep": [
+        "Helper text for username and password rules",
+        "'顯示名稱（選填）' labels optional clearly"
+      ]
+    },
+    {
+      "id": "settings",
+      "scores": {
+        "task": 7,
+        "hierarchy": 6,
+        "density": 7,
+        "viz": null,
+        "family": 5,
+        "type": 7,
+        "mobile": 6,
+        "theme": 2,
+        "a11y": 6,
+        "states": 4,
+        "copy": 6,
+        "feel": 6
+      },
+      "mean": 5.64,
+      "top_issues": [
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "No save feedback visible and no unsaved-changes indication; add role=status '已儲存' toast and disable 儲存 until changed",
+        "Only profile fields: no password change, sign-out-everywhere or delete-account sections that the storyboard lists; group into sections with h2",
+        "'自我介紹' textarea has no counter/limit and '所屬學校' uses '不公開' as a school option; split visibility from school choice",
+        "Phone nav (390 px): 56 px logo + nav row is ~110 px tall logged-out and wraps to 3 rows (首頁 學校 論壇 @user / 設定 登出) when logged in; collapse to a 60 px bar with icon search + menu"
+      ],
+      "keep": [
+        "Link to 查看公開個人頁 next to the handle",
+        "Narrow, focused form width"
+      ]
+    },
+    {
+      "id": "profile",
+      "scores": {
+        "task": 6,
+        "hierarchy": 6,
+        "density": 5,
+        "viz": null,
+        "family": 4,
+        "type": 6,
+        "mobile": 7,
+        "theme": 2,
+        "a11y": 6,
+        "states": 5,
+        "copy": 6,
+        "feel": 6
+      },
+      "mean": 5.36,
+      "top_issues": [
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Header card shows only name, handle, join date; add counts (評價 1・文章 1・獲推 N) as tiles and the user's school",
+        "Star glyphs '★★★★☆' carry the rating; ensure an accessible label and use the family rating bar instead of decorative characters",
+        "Reviews and posts are full-width cards with lots of padding; use a compact list (tag CompactArticleList) with tabs 評價 / 文章",
+        "Nav shows 登入／註冊 while viewing own profile is fine, but there's no empty-state copy shown for zero items — verify states.md text"
+      ],
+      "keep": [
+        "Clear section headings with counts",
+        "Linked course context on each review"
+      ]
+    },
+    {
+      "id": "legal",
+      "scores": {
+        "task": 7,
+        "hierarchy": 6,
+        "density": 7,
+        "viz": null,
+        "family": 5,
+        "type": 6,
+        "mobile": 7,
+        "theme": 2,
+        "a11y": 6,
+        "states": 6,
+        "copy": 7,
+        "feel": 7
+      },
+      "mean": 6.0,
+      "top_issues": [
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "Page is very thin (two short sections) with no '最後更新' date or table of contents; add date and anchor TOC",
+        "Breadcrumb '課程總覽' is odd on a legal page; use 首頁 or drop",
+        "Footer floats at mid-viewport leaving 250 px blank; use a min-height main so footer sits at the bottom",
+        "Body measure is fine (~670 px) but h2 to paragraph spacing is tight; add 8 px more above each h2"
+      ],
+      "keep": [
+        "Plain, short zh-TW copy",
+        "Comfortable CJK line length"
+      ]
+    },
+    {
+      "id": "notfound",
+      "scores": {
+        "task": 3,
+        "hierarchy": 4,
+        "density": 5,
+        "viz": null,
+        "family": 3,
+        "type": 5,
+        "mobile": 6,
+        "theme": 2,
+        "a11y": 5,
+        "states": 3,
+        "copy": 4,
+        "feel": 6
+      },
+      "mean": 4.18,
+      "top_issues": [
+        "404 page is a bare h1 '404' + '找不到這門課。' with no action; per states.md use title '找不到這門課程' + '搜尋課程' primary action + link to /schools",
+        "Dark theme does not exist: every *-dark.png is pixel-identical to *-light.png (lavender #f9f8fd page, white cards); add the paint-before theme script, tokens.css dark values and a sun/moon toggle in the nav",
+        "No search box on the page and no suggestion of similar courses; add the toolbar search prefilled from the URL code",
+        "Raw numeric h1 '404' is the most prominent element; demote to small muted code under the human title"
+      ],
+      "keep": [
+        "Keeps nav and footer so the user is not stranded"
+      ]
+    },
+    {
+      "id": "landscape",
+      "scores": {
+        "task": 7,
+        "hierarchy": 6,
+        "density": 5,
+        "viz": 3,
+        "family": 5,
+        "type": 5,
+        "mobile": 4,
+        "theme": 7,
+        "a11y": 6,
+        "states": 5,
+        "copy": 7,
+        "feel": 6
+      },
+      "mean": 5.5,
+      "top_issues": [
+        "Desktop table squeezes the 登入 column to one character, so '免登入' and '部分需登入' stack vertically letter by letter and rows become 80–100 px tall; give 登入/狀態 fixed min-widths and shorten 說明/備註 with clamp + expand",
+        "Phone: the 營運者 column is clipped mid-glyph ('教育部校務…TACER') with no scroll hint or sticky name column; use table-stack on phone or add the hint + sticky first column",
+        "Standalone page without the UniCourse nav, logo or footer and on a warm paper background — reads as a different site; wrap it in the shared shell",
+        "Stat tiles (505/376/129/268/149) are unlabelled-unit numbers with no visual; add a status/type split bar and make '第三方工具最多' a ranked bar list instead of a run-on link line",
+        "Count '505 / 505 個系統' uses spaced monospace; use the family result-count line"
+      ],
+      "keep": [
+        "The only page with a real, designed dark theme",
+        "Rich filter bar (學校/類型/功能/狀態/關鍵字) with live count",
+        "Function badges and 運作中/停止 status colours"
+      ]
+    }
+  ]
+}
