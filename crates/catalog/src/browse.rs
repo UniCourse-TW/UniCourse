@@ -4,7 +4,7 @@ use serde::Serialize;
 use sqlx::{FromRow, PgPool};
 use utoipa::ToSchema;
 
-use crate::{EnrollmentPoint, OFFERINGS, Offering};
+use crate::{Coverage, EnrollmentPoint, OFFERINGS, Offering};
 
 /// Most offerings returned by one instructor or department listing.
 pub const LISTING_LIMIT: i64 = 200;
@@ -45,17 +45,17 @@ pub struct SchoolOverview {
     pub slug: String,
     pub name: String,
     pub name_en: Option<String>,
-    /// Active (searchable) offerings across all terms.
+    /// All imported offerings across all terms, including withdrawn offerings.
     pub offerings: i64,
-    /// Distinct courses with an active offering.
+    /// Distinct courses with any imported offering.
     pub courses: i64,
     /// Imported terms.
     pub terms: i64,
-    /// Latest import time (ISO-8601 UTC), `null` before the first import.
+    /// Latest import time (ISO-8601 UTC).
     pub latest_imported_at: Option<String>,
 }
 
-#[derive(Debug, Serialize, ToSchema)]
+#[derive(Clone, Copy, Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct OverviewTotals {
     pub offerings: i64,
@@ -69,7 +69,7 @@ pub struct OverviewTotals {
 #[derive(Debug, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct Overview {
-    /// Schools by active offerings, most first.
+    /// Schools with at least one import, by imported offerings, most first.
     pub schools: Vec<SchoolOverview>,
     pub totals: OverviewTotals,
 }
@@ -93,7 +93,9 @@ pub struct SchoolDetail {
     pub name_en: Option<String>,
     /// Imported terms, newest first.
     pub terms: Vec<String>,
+    /// All imported offerings, including withdrawn offerings.
     pub offerings: i64,
+    /// Distinct courses with any imported offering.
     pub courses: i64,
     /// Offering units with active offerings, by name.
     pub departments: Vec<DepartmentCount>,
@@ -145,13 +147,41 @@ pub async fn refresh_rankings(pool: &PgPool) -> Result<(), sqlx::Error> {
         .map(drop)
 }
 
+/// Classify an offering for the default academic ranking. Exclude all zero-credit offerings
+/// (including zero-credit service learning and national defense) and administrative titles:
+/// 班級活動、班會、導師時間、導師輔導、操行、週會、勞作教育、新生定向、新生導航、新生訓練.
+/// Missing credits do not imply zero. The ranking uses the classification of its displayed offering.
+pub fn is_academic_offering(title: &str, credits: Option<f64>) -> bool {
+    credits != Some(0.0)
+        && ![
+            "班級活動",
+            "班會",
+            "導師時間",
+            "導師輔導",
+            "操行",
+            "週會",
+            "勞作教育",
+            "新生定向",
+            "新生導航",
+            "新生訓練",
+        ]
+        .iter()
+        .any(|label| title.contains(label))
+}
+
 /// Courses by cumulative enrollment, then by cumulative capacity, optionally at one school.
 pub async fn rankings(
     pool: &PgPool,
     school: Option<&str>,
     limit: i64,
+    academic: bool,
 ) -> Result<Vec<CourseRanking>, sqlx::Error> {
-    sqlx::query_as(
+    let academic_filter = if academic {
+        "AND ranking.is_academic"
+    } else {
+        ""
+    };
+    sqlx::query_as(&format!(
         "SELECT ranking.school, school.name AS school_name, ranking.course_code, ranking.title,
              ranking.title_en, ranking.terms, ranking.offerings, ranking.enrolled_total,
              ranking.capacity_total, ranking.latest_offering_id::text AS latest_offering_id,
@@ -159,48 +189,23 @@ pub async fn rankings(
              ranking.trend
          FROM course_rankings AS ranking
          JOIN schools AS school ON school.slug = ranking.school
-         WHERE $1::text IS NULL OR ranking.school = $1
+         WHERE ($1::text IS NULL OR ranking.school = $1) {academic_filter}
          ORDER BY ranking.enrolled_total DESC NULLS LAST, ranking.capacity_total DESC NULLS LAST,
              ranking.terms DESC, ranking.school, ranking.course_code
          LIMIT $2",
-    )
+    ))
+    .persistent(false)
     .bind(school)
     .bind(limit)
     .fetch_all(pool)
     .await
 }
 
-pub async fn overview(pool: &PgPool) -> Result<Overview, sqlx::Error> {
-    let schools: Vec<SchoolOverview> = sqlx::query_as(
-        "SELECT school.slug, school.name, school.name_en,
-             coalesce(active.offerings, 0) AS offerings, coalesce(active.courses, 0) AS courses,
-             coalesce(imported.terms, 0) AS terms, unicourse_iso(imported.latest) AS latest_imported_at
-         FROM schools AS school
-         LEFT JOIN (
-             SELECT school, count(*) AS offerings, count(DISTINCT course_code) AS courses
-             FROM offerings WHERE active GROUP BY school
-         ) AS active ON active.school = school.slug
-         LEFT JOIN (
-             SELECT school, count(*) AS terms, max(imported_at) AS latest
-             FROM course_snapshots GROUP BY school
-         ) AS imported ON imported.school = school.slug
-         ORDER BY offerings DESC, school.name, school.slug",
-    )
-    .fetch_all(pool)
-    .await?;
-    let terms: i64 = sqlx::query_scalar("SELECT count(DISTINCT term) FROM course_snapshots")
-        .fetch_one(pool)
-        .await?;
-    let totals = OverviewTotals {
-        offerings: schools.iter().map(|school| school.offerings).sum(),
-        courses: schools.iter().map(|school| school.courses).sum(),
-        schools: schools.iter().filter(|school| school.terms > 0).count() as i64,
-        terms,
-    };
-    Ok(Overview { schools, totals })
-}
-
-pub async fn school_detail(pool: &PgPool, slug: &str) -> Result<Option<SchoolDetail>, sqlx::Error> {
+pub async fn school_detail(
+    pool: &PgPool,
+    slug: &str,
+    coverage: &Coverage,
+) -> Result<Option<SchoolDetail>, sqlx::Error> {
     let Some((slug, name, name_en)) = sqlx::query_as::<_, (String, String, Option<String>)>(
         "SELECT slug, name, name_en FROM schools WHERE slug = $1",
     )
@@ -210,18 +215,12 @@ pub async fn school_detail(pool: &PgPool, slug: &str) -> Result<Option<SchoolDet
     else {
         return Ok(None);
     };
-    let terms = sqlx::query_scalar(
-        "SELECT term FROM course_snapshots WHERE school = $1 ORDER BY term DESC",
-    )
-    .bind(&slug)
-    .fetch_all(pool)
-    .await?;
-    let (offerings, courses): (i64, i64) = sqlx::query_as(
-        "SELECT count(*), count(DISTINCT course_code) FROM offerings WHERE school = $1 AND active",
-    )
-    .bind(&slug)
-    .fetch_one(pool)
-    .await?;
+    let (terms, offerings, courses) = coverage
+        .schools
+        .iter()
+        .find(|school| school.slug == slug)
+        .map(|school| (school.terms.clone(), school.offerings, school.courses))
+        .unwrap_or_default();
     let departments = sqlx::query_as(
         "SELECT department AS name, count(*) AS offerings, count(DISTINCT course_code) AS courses
          FROM offerings WHERE school = $1 AND active AND department IS NOT NULL
@@ -357,4 +356,33 @@ pub async fn course_exists(
         .bind(course_code)
         .fetch_one(pool)
         .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_academic_offering;
+
+    #[test]
+    fn academic_offerings_keep_credit_bearing_service_and_defense() {
+        for title in ["資料結構", "服務學習", "全民國防教育"] {
+            assert!(is_academic_offering(title, Some(1.0)));
+            assert!(is_academic_offering(title, None));
+            assert!(!is_academic_offering(title, Some(0.0)));
+        }
+        for title in [
+            "班級活動（一）",
+            "新生班會",
+            "導師時間",
+            "導師輔導",
+            "操行成績",
+            "週會",
+            "勞作教育（二）",
+            "新生定向",
+            "新生導航",
+            "新生訓練",
+        ] {
+            assert!(!is_academic_offering(title, Some(1.0)));
+            assert!(!is_academic_offering(title, None));
+        }
+    }
 }

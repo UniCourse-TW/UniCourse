@@ -6,8 +6,9 @@
 use std::{collections::BTreeMap, sync::LazyLock};
 
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgPool};
 use utoipa::ToSchema;
+
+use crate::Coverage;
 
 const INSTITUTIONS_JSON: &str = include_str!("../../../data/institutions.json");
 const STATUS_JSON: &str = include_str!("../../../crawlers/status.json");
@@ -112,9 +113,9 @@ pub struct Institution {
     pub issue: Option<u32>,
     /// Imported terms, newest first.
     pub terms: Vec<String>,
-    /// Active (searchable) offerings across all terms.
+    /// All imported offerings, including withdrawn offerings; zero before the first import.
     pub offerings: i64,
-    /// Distinct courses with an active offering.
+    /// Distinct courses with any imported offering.
     pub courses: i64,
     /// Latest import time (ISO-8601 UTC), `null` before the first import.
     pub latest_imported_at: Option<String>,
@@ -129,45 +130,23 @@ pub struct Institutions {
     pub updated_at: Option<String>,
 }
 
-#[derive(FromRow)]
-struct SchoolStats {
-    school: String,
-    terms: Vec<String>,
-    offerings: i64,
-    courses: i64,
-    latest_imported_at: Option<String>,
-}
-
-pub async fn institutions(pool: &PgPool) -> Result<Institutions, sqlx::Error> {
-    let stats: Vec<SchoolStats> = sqlx::query_as(
-        "SELECT imported.school, imported.terms, coalesce(active.offerings, 0) AS offerings,
-             coalesce(active.courses, 0) AS courses,
-             unicourse_iso(imported.latest) AS latest_imported_at
-         FROM (
-             SELECT school, array_agg(term ORDER BY term DESC) AS terms,
-                 max(imported_at) AS latest
-             FROM course_snapshots GROUP BY school
-         ) AS imported
-         LEFT JOIN (
-             SELECT school, count(*) AS offerings, count(DISTINCT course_code) AS courses
-             FROM offerings WHERE active GROUP BY school
-         ) AS active ON active.school = imported.school",
-    )
-    .fetch_all(pool)
-    .await?;
-    let updated_at = stats
+pub fn institutions(coverage: &Coverage) -> Institutions {
+    let updated_at = coverage
+        .schools
         .iter()
-        .filter_map(|school| school.latest_imported_at.clone())
-        .max();
-    let mut stats: BTreeMap<String, SchoolStats> = stats
-        .into_iter()
-        .map(|school| (school.school.clone(), school))
+        .map(|school| &school.latest_imported_at)
+        .max()
+        .cloned();
+    let stats: BTreeMap<_, _> = coverage
+        .schools
+        .iter()
+        .map(|school| (school.slug.as_str(), school))
         .collect();
     let institutions = INSTITUTION_RECORDS
         .iter()
         .map(|record| {
             let entry = CRAWL_STATUS.get(&record.slug);
-            let school = stats.remove(&record.slug);
+            let school = stats.get(record.slug.as_str());
             let status = entry.map_or(CrawlStatus::None, |entry| entry.status);
             Institution {
                 code: record.code.clone(),
@@ -182,19 +161,19 @@ pub async fn institutions(pool: &PgPool) -> Result<Institutions, sqlx::Error> {
                 status,
                 note: entry.map(|entry| entry.note.clone()),
                 issue: entry.and_then(|entry| entry.issue),
-                offerings: school.as_ref().map_or(0, |school| school.offerings),
-                courses: school.as_ref().map_or(0, |school| school.courses),
-                latest_imported_at: school
-                    .as_ref()
-                    .and_then(|school| school.latest_imported_at.clone()),
-                terms: school.map(|school| school.terms).unwrap_or_default(),
+                offerings: school.map_or(0, |school| school.offerings),
+                courses: school.map_or(0, |school| school.courses),
+                latest_imported_at: school.map(|school| school.latest_imported_at.clone()),
+                terms: school
+                    .map(|school| school.terms.clone())
+                    .unwrap_or_default(),
             }
         })
         .collect();
-    Ok(Institutions {
+    Institutions {
         institutions,
         updated_at,
-    })
+    }
 }
 
 #[cfg(test)]

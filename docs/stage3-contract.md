@@ -48,6 +48,7 @@ master list with live catalog stats:
 ```
 
 `status` is `none` for institutions without a `status.json` entry. Stats are 0/empty for schools with no data.
+Counts use the same imported terms and offerings as `/api/coverage`, including withdrawn offerings.
 Both JSON files are embedded into the API binary at build time (`include_str!`) so the deploy image
 needs no extra files; unit tests check that slugs are unique lowercase ASCII, that every slug in
 `status.json` exists in `institutions.json`, that every per-school crawler package under `crawlers/`

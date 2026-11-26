@@ -180,6 +180,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/coverage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["coverage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/departments": {
         parameters: {
             query?: never;
@@ -526,6 +542,20 @@ export interface components {
             terms: number;
         };
         /**
+         * @description Catalog coverage counts all imported terms and offerings, including withdrawn offerings.
+         *     A course is one distinct (school, course code) with at least one offering. School counts
+         *     include only schools with a snapshot, and global terms are the union across those schools.
+         */
+        Coverage: {
+            earliestTerm: string | null;
+            latestTerm: string | null;
+            /** @description Schools by imported offerings, most first. */
+            schools: components["schemas"]["SchoolCoverage"][];
+            /** @description Distinct imported terms, newest first. */
+            terms: string[];
+            totals: components["schemas"]["OverviewTotals"];
+        };
+        /**
          * @description `live`: in the scheduled refresh; `partial`: crawler exists but is not scheduled or covers a
          *     subset; `blocked`: the official source forbids or prevents crawling; `planned`: no crawler yet;
          *     `none`: no entry in `crawlers/status.json` (no data source yet).
@@ -590,7 +620,7 @@ export interface components {
             code: string;
             /**
              * Format: int64
-             * @description Distinct courses with an active offering.
+             * @description Distinct courses with any imported offering.
              */
             courses: number;
             /**
@@ -608,7 +638,7 @@ export interface components {
             note?: string | null;
             /**
              * Format: int64
-             * @description Active (searchable) offerings across all terms.
+             * @description All imported offerings, including withdrawn offerings; zero before the first import.
              */
             offerings: number;
             ownership: components["schemas"]["Ownership"];
@@ -738,7 +768,7 @@ export interface components {
             titleEn?: string | null;
         };
         Overview: {
-            /** @description Schools by active offerings, most first. */
+            /** @description Schools with at least one import, by imported offerings, most first. */
             schools: components["schemas"]["SchoolOverview"][];
             totals: components["schemas"]["OverviewTotals"];
         };
@@ -915,14 +945,33 @@ export interface components {
             nameEn?: string | null;
             slug: string;
         };
-        SchoolDetail: {
+        SchoolCoverage: {
             /** Format: int64 */
+            courses: number;
+            earliestTerm: string;
+            latestImportedAt: string;
+            latestTerm: string;
+            name: string;
+            /** Format: int64 */
+            offerings: number;
+            slug: string;
+            /** @description Imported terms at this school, newest first. */
+            terms: string[];
+        };
+        SchoolDetail: {
+            /**
+             * Format: int64
+             * @description Distinct courses with any imported offering.
+             */
             courses: number;
             /** @description Offering units with active offerings, by name. */
             departments: components["schemas"]["DepartmentCount"][];
             name: string;
             nameEn?: string | null;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description All imported offerings, including withdrawn offerings.
+             */
             offerings: number;
             slug: string;
             /** @description Imported terms, newest first. */
@@ -931,16 +980,16 @@ export interface components {
         SchoolOverview: {
             /**
              * Format: int64
-             * @description Distinct courses with an active offering.
+             * @description Distinct courses with any imported offering.
              */
             courses: number;
-            /** @description Latest import time (ISO-8601 UTC), `null` before the first import. */
+            /** @description Latest import time (ISO-8601 UTC). */
             latestImportedAt?: string | null;
             name: string;
             nameEn?: string | null;
             /**
              * Format: int64
-             * @description Active (searchable) offerings across all terms.
+             * @description All imported offerings across all terms, including withdrawn offerings.
              */
             offerings: number;
             slug: string;
@@ -1291,7 +1340,10 @@ export interface operations {
                 department?: string;
                 /** @description Skip this many matches (default 0). */
                 offset?: number;
-                /** @description Sort by relevance (default), published enrollment descending, or title ascending. */
+                /**
+                 * @description Sort by relevance (default), published enrollment descending, or title ascending.
+                 *     Relevance prefers exact code, exact title, title prefix, title substring, then other matches.
+                 */
                 sort?: components["schemas"]["SearchSort"];
             };
             header?: never;
@@ -1663,6 +1715,34 @@ export interface operations {
             };
         };
     };
+    coverage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Coverage of all imported terms and offerings, including withdrawn offerings; cached for five minutes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Coverage"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     departments: {
         parameters: {
             query: {
@@ -1711,7 +1791,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Every Taiwanese higher-education institution in the MOE list, by code, with crawl status and indexed (active) catalog stats */
+            /** @description Every Taiwanese higher-education institution in the MOE list, by code, with crawl status and coverage of all imported offerings */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2218,6 +2298,8 @@ export interface operations {
                 school?: string;
                 /** @description Number of courses, 1 to 100 (default 20). */
                 limit?: number;
+                /** @description Exclude zero-credit and administrative offerings from the ranking (default true). */
+                academic?: boolean;
             };
             header?: never;
             path?: never;
@@ -2484,7 +2566,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Per-school and total counts of indexed (active) offerings, courses and terms */
+            /** @description Per-school and total counts of all imported offerings, courses and terms */
             200: {
                 headers: {
                     [name: string]: unknown;
