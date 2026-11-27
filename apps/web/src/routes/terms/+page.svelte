@@ -60,16 +60,20 @@
     <h2 id="reviews">外部評論索引</h2>
     <p><span class="status live">已上線</span>課程頁的「外部評價」區列出其他網站上與這門課相關的公開文章。本站只做搜尋索引，不轉載全文：讀者看到的是標題、日期與開頭摘要，點標題會回到原網站閱讀全文。</p>
     <h3>目前收錄的看板</h3>
-    <p>只收錄 PTT（批踢踢實業坊）上專門討論課程的看板，從 2016 年起的文章：</p>
-    <table role="table">
-      <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">看板</th><th role="columnheader" scope="col">對應學校</th><th role="columnheader" scope="col">備註</th></tr></thead>
-      <tbody role="rowgroup">
-        <tr role="row"><td role="cell" data-label="看板">NTUcourse</td><td role="cell" data-label="對應學校">國立臺灣大學</td><td role="cell" data-label="備註">作者在評價範本中選「否」（不同意轉載）的文章不存摘要，只列標題。</td></tr>
-        <tr role="row"><td role="cell" data-label="看板">NTHU_Course</td><td role="cell" data-label="對應學校">國立清華大學</td><td role="cell" data-label="備註">2017 年看板搬遷時轉錄的舊文，日期是轉錄日。</td></tr>
-        <tr role="row"><td role="cell" data-label="看板">NCTU-Teacher</td><td role="cell" data-label="對應學校">國立陽明交通大學</td><td role="cell" data-label="備註">2016 年看板搬遷時轉錄的舊文，日期是轉錄日。</td></tr>
-        <tr role="row"><td role="cell" data-label="看板">NCHU-Courses</td><td role="cell" data-label="對應學校">國立中興大學</td><td role="cell" data-label="備註">文章較少。</td></tr>
-      </tbody>
-    </table>
+    <p>只收錄 PTT（批踢踢實業坊）上專門討論課程的四個看板，從 2016 年起的文章。</p>
+    <!-- Phones start with the list folded (markup closed); desktop CSS keeps it open. -->
+    <details class="phone-fold">
+      <summary>看板清單<span class="fold-count">：4 個看板、對應學校與備註</span></summary>
+      <table role="table" class="boards">
+        <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">看板</th><th role="columnheader" scope="col">對應學校</th><th role="columnheader" scope="col">備註</th></tr></thead>
+        <tbody role="rowgroup">
+          <tr role="row"><td role="cell" data-label="看板">NTUcourse</td><td role="cell" data-label="對應學校">國立臺灣大學</td><td role="cell" data-label="備註" title="作者在評價範本中選「否」（不同意轉載）的文章不存摘要，只列標題。">不同意轉載的文章只列標題</td></tr>
+          <tr role="row"><td role="cell" data-label="看板">NTHU_Course</td><td role="cell" data-label="對應學校">國立清華大學</td><td role="cell" data-label="備註" title="2017 年看板搬遷時轉錄的舊文，日期是轉錄日。">2017 年轉錄的舊文以轉錄日為準</td></tr>
+          <tr role="row"><td role="cell" data-label="看板">NCTU-Teacher</td><td role="cell" data-label="對應學校">國立陽明交通大學</td><td role="cell" data-label="備註" title="2016 年看板搬遷時轉錄的舊文，日期是轉錄日。">2016 年轉錄的舊文以轉錄日為準</td></tr>
+          <tr role="row"><td role="cell" data-label="看板">NCHU-Courses</td><td role="cell" data-label="對應學校">國立中興大學</td><td role="cell" data-label="備註">文章較少</td></tr>
+        </tbody>
+      </table>
+    </details>
     <h3>儲存與顯示的內容</h3>
     <ul>
       <li>每篇只儲存：連結、標題、發文日期、作者帳號（PTT ID，不含暱稱）、看板、推文數、內文開頭不超過 120 字的摘要，以及從標題比對出的學期、課程與教師。不存全文、推文內容與圖片。</li>
@@ -89,16 +93,18 @@
 
   <section aria-labelledby="removal">
     <h2 id="removal">聯絡與移除</h2>
-    <p>先選管道：<strong>涉及個人資料、帳號，或你不想公開提出的移除請求，請私密聯絡</strong>；一般的資料錯誤（課程資料、錯配的外部文章）可以公開回報。文章作者、被提及的教師或當事人都可以要求移除外部索引中的某一筆。</p>
+    <p>先選管道：<strong>涉及個人資料、帳號，或你不想公開提出的移除請求，請走私密聯絡</strong>；一般的資料錯誤（課程資料、錯配的外部文章）可以公開回報。文章作者、被提及的教師或當事人都可以要求移除外部索引中的某一筆。</p>
     <div class="contact-routes">
       <div>
-        <h3>公開回報</h3>
-        <p>更正課程資料、回報錯誤或移除外部索引，結果大家都看得到。請不要附上學號、聯絡方式等個人資料。</p>
+        <p class="route-kind">公開回報</p>
+        <h3>可公開的資料錯誤</h3>
+        <p>更正課程資料、回報錯配的外部文章，結果大家都看得到。請不要附上學號、聯絡方式等個人資料。</p>
         <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 建立 issue <span aria-hidden="true">↗</span></a>
       </div>
       <div>
-        <h3>私密聯絡</h3>
-        <p>涉及個人資料、帳號問題或不想公開的請求。用 GitHub 的私密回報表單送出，只有維護者看得到。</p>
+        <p class="route-kind">私密聯絡</p>
+        <h3>含個資或不想公開的請求</h3>
+        <p>移除索引中與你有關的文章、帳號問題，或任何不想公開提出的請求。用 GitHub 的私密回報表單送出，只有維護者看得到。</p>
         <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密回報給維護者 <span aria-hidden="true">↗</span></a>
       </div>
     </div>

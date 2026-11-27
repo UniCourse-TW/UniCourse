@@ -7,9 +7,12 @@ import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals, url }) => {
   const next = safeNext(url.searchParams.get('next'));
-  if (locals.user) redirect(303, next);
   const mode = url.searchParams.get('mode') === 'register' ? 'register' : 'login';
-  return { mode, next } as const;
+  // Signed in and sent here by an action (`next` given): straight on. Signed in and here by
+  // hand: say who is signed in and offer the ways on, instead of a silent bounce to the home page.
+  if (locals.user && url.searchParams.has('next')) redirect(303, next);
+  const signedIn = locals.user ? { username: locals.user.username, displayName: locals.user.displayName } : null;
+  return { mode, next, signedIn } as const;
 };
 
 export const actions: Actions = {

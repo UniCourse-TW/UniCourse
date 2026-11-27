@@ -1,6 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import '$lib/community-ui.css';
   import { initial, joinedMonth, slashDate } from '$lib/community-format';
   import { profileHref } from '$lib/community-paths';
@@ -52,9 +52,16 @@
 
   const length = (text: string) => [...text].length;
 
-  // 147 schools: a filter box narrows the list by name, short name (清大 → 國立清華大學) or English name.
+  // ---- School: one combobox over 147 schools (name, short form 清大 → 國立清華大學, English name, slug).
+  // Without JavaScript the native <select> below does the same job.
+  type SchoolRow = { name: string; nameEn?: string | null; slug: string };
+  const NO_SCHOOL: SchoolRow = { slug: '', name: '不顯示學校' };
+  const SHOWN = 8;
   let schoolQuery = $state('');
-  function matches(school: { name: string; nameEn?: string | null; slug: string }, query: string) {
+  let listOpen = $state(false);
+  let activeIndex = $state(-1);
+  let combo = $state<HTMLInputElement>();
+  function matches(school: SchoolRow, query: string) {
     const q = query.trim().toLowerCase();
     if (!q) return true;
     if (school.slug.includes(q) || (school.nameEn ?? '').toLowerCase().includes(q)) return true;
@@ -63,22 +70,73 @@
     for (const char of school.name) if (char === q[at]) at += 1;
     return at === q.length;
   }
-  let shownSchools = $derived(data.schools.filter((school) => school.slug === current.school || matches(school, schoolQuery)));
-
-  // In-page navigation marks the panel in view.
-  let inView = $state('public');
+  let hits = $derived(data.schools.filter((school) => matches(school, schoolQuery)));
+  // The empty query lists 不顯示學校 first; a typed query lists schools only.
+  let options = $derived<SchoolRow[]>(schoolQuery.trim() ? hits.slice(0, SHOWN) : [NO_SCHOOL, ...hits.slice(0, SHOWN - 1)]);
+  let selectedName = $derived(current.school ? (schoolNames[current.school] ?? current.school) : '');
+  // The box shows the chosen school until the visitor starts typing again.
   onMount(() => {
-    if (!('IntersectionObserver' in window)) return;
-    const panels = ['public', 'account'].map((id) => document.getElementById(id)).filter((node): node is HTMLElement => Boolean(node));
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) if (entry.isIntersecting) inView = entry.target.id;
-      },
-      { rootMargin: '-30% 0px -60% 0px' }
-    );
-    panels.forEach((panel) => observer.observe(panel));
-    return () => observer.disconnect();
+    schoolQuery = selectedName;
   });
+  function openList() {
+    listOpen = true;
+    activeIndex = -1;
+  }
+  function closeList() {
+    listOpen = false;
+    activeIndex = -1;
+  }
+  function choose(school: SchoolRow) {
+    current = { ...current, school: school.slug };
+    schoolQuery = school.slug ? school.name : '';
+    savedVisible = false;
+    closeList();
+  }
+  function clearSchool() {
+    choose(NO_SCHOOL);
+    combo?.focus();
+  }
+  function onComboInput(event: Event) {
+    event.stopPropagation();
+    openList();
+    // Typing over the chosen name un-chooses it; an empty box means no school.
+    if (current.school && schoolQuery !== selectedName) current = { ...current, school: '' };
+    savedVisible = false;
+  }
+  function onComboBlur(event: FocusEvent) {
+    const next = event.relatedTarget as HTMLElement | null;
+    if (next?.closest('.school-list')) return;
+    closeList();
+    // Leaving without picking: keep the choice that is actually stored, not the half-typed text.
+    if (!schoolQuery.trim()) {
+      if (current.school) current = { ...current, school: '' };
+    } else if (schoolQuery !== selectedName) {
+      schoolQuery = selectedName;
+    }
+  }
+  async function onComboKey(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      if (listOpen) event.preventDefault();
+      schoolQuery = selectedName;
+      closeList();
+      return;
+    }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (!listOpen) openList();
+      await tick();
+      const count = options.length;
+      if (!count) return;
+      activeIndex = event.key === 'ArrowDown' ? (activeIndex + 1) % count : (activeIndex - 1 + count) % count;
+      return;
+    }
+    if (event.key === 'Enter') {
+      if (!listOpen) return;
+      event.preventDefault();
+      const pick = options[activeIndex] ?? (options.length === 1 ? options[0] : null);
+      if (pick) choose(pick);
+    }
+  }
 </script>
 
 <svelte:head>
@@ -98,80 +156,120 @@
       {#if current.bio.trim()}<p class="bio">{current.bio.trim()}</p>{:else}<p class="bio empty">（沒有自我介紹）</p>{/if}
     </div>
   </div>
-  <p class="preview-note">{hydrated ? (dirty ? '預覽含尚未儲存的變更；按「儲存」後才會公開。' : '這是目前公開頁上的樣子；修改欄位時預覽會即時更新。') : '這是目前公開頁上的樣子。'}</p>
+  <p class="preview-note">
+    {#if hydrated && dirty}<span class="unsaved">未儲存</span> 預覽含你剛改的內容，按「儲存」後才會公開。
+    {:else}與目前公開的個人頁相同{#if hydrated}；修改欄位時這裡會先變{/if}。{/if}
+  </p>
 {/snippet}
 
 <div class="cm settings">
   <header class="cm-head">
     <h1>設定</h1>
     <p class="cm-dek">
-      <span class="mono">@{data.profile.username}</span><span class="sep">·</span><time datetime={data.profile.createdAt}>{slashDate(data.profile.createdAt)}</time> 加入<span class="sep">·</span><a href={profileHref(data.profile.username)}>查看已公開的個人頁 →</a>
+      <span class="who-line"><span class="mono">@{data.profile.username}</span><span class="sep">·</span><time datetime={data.profile.createdAt}>{slashDate(data.profile.createdAt)}</time> 加入</span><span class="sep dek-sep">·</span><a class="dek-link" href={profileHref(data.profile.username)}>查看已公開的個人頁 <span aria-hidden="true">→</span></a>
     </p>
   </header>
 
-  <!-- In-page navigation, pinned above both columns; links share the panel titles and focus the panel. -->
+  <!-- Phones stack the two panels; these chips jump between them. Desktop shows both at once. -->
   <nav class="sections" aria-label="設定項目">
-    <a href="#public" aria-current={inView === 'public' ? 'true' : undefined}>公開資料 <span aria-hidden="true">↓</span></a>
-    <a href="#account" aria-current={inView === 'account' ? 'true' : undefined}>帳號 <span aria-hidden="true">↓</span></a>
+    <span class="jump">跳到：</span>
+    <a class="cm-chip" href="#public">公開資料</a>
+    <a class="cm-chip" href="#account">帳號</a>
   </nav>
 
   <div class="layout">
-    <div class="panels">
-      <section id="public" class="cm-panel" aria-labelledby="public-title" tabindex="-1">
-        <h2 id="public-title">公開資料</h2>
-        <p class="lead">這些資料會顯示在你的<a href={profileHref(data.profile.username)}>個人頁</a>，以及你的評價、文章與回覆旁。</p>
-        <form method="POST" class="cm-form" use:enhance={save} oninput={onInput} onchange={onInput}>
-          <div class="cm-field">
-            <div class="cm-label">
-              <label for="displayName">顯示名稱</label>
-              <span class="cm-count" aria-live="polite">{length(current.displayName)} / 50</span>
-            </div>
-            <input id="displayName" class="cm-input" name="displayName" maxlength="50" defaultValue={values.displayName}
-              placeholder={data.profile.username} aria-describedby="displayName-hint" />
-            <p id="displayName-hint" class="cm-hint">留空時顯示帳號 @{data.profile.username}。</p>
+    <section id="public" class="cm-panel" aria-labelledby="public-title" tabindex="-1">
+      <h2 id="public-title">公開資料</h2>
+      <p class="lead">這些資料會顯示在你的<a href={profileHref(data.profile.username)}>個人頁</a>，以及你的評價、文章與回覆旁。</p>
+      <form method="POST" class="cm-form" use:enhance={save} oninput={onInput} onchange={onInput}>
+        <!-- Phones have no side column: the same preview folds open here, above the fields it reflects. -->
+        <details class="preview-fold">
+          <summary>{hydrated && dirty ? '預覽未儲存的變更' : '預覽個人頁'} <span class="chev" aria-hidden="true">▾</span></summary>
+          {@render previewCard()}
+        </details>
+        <div class="cm-field">
+          <div class="cm-label">
+            <label for="displayName">顯示名稱</label>
+            <span class="cm-count" aria-live="polite">{length(current.displayName)} / 50</span>
           </div>
-          <div class="cm-field">
-            <div class="cm-label">
-              <label for="bio">自我介紹</label>
-              <span class="cm-count" class:over={length(current.bio) > 500} aria-live="polite">{length(current.bio)} / 500</span>
-            </div>
-            <textarea id="bio" class="cm-input" name="bio" rows="3" maxlength="500" defaultValue={values.bio}
-              placeholder="例如：資工系大三，喜歡演算法與系統課。"></textarea>
+          <input id="displayName" class="cm-input" name="displayName" maxlength="50" defaultValue={values.displayName}
+            placeholder={data.profile.username} aria-describedby="displayName-hint" />
+          <p id="displayName-hint" class="cm-hint">留空時顯示帳號 @{data.profile.username}。</p>
+        </div>
+        <div class="cm-field">
+          <div class="cm-label">
+            <label for="bio">自我介紹</label>
+            <span class="cm-count" class:over={length(current.bio) > 500} aria-live="polite">{length(current.bio)} / 500</span>
           </div>
-          <!-- `selected` on options keeps a choice made before hydration; `value` on the select would reset it. -->
-          <div class="cm-field">
-            <div class="cm-label"><label for="school">所屬學校</label><span class="cm-hint">選填</span></div>
-            {#if hydrated}
-              <input class="cm-input school-filter" type="search" placeholder="輸入校名或簡稱篩選，例如 清大" aria-label="篩選學校清單"
-                aria-controls="school" bind:value={schoolQuery} oninput={(event) => event.stopPropagation()}
-                onkeydown={(event) => { if (event.key === 'Enter') event.preventDefault(); }} />
-              {#if schoolQuery.trim()}<p class="cm-hint" aria-live="polite">符合 {data.schools.filter((school) => matches(school, schoolQuery)).length} 所，在下方清單選擇。</p>{/if}
-            {/if}
+          <textarea id="bio" class="cm-input" name="bio" rows="3" maxlength="500" defaultValue={values.bio}
+            placeholder="例如：資工系大三，喜歡演算法與系統課。"></textarea>
+        </div>
+        <div class="cm-field">
+          <div class="cm-label"><label for="school">所屬學校</label><span class="cm-hint">選填</span></div>
+          {#if hydrated}
+            <div class="combo" class:chosen={Boolean(current.school)}>
+              <input bind:this={combo} id="school" class="cm-input" type="text" role="combobox" autocomplete="off" spellcheck="false"
+                placeholder="輸入校名或簡稱，例如 清大" aria-expanded={listOpen} aria-controls="school-list" aria-autocomplete="list"
+                aria-activedescendant={listOpen && activeIndex >= 0 ? `school-opt-${activeIndex}` : undefined}
+                aria-describedby="school-hint" bind:value={schoolQuery}
+                onfocus={openList} onclick={openList} oninput={onComboInput} onblur={onComboBlur} onkeydown={onComboKey} />
+              {#if current.school}
+                <span class="tick" aria-hidden="true">✓</span>
+                <button type="button" class="clear" aria-label="清除學校，改為不顯示" onclick={clearSchool}><span aria-hidden="true">×</span></button>
+              {/if}
+              <input type="hidden" name="school" value={current.school} />
+              <ul id="school-list" class="school-list" role="listbox" aria-label="符合的學校" hidden={!listOpen}>
+                {#each options as school, index (school.slug)}
+                  <!-- Keyboard choice happens on the combobox input (arrows + Enter), as the ARIA pattern prescribes. -->
+                  <!-- svelte-ignore a11y_click_events_have_key_events -->
+                  <li id="school-opt-{index}" role="option" aria-selected={school.slug === current.school} class:active={index === activeIndex} class:none-row={!school.slug}
+                    onmousedown={(event) => event.preventDefault()} onclick={() => choose(school)}>
+                    <span class="opt-name">{school.name}</span>
+                    {#if school.nameEn}<span class="opt-en">{school.nameEn}</span>{/if}
+                  </li>
+                {/each}
+                {#if schoolQuery.trim() && hits.length === 0}
+                  <li class="note" role="presentation">找不到符合的學校。清空後可選「不顯示學校」，或改用英文名、簡稱再試。</li>
+                {:else if hits.length > (schoolQuery.trim() ? SHOWN : SHOWN - 1)}
+                  <li class="note" role="presentation">還有 {hits.length - (schoolQuery.trim() ? SHOWN : SHOWN - 1)} 所；繼續輸入可縮小範圍。</li>
+                {/if}
+              </ul>
+            </div>
+            <p id="school-hint" class="cm-hint" aria-live="polite">
+              {#if current.school}已選 {selectedName}；按 × 可改為不顯示。{:else}從清單選一所才會儲存；留空則不顯示學校。{/if}
+            </p>
+          {:else}
+            <!-- `selected` on options keeps a choice made before hydration; `value` on the select would reset it. -->
             <select id="school" class="cm-input" name="school">
               <option value="" selected={!values.school}>不顯示學校</option>
-              {#each shownSchools as school (school.slug)}
+              {#each data.schools as school (school.slug)}
                 <option value={school.slug} selected={school.slug === values.school}>{school.name}</option>
               {/each}
             </select>
-          </div>
-          {#if form && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
-          <!-- Without JavaScript the button is always the solid primary; with it, it only lights up once something changed. -->
-          <div class="save-row">
-            <button class="cm-btn" class:secondary={hydrated && !dirty && !saving} aria-busy={saving}
-              disabled={saving || (hydrated && !dirty)}>{saving ? '儲存中…' : '儲存'}</button>
-            <p class="status" role="status">
-              {#if savedVisible}<span class="ok"><span aria-hidden="true">✓</span> 已儲存</span>
-              {:else if hydrated && dirty}<span class="pending">有尚未儲存的變更</span>
-              {:else if hydrated}<span class="idle">尚未變更，修改後才能儲存</span>{/if}
-            </p>
-          </div>
-          <!-- Phones have no side preview: the same card folds open here, next to 儲存. -->
-          <details class="preview-fold">
-            <summary>{hydrated && dirty ? '預覽未儲存的變更' : '預覽個人頁'} <span class="chev" aria-hidden="true">▾</span></summary>
-            {@render previewCard()}
-          </details>
-        </form>
-      </section>
+          {/if}
+        </div>
+        {#if form && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
+        <!-- One status line for every outcome, next to the button it describes. Without JavaScript the
+             button is always the solid primary; with it, it only lights up once something changed. -->
+        <div class="save-row">
+          <p class="status" role="status">
+            {#if saving}<span class="idle">儲存中…</span>
+            {:else if savedVisible}<span class="ok"><span aria-hidden="true">✓</span> 已儲存，個人頁已更新</span>
+            {:else if hydrated && dirty}<span class="pending">有尚未儲存的變更</span>
+            {:else if hydrated}<span class="idle">尚未變更，修改後才能儲存</span>{/if}
+          </p>
+          <button class="cm-btn" class:secondary={hydrated && !dirty && !saving} aria-busy={saving}
+            disabled={saving || (hydrated && !dirty)}>{saving ? '儲存中…' : '儲存'}</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="side">
+      <!-- Live preview of the public identity block, so the effect of each field is visible before saving. -->
+      <aside class="preview" aria-labelledby="preview-title">
+        <h2 id="preview-title" class="eyebrow">個人頁預覽</h2>
+        {@render previewCard()}
+      </aside>
 
       <section id="account" class="cm-panel" aria-labelledby="account-title" tabindex="-1">
         <h2 id="account-title">帳號</h2>
@@ -182,7 +280,7 @@
           <div>
             <dt>密碼</dt>
             <dd>目前還不能在這裡自行變更密碼。
-              <span class="cm-hint">需要重設時，用<a href={PRIVATE_REPORT_URL} rel="noopener external">私密回報</a>告訴維護者你的帳號名稱；只有維護者看得到，請不要附上密碼。</span></dd>
+              <span class="cm-hint">需要重設時，用 GitHub 的<a href={PRIVATE_REPORT_URL} rel="noopener external">私密回報</a>告訴維護者你的帳號名稱；只有維護者看得到，請不要附上密碼。</span></dd>
           </div>
           {#if data.profile.isAdmin}<div><dt>權限</dt><dd>管理員</dd></div>{/if}
         </dl>
@@ -192,44 +290,36 @@
         </form>
       </section>
     </div>
-
-    <!-- Live preview of the public identity block, so the effect of each field is visible before saving. -->
-    <aside class="preview" aria-labelledby="preview-title">
-      <h2 id="preview-title" class="eyebrow">個人頁預覽</h2>
-      {@render previewCard()}
-    </aside>
   </div>
 </div>
 
 <style>
   .settings .sep { margin-inline: 0.4em; color: var(--axis); }
-  .sections { position: sticky; inset-block-start: 0; z-index: 2; display: flex; gap: var(--space-1); margin-block-end: var(--space-4); border-block-end: 1px solid var(--line); background: var(--bg); }
-  .sections a { display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border-block-end: 2px solid transparent; margin-block-end: -1px; color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-decoration: none; }
-  .sections a span { color: var(--muted); font-weight: 500; }
-  .sections a:hover { color: var(--brand-ink); background: var(--hover-row); }
-  .sections a[aria-current='true'] { border-block-end-color: var(--brand); color: var(--brand-ink); }
+  .cm-dek { display: flex; flex-wrap: wrap; align-items: center; }
+  .dek-link { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: 2rem; }
+  .sections { display: none; }
+  .jump { color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .cm-panel:focus { outline: none; }
   .cm-panel:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .school-filter { margin-block-end: var(--space-1); }
   .save-row .cm-btn:disabled:not([aria-busy='true']) { color: var(--ink-2) !important; background: transparent; border-color: var(--control-line); }
-  .sections a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .preview-fold { display: none; }
   .preview-fold summary { display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
   .preview-fold summary::-webkit-details-marker { display: none; }
   .preview-fold[open] .chev { rotate: 180deg; }
   .preview-fold[open] { display: grid; gap: var(--space-2); }
-  .layout { display: grid; grid-template-columns: minmax(0, 42rem) minmax(16rem, 1fr); gap: var(--space-6); align-items: start; }
-  .panels { display: grid; gap: var(--space-4); min-inline-size: 0; }
-  .cm-panel { scroll-margin-block-start: 5rem; }
+  .layout { display: grid; grid-template-columns: minmax(0, 42rem) minmax(18rem, 1fr); gap: var(--space-5); align-items: start; }
+  .side { display: grid; gap: var(--space-5); min-inline-size: 0; }
+  .cm-panel { min-inline-size: 0; scroll-margin-block-start: 5rem; }
   h2 { font-size: var(--t-lg) !important; }
   .lead { margin-block: var(--space-1) var(--space-4) !important; color: var(--muted); font-size: 0.8125rem; }
-  .save-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+  .save-row { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
+  .save-row .cm-btn { order: -1; }
   .status { font-size: var(--t-base); }
   .ok { color: var(--up); font-weight: 600; }
   .pending { color: var(--warn); font-weight: 600; }
   .idle { color: var(--muted); }
   .facts { display: grid; margin: 0 0 var(--space-4); border-block-start: 1px solid var(--line); }
-  .facts div { display: grid; grid-template-columns: 6rem minmax(0, 1fr); gap: var(--space-3); padding-block: var(--space-2); border-block-end: 1px solid var(--line); font-size: var(--t-base); }
+  .facts div { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: var(--space-3); padding-block: var(--space-2); border-block-end: 1px solid var(--line); font-size: var(--t-base); }
   dt { color: var(--muted); }
   dd { margin: 0; }
   dd .cm-hint { display: block; }
@@ -237,8 +327,25 @@
   .cm-btn.neutral { color: var(--ink-2) !important; background: var(--panel-raised); border-color: var(--control-line); }
   .cm-btn.neutral:hover { background: var(--hover-row); filter: none; }
 
+  /* School combobox: the text box is the control; the list below it is the only way to choose. */
+  .combo { position: relative; }
+  .combo .cm-input { padding-inline-end: 5.25rem; }
+  .combo.chosen .cm-input { border-color: color-mix(in srgb, var(--up) 55%, var(--control-line)); }
+  .tick { position: absolute; inset-block-start: 50%; inset-inline-end: 2.9rem; translate: 0 -50%; color: var(--up); font-weight: 700; }
+  .clear { position: absolute; inset-block: 0; inset-inline-end: 0; display: grid; place-items: center; inline-size: var(--target-min); border: 0; border-inline-start: 1px solid var(--line); border-start-end-radius: var(--radius-control); border-end-end-radius: var(--radius-control); color: var(--ink-2); background: transparent; font-size: 1.25rem; cursor: pointer; touch-action: manipulation; }
+  .clear:hover { color: var(--down); background: var(--hover-row); }
+  .school-list { position: absolute; inset-inline: 0; inset-block-start: calc(100% + 4px); z-index: 5; max-block-size: 20rem; margin: 0; padding: var(--space-1); overflow-y: auto; list-style: none; border: 1px solid var(--control-line); border-radius: var(--radius-panel); background: var(--panel-raised); box-shadow: 0 10px 24px color-mix(in srgb, var(--ink) 16%, transparent); }
+  .school-list[hidden] { display: none; }
+  .school-list [role='option'] { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; min-block-size: var(--target-min); padding: var(--space-1) var(--space-3); border-radius: var(--radius-control); color: var(--ink); font-size: var(--t-base); cursor: pointer; }
+  .school-list [role='option']:hover, .school-list .active { background: var(--brand-wash); color: var(--brand-ink); }
+  .school-list [aria-selected='true'] { font-weight: 650; }
+  .school-list [aria-selected='true'] .opt-name::after { content: ' ✓'; color: var(--up); }
+  .school-list .none-row { color: var(--ink-2); }
+  .opt-en { color: var(--muted); font-size: var(--t-sm); }
+  .school-list .note { padding: var(--space-2) var(--space-3); color: var(--muted); font-size: var(--t-sm); line-height: 1.5; }
+
   /* The preview column is a panel of its own, so its top lines up with the form card beside it. */
-  .preview { position: sticky; inset-block-start: 4rem; display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .preview { display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .preview .preview-card { background: var(--panel-raised); }
   .eyebrow { color: var(--muted) !important; font-size: var(--t-sm) !important; letter-spacing: 0 !important; }
   .preview-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
@@ -248,16 +355,23 @@
   .handle { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: var(--t-sm); }
   .bio { margin-block-start: var(--space-2) !important; color: var(--ink-2); font-size: var(--t-base); white-space: pre-wrap; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
   .bio.empty { color: var(--muted); }
-  .preview-note { color: var(--muted); font-size: var(--t-sm); }
+  .preview-note { color: var(--muted); font-size: var(--t-sm); line-height: 1.5; }
+  .unsaved { display: inline-block; padding: 0 6px; border-radius: var(--radius-pill); color: var(--warn); background: var(--warn-wash); font-weight: 600; }
 
   @media (max-width: 56rem) {
-    .layout { grid-template-columns: minmax(0, 1fr); }
+    .layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+    .side { gap: var(--space-4); }
     .preview { display: none; }
     .preview-fold { display: block; }
     .preview-fold[open] { display: grid; }
+    .sections { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-block-end: var(--space-4); }
+    .cm-panel { scroll-margin-block-start: var(--space-4); }
   }
   @media (max-width: 40rem) {
-    .save-row .cm-btn { flex: 1 1 100%; }
+    .cm-dek .dek-sep { display: none; }
+    .who-line, .dek-link { flex-basis: 100%; }
+    .save-row .status { flex-basis: 100%; }
+    .save-row .cm-btn { order: 0; flex: 1 1 100%; }
     .facts div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
     .logout .cm-btn { flex: 1 1 100%; }
   }

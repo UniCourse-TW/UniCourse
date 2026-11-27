@@ -24,6 +24,8 @@
 
   // Scroll-spy for the desktop table of contents: the section nearest the top is marked current.
   let currentId = $state('');
+  // Before the observer has spoken (and without JavaScript) the first section is the current one.
+  let shownId = $derived(currentId || sections[0]?.id);
   // Phones: one floating「目錄」button once the contents have scrolled away (replaces a link per section).
   let tocAway = $state(false);
   let tocDetails = $state<HTMLDetailsElement>();
@@ -60,9 +62,9 @@
         const [first] = [...visible.entries()].sort((a, b) => a[1] - b[1]);
         if (first) currentId = first[0];
         else {
-          // Nothing in the band: keep the last heading that scrolled above it.
+          // Nothing in the band: the last heading that scrolled above it, or the first one at the top.
           const above = headings.filter((heading) => heading.getBoundingClientRect().top < 120).at(-1);
-          if (above) currentId = above.id;
+          currentId = above ? above.id : headings[0].id;
         }
       },
       { rootMargin: '-96px 0px -60% 0px', threshold: 0 }
@@ -78,23 +80,23 @@
     <p class="meta">
       更新於 <time datetime={updated}>{updatedLabel}</time>
       {#if contact}<span class="sep" aria-hidden="true">·</span><a href={`#${contact.id}`}>{contact.title}</a>{/if}
-      <span class="sep" aria-hidden="true">·</span><a href={sibling.href}>{sibling.label} <span aria-hidden="true">→</span></a>
+      <span class="sep" aria-hidden="true">·</span><a href={sibling.href}>{sibling.label}<span aria-hidden="true"> →</span></a>
     </p>
+  </header>
+  <div class="doc-layout" class:has-gist={summary.length > 0}>
     {#if summary.length}
       <section class="gist" aria-labelledby="gist-title">
         <h2 id="gist-title">白話重點</h2>
         <ul>{#each summary as point, index (index)}<li>{point}</li>{/each}</ul>
       </section>
     {/if}
-  </header>
-  <div class="doc-layout">
     <nav class="doc-toc" id="toc" aria-label="目錄">
       <!-- Closed in the markup so phones start collapsed; desktop CSS keeps the list visible regardless. -->
       <details bind:this={tocDetails}>
         <summary>目錄<span class="toc-hint">：展開 {sections.length} 個章節</span></summary>
         <ol>
           {#each sections as section (section.id)}
-            <li><a href={`#${section.id}`} aria-current={currentId === section.id ? 'true' : undefined}>{section.title}</a></li>
+            <li><a href={`#${section.id}`} aria-current={shownId === section.id ? 'true' : undefined}>{section.title}</a></li>
           {/each}
           <li class="sibling"><a href={sibling.href}>{sibling.label} <span aria-hidden="true">→</span></a></li>
         </ol>
@@ -103,8 +105,8 @@
     <div class="prose">
       {@render children()}
       <p class="next">
-        <a href="#toc" class="back" onclick={toToc}><span aria-hidden="true">↑</span> 回目錄</a>
-        <a href={sibling.href}>另請參閱{sibling.label} <span aria-hidden="true">→</span></a>
+        <a href="#toc" class="back" onclick={toToc}><span aria-hidden="true">↑</span><span>回目錄</span></a>
+        <a href={sibling.href}><span>另請參閱{sibling.label}</span><span aria-hidden="true">→</span></a>
       </p>
     </div>
   </div>
@@ -114,9 +116,10 @@
 <style>
   .doc { display: grid; gap: var(--space-5); min-inline-size: 0; color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
   .doc-head { display: grid; gap: var(--space-1); }
-  .gist { max-inline-size: 46em; margin-block-start: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  /* The gist shares the prose column: same left edge as the first h2 and the same 52 em measure. */
+  .gist { grid-column: 2; max-inline-size: 52em; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-panel); background: var(--panel); }
   .gist h2 { margin: 0 0 var(--space-1); font-size: var(--t-base); font-weight: 650; color: var(--ink-2); }
-  .gist ul { margin: 0; padding-inline-start: 1.2em; color: var(--ink); font-size: var(--t-base); line-height: 1.7; }
+  .gist ul { display: grid; gap: var(--space-1); margin: 0; padding-inline-start: 1.2em; color: var(--ink); font-size: var(--t-md); line-height: 1.75; }
   .toc-hint { display: none; font-weight: 500; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .meta { margin: 0; color: var(--muted); font-size: var(--t-base); }
@@ -124,8 +127,11 @@
   .meta a, .doc-toc a, .next a, .prose :global(a) { color: var(--brand-ink); text-underline-offset: 0.15em; }
   :is(.meta, .doc-toc, .next, .prose) :global(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: 2px; }
 
-  .doc-layout { display: grid; grid-template-columns: 14rem minmax(0, 1fr); gap: var(--space-8); align-items: start; }
-  .doc-toc { position: sticky; inset-block-start: 5rem; font-size: var(--t-base); }
+  .doc-layout { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: var(--space-5) var(--space-7); align-items: start; }
+  .has-gist .prose :global(section:first-of-type h2) { margin-block-start: var(--space-3); }
+  .doc-toc { grid-column: 1; grid-row: 1; position: sticky; inset-block-start: 5rem; font-size: var(--t-base); }
+  .has-gist .doc-toc { grid-row: 1 / span 2; }
+  .prose { grid-column: 2; }
   .doc-toc details { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .doc-toc summary { padding: var(--space-2) var(--space-3); color: var(--muted); font-size: var(--t-sm); font-weight: 600; list-style: none; pointer-events: none; }
   .doc-toc summary::-webkit-details-marker { display: none; }
@@ -137,33 +143,44 @@
   .doc-toc .sibling { margin-block-start: var(--space-1); padding-block-start: var(--space-1); border-block-start: 1px solid var(--line); }
   .doc-toc .sibling a { color: var(--brand-ink); font-weight: 600; }
 
-  /* Long-form text: 15 px on 1.8; running text keeps a 46 em measure, tables may use the full column. */
-  /* One measure for text and tables alike: each section is 46 em at the prose size, tables fill it. */
-  .prose :global(section) { max-inline-size: 46em; }
-  .prose { min-inline-size: 0; max-inline-size: 58em; font-size: var(--t-md); line-height: var(--leading-prose); overflow-wrap: anywhere; hanging-punctuation: none; }
+  /* Long-form text: 15 px on 1.85 (storyboard). One measure for text and tables alike: each section is
+     52 em at the prose size and tables fill it. */
+  .prose :global(section) { max-inline-size: 52em; }
+  .prose { min-inline-size: 0; font-size: var(--t-md); line-height: 1.85; overflow-wrap: anywhere; hanging-punctuation: none; }
   .prose :global(h2) { margin: var(--space-8) 0 var(--space-2); font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); scroll-margin-block-start: var(--space-4); }
   .prose :global(section:first-of-type h2) { margin-block-start: 0; }
   .prose :global(h3) { margin: var(--space-5) 0 var(--space-1); font-size: var(--t-lg); font-weight: 650; line-height: var(--leading-tight); }
   .prose :global(p), .prose :global(ul), .prose :global(ol) { margin: 0 0 var(--space-3); }
   .prose :global(ul), .prose :global(ol) { padding-inline-start: 1.4em; }
-  .prose :global(li) { margin-block-end: var(--space-1); }
+  .prose :global(li) { margin-block-end: 6px; }
+  .prose :global(li:last-child) { margin-block-end: 0; }
   .prose :global(table) { inline-size: 100%; margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); border-collapse: separate; border-spacing: 0; overflow: hidden; background: var(--panel-raised); font-size: var(--t-base); line-height: var(--leading-table); }
   .prose :global(th), .prose :global(td) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
   .prose :global(th) { background: var(--table-head); color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .prose :global(tr:last-child td) { border-block-end: 0; }
-  .prose :global(code) { font-family: var(--font-mono); font-size: 0.9em; }
+  /* Code inside CJK sentences sits on a chip, and may break after the colon on narrow screens. */
+  .prose :global(code) { padding: 1px 5px; border-radius: 4px; background: var(--chip); color: var(--ink); font-family: var(--font-mono); font-size: 0.88em; line-break: anywhere; }
+  /* Identifier columns (board names) never break mid-word; the remarks column takes the wrapping. */
+  .prose :global(table.boards td:first-child), .prose :global(table.boards th:first-child) { white-space: nowrap; font-family: var(--font-mono); font-size: 0.92em; }
+  .prose :global(table.boards td:nth-child(2)) { white-space: nowrap; }
+  /* Desktop shows a folded block open; phones get a real disclosure (summary styled below). */
+  .prose :global(details.phone-fold > summary) { list-style: none; pointer-events: none; color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
+  .prose :global(details.phone-fold > summary::-webkit-details-marker) { display: none; }
+  .prose :global(details.phone-fold::details-content) { display: block; content-visibility: visible; }
+  .prose :global(details.phone-fold > summary .fold-count) { display: none; }
   .prose :global(.callout) { margin: 0 0 var(--space-3); padding: var(--space-3) var(--space-4); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); }
   .prose :global(.callout .note) { display: block; margin-block-start: var(--space-2); color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
   .prose :global(.contact-routes) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-3); max-inline-size: 46em; margin: 0 0 var(--space-3); }
   .prose :global(.contact-routes > div) { display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .prose :global(.contact-routes h3) { margin: 0; font-size: var(--t-md); }
+  .prose :global(.contact-routes .route-kind) { margin: 0; color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .prose :global(.contact-routes p) { margin: 0; color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
   .prose :global(.contact-routes a.route) { display: inline-flex; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
   .toc-fab { display: none; }
   .prose :global(.status.live) { background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); color: color-mix(in srgb, var(--up) 85%, var(--ink)); }
   .prose :global(.status) { display: inline-block; margin-inline-end: var(--space-1); padding: 0 7px; border-radius: var(--radius-pill); background: var(--warn-wash); color: var(--warn); font-size: var(--t-sm); font-weight: 600; line-height: 1.6; }
-  .next { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-6) 0 0; padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); font-weight: 600; }
-  .next a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
+  .next { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-6) 0 0; padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); font-size: var(--t-base); font-weight: 500; }
+  .next a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); }
   .next .back { color: var(--ink-2); }
   .next .back:hover { color: var(--brand-ink); }
 
@@ -181,6 +198,8 @@
   }
   @media (max-width: 56rem) {
     .doc-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+    /* Phones: gist, then the folded contents, then the text. */
+    .gist, .doc-toc, .has-gist .doc-toc, .prose { grid-column: 1; grid-row: auto; }
     .doc-toc { position: static; }
     .doc-toc details::details-content { content-visibility: auto; }
     .doc-toc details:not([open])::details-content { content-visibility: hidden; }
@@ -195,6 +214,14 @@
     /* Phones: one floating way back to the contents once it has scrolled out of view. */
     .toc-fab { position: fixed; inset-block-end: calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); inset-inline-end: var(--space-4); z-index: 20; display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 18%, transparent); color: var(--ink); font-size: var(--t-base); font-weight: 650; text-decoration: none; opacity: 0; pointer-events: none; transition: opacity 150ms; }
     .toc-fab.shown { opacity: 1; pointer-events: auto; }
+    .prose :global(details.phone-fold) { margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
+    .prose :global(details.phone-fold > summary) { display: flex; align-items: center; gap: var(--space-2); min-block-size: var(--target-min); padding-inline: var(--space-3); color: var(--brand-ink); font-size: var(--t-base); cursor: pointer; pointer-events: auto; }
+    .prose :global(details.phone-fold > summary .fold-count) { display: inline; color: var(--muted); font-weight: 500; }
+    .prose :global(details.phone-fold > summary::after) { content: '▾'; margin-inline-start: auto; color: var(--muted); }
+    .prose :global(details.phone-fold[open] > summary::after) { content: '▴'; }
+    .prose :global(details.phone-fold::details-content) { content-visibility: auto; }
+    .prose :global(details.phone-fold:not([open])::details-content) { content-visibility: hidden; }
+    .prose :global(details.phone-fold table) { margin: 0; border: 0; border-radius: 0; border-block-start: 1px solid var(--line); }
     .toc-fab:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   }
 </style>

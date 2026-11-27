@@ -14,7 +14,7 @@
     if (route.startsWith('/courses/')) {
       return {
         title: '找不到這個開課班次',
-        description: '這個班次可能已不在校方系統，或連結已失效；同一門課的其他學期多半還在。用原課號或課名找所有學期：',
+        description: '這個班次可能已不在校方系統，或連結已失效。可試著用原課號或課名搜尋，看看其他學期有沒有開：',
         secondary: { href: '/', label: '回首頁' },
         also: [SCHOOLS, FORUM],
         search: true

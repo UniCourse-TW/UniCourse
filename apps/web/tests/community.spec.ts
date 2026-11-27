@@ -49,7 +49,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   // The optional display name sits in a collapsed「加上顯示名稱」section.
   await page.getByText('加上顯示名稱').click();
   await page.getByLabel('顯示名稱').fill('測試同學');
-  await page.getByRole('button', { name: '註冊' }).click();
+  await page.getByRole('button', { name: '建立帳號' }).click();
 
   await expect(page).toHaveURL(new RegExp(`/courses/${course.id}`));
   const nav = page.getByRole('navigation', { name: '主要導覽' });
@@ -161,7 +161,7 @@ test('rejects a wrong password inline and keeps next on the same origin', async 
   await page.getByLabel('帳號').fill('nobody_here');
   await page.getByLabel('密碼').fill('wrong password');
   await page.getByRole('button', { name: '登入' }).click();
-  await expect(page.getByRole('alert')).toHaveText('帳號或密碼錯誤。');
+  await expect(page.getByRole('alert')).toContainText('帳號或密碼錯誤。');
   await expect(page.locator('input[name="next"]')).toHaveValue('/');
 });
 
@@ -193,7 +193,7 @@ test.describe('without JavaScript', () => {
     await page.goto('/auth?mode=register&next=/settings');
     await page.getByLabel('帳號').fill(username);
     await page.getByLabel('密碼').fill('correct horse battery');
-    await page.getByRole('button', { name: '註冊' }).click();
+    await page.getByRole('button', { name: '建立帳號' }).click();
 
     await expect(page).toHaveURL(/\/settings$/);
     await page.getByLabel('自我介紹').fill('第一行\n第二行');
