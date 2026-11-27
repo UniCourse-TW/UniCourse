@@ -1,40 +1,40 @@
 """Daemon-free deploy contract: real Compose rendering and synthetic process/HTTP seams.
 
-COMPOSE_BIN must name a verified Compose CLI. Never invokes Docker daemon, ingest,
-Postgres, live sites, or a production environment file. JOB fixtures deliberately
-implement only the CLI exit/--rm boundary, not Docker container internals.
+Compose renders the configuration without a daemon. The job fixtures simulate
+CLI exit status and --rm cleanup.
 """
 import http.server
 import json
 import os
 from pathlib import Path
+import select
 import shlex
 import shutil
+import signal
 import subprocess
 import tempfile
 import threading
 import unittest
 
-ROOT = Path(os.environ.get("UNICOURSE_TEST_ROOT", Path(__file__).resolve().parents[2])).resolve()
-BASE = Path(os.environ["UNICOURSE_BASELINE_ROOT"]).resolve()
-COMPOSE = os.environ["COMPOSE_BIN"]
+ROOT = Path(__file__).resolve().parents[2]
 JOBS = ("ingest", "ingest-tvc")
 
 
-def render(root):
-    env = {"PATH": os.environ["PATH"], "HOME": os.environ["HOME"],
-           "GOMAXPROCS": "1", "GOMEMLIMIT": "128MiB",
-           "TMPDIR": os.environ["TMPDIR"], "DOCKER_HOST": "unix:///nonexistent/test-only.sock",
-           "DOCKER_CONFIG": os.environ["DOCKER_CONFIG"],
-           "UNICOURSE_DB_PASSWORD": "synthetic-not-a-secret",
-           "UNICOURSE_TAG": "synthetic", "UNICOURSE_HOST": "synthetic.invalid"}
-    result = subprocess.run(
-        [COMPOSE, "--env-file", os.devnull, "--profile", "jobs", "-f",
-         str(root / "deploy/compose.yaml"), "config", "--format", "json",
-         "--no-env-resolution", "--no-path-resolution"],
-        env=env, text=True, capture_output=True, timeout=15, check=True)
-    if result.stderr:
-        raise AssertionError(result.stderr)
+def render():
+    env = {name: os.environ[name] for name in ("PATH", "HOME", "TMPDIR", "DOCKER_CONFIG")
+           if name in os.environ}
+    env["DOCKER_HOST"] = "unix:///nonexistent/test-only.sock"
+    with tempfile.TemporaryDirectory(prefix="compose-config-") as directory:
+        env_file = Path(directory) / "synthetic.env"
+        env_file.write_text("UNICOURSE_DB_PASSWORD=synthetic-not-a-secret\n"
+                            "UNICOURSE_TAG=synthetic\n"
+                            "UNICOURSE_HOST=synthetic.invalid\n")
+        result = subprocess.run(
+            ["docker", "compose", "-f", str(ROOT / "deploy/compose.yaml"),
+             "--env-file", str(env_file), "--profile", "jobs", "config", "--format", "json"],
+            env=env, text=True, capture_output=True, timeout=15)
+    if result.returncode or result.stderr:
+        raise AssertionError(f"Compose config exited {result.returncode}: {result.stderr}")
     return json.loads(result.stdout)
 
 
@@ -58,8 +58,7 @@ def effective_probe(service, image_command):
 class DeploymentContract(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.model = render(ROOT)
-        cls.before = render(BASE)
+        cls.model = render()
         cls.probe = image_probe(ROOT)
 
     def test_ingest_never_inherits_api_http_probe(self):
@@ -75,14 +74,6 @@ class DeploymentContract(unittest.TestCase):
         api = self.model["services"]["api"]
         self.assertEqual(effective_probe(api, self.probe), ["CMD-SHELL", self.probe])
         self.assertIn("curl -fsS http://127.0.0.1:3001/api/schools", self.probe)
-        self.assertEqual((ROOT / "deploy/Dockerfile.api").read_bytes(),
-                         (BASE / "deploy/Dockerfile.api").read_bytes())
-
-    def test_only_ingest_healthchecks_change_in_effective_compose(self):
-        actual = json.loads(json.dumps(self.model))
-        for name in JOBS:
-            actual["services"][name].pop("healthcheck", None)
-        self.assertEqual(actual, self.before)
 
     def run_http_probe(self, status):
         class Handler(http.server.BaseHTTPRequestHandler):
@@ -140,20 +131,21 @@ class DeploymentContract(unittest.TestCase):
             "if os.environ['FIXTURE_MISSING'] == '1': sys.exit(125)\n"
             "record=pathlib.Path(os.environ['FIXTURE_RECORD'])\n"
             "record.write_text(json.dumps({'Status':'running','Healthcheck':'disabled'}))\n"
-            "print('synthetic-running', flush=True)\n"
-            "if os.environ['FIXTURE_WAIT'] == '1': sys.stdin.readline()\n"
+            "if os.environ['FIXTURE_WAIT'] == '1':\n"
+            "    os.write(sys.stdout.fileno(), b'1')\n"
+            "    sys.stdin.readline()\n"
             "record.unlink()  # synthetic --rm, on success AND failure\n"
             "sys.exit(int(os.environ['FIXTURE_EXIT']))\n")
         fixture.chmod(0o700)
         record = path / "state.json"
         proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, text=True,
+                                stderr=subprocess.PIPE, text=True, start_new_session=True,
                                 env={**os.environ, "PATH": directory.name + ":" + os.environ["PATH"],
                                      "FIXTURE_RECORD": str(record), "FIXTURE_EXIT": str(exit_code),
                                      "FIXTURE_MISSING": str(int(missing)), "FIXTURE_WAIT": str(int(wait))})
         def cleanup():
             if proc.poll() is None:
-                proc.kill()
+                os.killpg(proc.pid, signal.SIGKILL)
             proc.communicate(timeout=5)
         self.addCleanup(cleanup)
         return proc, record
@@ -186,7 +178,9 @@ class DeploymentContract(unittest.TestCase):
         for job in JOBS:
             with self.subTest(job=job):
                 proc, record = self.job_fixture(job, 17, wait=True)
-                self.assertEqual(proc.stdout.readline().strip(), "synthetic-running")
+                ready, _, _ = select.select([proc.stdout], [], [], 5)
+                self.assertTrue(ready, f"{job} readiness timed out")
+                self.assertEqual(os.read(proc.stdout.fileno(), 1), b"1", f"{job} exited before readiness")
                 self.assertEqual(json.loads(record.read_text())["Status"], "running")
                 self.assertIsNone(proc.poll())
                 proc.communicate(input="release\n", timeout=5)

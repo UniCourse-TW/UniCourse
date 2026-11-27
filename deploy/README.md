@@ -47,26 +47,20 @@ exit status (or the exact container's terminal state/exit before removal).
 A nonzero exit is a failed job, a running job is not complete, and an absent
 `--rm` container with no retained terminal result is **unknown**, not success.
 This change does not add durable job-result storage or repair earlier missing
-completion evidence. The existing refresh units deliberately run ingest after
-crawl using `;`; their shell exit covers the final ingest, not aggregate crawl
-success, which must be checked separately.
+completion evidence. The existing refresh units separate crawl and ingest with
+`;`, so the shell attempts ingest even if crawl exits nonzero. The shell reports
+the ingest exit status. Check the crawl result separately.
 
-Daemon-free deployment regression (Compose CLI required; no Docker daemon,
-actual ingest, database, live school website, or real env file):
+Run the deployment regression suite with Python 3, Docker Compose, and curl:
 
 ```sh
-# BASELINE is an immutable code-only checkout before this patch.
-# TMPDIR, HOME and DOCKER_CONFIG should point to task-local fixture/cache paths.
-COMPOSE_BIN=/absolute/path/to/verified/docker-compose \
-UNICOURSE_BASELINE_ROOT="$BASELINE" \
-UNICOURSE_TEST_ROOT="$PWD" \
-GOMAXPROCS=1 GOMEMLIMIT=128MiB PYTHONDONTWRITEBYTECODE=1 \
-/usr/bin/python3 deploy/tests/test_ingest_healthcheck.py
+just check-deploy
 ```
 
 The test renders real effective Compose with synthetic substitutions and models
 its override of the Dockerfile healthcheck. It executes the original probe
 against a synthetic loopback HTTP fixture (only its URL is remapped), and runs
 the refresh shell commands with a task-local fake Docker executable to check
-successful, failed, missing and still-running job outcomes. This is not a live
-Docker inheritance/ingest integration test, and is not part of `just check` yet.
+successful, failed, missing and still-running job outcomes. The suite also runs
+as part of `just check`, without a Docker daemon, database, or production
+environment file.
