@@ -92,14 +92,14 @@
             <span>名額 <b class="ui-tabular">{displayValue(focus.capacity)}</b></span>
             {#if focus.offeringCount > 1}<span>{displayValue(focus.offeringCount)} 班</span>{/if}
             {#if focus.current}<span class="tag">本班所在學期</span>{/if}
-            {#if focus.partial}<span class="tag partial-tag">只收錄部分班次</span>{/if}
+            {#if focus.partial}<span class="tag partial-tag"><span class="mark">※</span>只收錄 {displayValue(focus.offeringCount)} 班・通常約 {displayValue(focus.usualSections)} 班</span>{/if}
           {/if}
         </span>
         <span class="legend" aria-hidden="true">
           {#if hasEnrolled}<span><i class="key fill"></i>修課人數</span>{/if}
           {#if hasBoth}<span><i class="key cap"></i>名額</span>{/if}
           {#if hasCapacityOnly}<span><i class="key dashed"></i>{capacityOnly ? '名額（未公布修課人數）' : '只公布名額'}</span>{/if}
-          {#if partials.length}<span><i class="key part"></i>只收錄部分班次</span>{/if}
+          {#if partials.length}<span><i class="key part"></i>※ 只收錄部分班次</span>{/if}
           {#if rows.some((row) => row.current)}<span><i class="key mark"></i>本班所在學期</span>{/if}
         </span>
       </figcaption>
@@ -135,7 +135,8 @@
                 {#if row && row.enrolled == null && row.capacity == null}<span class="none">·</span>{/if}
                 {#if row?.partial}
                   <!-- Said at the bar itself, so the low total is not first read as a drop. -->
-                  <span class="flag" style:bottom={`calc(${percent(Math.max(row.enrolled ?? 0, row.capacity ?? 0))}% + 4px)`}><span>只收錄</span><span class="flag-n">{row.offeringCount}班</span></span>
+                  <!-- Desktop: 「只收錄 N班」 at the bar; phones keep only ※ and say it above and under the chart. -->
+                  <span class="flag" style:bottom={`calc(${percent(Math.max(row.enrolled ?? 0, row.capacity ?? 0))}% + 4px)`}><span class="flag-mark">※</span><span class="flag-text">只收錄</span><span class="flag-n">{row.offeringCount}班</span></span>
                 {/if}
               </div>
             {/each}
@@ -146,14 +147,14 @@
               <span class:current={slot.row?.current} class:gap={!slot.row}>{#if slot.row?.current}<span class="sr-only">本班所在學期 </span>{/if}{slot.term.split('-')[1] ?? ''}</span>
             {/each}
           </div>
-          <div class="x ui-tabular" style:--slots={slots.length} class:dense={years > 6}>
+          <div class="x ui-tabular" style:--slots={slots.length} class:dense={years > 12}>
             {#each yearGroups as group, index (index)}
-              <span class="year" class:odd={Number(group.year) % 2 === 1} style:grid-column={`span ${group.span}`}>{group.year}</span>
+              <span class="year" class:odd={Number(group.year) % 2 === 1} class:cur={group.year === currentTerm?.split('-')[0]} style:grid-column={`span ${group.span}`}>{group.year}</span>
             {/each}
           </div>
         </div>
       </div>
-      <p class="note">{#each partialNotes as group (group.terms.join())}<b class="partial-note">{group.terms.join('、')} 只收錄 {displayValue(group.count)} 班（其他學期通常約 {displayValue(group.usual)} 班），斜線長條偏低是班次少，不代表{capacityOnly ? '名額' : '修課人數'}驟減。</b>{/each}{#if !hasEnrolled}校方沒有公布修課人數，長條是各學期的名額，不是修課人數。{/if}{#if hasBoth}橫線是名額，長條超過橫線即超額。{/if}x 軸下排是學年度，上排 1、2 是上、下學期{#if gaps}；空格是該學期沒有開課紀錄{/if}{#if hasUnpublished}；「·」表示有開課但未公布人數與名額{/if}。多班次的學期為各班加總。</p>
+      <p class="note">{#each partialNotes as group (group.terms.join())}<b class="partial-note">※ {group.terms.join('、')} 只收錄 {displayValue(group.count)} 班（其他學期通常約 {displayValue(group.usual)} 班），斜線長條偏低是班次少，不代表{capacityOnly ? '名額' : '修課人數'}驟減。</b>{/each}{#if !hasEnrolled}校方沒有公布修課人數，長條是各學期的名額，不是修課人數。{/if}{#if hasBoth}橫線是名額，長條超過橫線即超額。{/if}x 軸下排是學年度，上排 1、2 是上、下學期{#if gaps}；空格是該學期沒有開課紀錄{/if}{#if hasUnpublished}；「·」表示有開課但未公布人數與名額{/if}。多班次的學期為各班加總。</p>
     </figure>
   {/if}
 
@@ -185,6 +186,10 @@
         <tbody>
           {#each rows as row, index (row.term)}
             {@const ratio = fill(row)}
+            {#if row.current && index > initialRows}
+              <!-- Collapsed, the list jumps from the newest terms to this page's term; say what is skipped. -->
+              <tr class="skip"><td colspan="4">⋯ 中間 {displayValue(index - initialRows)} 期未列出，按下方「展開全部」查看</td></tr>
+            {/if}
             <tr
               class:extra={index >= initialRows && !row.current}
               class:active={row.term === active}
@@ -194,13 +199,12 @@
               onfocusin={() => (active = row.term)}
               onfocusout={() => (active = undefined)}
             >
-              <th scope="row" class="ui-mono">{row.term}</th>
+              <th scope="row" class="ui-mono">{row.term}{#if row.current}<span class="here" aria-current="page">本頁</span>{/if}</th>
               <td class="names">
                 {#each row.instructors as name, i (name)}<span class="name">{#if i > 0}、{/if}<a href={instructorHref(school, name)}>{name}</a></span>{:else}<span class="muted">未公布</span>{/each}{#if row.instructorCount > row.instructors.length}<span class="muted count">，另 {displayValue(row.instructorCount - row.instructors.length)} 位</span>{/if}
               </td>
               <td class="num">
                 <span class="cell-bar">
-                  {#if row.partial}<span class="only partial-badge" title={`其他學期通常約 ${displayValue(row.usualSections)} 班`}>只收錄 {displayValue(row.offeringCount)} 班</span>{/if}
                   {#if ratio != null}
                     <span class="track" class:warn={ratio >= nearlyFull && ratio <= 1} class:scaled={ratioMax > 1} style:--full={share(1)} aria-hidden="true">
                       <span class="fill" style:width={share(Math.min(1, ratio))}></span>
@@ -216,22 +220,17 @@
                   </span>
                   {#if ratio != null && ratio > 1}<span class="over" title={`修課人數是名額的 ${Math.round(ratio * 100)}%，超收 ${displayValue((row.enrolled ?? 0) - (row.capacity ?? 0))} 人`}>{Math.round(ratio * 100)}%・超額</span>
                   {:else if hasEnrolled && row.enrolled == null && row.capacity != null}<span class="only">只公布名額</span>{/if}
+                  {#if row.partial}<span class="only partial-badge" title={`其他學期通常約 ${displayValue(row.usualSections)} 班`}>只收錄 {displayValue(row.offeringCount)} 班</span>{/if}
                 </span>
               </td>
-              <td class="sections" class:multi={row.offeringCount > 1} class:codes={row.offerings.length > 1} class:trim={row.offeringCount > row.offerings.length}>
-                {#each row.offerings as offering (offering.id)}
-                  <span class="section" class:own={offering.id === currentId}>
-                    {#if offering.id === currentId}
-                      <span class="here" aria-current="page">本頁</span>
-                    {:else}
-                      <a href={`/courses/${offering.id}`} aria-label={`${row.term} ${offering.label === '本班' ? '本班' : `班次 ${offering.label}`}${offering.active ? '' : '（已下架）'}`}>{offering.label} →</a>
-                    {/if}
-                    {#if !offering.active}<span class="withdrawn">已下架</span>{/if}
-                  </span>
-                {/each}
+              <td class="sections">
+                <!-- One link per term: its sections are listed on the search page, so rows stay one action wide. -->
                 {#if row.offeringCount > 1}
-                  {#if row.offeringCount > row.offerings.length}<a class="more" href={termSearch(row.term)} aria-label={`${row.term} 全部 ${row.offeringCount} 班`}>全部 {displayValue(row.offeringCount)} 班 →</a>{/if}
+                  <a class="more" href={termSearch(row.term)} aria-label={`看 ${row.term} 的 ${row.offeringCount} 個班次`}>{displayValue(row.offeringCount)} 個班次 →</a>
+                {:else if row.offerings[0] && row.offerings[0].id !== currentId}
+                  <a class="more" href={`/courses/${row.offerings[0].id}`} aria-label={`看 ${row.term} 的這一班${row.offerings[0].active ? '' : '（已下架）'}`}>看這班 →</a>
                 {/if}
+                {#if row.withdrawn}<span class="withdrawn">已下架</span>{/if}
               </td>
             </tr>
           {/each}
@@ -240,7 +239,7 @@
     </div>
     {#if rows.length > initialRows}
       <details class="toggle">
-        <summary><span class="closed">查看全部 {rows.length} 期 ▾</span><span class="opened">收合為最近 {initialRows} 期 ▴</span></summary>
+        <summary><span class="closed">展開全部 {rows.length} 個學期 ▾</span><span class="opened">收合為最近 {initialRows} 期 ▴</span></summary>
       </details>
     {/if}
   </div>
@@ -286,6 +285,8 @@
   .slot.partial .fill, .slot.partial .cap.dashed { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand) 60%, transparent) 0 3px, color-mix(in srgb, var(--brand) 18%, transparent) 3px 6px); box-shadow: inset 0 0 0 1px var(--brand); border: 0; min-block-size: 3px; }
   .slot > .flag { inset-block-end: auto; z-index: 2; display: grid; justify-items: center; inline-size: max-content; border-radius: 0; color: var(--ink); font-size: var(--t-xs); font-weight: 650; line-height: 1.2; text-align: center; white-space: nowrap; pointer-events: none; }
   .flag-n { color: var(--brand-ink); }
+  .flag-mark { display: none; }
+  .mark { margin-inline-end: 2px; }
   .slot .fill { background: color-mix(in srgb, var(--brand) 72%, var(--panel-raised)); }
   .slot.current .fill { background: var(--brand); }
   .slot.withdrawn .fill { background: color-mix(in srgb, var(--muted) 60%, var(--panel-raised)); }
@@ -297,7 +298,9 @@
   .sem .gap { opacity: 0.55; }
   .sem .current { padding-inline: 2px; background: var(--brand); color: var(--on-brand); font-weight: 700; }
   .x { display: grid; grid-template-columns: repeat(var(--slots), minmax(0.75rem, 1fr)); min-inline-size: calc(var(--slots) * 0.75rem); margin-block-start: 2px; color: var(--ink-2); font-size: var(--t-xs); line-height: 1.2; }
-  .x span { white-space: nowrap; overflow: visible; text-align: center; border-inline-start: 1px solid var(--line); }
+  /* Flex centring lets a label wider than its one-term year spill evenly; the last one spills inwards. */
+  .x span { display: flex; justify-content: center; white-space: nowrap; overflow: visible; border-inline-start: 1px solid var(--line); }
+  .x span:last-child { justify-content: flex-end; }
   .x span:first-child { border-inline-start: 0; }
   .note { margin: var(--space-2) 0 0; color: var(--muted); font-size: var(--t-xs); line-height: 1.5; }
 
@@ -340,11 +343,12 @@
   .track.blank { visibility: hidden; }
   .value { min-inline-size: 5.5rem; white-space: nowrap; }
   .sections { white-space: nowrap; }
-  .section { display: inline-flex; gap: var(--space-1); align-items: center; margin-inline-end: var(--space-2); }
-  .sections a, .here { display: inline-flex; align-items: center; min-block-size: 2rem; font-weight: 600; }
-  .here { color: var(--brand-ink); }
+  .sections a { display: inline-flex; align-items: center; min-block-size: 2rem; font-weight: 600; }
+  .here { margin-inline-start: var(--space-2); padding: 0 6px; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-family: var(--font-sans); font-size: var(--t-xs); font-weight: 650; }
+  .skip td { padding-block: var(--space-1); color: var(--muted); font-size: var(--t-sm); text-align: center; background: var(--table-head); }
+  .collapsible:has(details[open]) tr.skip { display: none; }
   .withdrawn { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; }
-  .more { color: var(--muted); font-size: var(--t-sm); }
+  .more { color: var(--ink-2); font-size: var(--t-sm); }
 
   .collapsible:not(:has(details[open])) tr.extra { display: none; }
   .toggle { border-block-start: 1px solid var(--line); }
@@ -355,14 +359,15 @@
 
   @media (max-width: 40rem) {
     .chart { padding-inline: var(--space-3); }
-    .x.dense span.odd { color: transparent; }
-    /* Narrow slots: only the offering's own term keeps its flag (top to bottom above the bar); other
-       hatched terms are named in the note under the chart. */
-    .slot > .flag { display: block; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -0.02em; }
-    .slot:not(.current) > .flag { display: none; }
+    /* Every academic year keeps its label (10 px); only very long histories thin them out. */
+    .x { font-size: 0.625rem; }
+    .x.dense span.odd:not(.cur) { color: transparent; }
+    /* Narrow slots: a ※ above each hatched bar; the readout above and the note below say what it means. */
+    .slot > .flag { color: var(--brand-ink); font-size: var(--t-sm); }
+    .flag-text, .flag-n { display: none; }
+    .flag-mark { display: inline; }
     .table-key { gap: 2px var(--space-3); padding-inline: var(--space-3); font-size: var(--t-xs); }
     /* Phones keep 本頁 and「全部 N 班」; single section links live behind「全部 N 班」. */
-    .sections.trim .section:not(.own) { display: none; }
     /* Each term becomes a two-line row (term + numbers, then teachers + sections), so nothing is
        clipped at 390 px and no horizontal scroll is needed. */
     table, tbody { display: block; }
@@ -379,15 +384,13 @@
     td.num { grid-column: 2 / -1; }
     .names { grid-row: 2; grid-column: 1 / 3; align-self: center; }
     .sections { grid-row: 2; grid-column: 3; justify-content: end; }
-    /* Several section codes need the full width: they get a third line and the teachers keep theirs. */
-    tbody tr:has(.sections.codes:not(.trim)) .names { grid-column: 1 / -1; }
-    .sections.codes:not(.trim) { grid-row: 3; grid-column: 1 / -1; justify-content: start; }
     .names { min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); }
     .track { flex: 1 1 auto; max-inline-size: 8rem; }
     .value { min-inline-size: 0; }
     .sections { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; white-space: normal; }
     .sections .more { margin-inline-start: auto; padding-inline: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); min-block-size: 2.25rem; display: inline-flex; align-items: center; }
-    .section { margin-inline-end: 0; }
-    .sections a, .here { min-block-size: var(--target-min); }
+    .sections a { min-block-size: var(--target-min); }
+    tbody tr.skip { display: block; padding: 0; }
+    tbody tr.skip td { display: block; padding: var(--space-1) var(--space-3); }
   }
 </style>

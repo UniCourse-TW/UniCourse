@@ -83,6 +83,20 @@
     if (window.matchMedia('(max-width: 40rem)').matches) aboutOpen = false;
   });
 
+  /** A field whose whole value is one web address. */
+  function fieldUrl(value: string) {
+    const trimmed = value.trim();
+    return isHttpUrl(trimmed) && !/\s/u.test(trimmed) ? trimmed : undefined;
+  }
+
+  function urlHost(url: string) {
+    try {
+      return new URL(url).host.replace(/^www\./u, '');
+    } catch {
+      return url;
+    }
+  }
+
   function credits(value: number | null | undefined) {
     return value == null ? null : displayValue(value);
   }
@@ -129,10 +143,10 @@
       {#if isHttpUrl(course.sourceUrl)}<p class="actions-note">即時名額與選課結果以校方為準</p>{/if}
     </div>
     <nav class="jumps" aria-label="跳到本頁段落">
-      <a href="#history" class="dup">歷年開課{#if history.rows.length > 1}<span class="n">{displayValue(history.rows.length)} 期</span>{/if}</a>
-      <a href="#ratings" class:dup={!externalTile}>同學評價<span class="n">{stats ? `${displayValue(ratingCount)} 則` : '—'}</span></a>
+      <a href="#history">歷年開課{#if history.rows.length > 1}<span class="n">{displayValue(history.rows.length)} 期</span>{/if}</a>
+      <a href="#ratings">同學評價<span class="n">{stats ? `${displayValue(ratingCount)} 則` : '—'}</span></a>
       <a href="#forum-title">站內討論<span class="n">{data.posts ? `${displayValue(data.posts.total)} 篇` : '—'}</span></a>
-      <a href="#external-reviews" class:strong={externalTotal > 0} class:dup={externalTile}>外部評價<span class="n">{externalTotal > 0 ? `${externalLabel} ${displayValue(externalTotal)} 篇` : '尚未收錄'}</span></a>
+      <a href="#external-reviews" class:strong={externalTotal > 0}>外部評價<span class="n">{externalTotal > 0 ? `${externalLabel} ${displayValue(externalTotal)} 篇` : '尚未收錄'}</span></a>
     </nav>
   </header>
 
@@ -170,19 +184,21 @@
       {/if}
     </div>
     {#if termTotal}
-      <div class="tile">
+      <!-- A partial term says so right at its number, so 107 is never read as the whole term. -->
+      {@const partialBadge = termTotal.partial ? `只收錄 ${displayValue(termTotal.offeringCount)} 班` : undefined}
+      <div class="tile" class:partial={termTotal.partial}>
         {#if termTotal.enrolled == null && termTotal.capacity != null}
-          <dt>本學期全班次名額（{termTotal.term}）</dt>
-          <dd><span class="value num">{displayValue(termTotal.capacity)}</span><small>人</small></dd>
+          <dt>{termTotal.term} {termTotal.partial ? '已收錄班次名額' : '全班次名額'}</dt>
+          <dd><span class="value num">{displayValue(termTotal.capacity)}</span><small>人</small>{#if partialBadge}<span class="part-badge">{partialBadge}</span>{/if}</dd>
         {:else}
-          <dt>本學期全班次（{termTotal.term}）</dt>
+          <dt>{termTotal.term} {termTotal.partial ? '已收錄班次合計' : '全班次合計'}</dt>
           {#if termTotal.enrolled != null}
-            <dd><span class="value num">{displayValue(termTotal.enrolled)}</span><small>/ {termTotal.capacity != null ? `${displayValue(termTotal.capacity)} 人` : '名額未公布'}</small></dd>
+            <dd><span class="value num">{displayValue(termTotal.enrolled)}</span><small>/ {termTotal.capacity != null ? `${displayValue(termTotal.capacity)} 人` : '名額未公布'}</small>{#if partialBadge}<span class="part-badge">{partialBadge}</span>{/if}</dd>
           {:else}
-            <dd><span class="value">—</span><small>人數未公布</small></dd>
+            <dd><span class="value">—</span><small>人數未公布</small>{#if partialBadge}<span class="part-badge">{partialBadge}</span>{/if}</dd>
           {/if}
         {/if}
-        <dd class="note"><a href="#history">{#if termTotal.partial}只收錄 {displayValue(termTotal.offeringCount)} 班的合計（通常約 {displayValue(termTotal.usualSections)} 班）{:else}{displayValue(termTotal.offeringCount)} 個班次合計{/if}&nbsp;↓</a></dd>
+        <dd class="note"><a href="#history">{#if termTotal.partial}該學期通常約 {displayValue(termTotal.usualSections)} 班，其餘未收錄{:else}{displayValue(termTotal.offeringCount)} 個班次{/if}&nbsp;↓</a></dd>
       </div>
     {/if}
     <div class="tile">
@@ -206,8 +222,9 @@
       {:else}
         <dt>同學評價</dt>
         {#if stats && ratingCount > 0}
-          <dd><span class="value num">{averageScore(stats.average)}</span><small class="stars" aria-hidden="true">{stars(Math.round(stats.average ?? 0))}</small></dd>
-          <dd class="note" class:sparse={ratingCount < 3}><a href="#ratings">{ratingCount < 3 ? `目前僅 ${ratingCount} 則評價，僅供參考\u00a0↓` : `${displayValue(ratingCount)} 則評價\u00a0↓`}</a></dd>
+          <!-- Fewer than 3 ratings: the average is shown muted so it does not weigh like the other tiles. -->
+          <dd class:thin={ratingCount < 3}><span class="value num">{averageScore(stats.average)}</span><small class="stars" aria-hidden="true">{stars(Math.round(stats.average ?? 0))}</small></dd>
+          <dd class="note" class:sparse={ratingCount < 3}><a href="#ratings">{ratingCount < 3 ? `${ratingCount} 則評價・樣本太少，僅供參考\u00a0↓` : `${displayValue(ratingCount)} 則評價\u00a0↓`}</a></dd>
         {:else if stats}
           <dd><span class="value small-value">尚無評價</span></dd>
           <dd class="note"><a href="#ratings">修過這門課？成為第一個評分&nbsp;↓</a></dd>
@@ -236,12 +253,11 @@
       {/if}
       </div>
       <dl class="facts-list">
-        <!-- Teacher, unit and code repeat the head; phones drop them from this panel. -->
-        <div class="dup"><dt>授課教師</dt><dd>{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{:else}<span class="muted">未公布</span>{/each}</dd></div>
+        <div><dt>授課教師</dt><dd>{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{:else}<span class="muted">未公布</span>{/each}</dd></div>
         {#if course.department}
-          <div class="dup"><dt>開課單位</dt><dd><a href={departmentHref(course.school, course.department)}>{course.department}</a>{#if course.departmentCode}&nbsp;<span class="muted mono">{course.departmentCode}</span>{/if}</dd></div>
+          <div><dt>開課單位</dt><dd><a href={departmentHref(course.school, course.department)}>{course.department}</a>{#if course.departmentCode}&nbsp;<span class="muted mono">{course.departmentCode}</span>{/if}</dd></div>
         {/if}
-        <div class="dup"><dt>課號</dt><dd class="mono">{course.courseCode}{#if course.classCode}{` · 班次 ${course.classCode}`}{/if}</dd></div>
+        <div><dt>課號</dt><dd class="mono">{course.courseCode}{#if course.classCode}{` · 班次 ${course.classCode}`}{/if}</dd></div>
         {#if requirementDetail}<div class="wide" id="requirement-detail"><dt>必選修（校方原文）</dt><dd>「{requirementDetail}」{#if requirementLabel}<span class="muted small">・UniCourse 歸為「{requirementLabel}」；原文用詞的意思以校方說明為準</span>{/if}</dd></div>{/if}
         {#if course.language}<div><dt>授課語言</dt><dd>{course.language}</dd></div>{/if}
         {#if course.campus}<div><dt>校區</dt><dd>{course.campus}</dd></div>{/if}
@@ -265,7 +281,7 @@
   </div>
 
   {#if externalFirst}
-    <CourseExternalReviews school={course.school} courseCode={course.courseCode} instructors={course.instructors} reviews={data.externalReviews} />
+    <CourseExternalReviews school={course.school} courseCode={course.courseCode} title={course.title} instructors={course.instructors} reviews={data.externalReviews} />
   {/if}
 
   <!-- Site ratings and site threads side by side; indexed posts from other sites get the full width below. -->
@@ -294,13 +310,13 @@
         <EmptyState title="還沒有人討論這門課" description="問問修過的同學作業量、給分或考古題。" />
       {/if}
       {#if externalBeside}
-        <CourseExternalReviews school={course.school} courseCode={course.courseCode} instructors={course.instructors} reviews={data.externalReviews} />
+        <CourseExternalReviews school={course.school} courseCode={course.courseCode} title={course.title} instructors={course.instructors} reviews={data.externalReviews} />
       {/if}
     </section>
   </div>
 
   {#if !externalFirst && !externalBeside}
-    <CourseExternalReviews school={course.school} courseCode={course.courseCode} instructors={course.instructors} reviews={data.externalReviews} />
+    <CourseExternalReviews school={course.school} courseCode={course.courseCode} title={course.title} instructors={course.instructors} reviews={data.externalReviews} />
   {/if}
 
   {#if hasAbout}
@@ -323,7 +339,9 @@
           <summary><h3 id="extra">其他校方欄位（{extra.length}）</h3></summary>
           <dl class="extra">
             {#each extra as field (field.key)}
-              <div><dt>{field.label}</dt><dd>{field.value}</dd></div>
+              {@const url = fieldUrl(field.value)}
+              <!-- A bare URL is a link named after its host (「ceiba.ntu.edu.tw 的頁面 ↗」), never a raw address broken mid-line. -->
+              <div><dt>{field.label}</dt><dd>{#if url}<a href={url} target="_blank" rel="noopener noreferrer nofollow">{urlHost(url)} 的頁面<span aria-hidden="true"> ↗</span><span class="sr-only">（外部網站）</span></a>{:else}{field.value}{/if}</dd></div>
             {/each}
           </dl>
         </details>
@@ -387,7 +405,11 @@
   .tile .note { color: var(--muted); font-size: var(--t-sm); }
   .tile .note a { color: var(--ink-2); text-decoration: none; }
   .tile .value.small-value { font-size: var(--t-xl); }
-  .tile .note.sparse a { color: var(--ink); font-weight: 600; }
+  .tile .note.sparse a { color: var(--ink-2); font-weight: 600; }
+  .tile .thin .value { color: var(--muted); font-size: var(--t-xl); }
+  .tile .thin small.stars { color: var(--muted); }
+  .tile .part-badge { align-self: center; margin-inline-start: var(--space-1); padding: 0 6px; border-radius: var(--radius-pill); background: var(--warn-wash); color: var(--ink); font-size: var(--t-xs); font-weight: 650; white-space: nowrap; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent); }
+  .tile.partial .value { color: var(--ink-2); }
   .tile .note a:hover { color: var(--brand-ink); text-decoration: underline; }
   .meter { display: block !important; block-size: 10px; margin-block: var(--space-1) 0 !important; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .meter span { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); }
@@ -459,11 +481,11 @@
     .dek .item:not(.when) { white-space: normal; }
     .dek .item.when { flex-basis: 100%; }
     .dek .item + .item.when::before { content: none; }
-    /* The tiles below already link to 歷年開課 and 同學評價; the phone row keeps the other two sections. */
+    /* All four section shortcuts, two by two, like the desktop row. */
     .jumps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1); order: 1; }
-    .jumps .dup { display: none; }
-    .facts-list .dup { display: none; }
-    .facts-list:not(:has(> div:not(.dup))) { display: none; }
+    /* Teacher, unit, code and language as a 2×2 grid of labelled facts under the time. */
+    .facts-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2) var(--space-4); }
+    .facts-list .wide { grid-column: 1 / -1; }
     .actions-note { text-align: start; }
     .jumps a { justify-content: space-between; min-block-size: var(--target-min); padding-inline: var(--space-3); border-radius: var(--radius-control); white-space: normal; }
     .jumps a::after { content: none; }
