@@ -109,7 +109,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   const browseSchools = (await directory)?.data?.institutions
     .filter((row) => row.slug !== school && hasImportedOfferings(row) && row.terms.length >= 4)
     .sort((left, right) => right.terms.length - left.terms.length || right.offerings - left.offerings)
-    .slice(0, 4).map(({ slug, name }) => ({ slug, name })) ?? [];
+    .slice(0, 4).map(({ slug, name, terms }) => ({ slug, name, termCount: terms.length })) ?? [];
 
   return {
     schools: schools?.data ?? [],

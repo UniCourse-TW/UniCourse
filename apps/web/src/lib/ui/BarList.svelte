@@ -3,6 +3,8 @@
   import ChartValues from './ChartValues.svelte';
   import EmptyState from './EmptyState.svelte';
   import { displayValue } from './format';
+  import PartialTermLegend from './PartialTermLegend.svelte';
+  import { partialTermLabel } from './partial-terms';
   import type { BarItem, TableColumn } from './types';
 
   interface Props {
@@ -22,9 +24,11 @@
   })));
   let ceiling = $derived(rows.reduce((highest, item) => Math.max(highest, item.value ?? 0), max ?? 0));
   let hasScale = $derived(ceiling > 0 && ((max ?? 0) > 0 || rows.filter((item) => item.value !== null).length > 1));
+  let hasPartial = $derived(rows.some((item) => item.partial && item.value !== null));
   let columns: TableColumn<(typeof rows)[number]>[] = $derived([
     { id: 'label', label: '項目', value: (row) => row.label },
-    { id: 'value', label: unit ? `數值（${unit}）` : '數值', numeric: true, value: (row) => row.value }
+    { id: 'value', label: unit ? `數值（${unit}）` : '數值', numeric: true, value: (row) => row.value },
+    ...(hasPartial ? [{ id: 'coverage', label: '收錄備註', value: (row: (typeof rows)[number]) => row.partial ? partialTermLabel : null }] : [])
   ]);
 </script>
 
@@ -35,13 +39,14 @@
         <div class="bar-row" class:scaled={hasScale}>
           {#if item.href}<a href={item.href}>{item.label}</a>{:else}<span class="label">{item.label}</span>{/if}
           {#if hasScale && item.value !== null}
-            <span class="track" aria-hidden="true"><span class="fill" class:muted={ranked && item.index >= 3} style:inline-size={`${barPercent(item.value, ceiling)}%`}></span></span>
+            <span class="track" aria-hidden="true"><span class="fill" class:partial={item.partial} class:muted={ranked && item.index >= 3 && !item.partial} style:inline-size={`${barPercent(item.value, ceiling)}%`}></span></span>
           {/if}
-          <span class="value ui-tabular" class:missing={item.value === null}>{item.value === null ? '未公布' : displayValue(item.value)}{#if item.value !== null && unit}{` ${unit}`}{/if}</span>
+          <span class="value ui-tabular" class:missing={item.value === null} title={item.partial ? partialTermLabel : undefined}>{#if item.partial && item.value !== null}<i class="partial-dot" aria-hidden="true"></i>{/if}{item.value === null ? '未公布' : displayValue(item.value)}{#if item.value !== null && unit}{` ${unit}`}{/if}{#if item.partial && item.value !== null}<span class="visually-hidden">（{partialTermLabel}）</span>{/if}</span>
         </div>
       </li>
     {/each}
   </svelte:element>
+  {#if hasPartial}<PartialTermLegend />{/if}
   {#if showValues}<ChartValues {label} {columns} {rows} rowKey={(row) => row.index} />{/if}
 {:else}
   <EmptyState />
@@ -81,6 +86,10 @@
   .value { grid-column: -2 / -1; text-align: end; overflow-wrap: anywhere; }
   .track { block-size: 10px; border-radius: var(--radius-pill); background: var(--line); }
   .fill { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); }
+  .fill.partial, .partial-dot { background: var(--partial-fill); }
+  .partial-dot { display: inline-block; inline-size: .55em; block-size: .55em; border-radius: 2px; margin-inline-end: var(--space-1); }
+  .scaled .partial-dot { display: none; }
+  .visually-hidden { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
   .muted { opacity: 0.6; }
   .missing { color: var(--muted); }
 

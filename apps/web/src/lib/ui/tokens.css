@@ -17,6 +17,7 @@
   --warn: #b45309;
   --warn-wash: #fef3c7;
   --partial-hatch: repeating-linear-gradient(135deg, transparent 0 3px, color-mix(in srgb, var(--brand) 50%, transparent) 3px 4px);
+  --partial-fill: color-mix(in srgb, var(--series-1) 58%, var(--panel-raised));
   --info: #1d4ed8;
   --chip: #f4f4f5;
   --table-head: #fafafa;
@@ -58,6 +59,10 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
   --space-12: 3rem;
+  --section-gap: clamp(var(--space-6), 4vw, var(--space-12));
+  --section-content-gap: var(--space-3);
+  --inactive-fill: var(--chip);
+  --inactive-line: color-mix(in srgb, var(--control-line) 55%, var(--inactive-fill));
   --radius-control: 0.5rem;
   --radius-card: 0.5625rem;
   --radius-panel: 0.75rem;
@@ -141,13 +146,19 @@
 
 .ui-tabular { font-variant-numeric: tabular-nums; }
 
-/* Keep native disabled controls legible against a known surface in both themes. */
-:where(button, input, select, textarea):disabled {
+/* Keep inactive controls legible, including in browsers that dim native text. */
+:is(button, input, select, textarea):disabled,
+:is(input, textarea)[readonly] {
   -webkit-text-fill-color: currentColor;
   opacity: 1;
 }
-:where(button, input, select, textarea):disabled:not([aria-busy='true']) {
-  background-color: var(--chip);
+:is(button, input, select, textarea):disabled:not([aria-busy='true']),
+:is(input, textarea)[readonly] {
+  background-color: var(--inactive-fill);
+  border-color: var(--inactive-line);
+  border-style: solid;
   color: var(--ink-2);
+}
+:where(button, input, select, textarea):disabled:not([aria-busy='true']) {
   cursor: not-allowed;
 }

@@ -15,11 +15,13 @@
   import ErrorState from './ui/ErrorState.svelte';
   import FilterSelect from './ui/FilterSelect.svelte';
   import Heatstrip from './ui/Heatstrip.svelte';
+  import PartialTermLegend from './ui/PartialTermLegend.svelte';
   import SectionHeader from './ui/SectionHeader.svelte';
   import StatRow from './ui/StatRow.svelte';
   import StatTile from './ui/StatTile.svelte';
   import { zeroBasedScale } from './ui/chart-scale';
   import { displayValue } from './ui/format';
+  import { partialTerms } from './ui/partial-terms';
   import type { TableColumn } from './ui/types';
 
   let { schools, terms, overview }: { schools: School[]; terms: string[]; overview: Extract<PageData['content'], { kind: 'overview' }> } = $props();
@@ -56,7 +58,8 @@
   let maximum = $derived(Math.max(0, ...rows.map((course) => metricValue(course) ?? 0)));
   let trendMax = $derived(zeroBasedScale(rows.flatMap((course) => course.trend
     .flatMap(({ term, enrolled }) => enrolled != null && trendTerms.includes(term) ? [enrolled] : []))).max);
-  let trendCaption = $derived(rankingTrendCaption(trendTerms, rows, trendMax));
+  let trendCaption = $derived(rankingTrendCaption(trendTerms, trendMax));
+  let hasPartialTrend = $derived(rows.some((course) => partialTerms(Object.entries(course.sectionsByTerm)).size > 0));
   let rankedSchools = $derived(new Set(rows.filter((course) => course.rank !== null).map((course) => course.school)).size);
   let leadingSchool = $derived.by(() => {
     const counts = new Map<string, number>();
@@ -72,7 +75,7 @@
   let deepCoverage = $derived(coveredSchools.filter(({ terms }) => terms.length > 3));
   let years = $derived(coverageYears(overview.institutions ?? []));
   let coverageColumns = $derived<TableColumn<(typeof deepCoverage)[number]>[]>([
-    { id: 'school', label: '學校', value: (row) => row.name, width: '38%' },
+    { id: 'school', label: '學校', value: (row) => row.name },
     { id: 'years', label: '學年覆蓋' },
     { id: 'offerings', label: '班次', value: (row) => row.offerings, numeric: true, width: '6.5rem' }
   ]);
@@ -80,6 +83,10 @@
   let rankRetry = $derived(rankingHref(overview.rankSchool, overview.expanded, overview.includeNonAcademic, overview.diverse));
   let scopeHref = $derived(rankingHref('', overview.expanded, overview.includeNonAcademic, !overview.diverse));
   let rankingPending = $derived(navigating.to?.url.pathname === '/' && navigating.to.url.hash === '#ranking');
+  const schoolShortNames: Record<string, string> = {
+    ncu: '中央大學', nccu: '政治大學', nchu: '中興大學', ntnu: '臺灣師大', ntu: '臺灣大學', nthu: '清華大學',
+    nycu: '陽明交大', tnua: '臺北藝術大學', ntust: '臺灣科大', ccu: '中正大學', fcu: '逢甲大學'
+  };
 
   function href(course: CourseRanking) { return `/courses/${course.latestOfferingId}`; }
   function metricValue(course: CourseRanking) { return course.enrolledTotal ?? course.capacityTotal ?? null; }
@@ -126,7 +133,9 @@
   <StatRow>
     <StatTile label="開課班次" value={overview.totals?.offerings ?? null} note="可搜尋的班次" />
     <StatTile label="跨學期課程" value={overview.totals?.courses ?? null} note="同校同課號合併計算" />
-    <StatTile label="已收錄大專校院" value={overview.totals && overview.institutions ? `${displayValue(overview.totals.schools)} / ${displayValue(overview.institutions.length)}` : overview.totals?.schools ?? null} note={overview.institutions ? `${displayValue(deepCoverage.length)} 所收錄至少 4 學期` : undefined} />
+    <StatTile label="已收錄大專校院" value={overview.totals && overview.institutions ? `${displayValue(overview.totals.schools)} / ${displayValue(overview.institutions.length)}` : overview.totals?.schools ?? null}>
+      {#snippet detail()}{#if overview.institutions}<span class="coverage-depth"><strong>{displayValue(deepCoverage.length)} 所</strong>收錄至少 4 學期</span>{/if}{/snippet}
+    </StatTile>
     <StatTile label="已收錄學期" value={overview.totals?.terms.length ?? null} note={overview.totals?.terms[0] ? `最新學期 ${overview.totals.terms[0]}` : '最新學期未公布'} />
   </StatRow>
   {#if !overview.totals}<p class="metadata">暫時無法取得統計，仍可使用搜尋。</p>{/if}
@@ -150,7 +159,7 @@
 {/snippet}
 
 <section class="home-section" id="ranking" aria-labelledby="ranking-title" aria-busy={rankingPending}>
-  <SectionHeader id="ranking-title" title="歷史累計修課人數排行" description={!overview.rankSchool && rankedSchools ? `${overview.diverse ? '整體前 100 筆中每校最多 2 門。' : '依全站已公布修課人數排行。'}本榜共 ${displayValue(rows.filter(({ rank }) => rank !== null).length)} 門課、來自 ${displayValue(rankedSchools)} 校。` : '同校同課號，跨學期加總已公布人次；不是單期熱度。'}>
+  <SectionHeader id="ranking-title" title="歷史累計修課人數排行" description={!overview.rankSchool && rankedSchools ? `本榜列出 ${displayValue(rows.filter(({ rank }) => rank !== null).length)} 門課，來自 ${displayValue(rankedSchools)} 校。依已公布的累計修課人次排序。` : '依同校同課號跨學期加總的修課人次排序。'}>
     {#snippet actions()}
       <form id="ranking-filters" method="GET" action="/#ranking" class="rank-form" onchange={applySchool}>
         {#if overview.expanded}<input type="hidden" name="rank_limit" value="50" />{/if}
@@ -168,7 +177,7 @@
     </nav>{/if}
     <details class="ranking-method">
       <summary>ⓘ <span>計算方式</span></summary>
-      <p>同校同課號跨學期加總；各校收錄期數與公布程度不一，開設多年、多班的課更容易上榜。{#if leadingSchool && !overview.rankSchool && !overview.diverse}本榜以{leadingSchool[0]}（{displayValue(leadingSchool[1])} 門）最多。{/if}{#if overview.diverse}目前檢視從整體前 100 筆保留各校至多 2 門。{/if}各課走勢最多有最近 10 個開課學期的數值。排行目前{overview.includeNonAcademic ? '納入' : '排除'}零學分及行政活動；缺學分不視為零。只公布名額的課不列名次，列在有修課人數的課之後。</p>
+      <p>各校收錄期數與公布程度不同，開設多年或多班的課更容易上榜。{#if leadingSchool && !overview.rankSchool && !overview.diverse}本榜以{leadingSchool[0]}（{displayValue(leadingSchool[1])} 門）最多。{/if}{#if overview.diverse}目前從整體前 100 門課保留每校至多 2 門。{/if}各課走勢最多有最近 10 個開課學期的數值。排行目前{overview.includeNonAcademic ? '納入' : '排除'}零學分及行政活動。只公布名額的課另列在有修課人數的課之後。</p>
       <label class="rank-toggle"><input form="ranking-filters" type="checkbox" name="include_non_academic" value="true" checked={overview.includeNonAcademic} onchange={(event) => event.currentTarget.form?.requestSubmit()} />納入零學分及行政活動</label>
       <noscript><button type="submit" form="ranking-filters" class="button secondary">套用計算方式</button></noscript>
     </details>
@@ -182,8 +191,9 @@
       {#snippet action()}<a class="button secondary" href="/schools">看各校收錄狀態</a>{/snippet}
     </EmptyState>
   {:else}
+    <p class="metadata rank-chart-key">{trendPeriod ? `${trendPeriod} · ` : ''}{trendCaption}{#if hasPartialTrend} <span class="trend-key"><PartialTermLegend />（＊，暫無差值）</span>{/if}</p>
     <div class="desktop-ranking">
-      <DataTable caption={trendCaption} {columns} {rows}
+      <DataTable caption="累計修課人次與各期走勢" {columns} {rows}
         rowKey={(course) => course.latestOfferingId} rowHeaderColumn="course" minWidth="42rem" maxHeight="none" scrollHint={false}>
         {#snippet cell(course, column)}
           {#if column.id === 'rank'}<span class="rank-number">{displayValue(course.rank)}</span>
@@ -195,7 +205,6 @@
         {/snippet}
       </DataTable>
     </div>
-    <p class="metadata mobile-rank-caption">{trendPeriod ? `${trendPeriod} · ` : ''}{trendCaption}</p>
     <div class="rank-frame">
       <ol class="mobile-ranking" aria-label="累計修課人數排行" role="list">
         {#each rows as course (course.latestOfferingId)}
@@ -204,7 +213,7 @@
             <div class="mobile-course">{@render courseTitle(course)}</div>
             <div class="mobile-total">
               {#if metricValue(course) !== null}
-                <strong class="ui-tabular">{displayValue(metricValue(course))} <small>{course.enrolledTotal == null ? '名額' : '人次'}</small></strong>
+                <strong class="ui-tabular"><small>累計</small> {displayValue(metricValue(course))} <small>{course.enrolledTotal == null ? '名額' : '人次'}</small></strong>
                 <span class="mobile-metric" aria-hidden="true">{@render metric(course)}</span>
               {:else}<small class="unpublished">人數與名額未公布</small>{/if}
             </div>
@@ -240,7 +249,8 @@
           {#snippet cell(school, column)}
             {#if column.id === 'years'}<Heatstrip cells={yearCoverage(school.terms, years)} label={school.name} hatchPartial />
             {:else if column.id === 'school'}
-              {school.name}
+              <span class="coverage-full">{school.name}</span>
+              <span class="coverage-short" aria-hidden="true" title={school.name}>{schoolShortNames[school.slug] ?? school.name}</span>
               {#if school.terms[0] !== overview.totals?.terms[0]}<small class="coverage-recent">截至 {school.terms[0]}</small>{/if}
             {:else}{displayValue(column.value?.(school))}{/if}
           {/snippet}
@@ -267,10 +277,12 @@
   .popular { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; margin-block-start: var(--space-2); color: var(--muted); font-size: var(--t-sm); }
   .popular a { display: inline-flex; align-items: center; min-height: var(--target-min); padding-inline: var(--space-3); border-radius: var(--radius-pill); background: var(--panel-raised); border: 1px solid var(--line); color: var(--brand-ink); font-weight: 630; text-decoration: none; }
   .popular a:hover { background: var(--brand-wash); }
-  .home-section { display: grid; gap: var(--space-3); margin-block-start: clamp(1.5rem, 4vw, 2.5rem); }
+  .home-section { display: grid; gap: var(--section-content-gap); margin-block-start: var(--section-gap); }
   .snapshot { margin-block-start: var(--space-5); }
   .snapshot-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
   .snapshot-period { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1); margin: 0; color: var(--muted); font-size: var(--t-sm); }
+  .coverage-depth { display: block; }
+  .snapshot :global(.detail) { display: block; margin-inline-start: 0; }
   .rank-form { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
   .rank-toggle { display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--target-min); font-size: var(--t-sm); cursor: pointer; }
   .rank-toggle input { accent-color: var(--brand); }
@@ -283,7 +295,9 @@
   .button { display: inline-flex; justify-content: center; align-items: center; gap: var(--space-1); min-height: var(--target-min); padding-inline: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--brand-ink); font: 650 var(--t-base) / var(--leading-table) var(--font-sans); text-decoration: none; cursor: pointer; }
   .secondary { border-color: var(--control-line); }
   .button:hover { background: var(--brand-wash); }
-  .mobile-ranking, .mobile-rank-caption { display: none; }
+  .mobile-ranking, .coverage-short { display: none; }
+  .rank-chart-key { display: block; margin: 0; text-wrap: pretty; }
+  .trend-key { display: inline-flex; align-items: center; }
   .desktop-ranking { --table-pad-block: 0.3rem; }
   .rank-title { display: grid; min-width: 0; }
   .course-title { overflow-wrap: anywhere; }
@@ -297,7 +311,7 @@
   .metric[data-estimate='true'] :global(.fill) { background: repeating-linear-gradient(125deg, var(--brand) 0 2px, transparent 2px 4px); }
   .unpublished { color: var(--muted); }
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .coverage-summary { margin: 0; color: var(--ink-2); }
+  .coverage-summary { margin: 0; color: var(--ink-2); text-wrap: pretty; }
   .coverage-schools { --table-pad-block: .25rem; --heatstrip-cell-size: .875rem; }
   .coverage-recent { display: block; }
   .rank-frame { min-width: 0; }
@@ -311,26 +325,30 @@
   .search-shortcuts button { cursor: pointer; }
   @media (max-width: 45rem) {
     .desktop-ranking { display: none; }
-    .mobile-rank-caption { display: block; margin: 0; }
     .mobile-course small { display: none; }
     .mobile-ranking { display: grid; margin: 0; padding: 0; list-style: none; }
     .rank-frame { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
     .rank-footer { border-block-start: 1px solid var(--line); padding: 0 var(--space-2); }
-    .mobile-ranking li { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr) 8rem; column-gap: var(--space-2); align-items: center; padding: 0 var(--space-2) var(--space-1); }
+    .mobile-ranking li { display: grid; grid-template-columns: 1rem minmax(0, 1fr) minmax(6.75rem, auto); column-gap: var(--space-2); align-items: center; padding: 0 var(--space-3) 2px; }
     .mobile-ranking li + li { border-top: 1px solid var(--line); }
     .mobile-ranking .rank-number { justify-self: end; font-size: var(--t-base); }
     .mobile-course { font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
     .mobile-course a { display: flex; align-items: center; min-height: var(--target-min); padding-block: var(--space-1); }
-    .mobile-total { display: grid; justify-items: end; font-size: var(--t-md); line-height: 1.3; }
+    .mobile-total { display: grid; justify-items: end; text-align: end; font-size: var(--t-md); line-height: 1.3; }
     .mobile-total small { font-size: var(--t-sm); }
-    .rank-meta { grid-column: 2; overflow-wrap: anywhere; line-height: 1.35; }
+    .rank-meta { grid-column: 2 / -1; overflow-wrap: anywhere; line-height: 1.35; }
     .rank-meta code { font-family: var(--font-mono); }
-    .mobile-trend { --ranking-trend-width: min(4rem, 15vw); --ranking-trend-height: 1.5rem; font-size: var(--t-base); }
+    .mobile-trend { grid-column: 2 / -1; --ranking-trend-height: 1.125rem; font-size: var(--t-base); }
+    .mobile-trend :global(.chart) { max-inline-size: 9rem; line-height: 1; }
+    .mobile-trend :global(.trend-value) { grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-2); align-items: baseline; }
+    .mobile-trend :global(.trend-value > :first-child) { grid-column: 1 / -1; }
     .mobile-metric { display: block; width: 3.25rem; margin-block-start: .2rem; }
     .mobile-metric :global(.bar-cell > .ui-tabular), .mobile-metric .capacity-label { display: none; }
     .mobile-metric .metric :global(.bar-cell) { --bar-cell-track-size: 100%; width: 100%; }
     .mobile-metric .metric :global(.track) { block-size: 4px; }
-    .coverage-schools { --heatstrip-cell-size: clamp(.55rem, 2.7vw, .875rem); }
+    .coverage-schools { --heatstrip-cell-size: clamp(.5rem, 2.45vw, .875rem); }
+    .coverage-short { display: inline; }
+    .coverage-full { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
   }
   @media (max-width: 37rem) {
     .hero { gap: var(--space-2); }

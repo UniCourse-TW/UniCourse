@@ -3,7 +3,7 @@
   import type { School } from '@unicourse/api-client';
   import { searchSorts, type OverviewSearchFilters } from './overview-paths';
 
-  let { schools, terms, filters, departments = null, externalSort = false, empty = false, compact = false }: {
+  let { schools, terms, filters, departments = null, externalSort = false, empty = false, compact = false, keywordHint }: {
     schools: School[];
     terms: string[];
     filters?: OverviewSearchFilters;
@@ -11,9 +11,11 @@
     externalSort?: boolean;
     empty?: boolean;
     compact?: boolean;
+    keywordHint?: string;
   } = $props();
 
   const departmentOptions = $props.id();
+  const hintId = `${departmentOptions}-hint`;
   let selectedSchool = $derived(filters?.school ?? '');
   let selectedTerm = $derived(filters?.term ?? terms[0] ?? 'all');
   let advancedCount = $derived(Number(Boolean(filters?.department && !selectedSchool)) + Number(Boolean(filters && filters.sort !== 'relevance')));
@@ -78,23 +80,27 @@
 
   <form id="course-search" action="/" method="GET" role="search" aria-label="課程搜尋" class:result-filters={filters && !empty} class:has-department={filters && selectedSchool && !empty} class:empty class:compact>
     <div class="keyword">
-      <label for="course-keyword" class="keyword-label">關鍵字</label>
-      <div class="search-input" class:has-clear={empty && ready && filters?.query}>
+      <div class="keyword-heading">
+        <label for="course-keyword" class="keyword-label">關鍵字</label>
+        {#if empty && ready && filters?.query}<button type="button" class="clear-keyword" onclick={clearKeyword}>清除關鍵字</button>{/if}
+      </div>
+      <div class="search-input">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.75" /><path d="m15 15 4 4" /></svg>
         {#key filters?.query ?? ''}
-          <input id="course-keyword" name="q" type="search" bind:this={keyword} defaultValue={filters?.query ?? ''} maxlength="100" placeholder="課名、教師或課號" />
+          <input id="course-keyword" name="q" type="search" bind:this={keyword} defaultValue={filters?.query ?? ''} maxlength="100" placeholder="課名、教師或課號" aria-describedby={keywordHint ? hintId : undefined} />
         {/key}
-        {#if empty && ready && filters?.query}<button type="button" class="clear-keyword" aria-label="清空關鍵字" title="清空關鍵字，重新輸入課名、教師或課號" onclick={clearKeyword}>×</button>{/if}
       </div>
+      {#if keywordHint}<p class="keyword-hint" id={hintId}>{keywordHint}</p>{/if}
     </div>
     {#if !empty}{@render schoolField()}{@render termField()}{/if}
-    <button type="submit" aria-busy={loading}>{loading ? '搜尋中…' : empty ? '重新搜尋' : '搜尋'}</button>
     {#if filters && empty}
-      <input type="hidden" name="sort" value={filters.sort} />
-      {#if filters.group}<input type="hidden" name="group" value={filters.group} />{/if}
       <div class="empty-scope">{@render schoolField()}{@render termField()}</div>
       {#if filters.department}{@render departmentField(filters.department)}{/if}
-    {:else if filters}
+      <input type="hidden" name="sort" value={filters.sort} />
+      {#if filters.group}<input type="hidden" name="group" value={filters.group} />{/if}
+    {/if}
+    <button type="submit" aria-busy={loading}>{loading ? '搜尋中…' : empty ? '重新搜尋' : '搜尋'}</button>
+    {#if filters && !empty}
       {#if selectedSchool}{@render departmentField(filters.department)}{/if}
       {#if !externalSort || !selectedSchool}
       <details class="advanced">
@@ -122,10 +128,12 @@
   input, select, button { width: 100%; min-height: var(--target-min); padding: 0 var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font: var(--t-base) / var(--leading-table) var(--font-sans); }
   input::placeholder { color: var(--muted); }
   .keyword { min-width: 0; display: grid; gap: var(--space-1); }
+  .keyword-heading { display: flex; justify-content: space-between; align-items: center; }
+  .empty .keyword-heading { min-block-size: var(--target-min); }
+  .keyword-hint { margin: 0; color: var(--ink-2); font-size: var(--t-sm); text-wrap: pretty; }
   .search-input { position: relative; }
-  .search-input.has-clear input { padding-inline-end: var(--target-min); }
-  .search-input.has-clear input::-webkit-search-cancel-button { display: none; }
-  .clear-keyword { position: absolute; inset: 0 0 0 auto; width: var(--target-min); padding: 0; background: transparent; color: var(--ink-2); font-size: var(--t-xl); }
+  .empty input::-webkit-search-cancel-button { display: none; }
+  .clear-keyword { width: auto; padding: 0 var(--space-2); background: transparent; color: var(--brand-ink); font-size: var(--t-sm); }
   .search-input svg { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
   .search-input input { padding-inline: 2.35rem var(--space-2); font-size: 1rem; }
   button { padding-inline: var(--space-4); border-color: transparent; background: var(--brand); color: var(--on-brand); font-weight: 650; cursor: pointer; }
@@ -139,6 +147,8 @@
   .advanced-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 12rem); gap: var(--space-2); max-width: 35rem; padding-block-end: var(--space-2); }
   .advanced-apply { grid-column: 1 / -1; width: fit-content; border: 1px solid var(--control-line); background: var(--panel-raised); color: var(--brand-ink); }
   .empty { grid-template-columns: minmax(0, 1fr) auto; }
+  .empty > :is(.keyword, .department-field) { grid-column: 1 / -1; }
+  .empty > button { grid-column: 2; }
   .empty-scope { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
   @media (min-width: 54rem) {
     .result-filters:not(.has-department):has(> .advanced:not([open])) { grid-template-columns: minmax(0, 1fr) minmax(0, 12rem) minmax(0, 8.5rem) auto auto; }
@@ -157,11 +167,8 @@
     form, .result-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .keyword, form > button { grid-column: 1 / -1; }
     .empty > .keyword { grid-column: 1 / -1; }
-    .empty { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; }
-    .empty > button { grid-area: 2 / 3; padding-inline: var(--space-2); }
-    .empty-scope { display: contents; }
-    .empty-scope label { grid-row: 2; }
-    .empty > .department-field { grid-column: 1 / -1; }
+    .empty { grid-template-columns: minmax(0, 1fr); }
+    .empty > button { grid-column: 1 / -1; }
     .result-filters .keyword-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
     .result-filters > label:has(select) { display: flex; align-items: center; padding-inline-start: .35rem; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); }
     .result-filters > label:has(select) span { flex: none; }
