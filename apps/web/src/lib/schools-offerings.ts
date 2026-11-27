@@ -30,7 +30,8 @@ export function buildTeachingMatrix(offerings: Offering[], complete: boolean) {
       entry = { row: { id: course.courseCode, label: course.title, points }, points, terms: new Map(), total: 0, latestYear: year };
       courses.set(course.courseCode, entry);
     }
-    const point = entry.points[year] ?? { offerings: 0, enrolled: null, href: `/courses/${course.id}` };
+    const point = entry.points[year] ?? { offerings: 0, enrolled: null, href: `/courses/${course.id}`,
+      destination: `${course.term} 學期 · ${course.courseCode}${course.classCode ? ` · ${course.classCode} 班` : ''}${course.department ? ` · ${course.department}` : ''}` };
     point.offerings += 1;
     if (course.enrolled != null) point.enrolled = (point.enrolled ?? 0) + course.enrolled;
     entry.points[year] = point;

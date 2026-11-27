@@ -28,10 +28,22 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const matches = offerings.filter((row) => (!term || row.term === term) && (!courseCode || row.courseCode === courseCode));
   if (oldestFirst) matches.sort((left, right) => left.term.localeCompare(right.term, undefined, { numeric: true }));
   const requestedPage = Number(url.searchParams.get('page'));
-  const pageSize = 12;
+  const pageSize = 50;
+  const groups = new Map<string, typeof offerings>();
+  for (const row of matches) {
+    let group = groups.get(row.courseCode);
+    if (!group) groups.set(row.courseCode, group = []);
+    group.push(row);
+  }
+  const grouped = [...groups.values()].flat();
+  const termsByCourse = new Map([...groups].map(([code, group]) => {
+    const termCounts = new Map<string, number>();
+    for (const { term } of group) termCounts.set(term, (termCounts.get(term) ?? 0) + 1);
+    return [code, [...termCounts]];
+  }));
   const totalPages = Math.max(1, Math.ceil(matches.length / pageSize));
   const page = Number.isSafeInteger(requestedPage) ? Math.min(Math.max(1, requestedPage), totalPages) : 1;
-  const rows = matches.slice((page - 1) * pageSize, page * pageSize);
+  const rows = grouped.slice((page - 1) * pageSize, page * pageSize);
   const recentCodes = [...new Set(offerings.map(({ courseCode }) => courseCode))].slice(0, 5);
   const [summaryRatings, courseReviews] = await Promise.all([
     browseRatings(client, instructor.school, offerings),
@@ -47,7 +59,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   }).sort((left, right) => right.count - left.count);
 
   return {
-    instructor, courses: courseOptions, term, courseCode, oldestFirst, rows, matched: matches.length, page, totalPages,
+    instructor, courses: courseOptions, term, courseCode, oldestFirst, rows, termsByCourse, matched: matches.length, page, totalPages,
     listedTerms: [...new Set(offerings.map(({ term }) => term))].sort().reverse(), firstRow: (page - 1) * pageSize + 1,
     matrix: buildTeachingMatrix(offerings, offerings.length === instructor.summary.offerings), trends: trendResult?.data ?? null, summaryRatings, ratedCourses,
     externalReviews: externalReviews?.data ?? null,

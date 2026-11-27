@@ -40,6 +40,7 @@ export interface MatrixPoint {
   offerings: number;
   enrolled: number | null;
   href?: string;
+  destination?: string;
   partial?: boolean;
 }
 

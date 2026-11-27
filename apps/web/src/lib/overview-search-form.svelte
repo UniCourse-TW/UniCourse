@@ -80,7 +80,7 @@
     {#if filters && empty}
       <input type="hidden" name="sort" value={filters.sort} />
       <details class="advanced">
-        <summary>調整學校、學期等條件</summary>
+        <summary>{filters.school || filters.department || filters.term !== 'all' ? '調整學校、學期等條件' : '選擇特定學校或學期'}</summary>
         <div class="advanced-fields">
           {@render schoolField()}{@render termField()}{@render departmentField(filters.department)}
           <button type="submit" class="advanced-apply">套用篩選</button>
@@ -127,6 +127,10 @@
   .advanced-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 12rem); gap: var(--space-2); max-width: 35rem; padding-block-end: var(--space-2); }
   .advanced-apply { grid-column: 1 / -1; width: fit-content; border: 1px solid var(--control-line); background: var(--panel-raised); color: var(--brand-ink); }
   .empty { grid-template-columns: minmax(0, 1fr) auto; }
+  @media (min-width: 54rem) {
+    .result-filters:not(.has-department):has(> .advanced:not([open])) { grid-template-columns: minmax(0, 1fr) minmax(0, 12rem) minmax(0, 8.5rem) auto auto; }
+    .result-filters:not(.has-department) > .advanced:not([open]) { grid-column: auto; }
+  }
   @media (max-width: 37rem) {
     form, .result-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .keyword, form > button { grid-column: 1 / -1; }

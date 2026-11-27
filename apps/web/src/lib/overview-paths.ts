@@ -14,6 +14,7 @@ export interface OverviewSearchFilters {
   term: string;
   department: string;
   sort: SearchSort;
+  group?: 'title' | 'term' | 'none';
 }
 
 export function overviewSearchHref(filters: Partial<OverviewSearchFilters> & { page?: number }) {
@@ -23,6 +24,7 @@ export function overviewSearchHref(filters: Partial<OverviewSearchFilters> & { p
   if (filters.term) params.set('term', filters.term);
   if (filters.department) params.set('department', filters.department);
   if (filters.sort && filters.sort !== 'relevance') params.set('sort', filters.sort);
+  if (filters.group) params.set('group', filters.group);
   if (filters.page && filters.page > 1) params.set('page', String(filters.page));
   const query = params.toString();
   return query ? `/?${query}` : '/';
@@ -32,11 +34,12 @@ export function schoolHref(school: string) {
   return `/schools/${encodeURIComponent(school)}`;
 }
 
-export function rankingHref(school: string, expanded: boolean, includeNonAcademic: boolean) {
+export function rankingHref(school: string, expanded: boolean, includeNonAcademic: boolean, diverse = false) {
   const params = new URLSearchParams();
   if (school) params.set('rank_school', school);
   if (expanded) params.set('rank_limit', '50');
   if (includeNonAcademic) params.set('include_non_academic', 'true');
+  if (diverse) params.set('rank_view', 'schools');
   return `/${params.size ? `?${params}` : ''}#ranking`;
 }
 

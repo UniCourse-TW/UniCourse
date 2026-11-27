@@ -20,8 +20,6 @@
   }
 
   let { values, label, labels, min, max, decorative = false, showValues = false, showArea = true, minSegmentLength = 2, bridgeGaps = false, partial = [] }: Props = $props();
-  const id = $props.id();
-  const hatchId = `${id}-partial`;
   let partialSlots = $derived(partial.flatMap((marked, index) => marked ? [index] : []));
 
   let samples = $derived(values.map(finiteValue));
@@ -55,11 +53,10 @@
     aria-hidden={decorative || undefined} aria-label={decorative ? undefined : label}>
     {#if labels}<title>{breakdown}</title>{/if}
     {#if partialSlots.length}
-      <defs><pattern id={hatchId} width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path class="hatch" d="M0 0V6" /></pattern></defs>
       {#each partialSlots as index (index)}
         {@const spacing = 90 / (samples.length - 1)}
         {@const x = 3 + index * spacing}
-        <rect x={Math.max(0, x - spacing * .45)} y="0" width={Math.min(96, x + spacing * .45) - Math.max(0, x - spacing * .45)} height="32" fill={`url(#${hatchId})`} />
+        <line class="partial-guide" x1={x} x2={x} y1="4" y2="28" vector-effect="non-scaling-stroke" />
       {/each}
     {/if}
     {#each segments as segment, index}
@@ -92,7 +89,7 @@
   .area { fill: var(--brand); fill-opacity: 0.12; }
   .line { fill: none; stroke: var(--brand); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
   .gap { stroke-dasharray: 4 2; stroke-linecap: butt; }
-  .hatch { stroke: var(--brand); stroke-width: 2; stroke-opacity: .5; }
+  .partial-guide { stroke: var(--brand-ring); stroke-width: 1; stroke-dasharray: 2 2; }
   ellipse { fill: var(--brand); }
   .sparse { color: var(--muted); font-size: var(--t-sm); white-space: nowrap; }
   .sparse-detail { font-variant-numeric: tabular-nums; }

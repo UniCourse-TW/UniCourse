@@ -7,10 +7,11 @@
   import type { LayoutProps } from './$types';
 
   let { data, children }: LayoutProps = $props();
-  let here = $derived(page.url.pathname + page.url.search);
-  let onSearch = $derived(page.url.pathname === '/' && page.data.content?.kind === 'search');
-  let hasPageSearch = $derived(['/', '/schools', '/forum', '/landscape'].includes(page.url.pathname) || page.url.pathname.startsWith('/schools/') || page.status === 404);
-  let searchTarget = $derived(page.url.pathname === '/' ? '#course-keyword' : '/#course-keyword');
+  let pathname = $derived(page.url.pathname);
+  let here = $derived(pathname + page.url.search);
+  let onSearch = $derived(page.status < 400 && pathname === '/' && page.data.content?.kind === 'search');
+  let hasPageSearch = $derived(['/', '/schools', '/forum', '/landscape'].includes(pathname) || pathname.startsWith('/schools/') || page.status === 404);
+  let searchTarget = $derived(pathname === '/' ? '#course-keyword' : '/#course-keyword');
   let accountOpen = $state(false);
 
   afterNavigate(() => { accountOpen = false; });
@@ -21,6 +22,13 @@
     { href: '/forum', label: '論壇' },
     { href: '/landscape', label: '網站總覽' }
   ];
+
+  function currentTab(href: string) {
+    if (page.status >= 400) return undefined;
+    if (pathname === href) return 'page';
+    if (pathname.startsWith(href === '/' ? '/courses/' : `${href}/`)) return 'location';
+    return undefined;
+  }
 </script>
 
 {#snippet searchIcon()}
@@ -39,7 +47,7 @@
 
     <div class="tabs">
       {#each tabs as tab (tab.href)}
-        <a href={tab.href} aria-current={page.url.pathname === tab.href ? 'page' : page.url.pathname.startsWith(`${tab.href}/`) || (tab.href === '/' && page.url.pathname.startsWith('/courses/')) ? 'location' : undefined}>{tab.label}</a>
+        <a href={tab.href} aria-current={currentTab(tab.href)}>{tab.label}</a>
       {/each}
     </div>
 
@@ -73,12 +81,11 @@
           </div>
         </details>
       {:else}
-        <a href={page.url.pathname === '/auth' ? page.url.pathname + page.url.search : loginHref(here)} class="login" aria-label="登入／註冊"
-          aria-current={page.url.pathname === '/auth' ? 'page' : undefined}>登入</a>
+        <a href={pathname === '/auth' ? here : loginHref(here)} class="login" aria-label="登入／註冊">登入</a>
       {/if}
     </div>
   </nav>
-  {#if navigating.to}<div class="progress" aria-hidden="true"></div>{/if}
+  {#if navigating.to && !navigating.willUnload}<div class="progress" aria-hidden="true"></div>{/if}
 </header>
 
 <main class="page" id="main-content" tabindex="-1">
@@ -136,7 +143,7 @@
     .site-header:not([data-shell-theme]) .set-light { display: inline-grid; }
   }
   .login { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target-min); min-width: var(--target-min); padding-inline: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; white-space: nowrap; text-decoration: none; }
-  .login:hover, .login[aria-current='page'] { border-color: var(--brand-ring); background: var(--brand-wash); }
+  .login:hover { border-color: var(--brand-ring); }
   .account { position: relative; }
   .account summary { display: flex; gap: var(--space-1); padding-inline: var(--space-2); list-style: none; font-weight: 650; }
   .account summary::-webkit-details-marker { display: none; }
@@ -147,7 +154,7 @@
   .menu-who { margin: 0; padding: var(--space-1) var(--space-3) var(--space-2); border-bottom: 1px solid var(--line); color: var(--muted); font-size: var(--t-sm); overflow-wrap: anywhere; }
   .account-links :is(a, button) { display: flex; align-items: center; width: 100%; min-height: var(--target-min); padding: 0 var(--space-3); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink); font: inherit; text-decoration: none; cursor: pointer; }
   .tools :is(a, button, summary):hover { background: var(--hover-row); }
-  .progress { position: absolute; bottom: -1px; height: 2px; width: 35%; background: var(--brand); animation: progress 1s ease-in-out infinite alternate; }
+  .progress { position: absolute; z-index: 1; inset-block-end: -1px; inset-inline-start: 0; height: 2px; width: 35%; background: var(--brand); pointer-events: none; animation: progress 1s ease-in-out infinite alternate; }
   @keyframes progress { from { transform: translateX(0); } to { transform: translateX(185%); } }
   @media (prefers-reduced-motion: reduce) { .progress { width: 100%; animation: none; } }
   .page { flex: 1; padding-block: clamp(1.5rem, 4vw, 3rem) var(--space-12); }

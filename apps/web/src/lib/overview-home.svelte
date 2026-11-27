@@ -2,7 +2,7 @@
   import { navigating } from '$app/state';
   import type { CourseRanking, School } from '@unicourse/api-client';
   import type { PageData } from '../routes/$types';
-  import { importedAt } from './format';
+  import { importedAt, shortImportedAt } from './format';
   import { coveragePeriod, coverageYears, hasSchoolPage, yearCoverage } from './institutions';
   import { overviewSearchHref, popularSearches, rankingHref, schoolHref } from './overview-paths';
   import OverviewRankingTrend, { rankingTrendCaption } from './overview-ranking-trend.svelte';
@@ -54,8 +54,9 @@
     .sort((left, right) => right.offerings - left.offerings || left.code.localeCompare(right.code)));
   let coverageMax = $derived(coveredSchools[0]?.offerings ?? 0);
   let years = $derived(coverageYears(overview.institutions ?? []));
-  let rankHref = $derived(rankingHref(overview.rankSchool, !overview.expanded, overview.includeNonAcademic));
-  let rankRetry = $derived(rankingHref(overview.rankSchool, overview.expanded, overview.includeNonAcademic));
+  let rankHref = $derived(rankingHref(overview.rankSchool, !overview.expanded, overview.includeNonAcademic, overview.diverse));
+  let rankRetry = $derived(rankingHref(overview.rankSchool, overview.expanded, overview.includeNonAcademic, overview.diverse));
+  let scopeHref = $derived(rankingHref('', overview.expanded, overview.includeNonAcademic, !overview.diverse));
   let rankingPending = $derived(navigating.to?.url.pathname === '/' && navigating.to.url.hash === '#ranking');
 
   function href(course: CourseRanking) { return `/courses/${course.latestOfferingId}`; }
@@ -79,7 +80,7 @@
     <h1>跨校查課，看十年修課人數。</h1>
     <p class="dek">跨校比對開課班次、授課教師與歷年修課人數；從課名、教師或課號開始查。</p>
     <p class="metadata">
-      {#if latest}<span>更新於 <time datetime={latest}>{importedAt(latest)}</time>（臺北時間）</span>{:else}<span>更新時間未公布</span>{/if}
+      {#if latest}<span>更新於 <time datetime={latest} title={importedAt(latest)}>{shortImportedAt(latest)}</time>・臺北時間</span>{:else}<span>更新時間未公布</span>{/if}
       <span aria-hidden="true">·</span><a href="#coverage">資料來源</a>
     </p>
   </div>
@@ -88,7 +89,7 @@
 <section class="search-panel" aria-labelledby="find-courses">
   <h2 id="find-courses">搜尋課程</h2>
   <OverviewSearchForm {schools} {terms} />
-  <p class="metadata search-scope-note">查歷年課程可將學期切換為「全部學期」。</p>
+  <div class="search-shortcuts"><button class="button text-action" form="course-search" name="all_terms" value="1">查全部學期</button><a class="summary-jump" href="#ranking">看累計修課排行 ↓</a></div>
   <div class="popular" aria-label="熱門搜尋">
     <span>熱門搜尋</span>
     {#each popularSearches as query (query)}<a href={overviewSearchHref({ query, term: 'all' })}>{query}</a>{/each}
@@ -106,7 +107,6 @@
     <StatTile label="大專校院" value={overview.totals && overview.institutions ? `${displayValue(overview.totals.schools)} / ${displayValue(overview.institutions.length)}` : overview.totals?.schools ?? null} note="有匯入資料的學校" />
     <StatTile label="已收錄學期" value={overview.totals?.terms.length ?? null} note={overview.totals?.terms[0] ? `最新學期 ${overview.totals.terms[0]}` : '最新學期未公布'} />
   </StatRow>
-  <a class="summary-jump" href="#ranking">看累計修課排行 ↓</a>
   {#if !overview.totals}<p class="metadata">暫時無法取得統計，仍可使用搜尋。</p>{/if}
 </section>
 
@@ -128,10 +128,11 @@
 {/snippet}
 
 <section class="home-section" id="ranking" aria-labelledby="ranking-title" aria-busy={rankingPending}>
-  <SectionHeader id="ranking-title" title="歷史累計修課人數排行" description="同校同課號，跨學期加總已公布人次；不是單期熱度。">
+  <SectionHeader id="ranking-title" title="歷史累計修課人數排行" description={!overview.rankSchool && rankedSchools ? `本榜列出 ${displayValue(rows.filter(({ rank }) => rank !== null).length)} 門課、來自 ${displayValue(rankedSchools)} 校；僅計已公布修課人數。` : '同校同課號，跨學期加總已公布人次；不是單期熱度。'}>
     {#snippet actions()}
       <form id="ranking-filters" method="GET" action="/#ranking" class="rank-form" onchange={applySchool}>
         {#if overview.expanded}<input type="hidden" name="rank_limit" value="50" />{/if}
+        {#if overview.diverse}<input type="hidden" name="rank_view" value="schools" />{/if}
         <FilterSelect name="rank_school" label="排行範圍" allLabel="所有學校" value={overview.rankSchool}
           options={schools.map((school) => ({ value: school.slug, label: school.name }))} />
         <noscript><button class="button secondary">套用</button></noscript>
@@ -139,15 +140,15 @@
     {/snippet}
   </SectionHeader>
   <div class="ranking-tools">
-    <div class="rank-scope">{#if !overview.rankSchool && rankedSchools}<span>{displayValue(rankedSchools)} 校上榜{#if leadingSchool}，以{leadingSchool[0]}（{displayValue(leadingSchool[1])} 門）最多{/if}。各校公布程度不一，未公布不列名次。</span>{:else}<span>僅已公布修課人數列入名次。</span>{/if}</div>
+    {#if !overview.rankSchool}<a class="button secondary" href={scopeHref}>{overview.diverse ? '看整體排行' : '每校最多 2 門'}</a>{/if}
     <details class="ranking-method">
-      <summary>計算方式</summary>
-      <p>目前{overview.includeNonAcademic ? '納入' : '排除'}零學分及班會、導師時間等行政活動；學分未公布不視為零。開設多年、多班的課較容易上榜。只公布名額的課以斜紋顯示，列在有修課人數的課之後。</p>
+      <summary>ⓘ <span>計算方式</span></summary>
+      <p>同校同課號跨學期加總；各校收錄期數與公布程度不一，開設多年、多班的課更容易上榜。{#if leadingSchool && !overview.rankSchool && !overview.diverse}本榜以{leadingSchool[0]}（{displayValue(leadingSchool[1])} 門）最多。{/if}{#if overview.diverse}目前檢視從整體前 50 筆保留各校至多 2 門。{/if}目前{overview.includeNonAcademic ? '納入' : '排除'}零學分及行政活動；缺學分不視為零。只公布名額的課不列名次，列在有修課人數的課之後。</p>
       <label class="rank-toggle"><input form="ranking-filters" type="checkbox" name="include_non_academic" value="true" checked={overview.includeNonAcademic} onchange={(event) => event.currentTarget.form?.requestSubmit()} />納入零學分及行政活動</label>
       <noscript><button type="submit" form="ranking-filters" class="button secondary">套用計算方式</button></noscript>
     </details>
     {#if rows.length >= 10 || overview.expanded}
-      <a class="button text-action expand-ranking" href={rankHref}>{overview.expanded ? '顯示前 10 筆' : '查看前 50 筆'} <span aria-hidden="true">→</span></a>
+      <a class="button text-action expand-ranking" href={rankHref}>{overview.expanded ? '顯示前 10 筆' : overview.diverse ? '顯示所有符合的課' : '查看前 50 筆'} <span aria-hidden="true">→</span></a>
     {/if}
     <span class="visually-hidden" role="status">{rankingPending ? '更新排行中…' : ''}</span>
   </div>
@@ -178,21 +179,20 @@
         <li>
           <span class="rank-number" aria-label={course.rank === null ? '不列名次' : `第 ${course.rank} 名`}>{displayValue(course.rank)}</span>
           <div class="rank-detail">
-            <div class="mobile-course">{@render courseTitle(course)}</div>
-            <span class="rank-meta">{course.schoolName} · <code>{course.courseCode}</code> {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}</span>
+            <div class="rank-main"><div class="mobile-course">{@render courseTitle(course)}</div><span class="rank-meta">{course.schoolName} · <code>{course.courseCode}</code> {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}</span></div>
             <div class="rank-metric">
-              <div><small class="metric-label">歷年累計 · {course.terms} 學期</small>
+              <div><small class="metric-label">{course.terms} 學期 · {course.enrolledTotal == null ? '名額' : '人次'}</small>
                 {#if metricValue(course) === null}<span class="unpublished">人數與名額未公布</span>
                 {:else}<span class="mobile-metric" title={course.enrolledTotal == null ? '累計名額' : '累計修課人次'}>{@render metric(course)}</span>{/if}
               </div>
-              <div><small class="metric-label">最近公布</small><OverviewRankingTrend {course} terms={trendTerms} max={trendMax} /></div>
+              <OverviewRankingTrend {course} terms={trendTerms} max={trendMax} />
             </div>
           </div>
         </li>
       {/each}
     </ol>
     {#if rows.length >= 10 || overview.expanded}
-      <a class="button text-action expand-mobile" href={rankHref}>{overview.expanded ? '顯示前 10 筆' : '查看前 50 筆'} <span aria-hidden="true">→</span></a>
+      <a class="button text-action expand-mobile" href={rankHref}>{overview.expanded ? '顯示前 10 筆' : overview.diverse ? '顯示所有符合的課' : '查看前 50 筆'} <span aria-hidden="true">→</span></a>
     {/if}
     {#if hasDemo}<p class="metadata">「示範」為合成資料，並非校方實際開課紀錄。</p>{/if}
   {/if}
@@ -218,7 +218,9 @@
             <tr>
               <th scope="row"><a href={schoolHref(school.slug)}>{school.name}</a></th>
               <td class="ui-tabular coverage-period">
-                <Heatstrip cells={yearCoverage(school.terms, years)} label={school.name} hatchPartial />
+                <div class="coverage-strip"><Heatstrip cells={yearCoverage(school.terms, years)} label={school.name} hatchPartial />
+                  {#if years.length > 1}<span class="strip-endpoints" aria-hidden="true"><span>{years[0]}</span><span>{years.at(-1)}</span></span>{/if}
+                </div>
                 <small>{displayValue(school.terms.length)} 學期</small>
               </td>
               <td class="coverage-count"><BarCell value={school.offerings} max={coverageMax} /></td>
@@ -254,7 +256,8 @@
   .rank-toggle { display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--target-min); font-size: var(--t-sm); cursor: pointer; }
   .rank-toggle input { accent-color: var(--brand); }
   #ranking[aria-busy='true'] .rank-form { opacity: 0.7; }
-  .ranking-tools { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); }
+  .ranking-tools { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .expand-ranking { margin-inline-start: auto; }
   .ranking-method summary { width: fit-content; align-content: center; min-height: var(--target-min); color: var(--brand-ink); cursor: pointer; font-size: var(--t-base); }
   .ranking-method p { max-width: 46rem; margin: 0; color: var(--muted); font-size: var(--t-base); }
   .button { display: inline-flex; justify-content: center; align-items: center; gap: var(--space-1); min-height: var(--target-min); padding-inline: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--brand-ink); font: 650 var(--t-base) / var(--leading-table) var(--font-sans); text-decoration: none; cursor: pointer; }
@@ -290,8 +293,9 @@
   .coverage-panel .coverage-count { width: 12rem; text-align: start; white-space: nowrap; }
   .coverage-count :global(.bar-cell) { justify-content: start; }
   .coverage-count :global(.bar-cell > .ui-tabular) { min-inline-size: 6ch; text-align: end; }
-  .rank-scope { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); color: var(--muted); font-size: var(--t-sm); }
-  .search-scope-note { margin-block: var(--space-1) 0; }
+  .search-shortcuts { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
+  .search-shortcuts button { cursor: pointer; }
+  .strip-endpoints { display: none; }
   @media (max-width: 45rem) {
     .desktop-ranking, .expand-ranking { display: none; }
     .mobile-rank-caption { display: block; }
@@ -302,14 +306,18 @@
     .mobile-ranking li + li { border-top: 1px solid var(--line); }
     .mobile-ranking .rank-number { margin-top: var(--space-3); font-size: var(--t-base); }
     .mobile-course { display: flex; flex-direction: column; justify-content: center; min-height: var(--target-min); width: fit-content; max-width: 100%; font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
+    .rank-main { display: flex; align-items: baseline; gap: 0 var(--space-2); flex-wrap: wrap; }
     .rank-meta { overflow-wrap: anywhere; }
     .rank-meta code { font-family: var(--font-mono); }
     .metric-label { display: block; color: var(--muted); font-size: var(--t-xs); }
-    .rank-metric { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; }
+    .rank-metric { display: grid; grid-template-columns: minmax(0, 1fr) minmax(7.25rem, 43%); gap: var(--space-2); align-items: center; }
     .rank-metric .metric { justify-content: start; }
     .mobile-metric { min-width: 0; }
     .rank-metric .unpublished { font-size: var(--t-sm); }
-    .rank-metric .metric :global(.bar-cell) { --bar-cell-track-size: clamp(1.25rem, 7vw, 3.5rem); width: auto; font-size: var(--t-sm); }
+    .rank-metric .metric :global(.bar-cell) { --bar-cell-track-size: auto; width: 100%; font-size: var(--t-sm); }
+    .rank-metric .metric :global(.track) { flex: 1 1 auto; min-inline-size: 1.5rem; }
+    .coverage-strip { width: fit-content; }
+    .strip-endpoints { display: flex; justify-content: space-between; gap: var(--space-2); font: var(--t-xs) var(--font-mono); }
   }
   @media (max-width: 37rem) {
     .hero { gap: var(--space-2); }

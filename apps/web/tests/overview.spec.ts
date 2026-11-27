@@ -2,6 +2,37 @@ import { expect, test } from '@playwright/test';
 
 const API = 'http://127.0.0.1:3001';
 
+test('keeps sign-in and error pages neutral and shows progress during client navigation', async ({ page }) => {
+  const nav = page.getByRole('navigation', { name: '主要導覽' });
+  const login = nav.getByRole('link', { name: '登入／註冊' });
+  const progress = page.locator('.site-header .progress');
+  await page.goto('/auth?next=%2Fschools');
+  await expect(login).toHaveAttribute('href', '/auth?next=%2Fschools');
+  await expect(nav.locator('[aria-current]')).toHaveCount(0);
+
+  expect((await page.goto('/courses/999999999'))?.status()).toBe(404);
+  await expect(nav.locator('[aria-current]')).toHaveCount(0);
+  await expect(progress).toHaveCount(0);
+  await page.waitForLoadState('networkidle');
+
+  const release = Promise.withResolvers<void>();
+  await page.route('**/schools/__data.json*', async (route) => {
+    await release.promise;
+    await route.continue();
+  });
+  try {
+    await nav.getByRole('link', { name: '學校', exact: true }).click();
+    await expect(progress).toBeVisible();
+    await expect(progress).toHaveCSS('height', '2px');
+    await expect(progress).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  } finally {
+    release.resolve();
+  }
+  await expect(page).toHaveURL('/schools');
+  await expect(progress).toHaveCount(0);
+  await expect(nav.getByRole('link', { name: '學校', exact: true })).toHaveAttribute('aria-current', 'page');
+});
+
 test('shows historical enrollment, filters the ranking and browses a school and its department', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' });
 
@@ -18,7 +49,8 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(linearAlgebra.locator('.trend svg circle')).toHaveCount(2);
   const singleTerm = ranking.getByRole('listitem').filter({ hasText: 'DEMO202' });
   await expect(singleTerm.getByText('115-1 · 72 人')).toBeVisible();
-  await expect(singleTerm.locator('.trend svg circle')).toHaveCount(1);
+  await expect(singleTerm.getByText('僅一期')).toBeVisible();
+  await expect(singleTerm.locator('.trend svg')).toHaveCount(0);
   await ranking.getByText('計算方式', { exact: true }).click();
   await expect(ranking.getByText(/列在有修課人數的課之後/)).toBeVisible();
   await expect(ranking.getByRole('list').getByText('人數與名額未公布').first()).toBeVisible();
@@ -35,7 +67,7 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   const snapshot = page.getByRole('region', { name: '目前收錄' });
   await expect(snapshot.getByText('開課班次')).toBeVisible();
   await expect(snapshot.getByText('114-2 至 115-1')).toBeVisible();
-  await expect(snapshot.getByRole('link', { name: '看累計修課排行' })).toHaveAttribute('href', '#ranking');
+  await expect(page.getByRole('region', { name: '搜尋課程' }).getByRole('link', { name: '看累計修課排行' })).toHaveAttribute('href', '#ranking');
   const coverage = page.getByRole('region', { name: '累計班次最多的學校' });
   const nthuCoverage = coverage.getByRole('row').filter({ hasText: '國立清華大學' });
   await expect(nthuCoverage.getByRole('img', { name: /國立清華大學.*114 學年：1 學期/ })).toBeVisible();
@@ -47,7 +79,7 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   const school = page.getByRole('table').getByRole('row').filter({ hasText: '國立清華大學' });
   await school.getByLabel('國立清華大學的收錄明細').click();
   await expect(school.locator('time').filter({ visible: true })).toHaveAttribute('datetime', /T/);
-  await school.getByRole('link', { name: '國立清華大學' }).click();
+  await school.getByRole('link', { name: '國立清華大學', exact: true }).click();
   await expect(page).toHaveURL('/schools/nthu');
   await expect(page.getByRole('heading', { name: '國立清華大學' })).toBeVisible();
   const historySection = page.getByRole('region', { name: '歷年收錄' });
@@ -62,7 +94,8 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(page.getByRole('heading', { name: '示範數學系' })).toBeVisible();
   const termLinks = page.getByRole('navigation', { name: '切換課表學期' });
   await expect(termLinks.getByRole('link', { name: '115-1' })).toHaveAttribute('aria-current', 'true');
-  await expect(page.getByRole('list', { name: '必選修分布' })).toBeVisible();
+  await expect(page.getByRole('list', { name: '必選修分布（班次）' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '歷年開課變化' }).getByText('已公布修課人次')).toBeVisible();
   await expect(page.getByRole('list', { name: '115-1 學期開課班次' }).getByText(/週二 第 3、4 節/)).toBeVisible();
   await expect(page.getByRole('list', { name: '115-1 學期開課班次' }).getByText('餘 2')).toBeVisible();
   await termLinks.getByRole('link', { name: '114-2' }).click();
@@ -137,7 +170,8 @@ test('derives directory coverage from crawler status and imported offerings', as
 
   const table = page.getByRole('table', { name: /大專校院收錄狀態/ });
   const rows = table.locator('tbody tr:not(.group)');
-  await expect(rows).toHaveCount(Math.min(24, institutions.length));
+  await expect(rows).toHaveCount(Math.min(50, institutions.length));
+  await expect(page.getByRole('combobox', { name: '名錄排序' })).toHaveValue('terms:desc');
   await expect(page.getByRole('navigation', { name: '依教育體系篩選' }).getByRole('link', { name: '一般大學' })).toBeVisible();
 
   // NCKU's own site asks for a CAPTCHA, so its data comes from the national platform. The e2e fixtures
@@ -145,7 +179,6 @@ test('derives directory coverage from crawler status and imported offerings', as
   const ncku = rows.filter({ hasText: '國立成功大學' });
   await expect(ncku.getByText('0005', { exact: true })).toBeVisible();
   await ncku.getByLabel('國立成功大學的收錄明細').click();
-  await ncku.getByLabel('國立成功大學：課程資源網').filter({ visible: true }).click();
   await expect(ncku.getByRole('link', { name: '課程資源網說明' })).toHaveAttribute('href', '#resource-network');
   await expect(ncku.getByRole('link', { name: '國立成功大學收錄紀錄 ↗' })).toHaveAttribute(
     'href',
@@ -157,10 +190,10 @@ test('derives directory coverage from crawler status and imported offerings', as
   await expect(nthu.getByRole('link', { name: '國立清華大學', exact: true })).toHaveAttribute('href', '/schools/nthu');
   await expect(nthu.getByRole('img', { name: /國立清華大學.*114 學年：1 學期/ })).toBeVisible();
 
-  if (institutions.length > 24) {
+  if (institutions.length > 50) {
     await page.getByRole('navigation', { name: '學校名錄分頁' }).getByRole('link', { name: '下一頁' }).click();
     await expect(page).toHaveURL(/\?page=2/);
-    await expect(rows).toHaveCount(Math.min(24, institutions.length - 24));
+    await expect(rows).toHaveCount(Math.min(50, institutions.length - 50));
     const sort = page.getByRole('combobox', { name: '名錄排序' });
     await sort.selectOption('offerings:desc');
     await expect(page).toHaveURL(/directory_order=offerings%3Adesc/);
@@ -177,7 +210,7 @@ test('derives directory coverage from crawler status and imported offerings', as
   await page.getByRole('button', { name: '套用篩選' }).click();
   await expect(page).toHaveURL(/\/schools\?.*status=live/);
   await expect(status).toHaveValue('live');
-  await expect(rows).toHaveCount(Math.min(24, liveCount));
+  await expect(rows).toHaveCount(Math.min(50, liveCount));
   await expect(rows.filter({ hasText: '國立清華大學' })).toHaveCount(1);
   await expect(rows.filter({ hasText: '國立成功大學' })).toHaveCount(0);
   await expect(chips.filter({ hasText: '已收錄' })).toHaveAttribute('aria-current', 'true');
@@ -186,7 +219,7 @@ test('derives directory coverage from crawler status and imported offerings', as
 
   await chips.filter({ hasText: '待匯入' }).click();
   await expect(page).toHaveURL(/status=pending_import/);
-  await expect(rows).toHaveCount(Math.min(24, pendingCount));
+  await expect(rows).toHaveCount(Math.min(50, pendingCount));
   const ntu = rows.filter({ hasText: '國立臺灣大學' });
   await expect(page.getByText(/本頁皆待匯入/)).toBeVisible();
   await ntu.getByLabel('國立臺灣大學的收錄明細').click();
@@ -210,9 +243,7 @@ test('keeps school and department navigation usable without JavaScript', async (
     await expect(page.getByRole('table').locator('tbody tr:not(.group)')).toHaveCount(1);
     await page.getByRole('link', { name: '國立清華大學', exact: true }).click();
     await page.getByRole('link', { name: '示範數學系' }).click();
-    await page.getByText('其他學期／篩選課程', { exact: true }).click();
-    await page.getByRole('combobox', { name: '選擇學期' }).selectOption('114-2');
-    await page.getByRole('button', { name: '套用', exact: true }).click();
+    await page.getByRole('navigation', { name: '切換課表學期' }).getByRole('link', { name: '114-2' }).click();
     await expect(page).toHaveURL(/\?term=114-2/);
     await expect(page.getByRole('region', { name: '114-2 學期課表' }).getByText(/週一 第 3、4 節/).filter({ visible: true })).toBeVisible();
   } finally {

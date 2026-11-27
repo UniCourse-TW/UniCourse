@@ -24,14 +24,14 @@ export function linePath(points: readonly PlotPoint[]): string {
   return points.map(({ x, y }, index) => `${index === 0 ? 'M' : 'L'}${x},${y}`).join(' ');
 }
 
-export function zeroBasedScale(values: readonly number[]) {
+export function zeroBasedScale(values: readonly number[], intervals = 4) {
   let rawMin = 0;
   let rawMax = 0;
   for (const value of values) {
     rawMin = Math.min(rawMin, value);
     rawMax = Math.max(rawMax, value);
   }
-  const interval = (rawMax - rawMin || 1) / 4;
+  const interval = (rawMax - rawMin || 1) / intervals;
   const magnitude = 10 ** Math.floor(Math.log10(interval));
   const step = ([1, 2, 2.5, 5, 10].find((factor) => factor * magnitude >= interval) ?? 10) * magnitude;
   const tickSize = values.every(Number.isInteger) ? Math.max(1, Math.ceil(step)) : step;

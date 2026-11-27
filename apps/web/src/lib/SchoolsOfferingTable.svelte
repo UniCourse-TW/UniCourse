@@ -15,25 +15,38 @@
     caption: string;
     ratings: ReadonlyMap<string, RatingStats | null>;
     showTerm: boolean;
+    groupTerms?: ReadonlyMap<string, readonly (readonly [string, number])[]>;
   }
 
-  let { offerings, mode, caption, ratings, showTerm }: Props = $props();
+  let { offerings, mode, caption, ratings, showTerm, groupTerms }: Props = $props();
   const courseHref = (row: Offering) => `/courses/${row.id}`;
   const termColumn: TableColumn<Offering> = { id: 'term', label: '學期', value: (row) => row.term, sortable: true };
   const gradeColumn: TableColumn<Offering> = { id: 'grade', label: '年級', value: (row) => row.grade, align: 'center', width: '3.5rem' };
   let showRatings = $derived(offerings.some((row) => (ratings.get(row.courseCode)?.count ?? 0) > 0));
-  let unknownRatings = $derived(offerings.some((row) => ratings.get(row.courseCode) == null));
+  let hasMeter = $derived(offerings.some((row) => row.enrolled != null && (reportedCapacity(row) ?? 0) > 0));
+  let hasRemaining = $derived(offerings.some((row) => {
+    const capacity = reportedCapacity(row);
+    return row.enrolled != null && capacity != null && capacity > 0 && row.enrolled >= capacity * .9 && row.enrolled < capacity;
+  }));
+  let groupStarts = $derived(new Set(offerings.filter((row, index) => row.courseCode !== offerings[index - 1]?.courseCode).map(({ id }) => id)));
   const category = (row: Offering) => [row.credits == null ? null : `${row.credits} 學分`, requirement({ ...row, requirementText: null }) ?? requirement(row)].filter(Boolean).join(' · ');
   let columns = $derived<TableColumn<Offering>[]>([
-    { id: 'course', label: '課程', value: (row) => row.title, sortable: true, width: '14rem' },
+    { id: 'course', label: '課程', value: (row) => row.title, sortable: true },
     ...(showTerm ? [termColumn] : []),
     mode === 'department' ? { id: 'teachers', label: '授課教師', width: '8rem' } : { id: 'unit', label: '開課單位' },
     ...(mode === 'department' && offerings.some(({ grade }) => grade) ? [gradeColumn] : []),
     { id: 'category', label: '學分／類別', value: category, width: '6.5rem' },
-    { id: 'enrollment', label: '人數／名額', sortable: true, sortValue: (row) => row.enrolled, numeric: true, width: '8.25rem' },
-    { id: 'schedule', label: '時間地點', width: mode === 'instructor' ? '24%' : undefined },
+    { id: 'enrollment', label: '人數／名額', sortable: true, sortValue: (row) => row.enrolled, numeric: true, width: '9rem' },
+    { id: 'schedule', label: '時間地點', width: 'clamp(9rem, 22vw, 16rem)' },
     ...(showRatings ? [{ id: 'rating', label: '課程評價', align: 'center' as const, width: '7rem' }] : [])
   ]);
+
+  function groupLabel(row: Offering) {
+    const terms = groupStarts.has(row.id) ? groupTerms?.get(row.courseCode) : undefined;
+    if (!terms) return undefined;
+    const total = terms.reduce((sum, [, count]) => sum + count, 0);
+    return `${row.title} · ${row.courseCode} · ${displayValue(total)} 班${terms.length > 1 ? `（${terms.map(([term, count]) => `${term} × ${count}`).join('、')}）` : ''}`;
+  }
 </script>
 
 {#snippet code(row: Offering)}
@@ -41,7 +54,7 @@
 {/snippet}
 
 {#snippet teachers(row: Offering)}
-  {#each row.instructors as name, index (index)}{#if index > 0}、{/if}<a href={instructorHref(row.school, name)}>{name}</a>{:else}—{/each}
+  {#each row.instructors as name, index (index)}{#if index > 0}、{/if}<a href={instructorHref(row.school, name)}>{name}</a>{:else}<span class="publication-note" title="校方未列教師">教師未列</span>{/each}
 {/snippet}
 
 {#snippet unit(row: Offering)}
@@ -64,7 +77,7 @@
     {:else if capacity != null}
       <span class="ui-tabular">名額 {displayValue(capacity)}</span><small class="publication-note">人數未公布</small>
     {:else}
-      <span title="人數與名額未公布">—</span>
+      <span class="publication-note">人數、名額未公布</span>
     {/if}
     {#if row.enrolled != null && capacity != null && capacity > 0}
       <span class="meter-line">
@@ -82,12 +95,12 @@
 {/snippet}
 
 {#snippet schedule(row: Offering)}
-  {#each scheduleLines(row) as line, index (index)}<span class="slot">{line}</span>{:else}—{/each}
+  {#each scheduleLines(row) as line, index (index)}<span class="slot">{line}</span>{:else}<span class="publication-note">時地未公布</span>{/each}
 {/snippet}
 
-<p class="browse-note offering-legend">條長＝滿額比例；「餘」為匯入時剩餘名額。名額 —＝校方未公布。{#if !showRatings}{unknownRatings ? '本頁評價資料未能完整取得。' : '本頁課程尚無評價。'}{/if}</p>
+{#if hasMeter}<p class="browse-note offering-legend">條長為滿額比例。{#if hasRemaining}「餘」為匯入時剩餘名額。{/if}</p>{/if}
 <div class="table-view">
-  <DataTable {caption} rows={offerings} {columns} rowKey={(row) => row.id} rowHref={courseHref} clientSort minWidth="47rem" maxHeight="none">
+  <DataTable {caption} rows={offerings} {columns} rowKey={(row) => row.id} rowHref={courseHref} {groupLabel} clientSort={!groupTerms} minWidth="47rem" maxHeight="none" scrollHint={false}>
     {#snippet cell(row, column)}
       {#if column.id === 'course'}
         <span class="browse-course-cell">
@@ -106,12 +119,12 @@
 </div>
 
 <ul class="card-view" aria-label={caption} role="list">
-  {#each offerings as row, index (row.id)}
+  {#each offerings as row (row.id)}
     {@const time = scheduleLines(row)}
     <li>
-      {#if mode === 'instructor' && row.term !== offerings[index - 1]?.term}<p class="card-term ui-tabular">{row.term} 學期</p>{/if}
+      {#if groupLabel(row)}<p class="card-term ui-tabular">{groupLabel(row)}</p>{/if}
       <div class="card-title">
-        <a class="card-course" href={courseHref(row)}>{row.title}</a>
+        <a class="card-course" href={courseHref(row)} aria-label={groupTerms ? `${row.title} · ${row.term} 學期${row.classCode ? ` · ${row.classCode} 班` : ''}` : undefined}>{groupTerms ? `${row.term} 學期${row.classCode ? ` · ${row.classCode} 班` : ''}` : row.title}</a>
         {#if showRatings && (ratings.get(row.courseCode)?.count ?? 0) > 0}<div class="card-rating" aria-label="課程評價">{@render rating(row, true)}</div>{/if}
         <div class="card-meta">
           {#if showTerm && mode !== 'instructor'}<span class="browse-code">{row.term}</span>{/if}{@render code(row)}
@@ -124,13 +137,17 @@
       <div class="card-meta secondary-meta">
         {#if mode === 'department'}<span class="people">{@render teachers(row)}</span>
         {:else}<span class="people">{@render unit(row)}</span>{/if}
-        {#if time.length}<span aria-hidden="true">·</span><span class="meeting">{time.join('；')}</span>{/if}
+        <span aria-hidden="true">·</span><span class="meeting">{time.length ? time.join('；') : '時地未公布'}</span>
       </div>
     </li>
   {/each}
 </ul>
 
 <style>
+  .table-view { --table-pad-block: .25rem; }
+  .table-view :global(caption) { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
+  .table-view .browse-course-cell { padding-block: .15rem; }
+  .table-view .offer-code { line-height: var(--leading-table); }
   .rating-sample { display: block; font-size: var(--t-sm); }
   .offering-legend { margin-block-end: var(--space-1); }
   .offer-code { white-space: nowrap; }
@@ -139,12 +156,12 @@
   .enrollment { display: grid; min-inline-size: 3rem; gap: .25rem; }
   .enrollment-value { display: flex; align-items: center; justify-content: end; gap: var(--space-1); }
   .meter-line { display: flex; align-items: center; justify-content: end; gap: var(--space-1); min-block-size: 1rem; }
-  .track { inline-size: min(100%, 4rem); min-inline-size: 1.5rem; block-size: .375rem; background: var(--line); border-radius: var(--radius-pill); }
+  .track { inline-size: min(100%, 7.5rem); min-inline-size: 1.5rem; block-size: .375rem; background: var(--line); border-radius: var(--radius-pill); }
   .fill { display: block; block-size: 100%; background: var(--brand); border-radius: inherit; }
   .fill.exceeded { background: var(--warn); }
   small { color: var(--muted); }
-  .capacity-note { padding-inline: var(--space-1); border-radius: var(--radius-control); background: var(--warn-wash); color: var(--warn); font-size: var(--t-xs); white-space: nowrap; }
-  .publication-note { color: var(--muted); font-size: var(--t-sm); }
+  .capacity-note { padding-inline: var(--space-1); border-radius: var(--radius-control); background: var(--warn-wash); color: var(--warn); font-size: var(--t-sm); white-space: nowrap; }
+  .publication-note { color: var(--ink-2); font-size: var(--t-sm); }
   .slot { display: block; overflow-wrap: anywhere; }
   @media (max-width: 40rem) {
     .table-view { display: none; }
@@ -156,7 +173,9 @@
     .card-view .card-term { margin-inline: calc(-1 * var(--space-3)); padding: var(--space-1) var(--space-3); background: var(--table-head); color: var(--ink-2); font-size: var(--t-sm); font-weight: 650; }
     .card-rating { grid-column: 1 / -1; }
     .card-meta, .card-rating { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--muted); font-size: var(--t-sm); }
-    .secondary-meta { margin-block-start: var(--space-1); }
+    .secondary-meta { display: block; margin-block-start: var(--space-1); color: var(--ink-2); }
+    .secondary-meta > span + span { margin-inline-start: var(--space-1); }
+    .track { inline-size: min(100%, 5.5rem); }
     .people { color: var(--ink-2); }
     .enrollment { text-align: end; font-size: var(--t-sm); gap: 0; }
     .card-rating a { min-block-size: var(--target-min); align-content: center; }

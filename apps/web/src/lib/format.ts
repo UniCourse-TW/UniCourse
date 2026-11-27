@@ -10,6 +10,15 @@ export function importedAt(value: string) {
   return taipei.format(new Date(value));
 }
 
+const taipeiShort = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Asia/Taipei', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+});
+
+export function shortImportedAt(value: string) {
+  const parts = Object.fromEntries(taipeiShort.formatToParts(new Date(value)).map(({ type, value }) => [type, value]));
+  return `${parts.month}/${parts.day} ${parts.hour}:${parts.minute}`;
+}
+
 const requirementLabels: Record<Requirement, string> = {
   required: '必修',
   elective: '選修',
