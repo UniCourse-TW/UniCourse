@@ -28,6 +28,7 @@ export interface BarItem {
 export interface TrendPoint {
   term: string;
   value: number | null;
+  partial?: boolean;
 }
 
 export interface CoverageCell {
@@ -39,6 +40,7 @@ export interface MatrixPoint {
   offerings: number;
   enrolled: number | null;
   href?: string;
+  partial?: boolean;
 }
 
 export interface MatrixRow {

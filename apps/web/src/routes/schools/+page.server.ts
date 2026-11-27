@@ -34,6 +34,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     years: coverageYears(institutions),
     updatedAt: updatedAt ?? null,
     total: institutions.length,
+    notStarted: institutions.filter((school) => directoryStatus(school) === 'none').map(({ name }) => name),
     coverage: coverage(institutions),
     counts: statuses.map((status) => ({
       status,

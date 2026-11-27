@@ -24,16 +24,17 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
     .map(([value, title]) => ({ value, label: `${title} · ${value}` }));
   const term = url.searchParams.get('term') ?? '';
   const courseCode = url.searchParams.get('course') ?? '';
+  const oldestFirst = url.searchParams.get('sort') === 'oldest';
   const matches = offerings.filter((row) => (!term || row.term === term) && (!courseCode || row.courseCode === courseCode));
+  if (oldestFirst) matches.sort((left, right) => left.term.localeCompare(right.term, undefined, { numeric: true }));
   const requestedPage = Number(url.searchParams.get('page'));
   const pageSize = 12;
   const totalPages = Math.max(1, Math.ceil(matches.length / pageSize));
   const page = Number.isSafeInteger(requestedPage) ? Math.min(Math.max(1, requestedPage), totalPages) : 1;
   const rows = matches.slice((page - 1) * pageSize, page * pageSize);
   const recentCodes = [...new Set(offerings.map(({ courseCode }) => courseCode))].slice(0, 5);
-  const [summaryRatings, ratings, courseReviews] = await Promise.all([
+  const [summaryRatings, courseReviews] = await Promise.all([
     browseRatings(client, instructor.school, offerings),
-    term || courseCode || page > 1 ? browseRatings(client, instructor.school, rows) : null,
     externalReviews?.data && !externalReviews.data.posts.length ? Promise.all(recentCodes.map(async (code) => {
       const row = offerings.find(({ courseCode }) => courseCode === code)!;
       const reviews = await loadCourseExternalReviews(fetch, instructor.school, code);
@@ -42,10 +43,9 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   ]);
 
   return {
-    instructor, courses: courseOptions, term, courseCode, rows, matched: matches.length, page, totalPages,
+    instructor, courses: courseOptions, term, courseCode, oldestFirst, rows, matched: matches.length, page, totalPages,
     listedTerms: [...new Set(offerings.map(({ term }) => term))].sort().reverse(), firstRow: (page - 1) * pageSize + 1,
-    matrix: buildTeachingMatrix(offerings), trends: trendResult?.data ?? null, summaryRatings,
-    ratings: ratings ?? summaryRatings,
+    matrix: buildTeachingMatrix(offerings, offerings.length === instructor.summary.offerings), trends: trendResult?.data ?? null, summaryRatings,
     externalReviews: externalReviews?.data ?? null,
     courseReviews: courseReviews.filter(({ count }) => count > 0),
     listed: offerings.length,

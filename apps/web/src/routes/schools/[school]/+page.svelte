@@ -20,6 +20,7 @@
   import StatTile from '$lib/ui/StatTile.svelte';
   import StatusPill from '$lib/ui/StatusPill.svelte';
   import { changeQuery, displayValue } from '$lib/ui/format';
+  import { partialTerms } from '$lib/ui/partial-terms';
   import type { TableColumn } from '$lib/ui/types';
   import '$lib/schools-browse.css';
   import type { PageProps } from './$types';
@@ -34,12 +35,13 @@
   let period = $derived(coveragePeriod(coverageTerms));
   let terms = $derived([...new Set([...coverageTerms, ...(data.trends ?? []).map(({ term }) => term)])].sort());
   let trendsByTerm = $derived(new Map(data.trends?.map((row) => [row.term, row])));
+  let partial = $derived(partialTerms((data.trends ?? []).map(({ term, offerings }) => [term, offerings])));
   let enrollmentTerms = $derived((data.trends ?? []).filter(({ enrolled }) => enrolled != null));
   let ranked = $derived((data.rankings ?? []).filter((row) => row.enrolledTotal != null));
   let capacities = $derived((data.rankings ?? []).filter((row) => row.enrolledTotal == null && row.capacityTotal != null));
   let hasDemoRankings = $derived(data.rankings?.some(({ isDemo }) => isDemo) ?? false);
   let trendTerms = $derived(terms.slice(-10));
-  let trendCaption = $derived(rankingTrendCaption(trendTerms));
+  let trendCaption = $derived(rankingTrendCaption(trendTerms, ranked));
   let clearUnits = $derived(changeQuery(new URL('#departments', page.url), (params) => { params.delete('unit'); params.delete('page'); }));
   let maxEnrolled = $derived(Math.max(1, ...ranked.map((row) => row.enrolledTotal ?? 0)));
   let maxTrend = $derived(Math.max(1, ...ranked.flatMap((row) => row.trend.filter(({ term }) => trendTerms.includes(term)).map(({ enrolled }) => enrolled ?? 0))));
@@ -75,7 +77,7 @@
   </FilterBar>
 {/snippet}
 
-<div class="browse-page">
+<div class="browse-page school-page">
   <nav class="browse-crumbs" aria-label="所在位置"><a href="/">首頁</a><span aria-hidden="true">/</span><a href="/schools">學校</a><span aria-hidden="true">/</span><span aria-current="page">{school.name}</span></nav>
   <header class="browse-head">
     <div class="browse-stack">
@@ -105,30 +107,25 @@
       unit="人次" note={enrollmentTerms.length ? '僅計已公布人次' : data.trends === null ? '統計暫未取得' : '未公布人數'} /></div>
   </StatRow></div>
 
-  {#if units.total > 12 || units.query}<div class="phone-unit-filter">{@render unitFilter()}</div>{/if}
-
   <section class="browse-stack" aria-labelledby="term-history">
     <SectionHeader title="歷年收錄" id="term-history" />
     {#if data.trends === null}
       <ErrorState title="暫時無法取得班次走勢" retryHref={page.url.pathname + page.url.search} />
     {:else if data.trends.length}
-      <SchoolsTermHistory label="每學期開課班次" points={terms.map((term) => ({ term, value: trendsByTerm.get(term)?.offerings ?? null }))}
-        termHref={(term) => overviewSearchHref({ school: school.slug, term })} phonePreview />
+      <SchoolsTermHistory label={`每學期開課班次${period ? ` · ${period}` : ''}`} points={terms.map((term) => ({ term, value: trendsByTerm.get(term)?.offerings ?? null, partial: partial.has(term) }))}
+        termHref={(term) => overviewSearchHref({ school: school.slug, term })} />
     {:else}
       <EmptyState title="目前沒有班次走勢" description="待有開課班次後，這裡會顯示各學期的變化。" />
     {/if}
-    <p class="browse-note">{period ? `收錄期間：${period}` : '尚未匯入'}{hasDemoRankings ? ' · 統計及排行包含示範班次。' : ''}</p>
+    {#if hasDemoRankings}<p class="browse-note">統計及排行包含示範班次。</p>{/if}
   </section>
 
   <div class="browse-columns">
     <section class="browse-stack" aria-labelledby="departments">
       <SectionHeader title="開課單位（{displayValue(units.total)}）" id="departments" description="橫條以全校最多班次的單位為基準。" />
-      {#if units.total}
-        <div class="desktop-unit-filter">{@render unitFilter()}</div>
-      {/if}
+      {#if units.total}<div class="unit-filter">{@render unitFilter()}</div>{/if}
       {#if units.rows.length}
         <p class="browse-note">共 {displayValue(units.matched)} 個單位 · 顯示 {displayValue(units.start)}–{displayValue(units.start + units.rows.length - 1)} 個</p>
-        <Pagination url={page.url} page={units.page} totalPages={units.totalPages} label="開課單位上方分頁" />
         <DataTable caption="開課單位與班次" columns={unitColumns} rows={units.rows} rowKey={(row) => row.name} rowHref={(row) => departmentHref(school.slug, row.name)} minWidth="100%" maxHeight="none" scrollHint={false}>
           {#snippet cell(row, column)}
             {#if column.id === 'offerings'}<BarCell value={row.offerings} max={units.max} emphasis={!units.query && units.sort === 'offerings' && units.start + units.rows.indexOf(row) <= 3} />{:else}{displayValue(column.value?.(row))}{/if}
@@ -195,21 +192,21 @@
 </div>
 
 <style>
+  .school-page { gap: var(--space-3); }
+  .school-page .browse-crumbs + .browse-head { margin-block-start: calc(-1 * var(--space-2)); }
   .browse-columns { --bar-cell-track-size: 2.4rem; }
   .jump-links { gap: var(--space-2); }
   .edition { white-space: nowrap; }
   .rank-toggle { display: inline-flex; gap: var(--space-2); align-items: center; min-block-size: var(--target-min); cursor: pointer; }
-  .mobile-rank, .phone-unit-filter { display: none; }
+  .mobile-rank { display: none; }
   h3 { margin: 0; font-size: var(--t-md); }
   .browse-button { justify-self: start; }
   @media (max-width: 40rem) {
     .desktop-rank { display: none; }
-    .desktop-unit-filter { display: none; }
-    .phone-unit-filter { display: block; }
-    .phone-unit-filter :global(form) { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; }
-    .phone-unit-filter :global(.actions) { display: contents; }
-    .phone-unit-filter :global(.actions button) { padding-inline: var(--space-2); }
-    .phone-unit-filter :global(.actions a) { grid-column: 1 / -1; justify-self: start; }
+    .unit-filter :global(form) { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; }
+    .unit-filter :global(.actions) { display: contents; }
+    .unit-filter :global(.actions button) { padding-inline: var(--space-2); }
+    .unit-filter :global(.actions a) { grid-column: 1 / -1; justify-self: start; }
     .mobile-rank { display: block; }
     .mobile-rank ol { list-style: none; padding: 0; margin: 0; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
     .mobile-rank li { padding: 0 var(--space-3) var(--space-2); }

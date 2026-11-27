@@ -37,7 +37,8 @@
   });
   let maximum = $derived(Math.max(0, ...rows.map((course) => metricValue(course) ?? 0)));
   let trendTerms = $derived(terms.slice(0, 10).reverse());
-  let trendCaption = $derived(rankingTrendCaption(trendTerms));
+  let trendCaption = $derived(rankingTrendCaption(trendTerms, rows));
+  let rankedSchools = $derived(new Set(rows.filter((course) => course.rank !== null).map((course) => course.school)).size);
   let trendMax = $derived(Math.max(0, ...rows.flatMap((course) => course.trend.filter(({ term }) => trendTerms.includes(term)).map(({ enrolled }) => enrolled ?? 0))));
   let latest = $derived(overview.latest);
   let period = $derived(coveragePeriod(overview.totals?.terms ?? []));
@@ -52,6 +53,14 @@
   function href(course: CourseRanking) { return `/courses/${course.latestOfferingId}`; }
   function metricValue(course: CourseRanking) { return course.enrolledTotal ?? course.capacityTotal ?? null; }
   function applySchool(event: Event) { (event.currentTarget as HTMLFormElement).requestSubmit(); }
+  function englishTitle(title: string) {
+    if (title !== title.toUpperCase()) return title;
+    return title.toLowerCase().replace(/\b[a-z]+\b/g, (word, index) => {
+      if (/^[ivx]+$/.test(word)) return word.toUpperCase();
+      if (index > 0 && ['a', 'an', 'and', 'as', 'at', 'for', 'in', 'of', 'the', 'to'].includes(word)) return word;
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    });
+  }
 
 </script>
 
@@ -71,6 +80,7 @@
 <section class="search-panel" aria-labelledby="find-courses">
   <h2 id="find-courses">搜尋課程</h2>
   <OverviewSearchForm {schools} {terms} />
+  <p class="metadata search-scope-note">查歷年課程可將學期切換為「全部學期」。</p>
   <div class="popular" aria-label="熱門搜尋">
     <span>熱門搜尋</span>
     {#each popularSearches as query (query)}<a href={overviewSearchHref({ query, term: 'all' })}>{query}</a>{/each}
@@ -93,7 +103,7 @@
 
 {#snippet courseTitle(course: RankedCourse)}
   <a class="course-title" href={href(course)}>{course.title}</a>
-  {#if course.titleEn}<small lang="en" title={course.titleEn}>{course.titleEn}</small>{/if}
+  {#if course.titleEn}<small lang="en">{englishTitle(course.titleEn)}</small>{/if}
 {/snippet}
 
 {#snippet metric(course: RankedCourse)}
@@ -121,7 +131,7 @@
     {/snippet}
   </SectionHeader>
   <div class="ranking-tools">
-    <div class="rank-scope"><Badge label="僅已公布修課人數列入名次" /></div>
+    <div class="rank-scope"><Badge label="僅已公布修課人數列入名次" />{#if !overview.rankSchool && rankedSchools}<span>各校公布情況不同；本榜有 {displayValue(rankedSchools)} 所學校上榜。</span>{/if}</div>
     <details class="ranking-method">
       <summary>計算方式</summary>
       <p>目前{overview.includeNonAcademic ? '納入' : '排除'}零學分及班會、導師時間等行政活動；學分未公布不視為零。開設多年、多班的課較容易上榜。只公布名額的課以斜紋顯示，列在有修課人數的課之後。</p>
@@ -159,11 +169,13 @@
           <span class="rank-number" aria-label={course.rank === null ? '不列名次' : `第 ${course.rank} 名`}>{displayValue(course.rank)}</span>
           <div class="rank-detail">
             <div class="mobile-course">{@render courseTitle(course)}</div>
-            <span class="rank-meta">{course.schoolName} · {course.courseCode} · {course.terms} 學期 {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}</span>
+            <span class="rank-meta">{course.schoolName} · <code>{course.courseCode}</code> {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}</span>
             <div class="rank-metric">
-              {#if metricValue(course) === null}<span class="unpublished">人數與名額未公布</span>
-              {:else}<span class="mobile-metric" title={course.enrolledTotal == null ? '累計名額' : '累計修課人次'}>{@render metric(course)}</span>{/if}
-              <OverviewRankingTrend {course} terms={trendTerms} max={trendMax} />
+              <div><small class="metric-label">歷年累計 · {course.terms} 學期</small>
+                {#if metricValue(course) === null}<span class="unpublished">人數與名額未公布</span>
+                {:else}<span class="mobile-metric" title={course.enrolledTotal == null ? '累計名額' : '累計修課人次'}>{@render metric(course)}</span>{/if}
+              </div>
+              <div><small class="metric-label">最近公布</small><OverviewRankingTrend {course} terms={trendTerms} max={trendMax} /></div>
             </div>
           </div>
         </li>
@@ -238,7 +250,6 @@
   .button { display: inline-flex; justify-content: center; align-items: center; gap: var(--space-1); min-height: var(--target-min); padding-inline: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--brand-ink); font: 650 var(--t-base) / var(--leading-table) var(--font-sans); text-decoration: none; cursor: pointer; }
   .secondary { border-color: var(--control-line); }
   .button:hover { background: var(--brand-wash); }
-  .rank-scope { display: flex; align-items: center; }
   .mobile-ranking, .mobile-rank-caption, .expand-mobile { display: none; }
   .desktop-ranking { --table-pad-block: 0.3rem; }
   .rank-title { display: grid; min-width: 0; }
@@ -265,7 +276,11 @@
   .coverage-period small { display: block; overflow: visible; white-space: normal; }
   .coverage-period small span { white-space: nowrap; }
   .coverage-all { justify-self: start; }
-  .coverage-panel .coverage-count { text-align: end; white-space: nowrap; }
+  .coverage-panel .coverage-count { width: 12rem; text-align: start; white-space: nowrap; }
+  .coverage-count :global(.bar-cell) { justify-content: start; }
+  .coverage-count :global(.bar-cell > .ui-tabular) { min-inline-size: 6ch; text-align: end; }
+  .rank-scope { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); color: var(--muted); font-size: var(--t-sm); }
+  .search-scope-note { margin-block: var(--space-1) 0; }
   @media (max-width: 45rem) {
     .desktop-ranking, .expand-ranking { display: none; }
     .mobile-rank-caption { display: block; }
@@ -277,6 +292,8 @@
     .mobile-ranking .rank-number { margin-top: var(--space-3); font-size: var(--t-base); }
     .mobile-course { display: flex; flex-direction: column; justify-content: center; min-height: var(--target-min); width: fit-content; max-width: 100%; font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
     .rank-meta { overflow-wrap: anywhere; }
+    .rank-meta code { font-family: var(--font-mono); }
+    .metric-label { display: block; color: var(--muted); font-size: var(--t-xs); }
     .rank-metric { display: grid; grid-template-columns: minmax(0, 1fr) minmax(9rem, 1fr); gap: var(--space-2); align-items: center; }
     .rank-metric .metric { justify-content: start; }
     .mobile-metric { min-width: 0; }
@@ -293,6 +310,6 @@
     .coverage-panel th, .coverage-panel td { padding-inline: var(--space-1); }
     .coverage-panel th:first-child { padding-inline-start: var(--space-2); }
     .coverage-panel td:last-child { padding-inline-end: var(--space-2); }
-    .coverage-panel .coverage-count { font-size: var(--t-xs); }
+    .coverage-panel .coverage-count { width: auto; font-size: var(--t-xs); }
   }
 </style>

@@ -49,9 +49,12 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await school.getByRole('link', { name: '國立清華大學' }).click();
   await expect(page).toHaveURL('/schools/nthu');
   await expect(page.getByRole('heading', { name: '國立清華大學' })).toBeVisible();
-  await expect(page.getByRole('list', { name: '每學期開課班次' }).getByRole('listitem')).toHaveCount(2);
+  const historySection = page.getByRole('region', { name: '歷年收錄' });
+  await expect(historySection.getByRole('link', { name: '114-2' })).toBeVisible();
+  await expect(historySection.getByRole('link', { name: '115-1' })).toBeVisible();
   await expect(page.getByRole('list', { name: '校內累計修課人次排行' })).toBeVisible();
-  await expect(page.getByText(/收錄期間：114-2 至 115-1/)).toBeVisible();
+  await expect(historySection.getByText('每學期開課班次 · 114-2 至 115-1')).toBeVisible();
+  await expect(page.getByRole('region', { name: /開課單位/ }).getByRole('searchbox', { name: '搜尋系所' })).toBeVisible();
 
   await page.getByRole('link', { name: '示範數學系' }).click();
   await expect(page).toHaveURL(`/schools/nthu/departments/${encodeURIComponent('示範數學系')}`);
@@ -60,7 +63,7 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(termChoice).toHaveValue('115-1');
   await expect(page.getByRole('list', { name: '必選修分布' })).toBeVisible();
   await expect(page.getByRole('list', { name: '115-1 學期開課班次' }).getByText(/週二 第 3、4 節/)).toBeVisible();
-  await expect(page.getByRole('list', { name: '115-1 學期開課班次' }).getByText('匯入時餘 2 名')).toBeVisible();
+  await expect(page.getByRole('list', { name: '115-1 學期開課班次' }).getByText('餘 2')).toBeVisible();
   await termChoice.selectOption('114-2');
   await page.getByRole('button', { name: '套用' }).click();
   await expect(page).toHaveURL(/\?term=114-2/);
@@ -140,8 +143,9 @@ test('derives directory coverage from crawler status and imported offerings', as
   // hold no NCKU offerings, so it is waiting for import and has no school page link yet.
   const ncku = rows.filter({ hasText: '國立成功大學' });
   await expect(ncku.getByText('0005', { exact: true })).toBeVisible();
-  await expect(ncku.getByRole('link', { name: '課程資源網' })).toHaveAttribute('href', '#resource-network');
-  await expect(ncku.getByRole('link', { name: '收錄紀錄 ↗' })).toHaveAttribute(
+  await ncku.getByLabel('國立成功大學：課程資源網').click();
+  await expect(ncku.getByRole('link', { name: '課程資源網說明' })).toHaveAttribute('href', '#resource-network');
+  await expect(ncku.getByRole('link', { name: '國立成功大學收錄紀錄 ↗' })).toHaveAttribute(
     'href',
     'https://github.com/UniCourse-TW/UniCourse/issues/1'
   );
