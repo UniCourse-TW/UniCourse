@@ -227,14 +227,14 @@
   .preview { grid-column: 2; grid-row: 1; display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .preview .preview-card { background: var(--panel-raised); }
   .preview-heading { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
-  .version { display: inline-block; padding: 0 6px; border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
+  .version { display: inline-block; padding: 0 6px; border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
   .version.draft { color: var(--warn); background: var(--warn-wash); }
   /* Saved: the preview keeps its ordinary frame; the one success signal is the status beside the button. */
   .preview-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .avatar { display: grid; place-items: center; inline-size: 3rem; block-size: 3rem; border-radius: 50%; color: var(--brand-ink); background: var(--brand-wash); font-size: 1.25rem; font-weight: 650; }
   .who { min-inline-size: 0; }
   .name { font-size: var(--t-lg); font-weight: 650; line-height: var(--leading-tight); overflow-wrap: anywhere; }
-  .handle { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: var(--t-sm); }
+  .handle { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; }
   .bio { margin-block-start: var(--space-2) !important; color: var(--ink-2); font-size: var(--t-base); white-space: pre-wrap; overflow-wrap: anywhere; }
   .bio.empty { color: var(--muted); }
 
@@ -253,10 +253,10 @@
     .cm-dek .dek-link { min-block-size: var(--target-min); margin-inline-end: var(--space-2); }
     /* Label left (small, muted), value right: four short rows instead of eight stacked lines. */
     .facts div { grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: center; }
-    .facts dt { font-size: var(--t-sm); }
+    .facts dt { font-size: 0.8125rem; }
     .facts dd { text-align: end; }
     /* The fixed-name note goes under the handle, so a long handle keeps its line. */
-    .facts dd .cm-hint.fixed { display: block; font-size: var(--t-sm); }
+    .facts dd .cm-hint.fixed { display: block; font-size: 0.8125rem; }
     .account-action dd { justify-content: end; }
     .account-action dd .cm-hint { display: none; }
     .facts .reset-row { grid-template-columns: minmax(0, 1fr); gap: 0; }

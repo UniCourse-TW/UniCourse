@@ -23,8 +23,9 @@
   let numbers = $derived(rows.flatMap((row) => [row.enrolled, row.capacity]).filter((value): value is number => value != null));
   let scale = $derived(zeroBasedScale(numbers));
   let published = $derived(rows.filter((row) => row.enrolled != null || row.capacity != null).length);
-  // A column chart only earns its place with a few terms of numbers; otherwise the table bars carry it.
-  let showChart = $derived(published >= 4);
+  // A column chart only earns its place with six or more terms of numbers; fewer terms are read straight
+  // from the table, whose bars and numbers sit side by side.
+  let showChart = $derived(published >= 6);
   let currentTerm = $derived(rows.find((row) => row.current)?.term ?? rows[0]?.term);
   let active = $state<string | undefined>();
   let focus = $derived(rows.find((row) => row.term === (active ?? currentTerm)));
@@ -100,11 +101,24 @@
   let hiddenRows = $derived(rows.slice(initialRows).filter((row) => !row.current).length);
   /** Index of the first folded row: the「⋯ 展開其餘 N 期」 row sits there, at the gap it fills. */
   let firstHidden = $derived(rows.findIndex((row, index) => index >= initialRows && !row.current));
+  /** Phones fold sooner (three terms), so the page reaches the reviews and discussions quicker. */
+  const phoneRows = 3;
+  let phoneHidden = $derived(rows.slice(phoneRows).filter((row) => !row.current).length);
+  let phoneFirst = $derived(rows.findIndex((row, index) => index >= phoneRows && !row.current));
+  /** 上／下 (and 暑) under each column instead of bare semester digits. */
+  function semester(term: string) {
+    const part = term.split('-')[1] ?? '';
+    return ({ '1': '上', '2': '下', '3': '暑' } as Record<string, string>)[part] ?? part;
+  }
+  /** Long histories on phones label every other year (the latest always), so labels never touch. */
+  let crowded = $derived(slots.length > 14);
   const uid = $props.id();
   let expanded = $state(false);
 
   let area: HTMLDivElement | undefined = $state();
   let scrolls = $state(false);
+  /** Terms in view when the chart scrolls sideways, so the swipe hint says which part is showing. */
+  let visibleRange = $state('');
   /** Content hidden past the left / right edge of the scrolling chart, shown as a soft fade there. */
   let clipStart = $state(false);
   let clipEnd = $state(false);
@@ -112,6 +126,10 @@
     if (!area) return;
     clipStart = area.scrollLeft > 2;
     clipEnd = area.scrollLeft + area.clientWidth < area.scrollWidth - 2;
+    const width = area.scrollWidth / Math.max(1, slots.length);
+    const first = slots[Math.min(slots.length - 1, Math.max(0, Math.round(area.scrollLeft / width)))]?.term;
+    const last = slots[Math.min(slots.length - 1, Math.floor((area.scrollLeft + area.clientWidth) / width) - 1)]?.term;
+    visibleRange = first && last ? `${first}–${last}` : '';
   }
   function moveChart(target: 'current' | 'latest') {
     if (!area) return;
@@ -140,7 +158,7 @@
     <figure class="chart">
       <figcaption>
         <!-- The scope is in the title: a multi-section term is the sum of every collected section, not this class. -->
-        <strong class="chart-title">{capacityOnly ? '名額（人數未公布）' : '修課人數與名額'}{#if multiSection}<span class="scope">・同課號各班合計</span>{/if}</strong>
+        <strong class="chart-title">{capacityOnly ? '名額（人；校方未公布修課人數）' : '修課人數與名額（人）'}{#if multiSection}<span class="scope">・同課號各班合計</span>{/if}</strong>
         <span class="readout" aria-hidden="true">
           {#if focus}
             <strong class="ui-mono">{focus.term}</strong>
@@ -162,7 +180,7 @@
         </span>
       </figcaption>
       {#if scrolls}
-        <p class="swipe"><span>↔ 左右滑動看各學期</span><button type="button" onclick={() => { moveChart('latest'); active = rows[0]?.term; }}>最近學期 →</button></p>
+        <p class="swipe"><span>↔ 目前 <b class="ui-mono">{visibleRange}</b>・共 <span class="ui-mono">{slots[0]?.term}–{slots.at(-1)?.term}</span></span><button type="button" onclick={() => { moveChart('latest'); active = rows[0]?.term; }}>最近學期 →</button></p>
       {/if}
       <div class="plot">
         <div class="y ui-tabular" class:band={hasCurrent} aria-hidden="true">
@@ -210,8 +228,8 @@
                 {#if row?.current}
                   <!-- 「本班」 sits in a band above the plot, with a dashed leader down to the bar, so even a
                        very short bar keeps its true height and the label never crowds the axis. -->
-                  <span class="here-flag" class:end={slotIndex === slots.length - 1} class:start={slotIndex === 0}>本班</span>
-                  {#if !row.partial}<span class="leader" style:bottom={`calc(${percent(Math.max(row.enrolled ?? 0, row.capacity ?? 0))}% + 3px)`}></span>{/if}
+                  <span class="here-flag" class:end={slotIndex >= slots.length - 3} class:start={slotIndex <= 1}>本班 {row.term}</span>
+                  <span class="leader" style:bottom={`calc(${percent(Math.max(row.enrolled ?? 0, row.capacity ?? 0))}% + 3px)`}></span>
                 {/if}
               </div>
             {/each}
@@ -219,39 +237,38 @@
           <!-- Semester digits under each slot; the offering's own term is a filled marker, not an outline. -->
           <div class="sem ui-tabular" style:--slots={slots.length} aria-hidden="true">
             {#each slots as slot (slot.term)}
-              <span class:current={slot.row?.current} class:gap={!slot.row}>{#if slot.row?.current}<span class="sr-only">本班所在學期 </span>{/if}{slot.term.split('-')[1] ?? ''}</span>
+              <span class:current={slot.row?.current} class:gap={!slot.row}>{semester(slot.term)}</span>
             {/each}
           </div>
-          <div class="x ui-tabular" style:--slots={slots.length} aria-hidden="true">
-            {#each yearGroups as group (group.year)}
-              <span class="year" class:cur={group.year === currentTerm?.split('-')[0]} style:grid-column={`span ${group.span}`}>{group.year}</span>
+          <div class="x ui-tabular" class:crowded style:--slots={slots.length} aria-hidden="true">
+            {#each yearGroups as group, groupIndex (group.year)}
+              <span class="year" class:cur={group.year === currentTerm?.split('-')[0]} class:alt={(yearGroups.length - 1 - groupIndex) % 2 === 1} style:grid-column={`span ${group.span}`}>{group.year}</span>
             {/each}
           </div>
         </div>
       </div>
       <!-- The partial-term warning is the one prominent caption; how to read the axes stays short. -->
-      <p class="note">{#each partialNotes as group (group.terms.join())}<span class="partial-note"><i class="key partial" aria-hidden="true"></i>{group.terms.join('、')} 只收錄 {displayValue(group.count)} 班<span class="nb">（通常約 {displayValue(group.usual)} 班）</span>，偏低不代表{capacityOnly ? '名額' : '人數'}驟減。</span>{/each}1、2 是上、下學期{#if gaps}；空格是沒有開課紀錄{/if}{#if hasUnpublished}；「·」是有開課但未公布人數{/if}。</p>
+      <p class="note">{#each partialNotes as group (group.terms.join())}<span class="partial-note"><i class="key partial" aria-hidden="true"></i>{group.terms.join('、')} 只收錄 {displayValue(group.count)} 班<span class="nb">（通常約 {displayValue(group.usual)} 班）</span>，<span class="nb">偏低不代表{capacityOnly ? '名額' : '人數'}驟減。</span></span>{/each}<span class="axis-note">橫軸為學年，上、下為學期{#if gaps}；空格是沒有開課紀錄{/if}{#if hasUnpublished}；「·」是有開課但未公布人數{/if}。</span><a class="to-table" href="#history-table">看各期數值 ↓</a></p>
     </figure>
   {/if}
 
   {#if !showChart && rows.length > 1}
     <p class="note">{published === 0 ? '各學期都沒有公布修課人數與名額，因此只列出開課紀錄。' : `只有 ${published} 個學期公布人數或名額，數值直接列在表格中。`}</p>
   {/if}
-  <div class="frame" class:collapsible={hiddenRows > 0}>
+  <div class="frame" class:collapsible={phoneHidden > 0} id="history-table">
     <!-- The bar key sits on the table itself (phones too), not in a long column header. -->
     <!-- Two short lines: what the rows are, then how to read the fill-rate bars (each term's own rate). -->
     <div class="table-key">
       <p class="key-scope">{multiSection ? '各學期已收錄班次合計，新到舊' : '各學期，新到舊'}{#if capacityOnly}；校方未公布修課人數，只列名額{/if}</p>
       {#if hasBoth && !capacityOnly}
+        <!-- One encoding: the grey track is 100% of 名額; only the part above it is orange and runs past the track. -->
         <p class="key-bars">
-          <span><i class="tk fill" aria-hidden="true"></i>滿額率＝修課÷名額</span>
-          <span><i class="tk tick" aria-hidden="true"></i>刻線＝100%</span>
-          {#if rows.some((row) => (fill(row) ?? 0) > 1)}<span><i class="tk over" aria-hidden="true"></i>橘色＝超額</span>{/if}
-          {#if ratioMax > 1}<span class="key-track"><i class="tk track-key" aria-hidden="true"></i>整條＝名額的 {Math.round(ratioMax * 100)}%{#if rows.some((row) => (fill(row) ?? 0) > 2)}，更高的截在條尾{/if}</span>{/if}
+          <span><i class="tk fill" aria-hidden="true"></i>滿額率＝修課÷名額，灰底滿格＝100%</span>
+          {#if rows.some((row) => (fill(row) ?? 0) > 1)}<span><i class="tk over" aria-hidden="true"></i>橘色＝超過名額的部分{#if rows.some((row) => (fill(row) ?? 0) > 2)}，200% 以上截斷{/if}</span>{/if}
         </p>
       {/if}
     </div>
-    {#if hiddenRows}
+    {#if phoneHidden}
       <!-- One checkbox (works without JavaScript) drives two labels: a gap row where the folded terms belong,
            and a collapse row at the end once they are shown. -->
       <input type="checkbox" id={`${uid}-all`} class="expand sr-only" bind:checked={expanded} aria-label={`列出全部 ${rows.length} 期`} />
@@ -272,10 +289,14 @@
           {#each rows as row, index (row.term)}
             {@const ratio = fill(row)}
             {#if index === firstHidden}
-              <tr class="gap-row" aria-hidden="true"><td colspan={columns}><label for={`${uid}-all`}><span class="dots">⋯</span>展開其餘 {hiddenRows} 期<span class="caret">▾</span></label></td></tr>
+              <tr class="gap-row desk" aria-hidden="true"><td colspan={columns}><label for={`${uid}-all`}><span class="dots">⋯</span>展開其餘 {hiddenRows} 期<span class="caret">▾</span></label></td></tr>
+            {/if}
+            {#if index === phoneFirst}
+              <tr class="gap-row phone" aria-hidden="true"><td colspan={columns}><label for={`${uid}-all`}><span class="dots">⋯</span>展開其餘 {phoneHidden} 期<span class="caret">▾</span></label></td></tr>
             {/if}
             <tr
               class:extra={index >= initialRows && !row.current}
+              class:phone-extra={index >= phoneRows && !row.current}
               class:active={row.term === active}
               class:current={row.current}
               onpointerenter={() => (active = row.term)}
@@ -285,7 +306,9 @@
             >
               <th scope="row" class="ui-mono">{row.term}{#if row.current}<span class="here" aria-current="page">本頁</span>{/if}</th>
               <td class="names">
-                {#each row.instructors as name, i (name)}<span class="name">{#if i > 0}、{/if}<a href={instructorHref(school, name)}>{name}</a></span>{:else}<span class="muted">未公布</span>{/each}{#if row.instructorCount > row.instructors.length}<span class="muted count">，另 {displayValue(row.instructorCount - row.instructors.length)} 位</span>{/if}
+                <!-- Desktop links each teacher; on phones the row itself links to the term's sections, so the
+                     names are plain text there (no 17 px tall targets). -->
+                <span class="name-links">{#each row.instructors as name, i (name)}<span class="name">{#if i > 0}、{/if}<a href={instructorHref(school, name)}>{name}</a></span>{:else}<span class="muted">未公布</span>{/each}</span><span class="name-text">{row.instructors.join('、') || '教師未公布'}</span>{#if row.instructorCount > row.instructors.length}<span class="count">，另 {displayValue(row.instructorCount - row.instructors.length)} 位</span>{/if}
               </td>
               <!-- Numbers and the fill rate are separate aligned columns: 修課／名額, then bar, percentage and one tag. -->
               <td class="num ui-tabular value">
@@ -301,7 +324,7 @@
                     {#if ratio != null}
                       <span class="track" class:warn={ratio >= nearlyFull && ratio <= 1} class:scaled={ratioMax > 1} style:--full={share(1)} aria-hidden="true">
                         <span class="fill" style:width={share(Math.min(1, ratio))}></span>
-                        {#if ratio > 1}<span class="over-fill" style:inset-inline-start={share(1)} style:width={`calc(${share(ratio)} - ${share(1)})`}></span>{/if}
+                        {#if ratio > 1}<span class="over-fill" class:capped={ratio > ratioMax} style:inset-inline-start={share(1)} style:width={`calc(${share(ratio)} - ${share(1)})`}></span>{/if}
                       </span>
                       <span class="pct ui-tabular" class:hot={ratio > 1}>{Math.round(ratio * 100)}%</span>
                     {:else if hasBoth}
@@ -324,8 +347,8 @@
               </td>
             </tr>
           {/each}
-          {#if hiddenRows}
-            <tr class="collapse-row" aria-hidden="true"><td colspan={columns}><label for={`${uid}-all`}>收合為最近 {initialRows} 期{#if hasCurrent && rows.findIndex((row) => row.current) >= initialRows}與本班{/if}<span class="caret">▴</span></label></td></tr>
+          {#if phoneHidden}
+            <tr class="collapse-row" aria-hidden="true"><td colspan={columns}><label for={`${uid}-all`}>收合為最近 <span class="desk-n">{initialRows} 期{#if rows.findIndex((row) => row.current) >= initialRows}與本班{/if}</span><span class="phone-n">{phoneRows} 期{#if rows.findIndex((row) => row.current) >= phoneRows}與本班{/if}</span><span class="caret">▴</span></label></td></tr>
           {/if}
         </tbody>
       </table>
@@ -342,10 +365,11 @@
 
   .chart { margin: 0; padding: var(--space-3) var(--space-4) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
   figcaption { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: baseline; justify-content: space-between; margin-block-end: var(--space-3); font-size: 0.8125rem; color: var(--ink-2); }
+  .phone-n, .name-text, .gap-row.phone { display: none; }
   .readout { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: baseline; min-block-size: 1.5rem; color: var(--ink-2); }
   .readout strong { color: var(--ink); font-size: var(--t-base); }
   .readout b { color: var(--ink); font-size: var(--t-base); font-weight: 600; }
-  .tag { padding: 0 6px; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-weight: 600; }
+  .tag { padding: 0 6px; font-size: 0.8125rem; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-weight: 600; }
   .tag.partial-tag { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--brand) 70%, transparent); }
   .legend { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); }
   .legend span { display: inline-flex; gap: 0.35rem; align-items: center; }
@@ -356,7 +380,7 @@
   .key.cap { block-size: 0; inline-size: 20px; border-block-start: 3px solid var(--ink); border-radius: 0; }
   .key.caponly { background: color-mix(in srgb, var(--brand) 62%, var(--panel-raised)); }
   /* The one partial-term mark: a faint diagonal texture in a thin dashed frame, same as the chart column. */
-  .key.partial, .slot > .ghost { border: 1px dashed color-mix(in srgb, var(--brand) 55%, var(--line)); background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand) 16%, transparent) 0 2px, transparent 2px 6px), color-mix(in srgb, var(--brand) 4%, var(--panel-raised)); }
+  .key.partial, .slot > .ghost { border: 1px dashed color-mix(in srgb, var(--brand) 70%, var(--line)); background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand) 55%, transparent) 0 2px, transparent 2px 5px), color-mix(in srgb, var(--brand) 8%, var(--panel-raised)); }
   .key.partial { inline-size: 12px; block-size: 12px; }
   .chart-title .scope { color: var(--ink-2); font-weight: 500; }
 
@@ -385,7 +409,7 @@
   /* A partial term keeps its real bar height; the texture sits on the bar itself, never on a full-height column. */
   .slot > .ghost { display: none; }
   .slot.partial > :is(.fill, .cap, .tick, .over-seg) { z-index: 1; }
-  .slot > .here-flag { inset-block: -1.5rem auto; z-index: 2; inline-size: max-content; padding: 0 5px; border-radius: 3px; background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); font-weight: 650; line-height: 1.35rem; white-space: nowrap; pointer-events: none; }
+  .slot > .here-flag { inset-block: -1.5rem auto; z-index: 2; inline-size: max-content; padding: 0 6px; border-radius: 3px; background: var(--brand); color: var(--on-brand); font-size: 0.8125rem; font-weight: 650; line-height: 1.35rem; white-space: nowrap; pointer-events: none; }
   .slot > .here-flag.end { inset-inline-end: 0; }
   .slot > .here-flag.start { inset-inline-start: 0; }
   .slot > .leader { inset-block-start: 0; z-index: 1; inline-size: 0; border-radius: 0; border-inline-start: 1.5px dashed var(--brand); pointer-events: none; }
@@ -397,21 +421,28 @@
   /* Over capacity: only the part above 名額 is orange, stacked on the brand bar. */
   .slot.overbooked .fill { border-radius: 0; }
   .slot > .over-seg { background: var(--warn); }
-  .slot.partial .fill, .slot.partial .cap.capacity { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand) 60%, var(--panel-raised)) 0 3px, color-mix(in srgb, var(--brand) 30%, var(--panel-raised)) 3px 6px); }
+  .slot.partial .fill, .slot.partial .cap.capacity { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand) 85%, var(--panel-raised)) 0 3px, color-mix(in srgb, var(--brand) 35%, var(--panel-raised)) 3px 6px); box-shadow: inset 0 0 0 1px var(--brand); }
   .slot.partial > .over-seg { background: color-mix(in srgb, var(--warn) 55%, var(--panel-raised)); }
   .slot.current .tick { border-block-start-width: 3px; }
-  .slot .none { inset-block-end: 2px; inline-size: auto; color: var(--muted); font-size: var(--t-sm); line-height: 1; }
-  .sem { display: grid; grid-template-columns: repeat(var(--slots), minmax(0.75rem, 1fr)); min-inline-size: calc(var(--slots) * 0.75rem); margin-block-start: 7px; color: var(--ink-2); font-size: var(--t-sm); line-height: 1.4; text-align: center; }
+  .slot .none { inset-block-end: 2px; inline-size: auto; color: var(--muted); font-size: 0.8125rem; line-height: 1; }
+  .sem { display: grid; grid-template-columns: repeat(var(--slots), minmax(0.75rem, 1fr)); min-inline-size: calc(var(--slots) * 0.75rem); margin-block-start: 7px; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.4; text-align: center; }
   .sem span { justify-self: center; min-inline-size: 1.1em; border-radius: 3px; }
   .sem .gap { opacity: 0.55; }
   .sem .current { padding-inline: 2px; background: var(--brand); color: var(--on-brand); font-weight: 700; }
-  .x { display: grid; grid-template-columns: repeat(var(--slots), minmax(0.75rem, 1fr)); min-inline-size: calc(var(--slots) * 0.75rem); margin-block-start: 2px; color: var(--ink-2); font-size: var(--t-sm); line-height: 1.2; }
+  .x { display: grid; grid-template-columns: repeat(var(--slots), minmax(0.75rem, 1fr)); min-inline-size: calc(var(--slots) * 0.75rem); margin-block-start: 2px; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.2; }
   /* Flex centring lets a label wider than its one-term year spill evenly; the last one spills inwards. */
   .x span { display: flex; justify-content: center; white-space: nowrap; overflow: visible; border-inline-start: 1px solid var(--line); }
   .x span:last-child { justify-content: flex-end; }
   .x span:first-child { border-inline-start: 0; }
   .note { margin: var(--space-2) 0 0; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.5; text-wrap: pretty; }
-  .swipe { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin: 0 0 var(--space-2); color: var(--ink-2); font-size: var(--t-sm); }
+  .chart .note { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; }
+  .chart .note .partial-note { flex-basis: 100%; }
+  .chart .note .axis-note { flex: 1 1 14rem; }
+  /* The exact numbers are one tap away from the chart: a full-size target in the chart frame. */
+  .to-table { display: inline-flex; align-items: center; min-block-size: var(--target-min); padding-inline: var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .to-table:hover { background: var(--hover-row); }
+  .swipe { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin: 0 0 var(--space-2); color: var(--ink-2); font-size: 0.8125rem; }
+  .swipe b { color: var(--ink); }
   .swipe button { min-block-size: var(--target-min); padding: 0 var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font: inherit; font-weight: 600; cursor: pointer; }
 
   .frame { position: relative; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); overflow: hidden; }
@@ -422,13 +453,11 @@
   .key-bars span { display: inline-flex; gap: 0.4em; align-items: center; }
   .tk { display: inline-block; inline-size: 14px; block-size: 8px; border-radius: var(--radius-pill); }
   .tk.fill { background: var(--brand); }
-  .tk.tick { inline-size: 2px; block-size: 12px; border-radius: 0; background: var(--ink); }
   .tk.over { background: var(--warn); }
-  .tk.track-key { inline-size: 22px; background: var(--chip); box-shadow: inset 0 0 0 1px var(--control-line); }
   .scroll { overflow-x: auto; scrollbar-width: thin; }
   table { inline-size: 100%; border-collapse: collapse; font-size: var(--t-base); line-height: var(--leading-table); }
   th, td { padding: 0.375rem 0.625rem; border-block-end: 1px solid var(--line); text-align: start; vertical-align: middle; }
-  thead th { background: var(--table-head); color: var(--muted); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
+  thead th { background: var(--table-head); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
   tbody th { font-weight: 600; white-space: nowrap; }
   tbody tr:last-child > * { border-block-end: 0; }
   tbody tr:hover, tbody tr.active { background: var(--hover-row); }
@@ -436,26 +465,30 @@
   tbody tr.current > th { box-shadow: inset 3px 0 0 var(--brand); }
   .num { text-align: end; }
   .names { min-inline-size: 6rem; overflow-wrap: anywhere; }
-  .names .count { margin-inline-start: 0.15em; color: var(--muted); font-size: 0.8125rem; white-space: nowrap; }
+  .names .count { margin-inline-start: 0.15em; color: var(--ink-2); font-size: 0.8125rem; white-space: nowrap; }
+  td.value .muted { color: var(--ink-2); }
   .cell-bar { display: flex; gap: var(--space-2); align-items: center; }
   td.ratio { inline-size: 1%; white-space: nowrap; }
-  .pct { min-inline-size: 2.75rem; color: var(--ink-2); font-size: var(--t-sm); text-align: end; }
+  .pct { min-inline-size: 2.75rem; color: var(--ink-2); font-size: 0.8125rem; text-align: end; }
   .pct.hot { color: var(--ink); font-weight: 650; }
   .track { position: relative; flex: 0 0 5.5rem; block-size: 10px; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
+  /* With over-capacity rows the grey track ends at 100%; the orange part runs past it on blank ground. */
+  .track.scaled { background: none; }
+  .track.scaled::before { content: ''; position: absolute; inset-block: 0; inset-inline-start: 0; inline-size: var(--full); border-radius: var(--radius-pill); background: var(--chip); box-shadow: inset 0 0 0 1px var(--control-line); }
+  .track .over-fill.capped { -webkit-mask-image: linear-gradient(110deg, #000 calc(100% - 7px), transparent calc(100% - 7px) calc(100% - 4px), #000 calc(100% - 4px)); mask-image: linear-gradient(110deg, #000 calc(100% - 7px), transparent calc(100% - 7px) calc(100% - 4px), #000 calc(100% - 4px)); }
   .track > span { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: inherit; }
   .track .fill { background: var(--brand); }
   .track.warn .fill { background: var(--warn); }
   .track .over-fill { background: var(--warn); border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
   .track.scaled .fill { border-radius: var(--radius-pill) 0 0 var(--radius-pill); }
-  /* 100% of capacity: a marker the over-capacity part runs past. */
-  .track.scaled::after { content: ''; position: absolute; z-index: 1; inset-block: -2px; inset-inline-start: var(--full); inline-size: 2px; margin-inline-start: -1px; background: var(--ink); }
   .track.scaled { overflow: visible; }
-  .over, .only { flex: none; padding: 0 6px; border-radius: var(--radius-pill); font-size: var(--t-xs); font-weight: 650; white-space: nowrap; }
+  .over, .only { flex: none; padding: 0 6px; border-radius: var(--radius-pill); font-size: 0.8125rem; font-weight: 650; white-space: nowrap; }
   .over { background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent); }
   .only { background: var(--chip); color: var(--ink-2); }
   .partial-badge { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 45%, transparent); }
-  .partial-note { display: flex; gap: 0.4em; align-items: baseline; margin-block-end: 2px; color: var(--ink); }
-  .partial-note .key { flex: none; translate: 0 1px; }
+  /* One sentence that wraps as text (the key is an inline mark before it), never split into columns. */
+  .partial-note { display: block; margin-block-end: 2px; color: var(--ink); }
+  .partial-note .key { margin-inline-end: 0.4em; vertical-align: -1px; }
   /* The parenthetical never breaks inside, so a wrapped warning keeps whole phrases together. */
   .partial-note .nb { white-space: nowrap; }
   .track.blank { visibility: hidden; }
@@ -465,11 +498,12 @@
   td.sections { inline-size: 1%; }
   .sections { white-space: nowrap; }
   .sections a { display: inline-flex; align-items: center; min-block-size: 2rem; font-weight: 600; }
-  .here { margin-inline-start: var(--space-2); padding: 0 6px; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-family: var(--font-sans); font-size: var(--t-xs); font-weight: 650; }
-  .withdrawn { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; }
-  .more { color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
+  .here { margin-inline-start: var(--space-2); padding: 0 6px; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-family: var(--font-sans); font-size: 0.8125rem; font-weight: 650; }
+  .withdrawn { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
+  .more { color: var(--brand-ink); font-size: 0.8125rem; white-space: nowrap; }
 
   .collapsible:not(:has(.expand:checked)) tr.extra { display: none; }
+  .sections a { min-block-size: var(--target-min); }
   .collapsible:has(.expand:checked) .gap-row, .collapsible:not(:has(.expand:checked)) .collapse-row { display: none; }
   :is(.gap-row, .collapse-row) td { padding: 0; }
   :is(.gap-row, .collapse-row) label { display: flex; gap: var(--space-2); align-items: center; justify-content: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; cursor: pointer; }
@@ -481,8 +515,27 @@
 
   @media (max-width: 40rem) {
     .chart { padding-inline: var(--space-3); }
-    /* Fixed term columns: a long history scrolls inside the chart instead of squeezing every bar. */
-    .bars, .sem, .x { grid-template-columns: repeat(var(--slots), minmax(1.25rem, 1fr)); min-inline-size: calc(var(--slots) * 1.25rem); }
+    /* Up to ~24 terms fit at 390 px without sideways scrolling; the axis names only academic years (every
+       other one when crowded, the latest always), and 「本班 108-2」 above its bar names the term. */
+    .sem { display: none; }
+    .x { margin-block-start: 6px; }
+    .x.crowded .year.alt { visibility: hidden; }
+    .readout { display: none; }
+    figcaption { margin-block-end: var(--space-2); }
+    .to-table { flex: 1 1 100%; justify-content: center; margin-block-start: var(--space-1); }
+    .gap-row.desk, .desk-n { display: none; }
+    .gap-row.phone { display: table-row; }
+    .phone-n { display: inline; }
+    .collapsible:not(:has(.expand:checked)) tr.phone-extra { display: none; }
+    .collapsible:has(.expand:checked) .gap-row.phone { display: none; }
+    /* The row is the link to the term's sections; the teacher names are text on phones. */
+    .name-links { display: none; }
+    .name-text { display: inline; }
+    tbody tr { position: relative; }
+    .sections .more::after { content: ''; position: absolute; inset: 0; }
+    tbody tr:has(.more:hover) { background: var(--hover-row); }
+    tbody tr:has(.more:focus-visible) { outline: var(--focus-ring); outline-offset: -2px; }
+    .sections .more:focus-visible { outline: none; }
     .table-key { padding-inline: var(--space-3); }
     /* Phones keep 本頁 and「全部 N 班」; single section links live behind「全部 N 班」. */
     /* Each term becomes a two-line row (term + numbers, then teachers + sections), so nothing is
@@ -491,7 +544,7 @@
     thead { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); }
     tbody tr { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--space-3); padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); }
     tbody tr:last-child { border-block-end: 0; }
-    tbody tr:is(.gap-row, .collapse-row) { display: block; padding: 0; }
+    tbody tr:is(.gap-row.phone, .collapse-row) { display: block; padding: 0; }
     .collapsible:has(.expand:checked) .gap-row, .collapsible:not(:has(.expand:checked)) .collapse-row { display: none; }
     tbody tr:is(.gap-row, .collapse-row) td { display: block; }
     tbody tr > * { padding: 0; border: 0; }
@@ -511,11 +564,10 @@
     .ratio .cell-bar { gap: var(--space-1); justify-content: end; }
     .ratio .cell-bar > :is(.over, .only) { order: -1; }
     /* The legend stays on one line: the track's full-scale note is in the desktop key only. */
-    .key-bars { flex-wrap: nowrap; gap: var(--space-3); font-size: var(--t-sm); white-space: nowrap; overflow: hidden; }
-    .key-bars .key-track { display: none; }
+    .key-bars { gap: 2px var(--space-3); font-size: 0.8125rem; }
     .ratio .track { flex: 1 1 3rem; min-inline-size: 2rem; }
     .pct { min-inline-size: 0; }
-    .names { min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); }
+    .names { min-inline-size: 0; color: var(--ink-2); font-size: 0.8125rem; }
     .track { max-inline-size: 6rem; }
     .value { min-inline-size: 0; }
     .sections { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; white-space: normal; }

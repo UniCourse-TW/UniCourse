@@ -14,7 +14,7 @@
   .stars { letter-spacing: 0.04em; white-space: nowrap; line-height: 1; }
   .on { color: var(--brand); }
   .off { color: var(--muted); }
-  .sm { font-size: var(--t-sm); }
+  .sm { font-size: 0.8125rem; }
   .base { font-size: var(--t-base); }
   .md { font-size: var(--t-md); }
 </style>

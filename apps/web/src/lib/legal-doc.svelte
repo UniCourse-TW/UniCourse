@@ -172,7 +172,7 @@
   /* The first h2 sits as far below the gist as every h2 sits below the previous section. */
   .has-gist .prose { padding-block-start: var(--space-4); }
   .doc-toc details { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
-  .doc-toc summary { padding: var(--space-2) var(--space-3); color: var(--muted); font-size: var(--t-sm); font-weight: 600; list-style: none; pointer-events: none; }
+  .doc-toc summary { padding: var(--space-2) var(--space-3); color: var(--muted); font-size: 0.8125rem; font-weight: 600; list-style: none; pointer-events: none; }
   .doc-toc summary::-webkit-details-marker { display: none; }
   .doc-toc details::details-content { display: block; content-visibility: visible; }
   .doc-toc ol { display: grid; margin: 0; padding: 0 var(--space-2) var(--space-2); list-style: none; }
@@ -200,7 +200,7 @@
   .prose :global(li:last-child) { margin-block-end: 0; }
   .prose :global(table) { inline-size: 100%; margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); border-collapse: separate; border-spacing: 0; overflow: hidden; background: var(--panel-raised); font-size: var(--t-base); line-height: var(--leading-table); }
   .prose :global(th), .prose :global(td) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
-  .prose :global(th) { background: var(--table-head); color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
+  .prose :global(th) { background: var(--table-head); color: var(--muted); font-size: 0.8125rem; font-weight: 600; }
   .prose :global(tr:last-child td) { border-block-end: 0; }
   /* Code inside CJK sentences sits on a chip that moves to the next line whole; it never breaks mid-word. */
   .prose :global(code) { padding: 1px 5px; border-radius: 4px; background: var(--chip); color: var(--ink); font-family: var(--font-mono); font-size: 0.88em; white-space: nowrap; }

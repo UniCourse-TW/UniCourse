@@ -90,6 +90,42 @@
     data.externalReviews?.sources.length === 1 ? data.externalReviews.sources[0].sourceLabel.replace(/\s*批踢踢$/u, '') : '外站'
   );
   let aboutOpen = $state(true);
+  let notesPeek = $derived(course.notes?.trim().replace(/\s+/gu, ' ') || undefined);
+  /** Sections in page order, for the jump chips (sticky on phones, the one in view highlighted). */
+  let sections = $derived.by(() => {
+    const list: { id: string; label: string; count?: number; lead?: boolean }[] = [{ id: 'history', label: '歷年開課' }];
+    const external = { id: 'external-reviews', label: '外站討論', count: externalTotal || undefined, lead: externalFirst };
+    if (externalFirst) list.push(external);
+    if (communityEmpty) list.push({ id: 'ratings', label: '站內評價與討論', count: 0 });
+    else {
+      list.push({ id: 'ratings', label: '站內評價', count: stats ? ratingCount : undefined });
+      list.push({ id: 'forum-title', label: '站內討論', count: data.posts?.total });
+    }
+    if (!externalFirst) list.push(external);
+    if (hasAbout) list.push({ id: 'about-title', label: '課程說明' });
+    return list;
+  });
+  let inView = $state('');
+  let chipRow: HTMLElement | undefined = $state();
+  onMount(() => {
+    // The section whose top has passed the sticky bars most recently is the one being read.
+    const update = () => {
+      const line = (chipRow?.getBoundingClientRect().bottom ?? 0) + 24;
+      let current = '';
+      for (const section of sections) {
+        const el = document.getElementById(section.id);
+        if (el && el.getBoundingClientRect().top <= line) current = section.id;
+      }
+      if (current !== inView) {
+        inView = current;
+        const chip = chipRow?.querySelector<HTMLElement>(`[data-section="${current}"]`);
+        if (chip && chipRow) chipRow.scrollTo({ left: chip.offsetLeft - chipRow.clientWidth / 2 + chip.offsetWidth / 2, behavior: 'smooth' });
+      }
+    };
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  });
   onMount(() => {
     if (window.matchMedia('(max-width: 40rem)').matches) aboutOpen = false;
   });
@@ -129,14 +165,6 @@
     <div class="title">
       <h1>{course.title}</h1>
       {#if titleEn}<p class="en" lang="en">{titleEn}</p>{/if}
-      <!-- Every meeting slot, once on the page: day, periods and room lead the head. -->
-      <p class="when-line" aria-label="上課時間地點">
-        {#each slots as slot, index (index)}
-          <span class="slot"><b>{meeting(slot)}</b>{#if slot.location}<span class="room">{slot.location}</span>{/if}</span>
-        {:else}
-          {#if scheduleText}<span class="slot"><b>{scheduleText}</b></span>{:else}<span class="slot muted">校方未公布上課時間</span>{/if}
-        {/each}
-      </p>
       <p class="meta">
         {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}
         {#if !course.active}<Badge label="已下架" tone="inactive" />{/if}
@@ -149,10 +177,22 @@
         {#if course.campus}<span class="item">{course.campus}</span>{/if}
         {#if course.grade}<span class="item">{course.grade}</span>{/if}
       </p>
+      <!-- Every meeting slot, once on the page, as a meta line under the identity line (term, code, teacher). -->
+      <p class="when-line" aria-label="上課時間地點">
+        {#each slots as slot, index (index)}
+          <span class="slot"><b>{meeting(slot)}</b>{#if slot.location}<span class="room">{slot.location}</span>{/if}</span>
+        {:else}
+          {#if scheduleText}<span class="slot"><b>{scheduleText}</b></span>{:else}<span class="slot muted">校方未公布上課時間</span>{/if}
+        {/each}
+      </p>
       <p class="headline-facts" aria-label="學分與必選修">
         <span class="item">{#if course.credits != null}<b class="num">{credits(course.credits)}</b> 學分{:else}學分未公布{/if}</span>
         <span class="item">{#if requirementLabel}<b>{requirementLabel}</b>{#if requirementDetail}<a class="detail" href="#requirement-detail" title={`校方原文：「${requirementDetail}」`} aria-label="必選修的校方原文">ⓘ</a>{/if}{:else}必選修未公布{/if}</span>
       </p>
+      {#if notesPeek}
+        <!-- The school's notes (優先、限修、加簽) affect enrolment, so phones see their start in the head; the full text stays below. -->
+        <p class="notes-peek"><span class="peek-key">校方備註</span><span class="peek-text">{notesPeek}</span><a href="#notes" onclick={() => (aboutOpen = true)}>全文 ↓</a></p>
+      {/if}
     </div>
     <div class="actions">
       {#if isHttpUrl(course.sourceUrl)}
@@ -208,7 +248,7 @@
       {/if}
     </div>
     {#if termTotal}
-      <div class="tile" class:partial={termTotal.partial}>
+      <div class="tile link-tile" class:partial={termTotal.partial}>
         <!-- The scope is in the label (how many sections the sum covers); the term goes in the sub-line. -->
         <!-- A partial term is flagged in the label row, so the sum is never read as the whole term. -->
         <dt>同學期 {displayValue(termTotal.offeringCount)} 班合計{#if termTotal.partial}<span class="tile-badge warn" title="這一期的合計不能和其他學期直接比較">只收錄部分</span>{/if}</dt>
@@ -222,7 +262,7 @@
         <dd class="note"><a href="#history"><span class="mono">{termTotal.term}</span>・{#if termTotal.partial && termTotal.usualSections}通常約 {displayValue(termTotal.usualSections)} 班{:else}含本班{/if}&nbsp;↓</a></dd>
       </div>
     {/if}
-    <div class="tile">
+    <div class="tile" class:link-tile={totals != null}>
       {#if totals?.enrolledTotal != null}
         <dt>{displayValue(totals.terms)} 期累計修課人次</dt>
         <dd><span class="value num">{displayValue(totals.enrolledTotal)}</span><small>人次</small></dd>
@@ -242,11 +282,16 @@
         <dd class="note">暫時無法取得</dd>
       {/if}
     </div>
-    <div class="tile">
+    <div class="tile" class:link-tile={externalTile || (stats != null && ratingCount > 0 && ratingCount < 3)}>
       {#if externalTile}
+        <!-- The total is this course code across every teacher; the line under it says how many name this class's teacher. -->
         <dt>外站討論（{externalLabel}）</dt>
-        <dd><span class="value num">{displayValue(externalTotal)}</span><small>篇</small></dd>
-        <dd class="note"><a href="#external-reviews">看索引與來源 ↓</a></dd>
+        <dd><span class="value num">{displayValue(externalTotal)}</span><small>篇・各教師合計</small></dd>
+        {#if externalMine != null && externalMine < externalTotal}
+          <dd class="note mine-note"><a href={externalMine ? '#external-mine' : '#external-reviews'}>{#if externalMine}本班教師僅 <b class="num">{displayValue(externalMine)}</b> 篇{#if externalMineKind}・{externalMineKind}{/if}{:else}本班教師 0 篇，都是其他教師{/if}&nbsp;↓</a></dd>
+        {:else}
+          <dd class="note"><a href="#external-reviews">看文章與來源&nbsp;↓</a></dd>
+        {/if}
       {:else}
         <dt>同學評價</dt>
         {#if stats && ratingCount > 0}
@@ -263,20 +308,12 @@
     </div>
   </dl></div>
 
-  <!-- Jump links in page order; indexed posts lead (with their count) when they come first on the page. -->
-  {#snippet externalLink()}
-    <a href="#external-reviews" class:lead={externalFirst}>外站討論{#if externalTotal} <span class="num">{displayValue(externalTotal)}</span> 篇{#if externalMine != null && externalMine < externalTotal}<span class="sub-count">（本班教師 <span class="num">{displayValue(externalMine)}</span> 篇{#if externalMine && externalMineKind}・{externalMineKind}{/if}）</span>{/if}{/if} ↓</a>
-  {/snippet}
-  <nav class="section-links" aria-label="本頁段落">
-    {#if externalFirst}{@render externalLink()}{/if}
-    {#if communityEmpty}
-      <a href="#ratings">站內評價與討論 <span class="num">0</span> ↓</a>
-    {:else}
-      <a href="#ratings">站內評價{#if stats} <span class="num">{displayValue(ratingCount)}</span>{/if} ↓</a>
-      <a href="#forum-title">站內討論{#if data.posts} <span class="num">{displayValue(data.posts.total)}</span>{/if} ↓</a>
-    {/if}
-    {#if !externalFirst}{@render externalLink()}{/if}
-    {#if hasAbout}<a href="#about-title">課程說明 ↓</a>{/if}
+  <!-- Jump chips in page order. Phones keep them in one sticky, horizontally scrolling row under the site
+       header, with the section in view highlighted (the same row on every long page). -->
+  <nav class="section-links" aria-label="本頁段落" bind:this={chipRow}>
+    {#each sections as section (section.id)}
+      <a href={`#${section.id}`} data-section={section.id} class:lead={section.lead} class:here={inView === section.id} aria-current={inView === section.id ? 'location' : undefined}>{section.label}{#if section.count != null} <span class="num">{displayValue(section.count)}</span>{/if}</a>
+    {/each}
   </nav>
 
   <section class="history" aria-labelledby="history">
@@ -382,35 +419,42 @@
   .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
   .num { font-variant-numeric: tabular-nums; }
   .muted { color: var(--muted); }
-  .small { font-size: var(--t-sm); }
+  .small { font-size: 0.8125rem; }
 
   .crumbs { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; margin-block-end: calc(-1 * var(--space-5)); color: var(--muted); font-size: var(--t-base); }
-  .crumbs a { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); }
+  /* Padding with an equal negative margin: a 44 px wide target for short crumbs (「查課」) without moving the text. */
+  .crumbs a { display: inline-flex; align-items: center; min-block-size: var(--target-min); margin-inline: calc(-1 * var(--space-2)); padding-inline: var(--space-2); color: var(--ink-2); }
 
   .head { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); align-items: start; justify-content: space-between; }
   .title { flex: 1 1 28rem; display: grid; gap: var(--space-1); min-inline-size: 0; }
   h1 { font-size: var(--t-2xl); overflow-wrap: anywhere; }
   .en { color: var(--ink-2); font-size: var(--t-md); overflow-wrap: anywhere; }
-  /* The schedule leads: bold day and periods, the room beside them; several slots wrap as a list. */
-  .when-line { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-5); margin-block-start: var(--space-2) !important; font-size: var(--t-lg); }
+  /* When and where: a meta line under term, code and teacher (same size), the day and periods in ink. */
+  .when-line { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-5); color: var(--ink); font-size: var(--t-md); }
   .when-line .slot { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; }
-  .when-line b { font-weight: 650; }
+  .when-line b { font-weight: 600; }
   .when-line .room { color: var(--ink-2); }
   .when-line .slot { gap: 0; }
   .when-line .room::before { content: '·'; margin-inline: var(--space-2); color: var(--muted); }
   /* Everything else about the class on one wrapping line: term, code, teachers, credits, 必選修, language. */
   /* Each item carries its dot in the gap before it; the row clips anything left of its edge, so a wrapped
      line never starts with a stray「・」. */
-  .meta { display: flex; flex-wrap: wrap; gap: 0.125rem 1.5em; align-items: center; color: var(--ink-2); font-size: var(--t-md); overflow: clip; overflow-clip-margin: 4px; }
+  .meta { margin-block-start: var(--space-1) !important; display: flex; flex-wrap: wrap; gap: 0.125rem 1.5em; align-items: center; color: var(--ink-2); font-size: var(--t-md); overflow: clip; overflow-clip-margin: 4px; }
   .meta .item { position: relative; white-space: nowrap; }
   .meta .item.people { white-space: normal; }
+  /* Teacher links: invisible block padding makes a 44 px tall target without changing the line. */
+  .meta .people a { padding-block: 0.75rem; }
   .meta .item::before { content: '·'; position: absolute; inset-inline-start: -1.5em; inline-size: 1.5em; color: var(--muted); text-align: center; }
   .headline-facts { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; margin-block-start: var(--space-1) !important; color: var(--ink-2); font-size: var(--t-md); }
   .headline-facts .item { padding: 1px var(--space-2); border-radius: var(--radius-pill); background: var(--chip); }
   .headline-facts b { color: var(--ink); font-weight: 650; }
-  .headline-facts .detail { margin-inline-start: 2px; color: var(--muted); font-size: var(--t-sm); text-decoration: none; }
+  .headline-facts .detail { margin-inline-start: 2px; padding: 0.75rem 0.6rem; color: var(--ink-2); font-size: 0.8125rem; text-decoration: none; }
+  .notes-peek { display: -webkit-box; margin-block-start: var(--space-2) !important; max-inline-size: 48rem; color: var(--ink-2); font-size: var(--t-base); line-height: 1.55; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
+  .notes-peek .peek-key { margin-inline-end: var(--space-2); padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink); font-size: 0.8125rem; font-weight: 650; }
+  .notes-peek a { margin-inline-start: var(--space-2); padding-block: 0.75rem; font-weight: 600; white-space: nowrap; }
+  @media (min-width: 40.01rem) { .notes-peek { display: none; } }
   .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: end; }
-  .actions-note { flex-basis: 100%; color: var(--muted); font-size: var(--t-xs); text-align: end; }
+  .actions-note { flex-basis: 100%; color: var(--ink-2); font-size: 0.8125rem; text-align: end; }
   .button { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-base); font-weight: 650; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
   .button:hover { background: var(--hover-row); }
   .button.primary { border-color: var(--brand); background: var(--brand); color: var(--on-brand) !important; }
@@ -428,7 +472,16 @@
   .tile dt { color: var(--ink-2); font-size: var(--t-base); font-weight: 650; }
   .tile dd { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; margin: 0; min-inline-size: 0; }
   .tile .value { font-size: var(--t-3xl); font-weight: 600; line-height: var(--leading-tight); overflow-wrap: anywhere; }
-  .tile small { color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
+  .tile small { color: var(--ink-2); font-size: 0.8125rem; font-weight: 500; }
+  /* A tile whose note links down the page is one target: the whole tile is the link, with hover and focus. */
+  .tile.link-tile { position: relative; }
+  .tile.link-tile .note a::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+  .tile.link-tile:hover { border-color: color-mix(in srgb, var(--brand) 55%, var(--line)); background: var(--hover-row); }
+  .tile.link-tile:hover .note a { color: var(--brand-ink); text-decoration: underline; }
+  .tile.link-tile:has(.note a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .tile.link-tile .note a:focus-visible { outline: none; }
+  .tile .note a { font-weight: 600; }
+  .tile .mine-note b { color: var(--ink); font-weight: 700; }
   .tile .note { color: var(--ink-2); font-size: 0.8125rem; text-wrap: pretty; }
   .tile .note a { color: var(--ink-2); text-decoration: none; }
   .tile .value.small-value { font-size: var(--t-xl); }
@@ -458,11 +511,12 @@
 
   .section-links { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: center; margin-block: calc(-1 * var(--space-3)); font-size: var(--t-base); }
   .section-links a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
-  .section-links .sub-count { color: var(--ink-2); font-weight: 500; }
+  .section-links .num { color: var(--ink-2); font-weight: 600; }
+  .section-links a.here { text-decoration-thickness: 2px; }
   /* When indexed posts come before the site's (empty) sections, their link is the outlined lead. */
   .section-links a.lead { padding-inline: var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 55%, var(--line)); border-radius: var(--radius-control); background: var(--brand-wash); text-decoration: none; }
   .section-links a.lead:hover { border-color: var(--brand); }
-  .course-page :is(#history, #forum-title, #about-title), .course-page :global(:is(#ratings, #external-reviews)) { scroll-margin-block-start: 7.5rem; }
+  .course-page :is(#history, #forum-title, #about-title, #notes), .course-page :global(:is(#ratings, #external-reviews, #external-mine)) { scroll-margin-block-start: 7.5rem; }
   .community { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); align-items: start; }
   .community.combined { grid-template-columns: minmax(0, 1fr); }
 
@@ -478,8 +532,9 @@
   .prose { padding-block-end: var(--space-4); color: var(--ink-2); font-size: var(--t-md); line-height: var(--leading-prose); white-space: pre-line; overflow-wrap: anywhere; }
   .extra { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: var(--space-3) var(--space-6); margin: 0; padding-block-end: var(--space-4); font-size: var(--t-base); }
   .extra div { min-inline-size: 0; }
-  .extra dt { color: var(--muted); font-size: var(--t-sm); }
+  .extra dt { color: var(--ink-2); font-size: 0.8125rem; }
   .extra dd { margin: 0; overflow-wrap: anywhere; }
+  .extra dd a { padding-block: 0.75rem; }
   .source { padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); color: var(--ink-2); font-size: var(--t-base); }
 
   @media (max-width: 64rem) {
@@ -497,10 +552,15 @@
     .tiles { gap: var(--space-2); }
     .tile { padding: var(--space-3); }
     .tile .value { font-size: var(--t-2xl); }
-    /* Section chips in a two-column grid: every chip is visible at 390 px (none cut off at the edge); the
-       lead chip (indexed posts first) takes a row of its own. */
-    .section-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); margin-block: 0 var(--space-1); }
-    .section-links a { justify-content: center; padding-inline: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); text-align: center; text-decoration: none; }
-    .section-links a.lead { grid-column: 1 / -1; border-radius: var(--radius-control); }
+    /* Jump chips: one sticky row under the site header (two rows of 44 px plus its border), scrolling
+       sideways; the section in view is filled. Long phone pages share this look. */
+    .section-links { position: sticky; inset-block-start: calc(2 * var(--target-min) + var(--space-1) + 1px); z-index: 5; display: flex; flex-wrap: nowrap; gap: var(--space-2); margin-block: 0 calc(-1 * var(--space-2)); margin-inline: calc(-1 * clamp(1rem, 3vw, 2.5rem)); padding: var(--space-1) clamp(1rem, 3vw, 2.5rem); overflow-x: auto; scrollbar-width: none; background: var(--bg); border-block-end: 1px solid var(--line); }
+    .section-links::-webkit-scrollbar { display: none; }
+    .section-links a { flex: none; padding-inline: var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink-2); text-decoration: none; white-space: nowrap; }
+    .section-links a.lead { border-radius: var(--radius-pill); }
+    .section-links a.here { border-color: var(--brand); background: var(--brand); color: var(--on-brand); }
+    .section-links a.here .num { color: var(--on-brand); }
+    .course-page :is(#history, #forum-title, #about-title, #notes), .course-page :global(:is(#ratings, #external-reviews, #external-mine)) { scroll-margin-block-start: 10rem; }
+    .forum .section-head .sub { display: none; }
   }
 </style>

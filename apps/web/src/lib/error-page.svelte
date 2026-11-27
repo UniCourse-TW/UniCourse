@@ -155,7 +155,7 @@
     overflow-wrap: anywhere;
   }
   .outage { border-inline-start: 3px solid var(--down); }
-  .eyebrow { display: flex; gap: var(--space-2); align-items: center; margin: 0; color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
+  .eyebrow { display: flex; gap: var(--space-2); align-items: center; margin: 0; color: var(--muted); font-size: 0.8125rem; font-weight: 600; }
   .code { padding: 0 6px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--panel-raised); font-family: var(--font-mono); font-weight: 500; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .detail { margin: 0; color: var(--ink-2); }
@@ -170,7 +170,7 @@
   .search { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: end; inline-size: 100%; margin-block-start: var(--space-2); }
   .search-field { display: grid; flex: 1 1 14rem; gap: var(--space-1); }
   .scope-field { display: grid; flex: 0 0 auto; gap: var(--space-1); }
-  .field-label { color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; }
+  .field-label { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
   .input-wrap, .select-wrap { position: relative; display: block; }
   .input-wrap .icon { position: absolute; inset-block-start: 50%; inset-inline-start: var(--space-3); translate: 0 -50%; color: var(--muted); pointer-events: none; }
   .search input[type='search'], .search select {
