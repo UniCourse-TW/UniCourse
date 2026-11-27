@@ -668,7 +668,8 @@
   .taken-ways { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; font-size: 0.8125rem; color: var(--ink-2); }
   .suggest-label { font-weight: 600; }
   /* Suggestions stay one row (scrolling sideways on narrow phones), so the password field stays close. */
-  .suggest-row { display: flex; flex-wrap: nowrap; gap: var(--space-2); max-inline-size: 100%; overflow-x: auto; scrollbar-width: none; }
+  /* Every candidate stays fully readable: chips wrap instead of scrolling out of view. */
+  .suggest-row { display: flex; flex-wrap: wrap; gap: var(--space-2); max-inline-size: 100%; }
   .taken-ways { min-inline-size: 0; }
   .suggest-chip b { margin-inline-start: 0.3em; font-family: var(--font-mono); font-weight: 650; }
   .suggest-chip[aria-pressed='true'] { border-color: var(--brand); background: var(--brand-wash); }
@@ -676,7 +677,8 @@
     display: inline-flex;
     align-items: center;
     min-block-size: var(--target-min);
-    flex: none;
+    flex: 0 1 auto;
+    max-inline-size: 100%;
     padding: 0 var(--space-3);
     border: 1px solid var(--control-line);
     border-radius: var(--radius-pill);
