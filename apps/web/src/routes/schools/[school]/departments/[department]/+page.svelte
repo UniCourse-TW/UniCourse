@@ -41,13 +41,16 @@
     ...(data.query ? [{ value: 'relevance', label: '關鍵字相關度' }] : [{ value: 'relevance', label: '學期最新' }]),
     { value: 'enrolled', label: '修課人數最多' }, { value: 'title', label: '依課名排序' }
   ]);
+  const classOptions = [{ value: 'required', label: '必修' }, { value: 'elective', label: '選修' }];
+  let classLabel = $derived(classOptions.find(({ value }) => value === data.classFilter)?.label ?? '不限類別');
+  let hasFilters = $derived(hasSearch || Boolean(data.classFilter));
+  let clearHref = $derived(`${base}?term=${encodeURIComponent(data.term)}#offerings`);
   let tableOrder = $derived(
     data.sort === 'title' ? { column: 'course', direction: 'ascending' } as const :
     data.sort === 'enrolled' ? { column: 'enrollment', direction: 'descending' } as const : undefined
   );
   let historical = $derived([...(data.trends ?? [])].reverse());
   let courseCount = $derived(data.complete ? data.courses : data.trends?.find(({ term }) => term === data.term)?.courses ?? null);
-  const classOptions = [{ value: 'required', label: '必修' }, { value: 'elective', label: '選修' }];
 
   function termHref(term: string) {
     return changeQuery(new URL(page.url.pathname + page.url.search, page.url), (params) => {
@@ -73,9 +76,12 @@
     <a href="/">查課</a><span aria-hidden="true">/</span><a href="/schools">學校</a><span aria-hidden="true">/</span><a href={schoolHref(department.school)}>{department.schoolName}</a>
   </nav>
   <header class="browse-head" id="department-top" tabindex="-1">
-    <div class="browse-stack">
+    <div class="browse-stack department-heading">
       <h1>{department.department}</h1>
       <p class="browse-dek"><span>{department.schoolName}課程資料 · {displayValue(data.terms.length)} 學期</span>{#if data.updatedAt}<span>匯入 <time datetime={data.updatedAt} title={importedAt(data.updatedAt)}>{shortImportedAt(data.updatedAt)}</time>・臺北時間</span>{/if}</p>
+      {#if data.website && isHttpUrl(data.website)}
+        <a class="browse-button department-website" href={data.website} rel="external">校方官網 ↗</a>
+      {/if}
     </div>
   </header>
   <SchoolsSectionLinks sections={[{ id: 'offerings', label: '課表' }, { id: 'department-history', label: '歷年開課變化' }]} />
@@ -145,11 +151,16 @@
           <div class="timetable-options">
             <FilterSelect name="sort" label="排序" allLabel={null} value={data.sort} options={orderOptions} />
             <button class="browse-button">套用</button>
-            {#if hasSearch || data.classFilter}<a href={`${base}?term=${encodeURIComponent(data.term)}#offerings`}>清除</a>{/if}
           </div>
         </form>
       {/key}
     </div>
+    {#if hasFilters}
+      <div class="filter-summary">
+        <p class="browse-note">{termLabel}・{classLabel}{#if data.query}・「{data.query}」{/if}{#if page.url.searchParams.has('sort')}・{orderOptions.find(({ value }) => value === data.sort)?.label}{/if}</p>
+        <a href={clearHref}>清除篩選</a>
+      </div>
+    {/if}
     {#if data.classInPage}
       <p class="browse-note">類別僅篩選本頁{#if data.term === 'all'}，可選擇單一學期縮小範圍{/if}。</p>
     {/if}
@@ -165,13 +176,12 @@
         {#if data.totalPages > 1}
           <div class="top-pagination"><Pagination url={new URL('#offerings', page.url)} page={data.page} totalPages={data.totalPages} label="課表上方分頁" /></div>
         {/if}
-        <p class="browse-note import-note">人數、名額及餘額為匯入紀錄。{#if data.offerings.some(({ credits }) => credits === 0)} <span>0 學分依校方資料。</span>{/if}</p>
+        <p class="browse-note import-note">匯入時：修課人數／校方名額（人）。{#if data.offerings.some(({ credits }) => credits === 0)} <span>0 學分依校方資料。</span>{/if}</p>
       </div>
       <SchoolsOfferingTable offerings={data.offerings} ratings={data.ratings} mode="department" caption={`${termLabel}開課班次`} showTerm={data.term === 'all'} order={tableOrder} />
     {:else}
-      <EmptyState title={data.classInPage ? '本頁沒有此類別的班次' : data.query || data.classFilter ? '沒有符合條件的班次' : `${termLabel}沒有開課紀錄`} description={data.classInPage ? '可切換類別或查看其他頁。' : data.query ? '試試其他教師名、課名或課號。' : data.classFilter ? '可切換類別或學期。' : '可切換上方學期，查看這個開課單位的課表。'}>
-        {#snippet action()}<a href={data.query || data.classFilter ? `${base}?term=${encodeURIComponent(data.term)}#offerings` : termHref('all')}>{data.query || data.classFilter ? '清除篩選' : '查看所有學期'}</a>{/snippet}
-      </EmptyState>
+      {#snippet showAllTerms()}<a href={termHref('all')}>查看所有學期</a>{/snippet}
+      <EmptyState title={data.classInPage ? '本頁沒有此類別的班次' : data.query || data.classFilter ? '沒有符合條件的班次' : `${termLabel}沒有開課紀錄`} description={data.classInPage ? '可切換類別或查看其他頁。' : data.query ? '試試其他教師名、課名或課號。' : data.classFilter ? '可切換類別或學期。' : '可切換上方學期，查看這個開課單位的課表。'} action={data.query || data.classFilter ? undefined : showAllTerms} />
     {/if}
     {#if !data.resultsError && data.totalPages > 1}
       <div class="table-footer">
@@ -182,11 +192,7 @@
   </section>
 
   <section class="browse-stack history" aria-labelledby="department-history">
-    <SectionHeader title="歷年開課變化" id="department-history">
-      {#snippet actions()}
-        {#if data.website && isHttpUrl(data.website)}<a class="browse-button" href={data.website} rel="external">校方官網 ↗</a>{/if}
-      {/snippet}
-    </SectionHeader>
+    <SectionHeader title="歷年開課變化" id="department-history" />
     {#if data.trends === null}
       <ErrorState title="暫時無法取得歷年開課統計" retryHref={page.url.pathname + page.url.search} />
     {:else}
@@ -204,6 +210,9 @@
   .department-page .browse-crumbs + .browse-head { margin-block-start: calc(-1 * var(--space-2)); }
   .browse-note { text-wrap: pretty; }
   .department-page :global(.state .action a) { display: inline-flex; align-items: center; min-block-size: var(--target-min); min-inline-size: var(--target-min); }
+  .department-heading { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  .department-heading .browse-dek { grid-column: 1 / -1; }
+  .department-website { grid-column: 2; grid-row: 1; white-space: nowrap; }
   .browse-head h1 { font-size: clamp(1.5rem, 4vw, 2rem); }
   .department-page :global(:is(#department-top, #offerings, #department-history)) { scroll-margin-block-start: 4.5rem; }
   .history { margin-block-start: var(--space-4); padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); }
@@ -211,11 +220,14 @@
   .import-note:not(:first-child) { padding-inline-start: var(--space-2); border-inline-start: 1px solid var(--line); }
   .import-note span { white-space: nowrap; }
   .results-count { color: var(--ink-2); }
+  .filter-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-2); }
+  .filter-summary a { display: inline-grid; align-items: center; min-block-size: var(--target-min); white-space: nowrap; }
   .table-footer, .timetable-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-1) var(--space-2); }
   .back-link { display: inline-grid; align-items: center; justify-self: start; min-block-size: var(--target-min); font-size: var(--t-base); }
+  .timetable-toolbar { justify-content: start; }
   .timetable-controls { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); }
   .timetable-options { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-  .timetable-options a, .timetable-options button { display: inline-grid; align-items: center; min-block-size: var(--target-min); min-inline-size: var(--target-min); text-align: center; }
+  .timetable-options button { display: inline-grid; align-items: center; min-block-size: var(--target-min); min-inline-size: var(--target-min); text-align: center; }
   .term-links { display: flex; align-items: center; gap: .25rem; }
   .term-links a { flex: none; display: inline-grid; place-items: center; min-height: var(--target-min); min-width: var(--target-min); border-radius: var(--radius-control); padding: 0 .625rem; background: var(--chip); color: var(--ink-2); font-size: var(--t-sm); text-decoration: none; font-variant-numeric: tabular-nums; }
   .term-links a[aria-current] { background: var(--brand-wash); color: var(--brand-ink); font-weight: 750; box-shadow: inset 0 -2px var(--brand); }
@@ -236,7 +248,7 @@
   .timetable-search:has(input:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   input:focus-visible { outline: none; }
   input::placeholder { color: var(--muted); opacity: 1; }
-  .distribution { display: grid; flex: 0 1 18rem; gap: .3rem; margin-inline-start: var(--space-3); }
+  .distribution { display: grid; flex: 0 1 13rem; gap: .3rem; }
   .segments { display: flex; gap: 2px; height: 6px; overflow: hidden; border-radius: var(--radius-pill); }
   .segments > span { min-inline-size: 3px; flex-basis: 0; }
   .distribution ul { display: flex; flex-wrap: wrap; list-style: none; gap: .25rem .65rem; padding: 0; margin: 0; font-size: var(--t-sm); }
@@ -254,11 +266,13 @@
   }
   @media (min-width: 64rem) {
     .timetable-controls { flex: 1 1 32rem; }
-    .distribution { flex-basis: 13rem; order: 1; }
   }
   @media (max-width: 40rem) {
     .browse-crumbs a { min-inline-size: var(--target-min); justify-content: center; }
-    .distribution { order: -1; flex-basis: 100%; margin-inline: 0; }
+    .department-heading h1 { grid-column: 1 / -1; }
+    .department-heading:has(.department-website) .browse-dek { grid-column: 1; }
+    .department-website { grid-row: 2; padding-inline: var(--space-2); }
+    .distribution { order: -1; flex-basis: 100%; }
     .results-summary { align-items: center; justify-content: space-between; gap: var(--space-1) var(--space-2); }
     .results-summary .import-note { flex-basis: 100%; padding-inline-start: 0; border-inline-start: 0; }
     .term-links a { padding-inline: .5rem; }

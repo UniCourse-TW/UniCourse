@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state';
+  import { onMount } from 'svelte';
   import { importedAt, shortImportedAt } from '$lib/format';
   import { departmentHref, instructorHref, schoolHref } from '$lib/overview-paths';
   import { meanRating, publishedEnrollment } from '$lib/schools-offerings';
@@ -37,6 +38,16 @@
     ? [...data.courses, { value: data.courseCode, label: data.courseCode }]
     : data.courses);
   let ratedCourses = $state<HTMLDetailsElement>();
+  let enhancedFilters = $state(false);
+  onMount(() => { enhancedFilters = true; });
+
+  function submitFilter(event: Event & { currentTarget: HTMLSelectElement }) {
+    const select = event.currentTarget;
+    if (select.name === 'course' || window.matchMedia('(min-width: 40.0625rem)').matches) {
+      select.form?.requestSubmit();
+    }
+  }
+
   const ratedCourseHref = (code: string) => `${base}?${new URLSearchParams({ course: code })}#offerings`;
   const yearOfferingsHref = (course: string, year: string) => `${base}?${new URLSearchParams({ course, year })}#offerings`;
 </script>
@@ -50,16 +61,8 @@
   <header class="browse-head" id="instructor-top" tabindex="-1">
     <div class="browse-stack">
       <h1>{instructor.name}</h1>
-      <div class="identity">
-        <p class="browse-dek"><span>{instructor.schoolName}・同校同名教師合併顯示</span>{#if span}<span>{span} 授課</span>{/if}
-          {#if data.updatedAt}<span>更新於 <time datetime={data.updatedAt} title={importedAt(data.updatedAt)}>{shortImportedAt(data.updatedAt)}</time>・臺北時間</span>{/if}</p>
-        {#if summary.departments.length}
-          <details class="instructor-units">
-            <summary>{displayValue(summary.departments.length)} 個開課單位</summary>
-            <p class="browse-inline browse-note">{#each summary.departments as department (department)}<a href={departmentHref(instructor.school, department)}>{department}</a>{/each}</p>
-          </details>
-        {/if}
-      </div>
+      <p class="browse-dek"><span>{instructor.schoolName}・同校同名教師合併顯示</span>{#if span}<span>{span} 授課</span>{/if}
+        {#if data.updatedAt}<span>更新於 <time datetime={data.updatedAt} title={importedAt(data.updatedAt)}>{shortImportedAt(data.updatedAt)}</time>・臺北時間</span>{/if}</p>
     </div>
   </header>
   <SchoolsSectionLinks sections={[
@@ -68,25 +71,33 @@
     { id: 'discussions', label: data.externalReviews?.posts.length ? '看網路討論' : '外站搜尋' }
   ]} />
 
-  <div class="browse-compact-stats instructor-stats"><StatRow label="歷年授課與課程評價">
-    <StatTile label="歷年開課" value={summary.offerings} unit="班">
-      {#snippet detail()}<span class="course-count">{displayValue(summary.courses)} 門課</span>{/snippet}
-    </StatTile>
-    <StatTile label="授課學期" value={summary.terms.length} unit="期" />
-    <StatTile label="累計修課" value={enrollment} unit="人次" note={enrollment !== null ? '僅計已公布' : data.trends === null ? '暫未取得' : '未公布人數'} />
-    {#if data.ratedCourses.length === 1}
-      {@const course = data.ratedCourses[0]}
-      <a class="rating-tile" href={ratedCourseHref(course.courseCode)} title={`查看「${course.title}」班次與課程評價`}>
+  <div class="browse-compact-stats instructor-stats">
+    <StatRow label="歷年授課與課程評價">
+      <StatTile label="歷年開課" value={summary.offerings} unit="班">
+        {#snippet detail()}<span class="course-count">{displayValue(summary.courses)} 門課</span>{/snippet}
+      </StatTile>
+      <StatTile label="授課學期" value={summary.terms.length} unit="期" />
+      <StatTile label="累計修課" value={enrollment} unit="人次" note={enrollment !== null ? '僅計已公布' : data.trends === null ? '暫未取得' : '未公布人數'} />
+      {#if data.ratedCourses.length === 1}
+        {@const course = data.ratedCourses[0]}
+        <a class="rating-tile" href={ratedCourseHref(course.courseCode)} title={`查看「${course.title}」班次與課程評價`}>
+          {@render ratingTile()}
+        </a>
+      {:else if data.ratedCourses.length > 1}
+        <a class="rating-tile" href="#rated-courses" onclick={() => { if (ratedCourses) ratedCourses.open = true; }}>
+          {@render ratingTile()}
+        </a>
+      {:else}
         {@render ratingTile()}
-      </a>
-    {:else if data.ratedCourses.length > 1}
-      <a class="rating-tile" href="#rated-courses" onclick={() => { if (ratedCourses) ratedCourses.open = true; }}>
-        {@render ratingTile()}
-      </a>
-    {:else}
-      {@render ratingTile()}
+      {/if}
+    </StatRow>
+    {#if summary.departments.length}
+      <details class="instructor-units">
+        <summary>查看 {displayValue(summary.departments.length)} 個開課單位</summary>
+        <p class="browse-inline browse-note">{#each summary.departments as department (department)}<a href={departmentHref(instructor.school, department)}>{department}</a>{/each}</p>
+      </details>
     {/if}
-  </StatRow></div>
+  </div>
   <section class="browse-stack instructor-section history-section" aria-labelledby="history">
     <SectionHeader title="歷年授課" id="history" />
     {#if truncated}<p class="browse-note">各課程的學年統計僅計入最近 {displayValue(data.listed)} 班；下方可查看完整的各學期總數。</p>{/if}
@@ -100,7 +111,7 @@
       <details class="rating-courses" id="rated-courses" bind:this={ratedCourses}>
         <summary>查看有評價的課程</summary>
         <ul>{#each data.ratedCourses as course (course.id)}
-          <li><a href={ratedCourseHref(course.courseCode)}>{course.title} · {course.average.toFixed(1)} 分／{displayValue(course.count)} 則 →</a></li>
+          <li><a href={ratedCourseHref(course.courseCode)}>{course.title} · <span class="rating-tail">{course.average.toFixed(1)} 分／{displayValue(course.count)} 則 →</span></a></li>
         {/each}</ul>
       </details>
     {/if}
@@ -132,11 +143,12 @@
 {/snippet}
 
 {#snippet offeringFilters()}
-  <div class="instructor-filters">
+  <div class="instructor-filters" class:enhancedFilters data-sveltekit-keepfocus>
     <FilterBar action={`${base}#offerings`} label="開課列表篩選" hidden={data.year ? { year: data.year } : undefined} clearHref={filtered || data.oldestFirst ? `${base}#offerings` : undefined}>
-      <FilterSelect name="term" label="學期" value={data.term} options={termOptions} />
-      <FilterSelect name="course" label="課程" value={data.courseCode} options={courseOptions} />
-      <FilterSelect name="sort" label="分組排序" allLabel={null} value={data.oldestFirst ? 'oldest' : 'newest'} options={sortOptions} />
+      <FilterSelect name="term" label="學期" value={data.term} options={termOptions} onchange={submitFilter} />
+      <FilterSelect name="course" label="課程" value={data.courseCode} options={courseOptions} onchange={submitFilter} />
+      <FilterSelect name="sort" label="分組排序" allLabel={null} value={data.oldestFirst ? 'oldest' : 'newest'} options={sortOptions} onchange={submitFilter} />
+      <p class="browse-note filter-hint">變更選項後更新班次</p>
     </FilterBar>
   </div>
 {/snippet}
@@ -144,8 +156,6 @@
 <style>
   .instructor-page { --t-sm: max(13px, .75rem); --t-xs: max(13px, .6875rem); gap: var(--space-3); margin-block-start: calc(-1 * var(--space-3)); }
   .browse-head .browse-stack { gap: var(--space-1); }
-  .identity { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-3); }
-  .identity:has(details[open]) > details { flex-basis: 100%; }
   .instructor-stats :global(.tile) { min-block-size: 100%; padding-block: var(--space-2); }
   .rating-tile { display: grid; color: inherit; text-decoration: none; border-radius: var(--radius-panel); }
   .rating-tile :global(dt) { color: var(--brand-ink); }
@@ -154,7 +164,8 @@
   .rating-value { white-space: normal; }
   .rating-courses summary, .rating-courses a { min-block-size: var(--target-min); align-content: center; color: var(--brand-ink); }
   .rating-courses summary { width: fit-content; cursor: pointer; }
-  .rating-courses a { display: inline-grid; }
+  .rating-courses a { display: inline-block; }
+  .rating-tail { white-space: nowrap; }
   .rating-courses ul { margin: 0; padding-inline-start: var(--space-5); }
   .instructor-page .browse-crumbs + .browse-head { margin-block-start: calc(-1 * var(--space-2)); }
   .instructor-page :global(:is(#instructor-top, #history, #offerings, #discussions, #rated-courses)) { scroll-margin-block-start: 4.5rem; }
@@ -163,11 +174,17 @@
   .instructor-page :global(.state .action a) { display: inline-flex; align-items: center; min-block-size: var(--target-min); min-inline-size: var(--target-min); }
   .instructor-page :global(.section-header p) { text-wrap: balance; }
   .back-to-top { display: inline-grid; align-items: center; justify-self: start; min-block-size: var(--target-min); }
-  .instructor-units summary { min-block-size: var(--target-min); cursor: pointer; align-content: center; width: fit-content; color: var(--brand-ink); font-size: var(--t-base); }
+  .instructor-units p { margin-block-end: var(--space-2); }
+  .instructor-units summary { min-block-size: var(--target-min); cursor: pointer; align-content: center; width: fit-content; color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; }
   .instructor-units a { display: inline-grid; align-items: center; min-block-size: var(--target-min); min-inline-size: var(--target-min); }
+  .filter-hint { display: none; }
   .instructor-filters :global(.field) { flex: 0 1 auto; }
-  .instructor-filters :global(select[name='course']) { min-inline-size: 0; max-inline-size: min(50vw, 17rem); }
+  .instructor-filters :global(.actions button) { border-color: var(--control-line); background: var(--panel-raised); color: var(--ink); }
+  .instructor-filters :global(select[name='course']) { min-inline-size: 0; max-inline-size: min(40vw, 14rem); }
   @media (min-width: 40.0625rem) {
+    .enhancedFilters :global(.actions button), .enhancedFilters :global(.actions:not(:has(a))) { display: none; }
+    .enhancedFilters .filter-hint { display: block; order: 1; align-self: center; }
+
     .instructor-page { grid-template-areas: 'crumbs crumbs' 'heading links' 'stats stats' 'history history' 'offerings offerings' 'discussions discussions' 'top top'; grid-template-columns: minmax(0, 1fr) auto; }
     .browse-crumbs { grid-area: crumbs; }
     .browse-head { grid-area: heading; }
