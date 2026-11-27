@@ -9,6 +9,7 @@
   let { data, children }: LayoutProps = $props();
   let here = $derived(page.url.pathname + page.url.search);
   let onSearch = $derived(page.url.pathname === '/' && page.data.content?.kind === 'search');
+  let searchTarget = $derived(page.url.pathname !== '/' ? '/#course-keyword' : onSearch && page.data.content?.result?.total === 0 ? '#edit-course-search' : '#course-keyword');
   let accountOpen = $state(false);
 
   afterNavigate(() => { accountOpen = false; });
@@ -46,7 +47,7 @@
         <input type="search" name="q" maxlength="100" placeholder="課名、教師或課號" aria-label="全站搜尋關鍵字" />
         <button aria-label="全站搜尋">{@render searchIcon()}</button>
       </form>
-      <a href={page.url.pathname === '/' ? '#course-keyword' : '/#course-keyword'} class="mobile-search icon-action" aria-label="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}</a>
+      <a href={searchTarget} class="mobile-search icon-action" aria-label="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}</a>
       <form method="POST" action="/?/theme" class="theme-form">
         <input type="hidden" name="returnTo" value={here} />
         {#if data.theme !== 'dark'}

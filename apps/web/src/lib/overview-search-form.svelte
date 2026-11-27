@@ -115,6 +115,13 @@
     .result-filters label { grid-column: span 2; }
     .result-filters .keyword { grid-column: 1 / 4; }
     .result-filters > button { grid-area: 1 / 4; padding-inline: var(--space-1); }
+    .result-filters:not(.has-department) { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; }
+    .result-filters:not(.has-department) > label { grid-column: span 1; }
+    .result-filters:not(.has-department) > .keyword { grid-column: 1 / 3; }
+    .result-filters:not(.has-department) > button { grid-area: 1 / 3; padding-inline: var(--space-2); }
+    .result-filters:not(.has-department) .advanced:not([open]) { grid-column: 3; }
+    .result-filters:not(.has-department) .advanced:not([open]) summary { padding-inline: var(--space-1); white-space: nowrap; }
+    .result-filters:not(.has-department) .advanced:not([open]) summary span { display: none; }
     .advanced-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     select { text-overflow: ellipsis; }
   }

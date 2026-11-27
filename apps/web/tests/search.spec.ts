@@ -11,7 +11,6 @@ test('searches Chinese titles, filters by school and opens the mobile details pa
   await expect(page.getByText('共 2 班次')).toBeVisible();
   await expect(page.getByRole('article').first().getByText('修課人數／名額未公布')).toBeVisible();
   await expect(page.locator('select[name="sort"]')).toBeHidden();
-  await page.getByText('本頁班次分布', { exact: true }).click();
   await expect(page.getByRole('navigation', { name: '依學校縮小範圍' }).getByRole('link', { name: '國立臺灣師範大學 1' })).toBeVisible();
   await page.waitForLoadState('networkidle');
 
@@ -42,7 +41,9 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
   await expect(card.getByText(/班次 01/)).toBeVisible();
   await expect(card.getByText('58 / 60', { exact: true })).toBeVisible();
   await expect(card.locator('.meter .capacity-marker')).toHaveCount(1);
+  await page.getByText('ⓘ 排序與口徑', { exact: true }).click();
   await expect(page.getByText(/人數條以本頁同一尺度呈現/)).toBeVisible();
+  await page.getByText('ⓘ 排序與口徑', { exact: true }).click();
 
   // fixtures/nthu-114-2.json has a 線性代數 offering too, so each term filter shows a different set.
   await term.selectOption('all');
@@ -98,10 +99,13 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
 test('uses a desktop table and keeps all parts inside the phone viewport', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/?q=線性&school=nthu&term=all');
-  await expect(page.getByText(/排序：關聯性/)).toBeVisible();
   const table = page.getByRole('table', { name: /開課班次/ });
   await expect(table.getByRole('columnheader', { name: '修課人數／名額' })).toBeVisible();
   await expect(table.getByRole('rowheader').first()).toContainText('線性代數');
+  const schedule = table.getByRole('rowheader').first().getByText(/第 3、4 節/);
+  await expect(schedule).toBeVisible();
+  await expect(schedule).toHaveCSS('white-space', 'normal');
+  expect(await schedule.evaluate((element) => element.closest('a'))).toBeNull();
   const enrollmentHeader = table.getByRole('columnheader', { name: '修課人數／名額' });
   await enrollmentHeader.getByRole('button').click();
   await expect(enrollmentHeader).toHaveAttribute('aria-sort', 'descending');
@@ -116,16 +120,21 @@ test('keeps global filters on pagination redirects and offers applicable empty-s
   await expect(page).toHaveURL('/?q=%E7%B7%9A%E6%80%A7&school=nthu&term=all&sort=title');
   await expect(page.getByText('顯示 1–2 筆 · 共 2 筆')).toBeVisible();
   await page.goto('/?q=zzzz&term=all');
-  await expect(page.getByText('共 0 班次')).toHaveCount(0);
+  await expect(page.getByRole('status')).toContainText('0 班次');
   const results = page.getByRole('region', { name: '搜尋結果' });
   await expect(results.getByText('找不到符合條件的課程')).toBeVisible();
   await expect(results.getByRole('link', { name: '查全部學期' })).toHaveCount(0);
-  await expect(results.getByRole('navigation', { name: '熱門搜尋' }).getByRole('link', { name: '資料結構' })).toBeVisible();
+  await expect(results.getByRole('navigation', { name: '熱門搜尋' }).getByRole('link', { name: '微積分' })).toBeVisible();
   await page.goto('/?q=zzzz&school=nthu&term=115-1');
+  await expect(results.getByRole('link', { name: '保留關鍵字，清除篩選' })).toHaveAttribute('href', '/?q=zzzz&term=all');
   await expect(results.getByRole('link', { name: '查全部學期' })).toHaveAttribute('href', '/?q=zzzz&school=nthu&term=all');
   await expect(results.getByRole('link', { name: '改搜所有學校' })).toHaveAttribute('href', '/?q=zzzz&term=115-1');
-  await results.getByRole('link', { name: '回搜尋框修改' }).click();
-  await expect(page.getByRole('searchbox', { name: '關鍵字' })).toBeFocused();
+  await expect(page.getByRole('searchbox', { name: '關鍵字' })).toBeHidden();
+  await page.getByText('修改關鍵字與篩選', { exact: true }).click();
+  await expect(page.getByRole('searchbox', { name: '關鍵字' })).toHaveValue('zzzz');
+  await page.goto('/?q=線性代數錯&term=all');
+  await results.getByRole('link', { name: '試搜「線性代數」' }).click();
+  await expect(results.getByRole('link', { name: /^線性代數/ })).toHaveCount(2);
 });
 
 test('submits a search and persists the SSR theme without JavaScript', async ({ browser }) => {

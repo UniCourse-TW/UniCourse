@@ -13,9 +13,10 @@
     decorative?: boolean;
     showValues?: boolean;
     showArea?: boolean;
+    minSegmentLength?: number;
   }
 
-  let { values, label, labels, min, max, decorative = false, showValues = false, showArea = true }: Props = $props();
+  let { values, label, labels, min, max, decorative = false, showValues = false, showArea = true, minSegmentLength = 2 }: Props = $props();
 
   let samples = $derived(values.map(finiteValue));
   let segments = $derived.by(() => {
@@ -48,8 +49,8 @@
     aria-hidden={decorative || undefined} aria-label={decorative ? undefined : label}>
     {#if labels}<title>{breakdown}</title>{/if}
     {#each segments as segment}
-      {#if segment.length === 1}
-        <ellipse cx={segment[0].x} cy={segment[0].y} rx="3" ry="2.67" />
+      {#if segment.length < minSegmentLength}
+        {#each segment as point (point.x)}<ellipse cx={point.x} cy={point.y} rx="3" ry="2.67" />{/each}
       {:else}
         {@const path = linePath(segment)}
         {#if showArea}<path class="area" d={`${path} V32 H${segment[0].x} Z`} />{/if}

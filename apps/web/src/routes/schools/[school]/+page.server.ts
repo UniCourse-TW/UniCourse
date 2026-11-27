@@ -20,9 +20,11 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   if (!result.data) error(503, UNAVAILABLE);
   const { departments, ...school } = result.data;
   const query = (url.searchParams.get('unit') ?? '').trim().slice(0, 100);
+  const sortParam = url.searchParams.get('unit_sort');
+  const sort = sortParam === 'courses' || sortParam === 'name' ? sortParam : 'offerings';
   const normalize = (value: string) => value.toLocaleLowerCase('zh-TW').replaceAll('台', '臺');
   const matches = departments.filter(({ name }) => normalize(name).includes(normalize(query)))
-    .sort((left, right) => right.offerings - left.offerings || left.name.localeCompare(right.name, 'zh-TW'));
+    .sort((left, right) => (sort === 'name' ? 0 : right[sort] - left[sort]) || left.name.localeCompare(right.name, 'zh-TW'));
   const pageSize = 12;
   const totalPages = Math.max(1, Math.ceil(matches.length / pageSize));
   const requestedPage = Number(url.searchParams.get('page'));
@@ -34,7 +36,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
     rankings: rankingResult?.data ?? null,
     includeNonAcademic,
     units: {
-      query, page, totalPages, total: departments.length, matched: matches.length, start: (page - 1) * pageSize + 1,
+      query, sort, page, totalPages, total: departments.length, matched: matches.length, start: (page - 1) * pageSize + 1,
       max: departments.reduce((highest, unit) => Math.max(highest, unit.offerings), 0),
       rows: matches.slice((page - 1) * pageSize, page * pageSize)
     }

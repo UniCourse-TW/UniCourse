@@ -32,6 +32,7 @@
   let termOptions = $derived([...new Set([...data.terms, data.term].filter((term) => term !== 'all'))]
     .sort().reverse().map((value) => ({ value, label: value })));
   let historical = $derived([...(data.trends ?? [])].reverse());
+  let latest = $derived(historical.at(-1));
 
   function termHref(term: string, keepQuery = true) {
     return changeQuery(page.url, (params) => {
@@ -63,16 +64,17 @@
 
   <section class="browse-stack" aria-labelledby="offerings">
     <SectionHeader title={`${termLabel}課表`} id="offerings" />
-    <nav class="term-pills" aria-label="切換學期">
-      {#each termOptions.slice(0, 3) as option (option.value)}
-        <a class="browse-button" href={termHref(option.value)} aria-current={data.term === option.value ? 'page' : undefined}>{option.label}</a>
-      {/each}
-      <a class="browse-button" href={termHref('all')} aria-current={data.term === 'all' ? 'page' : undefined}>所有學期</a>
-    </nav>
+    <div class="timetable-filter"><FilterBar action={`${base}#offerings`} label="課表篩選" clearHref={data.query ? termHref(data.term, false) : undefined}>
+      <FilterSelect name="term" label="選擇學期" allLabel={null} value={data.term} options={[{ value: 'all', label: '所有學期' }, ...termOptions]} />
+      <label class="browse-field">搜尋教師或課程<input type="search" name="q" value={data.query} maxlength="100" placeholder="教師、課名或課號" /></label>
+    </FilterBar></div>
     <div class="browse-compact-stats department-stats"><StatRow label={`${termLabel}開課概況`}>
       <StatTile label="班次" value={data.total} unit="班" />
       <StatTile label="課程" value={data.complete ? data.courses : data.trends?.find(({ term }) => term === data.term)?.courses ?? null} unit="門" />
       <StatTile label="授課教師" value={data.complete ? data.teachers : null} unit="位" note={data.complete ? undefined : '班次未完整納入'} />
+      <StatTile label={latest ? `近期班次 · ${latest.term}` : '近期班次'} value={latest?.offerings ?? null} unit="班">
+        {#snippet detail()}{#if historical.length >= 3}<Sparkline label="各學期班次，從舊到新" values={historical.map(({ offerings }) => offerings)} labels={historical.map(({ term }) => term)} min={0} showArea={false} />{/if}{/snippet}
+      </StatTile>
     </StatRow></div>
     {#if data.sampleSize}
       <div class="distribution">
@@ -92,33 +94,13 @@
         {#if !data.complete}<p class="browse-note">分布僅計入最新 {displayValue(data.sampleSize)} 班次。</p>{/if}
       </div>
     {/if}
-    <div class="browse-stack timetable-tools">
-      {#if historical.length}<p class="browse-note">近期班次：{historical.slice(-2).map(({ term, offerings }) => `${term}：${displayValue(offerings)} 班`).join(' → ')}</p>{/if}
-      <details class="browse-stack">
-        <summary><span class="history-summary">歷年開課變化
-          {#if historical.length > 2}<Sparkline label="歷年各學期開課班次" values={historical.map(({ offerings }) => offerings)} labels={historical.map(({ term }) => term)} min={0} showArea={false} />{/if}
-        </span></summary>
-        {#if data.trends === null}
-          <ErrorState title="暫時無法取得歷年開課統計" retryHref={page.url.pathname + page.url.search} />
-        {:else}
-          <SchoolsTermHistory label="各學期班次" points={historical.map(({ term, offerings }) => ({ term, value: offerings }))} termHref={termHref} />
-        {/if}
-      </details>
-      <div class="browse-stack timetable-filter">
-        <p class="browse-note"><strong>課表篩選</strong></p>
-        <FilterBar action={`${base}#offerings`} label="課表篩選" clearHref={data.query ? termHref(data.term, false) : undefined}
-          hidden={termOptions.length > 3 ? {} : { term: data.term }}>
-          {#if termOptions.length > 3}<FilterSelect name="term" label="選擇學期" allLabel={null} value={data.term} options={[{ value: 'all', label: '所有學期' }, ...termOptions]} />{/if}
-          <label class="browse-field">搜尋教師或課程<input type="search" name="q" value={data.query} maxlength="100" placeholder="輸入教師、課名或課號" /></label>
-        </FilterBar>
-      </div>
-    </div>
     {#if data.resultsError}
       <ErrorState title="暫時無法載入課表" retryHref={page.url.pathname + page.url.search} />
     {:else if data.offerings.length}
-      <p class="browse-note">{data.query ? '符合條件 ' : `${termLabel}共 `}{displayValue(data.matches)} 班次 · 顯示 {displayValue(data.firstRow)}–{displayValue(data.firstRow + data.offerings.length - 1)} 班</p>
-      <p class="browse-note">人數與名額採校方匯入資料；— 表示未公布。每頁最多查看 10 門課的評價筆數。</p>
-      <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="課表上方分頁" />
+      <div class="timetable-meta">
+        <p class="browse-note">{displayValue(data.matches)} 班次 · 顯示 {displayValue(data.firstRow)}–{displayValue(data.firstRow + data.offerings.length - 1)} 班</p>
+        <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="課表上方分頁" />
+      </div>
       <SchoolsOfferingTable offerings={data.offerings} ratings={data.ratings} mode="department" caption={`${termLabel}開課班次`} showTerm={data.term === 'all'} />
       <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="課表分頁" />
     {:else}
@@ -127,27 +109,34 @@
       </EmptyState>
     {/if}
   </section>
+  <details class="history browse-stack">
+    <summary>查看歷年開課變化</summary>
+    {#if data.trends === null}
+      <ErrorState title="暫時無法取得歷年開課統計" retryHref={page.url.pathname + page.url.search} />
+    {:else}
+      <SchoolsTermHistory label="各學期班次" points={historical.map(({ term, offerings }) => ({ term, value: offerings }))} termHref={termHref} />
+    {/if}
+  </details>
 
 </div>
 
 <style>
-  .term-pills { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-  .term-pills .browse-button { font-variant-numeric: tabular-nums; border-radius: var(--radius-pill); }
-  .term-pills .browse-button[aria-current] { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
-  .department-stats { max-inline-size: 48rem; }
-  .timetable-filter { min-inline-size: 0; }
-  .timetable-filter :global(input[type='search']) { min-inline-size: 0; }
-  .timetable-tools summary { min-block-size: var(--target-min); align-content: center; cursor: pointer; width: fit-content; color: var(--brand); font-size: var(--t-base); font-weight: 650; }
-  .history-summary { display: inline-flex; align-items: center; gap: var(--space-2); }
-  .distribution { display: grid; gap: .4rem; max-inline-size: 48rem; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel-raised); }
+  .department-stats :global(.stat-row) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .timetable-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+  .history summary { min-block-size: var(--target-min); align-content: center; cursor: pointer; width: fit-content; color: var(--brand); font-size: var(--t-base); font-weight: 650; }
+  .distribution { display: grid; gap: .3rem; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel-raised); }
+  @media (max-width: 40rem) {
+    .department-stats :global(.stat-row) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .timetable-meta :global(nav) { display: none; }
+  }
   .segments { display: flex; gap: 2px; height: .5rem; overflow: hidden; border-radius: var(--radius-pill); }
   .segments > span { flex-basis: 0; }
   .distribution ul { display: flex; flex-wrap: wrap; list-style: none; gap: .45rem .85rem; padding: 0; margin: 0; font-size: var(--t-base); }
   .distribution li { display: flex; align-items: baseline; gap: .35rem; white-space: nowrap; }
   .distribution li span { display: inline-block; width: .55rem; height: .55rem; border-radius: 50%; }
   @media (max-width: 40rem) {
-    .timetable-filter :global(form) { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
-    .timetable-filter :global(form > .field) { grid-column: 1 / -1; }
+    .timetable-filter :global(form) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; }
+    .timetable-filter :global(.actions button) { padding-inline: var(--space-2); }
     .timetable-filter :global(.actions) { display: contents; }
     .timetable-filter :global(.actions a) { grid-column: 1 / -1; justify-self: start; }
   }
