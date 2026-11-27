@@ -5,7 +5,6 @@
   import { ISSUES_URL, coveragePeriod, directoryStatus, directoryStatusLabels, hasImportedOfferings, hasSchoolPage, ownerships, ownershipLabels, statuses, systemLabels, yearCoverage, type DirectoryStatus, type SchoolSort } from '$lib/institutions';
   import { schoolHref } from '$lib/overview-paths';
   import { changeQuery, displayValue } from '$lib/ui/format';
-  import Badge from '$lib/ui/Badge.svelte';
   import BarCell from '$lib/ui/BarCell.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import FilterSelect from '$lib/ui/FilterSelect.svelte';
@@ -36,8 +35,8 @@
   const ownershipOptions = ownerships.map((value) => ({ value, label: ownershipLabels[value] }));
   const statusOptions = statuses.map((value) => ({ value, label: directoryStatusLabels[value] }));
   let depth = $derived([
-    { id: 'longer', label: '收錄 4 期以上', count: data.breadth.longer, color: 'var(--brand)' },
-    { id: 'recent', label: '收錄 1–3 期', count: data.breadth.recent, color: 'var(--series-2)' },
+    { id: 'longer', label: '收錄 4 期以上', count: data.breadth.longer, color: 'var(--seq-4)' },
+    { id: 'recent', label: '收錄 1–3 期', count: data.breadth.recent, color: 'var(--seq-2)' },
     { id: 'empty', label: '尚無班次', count: data.total - data.coverage.schools, color: 'var(--control-line)' }
   ]);
   let csv = $derived('data:text/csv;charset=utf-8,' + encodeURIComponent('\ufeff' + [
@@ -49,8 +48,8 @@
 
   function sourceInfo(school: Institution) {
     const resource = school.note?.match(resourceNetwork);
-    if (resource) return { name: resource[1] === '技職校院' ? '技職課程資源網' : '課程資源網', frequency: '每週更新', href: '#resource-network' };
-    if (school.note?.startsWith('每日更新')) return { name: '校方課程系統', frequency: '每日更新', href: school.website && isHttpUrl(school.website) ? school.website : undefined };
+    if (resource) return { name: resource[1] === '技職校院' ? '技職課程資源網' : '課程資源網', shortName: '資源網', frequency: '每週', href: '#resource-network' };
+    if (school.note?.startsWith('每日更新')) return { name: '校方課程系統', shortName: '校方', frequency: '每日', href: school.website && isHttpUrl(school.website) ? school.website : undefined };
     return null;
   }
 
@@ -146,7 +145,7 @@
     {/if}
   </section>
 
-  <section class="browse-stack" aria-labelledby="directory">
+  <section class="browse-stack directory" aria-labelledby="directory">
     <div class="table-meta">
       <h2 id="directory">學校名錄</h2>
       {#if data.rows.length}<a class="csv-link" href={csv} download="unicourse-schools.csv">下載本頁名錄 CSV</a>{/if}
@@ -187,9 +186,13 @@
     </form>
     {#if filtered}<p class="browse-note">已篩選：{[filters.q, filters.system && systemLabels[filters.system], filters.ownership && ownershipLabels[filters.ownership], filters.status && directoryStatusLabels[filters.status], depth.find(({ id }) => id === filters.depth)?.label, filters.source && '校方來源'].filter(Boolean).join(' · ')} · <a href="/schools">清除篩選</a></p>{/if}
 
+    {#if filters.depth === 'empty'}
+      <p class="browse-note">校名旁標示收錄進度。展開該校明細可查看已知原因與收錄紀錄。</p>
+    {/if}
+
     {#if data.rows.length}
       <div class="table-meta">
-        <p class="browse-note">{filtered ? '符合條件' : '共'} {displayValue(data.shown)} 所 · 顯示 {data.start + 1}–{data.end} 所{#if uniformStatus} · 本頁皆{directoryStatusLabels[uniformStatus]}{/if}</p>
+        <p class="browse-note">{filtered ? '符合條件' : '共'} {displayValue(data.shown)} 所 · 顯示 {data.start + 1}–{data.end} 所{#if uniformStatus} · 本頁皆{directoryStatusLabels[uniformStatus]}（{displayValue(data.rows.length)} 所）{/if}</p>
         <Pagination url={new URL('#directory', page.url)} page={data.page} totalPages={data.totalPages} label="學校名錄上方分頁" />
       </div>
       {#if data.years.length}
@@ -210,8 +213,11 @@
             <th role="columnheader" scope="col" class="school-name" aria-sort={sortState('name')}>{@render sortLabel('name', '學校')}</th>
             {#if !uniformStatus}<th role="columnheader" scope="col" class="wide-column" aria-sort={sortState('status')}>{@render sortLabel('status', '收錄狀態')}</th>{/if}
             <th role="columnheader" scope="col" class="coverage" aria-label={yearsLabel ? `學年覆蓋 ${yearsLabel}` : '學年覆蓋'}>
-              <span class="coverage-period">{yearsLabel ?? '學年覆蓋'}</span>
-              <Heatstrip cells={data.years.map((period) => ({ period, value: null }))} yearTicks="only" />
+              <span class="coverage-ticks" aria-hidden="true">
+                {#each data.years as year, index (year)}
+                  <span>{index === 0 || index === data.years.length - 1 || (year === '110' && index >= 2 && index < data.years.length - 2) ? year : ''}</span>
+                {/each}
+              </span>
             </th>
             <th role="columnheader" scope="col" class="numeric term-column" aria-sort={sortState('terms')}>{@render sortLabel('terms', '學期')}</th>
             <th role="columnheader" scope="col" class="numeric offering-column" aria-sort={sortState('offerings')}>{@render sortLabel('offerings', '班次')}</th>
@@ -250,13 +256,16 @@
                   <td role="cell" class="wide-column">{#if school.latestImportedAt}<time datetime={school.latestImportedAt} title={`${importedAt(school.latestImportedAt)}（臺北時間）`}><span aria-hidden="true">{shortImportedAt(school.latestImportedAt)}</span><span class="full-date">{importedAt(school.latestImportedAt)}（臺北時間）</span></time>{:else}<span title="未有匯入紀錄">—</span>{/if}</td>
                   <td role="cell" class="note-cell">
                     <div class="desktop-source">{#if source}
-                      {#if source.href}<a href={source.href} title={school.note ?? undefined}><Badge label={source.name} /></a>{:else}<Badge label={source.name} />{/if}
-                      <small class="frequency">{source.frequency}</small>
+                      {#if source.href}<a href={source.href} title={source.name}>{source.shortName}</a>{:else}{source.shortName}{/if}
+                      <small class="frequency">{source.frequency}更新</small>
                     {:else if school.issue}<a href={`${ISSUES_URL}/${school.issue}`} rel="external" title={school.note ?? undefined}>收錄紀錄 ↗</a>
                     {:else}<span title={school.note ?? '尚無來源說明'}>—</span>{/if}</div>
                     <details class="full-coverage mobile-coverage">
                       <summary aria-label={`${school.name}的收錄明細`}>
-                        {#if status === 'live' && school.latestImportedAt}<time datetime={school.latestImportedAt}>更新 {shortImportedAt(school.latestImportedAt).split(' ')[0]}</time>
+                        {#if imported && source}
+                          {#if school.latestImportedAt}<time datetime={school.latestImportedAt}>{source.shortName} · {source.frequency}</time>{:else}{source.shortName} · {source.frequency}{/if}
+                        {:else if imported && school.latestImportedAt}
+                          <time datetime={school.latestImportedAt}>更新 {shortImportedAt(school.latestImportedAt).split(' ')[0]}</time>
                         {:else}{directoryStatusLabels[status]}{/if}
                       </summary>
                       <p class="browse-note">{school.code} · {ownershipLabels[school.ownership]} · {systemLabels[school.system]}</p>
@@ -284,13 +293,17 @@
   <section id="sources" class="browse-stack" aria-labelledby="source-heading">
     <h2 id="source-heading">資料來源與統計口徑</h2>
     <p class="browse-note">名錄來自教育部的<a href="https://data.gov.tw/dataset/6091">大專校院名錄</a>（<a href="https://stats.moe.gov.tw/files/opendata/u1_new.csv">教育部原始 CSV ↗</a>）、<a href="https://data.gov.tw/dataset/6236">宗教研修學院概況</a>與<a href="https://data.gov.tw/dataset/6237">空大及大專進修學校概況</a>。班次與收錄期間採 UniCourse 匯入資料。</p>
-    <p id="resource-network" class="browse-note"><Badge label="課程資源網" /> <Badge label="技職課程資源網" /> 分別標示一般大學及技職校院的課程資源網（每週更新），不含上課時間、教室及名額。</p>
+    <p id="resource-network" class="browse-note">「校方」是各校課程系統，每日更新。「資源網」指教育部的大學校院及技職校院課程資源網，每週更新，不含上課時間、教室及名額。</p>
   </section>
 </div>
 
 <style>
   .directory-page h1 { font-size: var(--t-2xl); font-weight: 650; }
-  .directory-page, .directory-page .browse-stack { gap: var(--space-2); }
+  .directory-page { gap: var(--space-4); }
+  .directory-page .browse-stack { gap: var(--space-2); }
+  .directory { padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
+  .directory-page .browse-note { text-wrap: pretty; }
+  :is(#directory, #sources, #resource-network) { scroll-margin-block-start: 6.25rem; }
   .national-status { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-2); }
   .coverage-progress { display: grid; align-content: center; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .directory-filter { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--space-2); align-items: end; }
@@ -330,8 +343,16 @@
   thead .school-name { z-index: 3; }
   tbody tr:hover > * { background: var(--hover-row); }
   td time { white-space: nowrap; }
-  .coverage { inline-size: 13rem; min-inline-size: 8.75rem; }
-  .directory-frame { --heatstrip-cell-size: 14px; --heatstrip-tick-size: var(--t-base); --heatstrip-partial-hatch: repeating-linear-gradient(135deg, transparent 0 2px, var(--brand-ring) 2px 3px, transparent 3px 5px); --heatstrip-empty-line: var(--muted); }
+  .coverage { inline-size: 13rem; min-inline-size: 8.75rem; --coverage-cell-size: 14px; }
+  .coverage-ticks, .coverage :global(.strip) {
+    display: grid;
+    grid-template-columns: repeat(var(--coverage-years), minmax(0, var(--coverage-cell-size)));
+    gap: var(--heatstrip-gap, 2px);
+  }
+  .coverage-ticks { font: var(--t-sm) / 1.2 var(--font-mono); }
+  .coverage-ticks span { display: grid; justify-content: center; }
+  .coverage :global(.cell) { inline-size: 100%; aspect-ratio: 1; block-size: auto; }
+  .directory-frame { --heatstrip-partial-hatch: repeating-linear-gradient(135deg, transparent 0 2px, var(--brand-ring) 2px 3px, transparent 3px 5px); --heatstrip-empty-line: var(--muted); }
   .full-coverage > summary { white-space: nowrap; min-block-size: var(--target-min); align-content: center; color: var(--brand-ink); font-size: var(--t-sm); cursor: pointer; font-weight: 650; }
   .full-coverage > :not(summary) { overflow-wrap: anywhere; }
   .full-coverage a { display: flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-sm); }
@@ -340,7 +361,7 @@
   .numeric { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
   td time { font-variant-numeric: tabular-nums; }
   .full-date { position: absolute; clip-path: inset(50%); inline-size: 1px; block-size: 1px; overflow: hidden; }
-  .note-cell { inline-size: 11rem; }
+  .note-cell { inline-size: 8rem; }
   .note-cell a { text-decoration: none; }
   .note-cell a:hover { text-decoration: underline; }
   .frequency { display: inline-block; margin-inline-start: var(--space-1); }
@@ -348,7 +369,7 @@
   thead .offering-column { text-align: start; }
   .offering-column :global(.bar-cell) { display: grid; grid-template-columns: minmax(0, 1fr) 8ch; }
   .offering-column :global(.bar-cell > .ui-tabular) { grid-column: 2; }
-  .browse-field input::placeholder { color: var(--muted); }
+  .browse-field input::placeholder { color: var(--muted); opacity: 1; }
   .unimported :is(.numeric, .coverage, .browse-code) { color: var(--muted); }
   #sources { border-block-start: 1px solid var(--line); padding-block-start: .85rem; }
   @media (max-width: 58rem) {
@@ -363,7 +384,7 @@
     tbody tr:last-child { border-block-end: 0; }
     thead tr { background: var(--table-head); }
     th, td { min-inline-size: 0; padding-inline: .2rem; border: 0; background: transparent; }
-    .wide-column, .desktop-source, thead .note-cell, .coverage-period { display: none; }
+    .wide-column, .desktop-source, thead .note-cell { display: none; }
     .school-name, .coverage, .note-cell, .offering-column { inline-size: auto; min-inline-size: 0; }
     .school-name { position: static; box-shadow: none; grid-column: 1; grid-row: 1; }
     tbody .school-name { display: flex; flex-wrap: wrap; gap: 0 .3rem; align-items: center; }
@@ -377,16 +398,17 @@
     .coverage {
       grid-column: 1 / 3;
       grid-row: 2;
-      --heatstrip-cell-size: min(18px, calc((100% - (var(--coverage-years) - 1) * 2px) / var(--coverage-years)));
-      --heatstrip-tick-size: var(--t-sm);
+      --coverage-cell-size: min(15px, calc((100% - (var(--coverage-years) - 1) * 2px) / var(--coverage-years)));
+      padding-inline-start: .35rem;
       --heatstrip-gap: 2px;
     }
-    .coverage :global(.cell) { aspect-ratio: 1; block-size: auto; }
-    thead .coverage { height: auto; }
+    thead .coverage { height: auto; padding-block: var(--space-1) var(--space-2); }
     .mobile-coverage { display: block; }
     .note-cell { grid-column: 3; grid-row: 2; justify-self: end; }
     .note-cell:has(details[open]) { grid-column: 1 / -1; grid-row: 3; justify-self: stretch; }
-    .full-coverage > summary { min-inline-size: 6.25rem; text-align: end; }
+    .full-coverage > summary { position: relative; min-inline-size: 6.25rem; min-block-size: 2rem; text-align: end; }
+    .full-coverage:not([open]) > summary::after { content: ''; position: absolute; inset: -.75rem 0 0; }
+    .full-coverage[open] { padding-block-end: var(--space-1); }
     .full-coverage[open] > summary { text-align: start; }
   }
   @media (max-width: 680px) {
