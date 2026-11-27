@@ -109,7 +109,9 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   const card = page.getByRole('complementary', { name: '這門課' });
   await expect(card.getByRole('link', { name: '查看課程' })).toHaveAttribute('href', `/courses/${course.id}`);
 
-  // Reply, then upvote the question.
+  // Reply (the thread's 回覆 link jumps to the box, which names the signed-in identity), then upvote the question.
+  await expect(thread.getByRole('link', { name: /^回覆/ })).toHaveAttribute('href', '#reply-form');
+  await expect(page.locator('#reply-form')).toContainText('以 測試同學 的身分');
   await page.getByLabel('我要回覆').fill(`同問 ${username}`);
   await page.getByRole('button', { name: '送出回覆' }).click();
   await expect(page.getByRole('heading', { name: '回覆（1）' })).toBeVisible();
@@ -210,6 +212,8 @@ test.describe('without JavaScript', () => {
 
     await expect(page).toHaveURL(/\/settings$/);
     await page.getByLabel('自我介紹').fill('第一行\n第二行');
+    // The school is a plain select, so it works here too.
+    await page.getByLabel('所屬學校').selectOption({ index: 1 });
     await page.getByRole('button', { name: '儲存' }).click();
     await expect(page.getByRole('status').getByText('已儲存')).toBeVisible();
     await page.goto(`/u/${username}`);

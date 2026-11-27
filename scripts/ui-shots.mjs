@@ -70,7 +70,8 @@ for (const page of pages) {
         // Full page, but capped so a 150-row table does not become a 13 MB PNG.
         const height = Math.min(await tab.evaluate(() => document.documentElement.scrollHeight), page.maxHeight ?? MAX_HEIGHT);
         await tab.screenshot({ path: file, fullPage: true, type: 'png', clip: { x: 0, y: 0, width: options.viewport.width, height } });
-        console.log(`${path.basename(file)}  ${status}`);
+        // The document title goes to the log, so judges can check <title> without opening the page.
+        console.log(`${path.basename(file)}  ${status}  ${await tab.title()}`);
       } catch (error) {
         failures.push(`${page.id} ${device} ${scheme}: ${error.message.split('\n')[0]}`);
       }
@@ -99,8 +100,12 @@ function examplePages(f) {
     { id: 'instructor', url: `/instructors/${f.school}/${encodeURIComponent(f.instructor)}` },
     { id: 'forum', url: '/forum', loggedIn: true },
     { id: 'thread', url: f.postId ? `/forum/${f.postId}` : '/forum', loggedIn: true },
+    // The same thread without a session (登入後即可回覆), and a thread nobody has answered yet.
+    { id: 'thread-signed-out', url: f.postId ? `/forum/${f.postId}` : '/forum' },
+    { id: 'thread-empty', url: f.emptyPostId ? `/forum/${f.emptyPostId}` : '/forum', loggedIn: true },
     { id: 'auth', url: '/auth' },
     { id: 'settings', url: '/settings', loggedIn: true },
+    { id: 'settings-saved', url: '/settings', loggedIn: true, act: saveSettings },
     { id: 'profile', url: `/u/${ACCOUNT.username}` },
     { id: 'landscape', url: '/landscape', maxHeight: 3000 },
     { id: 'legal', url: '/terms' },
@@ -109,6 +114,8 @@ function examplePages(f) {
     { id: 'search-empty', url: `/?q=${encodeURIComponent('zzzz-no-such-course')}&term=all` },
     { id: 'notfound', url: '/courses/999999999', status: 404 },
     { id: 'auth-register', url: '/auth?mode=register' },
+    // The sign-in request held open, so the page shows its pending state (登入中…, aria-busy).
+    { id: 'auth-pending', url: '/auth', act: pendingLogin },
     { id: 'auth-error', url: `/auth?next=${encodeURIComponent('/forum?compose=1')}`, act: (tab) => failLogin(tab, `nobody_${Date.now().toString(36)}`) },
     { id: 'auth-locked', url: '/auth', act: async (tab) => { await lockUsername(); await failLogin(tab, LOCKED); } },
     { id: 'auth-signed-in', url: '/auth', loggedIn: true },
@@ -122,6 +129,31 @@ async function failLogin(tab, username) {
   await tab.getByLabel('密碼').fill('not-the-password');
   await tab.getByRole('button', { name: '登入' }).click();
   await tab.getByRole('alert').waitFor();
+}
+
+/**
+ * Changes the bio and saves, then waits for the 已儲存 status. The two sentences alternate between runs,
+ * so there is always a change to save and the profile keeps a natural-looking bio.
+ */
+async function saveSettings(tab) {
+  const bio = tab.getByLabel('自我介紹');
+  const sentences = ['資工系大三，喜歡演算法與系統課。', '資工系大三，常修跨院的通識與統計課。'];
+  const current = await bio.inputValue();
+  await bio.fill(current === sentences[0] ? sentences[1] : sentences[0]);
+  await tab.getByRole('button', { name: '儲存' }).click();
+  await tab.getByRole('status').getByText('已儲存').waitFor();
+}
+
+/** Holds the sign-in request for a while and captures the form while it is pending. */
+async function pendingLogin(tab) {
+  await tab.route((url) => url.pathname === '/auth' && url.search.startsWith('?/login'), async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 15_000));
+    await route.continue();
+  });
+  await tab.getByLabel('帳號').fill(ACCOUNT.username);
+  await tab.getByLabel('密碼').fill(ACCOUNT.password);
+  await tab.getByRole('button', { name: '登入' }).click();
+  await tab.locator('button[aria-busy="true"]').waitFor();
 }
 
 /** Submits the register form with the throwaway account's name, which is already taken. */
@@ -159,7 +191,8 @@ async function prepareFixtures() {
     department: course.department ?? '',
     instructor: course.instructors[0] ?? '',
     session: null,
-    postId: null
+    postId: null,
+    emptyPostId: null
   };
   if (!login) return fixtures;
 
@@ -196,6 +229,28 @@ async function prepareFixtures() {
       });
       await fetch(`${api}/api/posts/${post.id}/vote`, { method: 'PUT', headers, body: JSON.stringify({ value: 1 }) });
     }
+  }
+
+  // A second thread about the course with no replies, for the empty-replies state; created once and reused.
+  const EMPTY_TITLE = `${course.title} 有人想一起組讀書會嗎？`;
+  const listed = await getJson(`${api}/api/posts?school=${course.school}&courseCode=${encodeURIComponent(course.courseCode)}&pageSize=50`);
+  const empty = listed?.posts?.find((post) => post.title === EMPTY_TITLE && post.replyCount === 0);
+  if (empty) {
+    fixtures.emptyPostId = empty.id;
+  } else {
+    const post = await fetch(`${api}/api/posts`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        type: 'article',
+        title: EMPTY_TITLE,
+        content: '這學期修這門課，想找幾位同學每週一起討論作業和整理筆記。\n\n有興趣的話回覆一下，再約時間。',
+        school: course.school,
+        courseCode: course.courseCode,
+        tags: ['讀書會']
+      })
+    }).then((r) => (r.ok ? r.json() : null));
+    if (post?.id) fixtures.emptyPostId = post.id;
   }
 
   // One rating with a review on the example course.

@@ -86,8 +86,15 @@
 .cm-btn.danger { color: var(--on-brand) !important; background: var(--down); border-color: var(--down); }
 .cm-btn.block { inline-size: 100%; }
 .cm-btn[aria-busy='true'] { opacity: 0.6; cursor: progress; filter: none; }
-/* Disabled keeps the brand outline at reduced opacity, so the main action stays findable in both themes. */
-.cm-btn:disabled:not([aria-busy='true']) { color: var(--brand-ink) !important; background: var(--panel-raised); border-color: var(--brand); opacity: 0.55; cursor: not-allowed; filter: none; }
+/* Disabled keeps the brand outline (the main action stays findable) but no opacity: the label is muted
+   ink on the raised panel, which clears WCAG AA (5.9:1 light, 7.2:1 dark) in both themes. */
+.cm-btn:disabled:not([aria-busy='true']) {
+  color: var(--muted) !important;
+  background: var(--panel-raised);
+  border-color: color-mix(in srgb, var(--brand) 55%, var(--line));
+  cursor: not-allowed;
+  filter: none;
+}
 
 /* Form fields: label row (label + hint/counter on the right) above a 44 px control. */
 .cm-form { display: grid; gap: var(--space-3); }
@@ -122,6 +129,8 @@ textarea.cm-input { resize: vertical; line-height: var(--leading-body); }
 select.cm-input { block-size: var(--target-min); padding-block: 0; }
 .cm-input:focus-visible { border-color: var(--brand); }
 .cm-input[aria-invalid='true'] { border-color: var(--down); }
+/* An invalid field keeps one colour when focused: the red border and a red ring, not red plus purple. */
+.cm-input[aria-invalid='true']:focus-visible { border-color: var(--down); outline-color: var(--down); }
 
 /* Messages. */
 .cm-alert, .cm-ok {

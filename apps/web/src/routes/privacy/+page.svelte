@@ -1,6 +1,6 @@
 <script lang="ts">
   import { PRIVATE_REPORT_URL, PUBLIC_REPORT_URL } from '$lib/legal-contact';
-  import LegalDoc from '$lib/legal-doc.svelte';
+  import LegalDoc, { type GistPoint } from '$lib/legal-doc.svelte';
 
   const UPDATED = '2026-11-27';
   const sections = [
@@ -11,13 +11,13 @@
     { id: 'cookies', title: 'Cookie 與記錄' },
     { id: 'contact', title: '移除與聯絡' }
   ];
-  const summary = [
-    '查課不用帳號，本站不要求學號、姓名或電子郵件。',
-    '註冊只存帳號名稱與雜湊後的密碼；顯示名稱、學校與自我介紹都是選填。',
-    '評分、文章與回覆會公開，也可能被搜尋引擎索引；投票只顯示合計。',
-    '外部評價只索引 PTT 課程板的公開文章（標題、日期、作者帳號與 120 字內摘要），不存全文。',
-    '沒有廣告與第三方追蹤；Cookie 只用來維持登入和記住你選的深淺色。',
-    '要刪除帳號或移除與你有關的索引：涉及個資的請私密聯絡維護者，一般資料錯誤可公開回報。'
+  const summary: GistPoint[] = [
+    { lead: '查課', text: '不用帳號；本站不要求學號、姓名或電子郵件。' },
+    { lead: '帳號', text: '只存帳號名稱與雜湊後的密碼；顯示名稱、學校與自我介紹都是選填。' },
+    { lead: '公開內容', text: '評分、文章與回覆會公開，也可能被搜尋引擎索引；投票只顯示合計。' },
+    { lead: '外部評價', text: '只索引 PTT 課程板公開文章的標題與短摘要，不存全文。' },
+    { lead: 'Cookie', text: '沒有廣告與第三方追蹤；Cookie 只用來維持登入和記住深淺色。' },
+    { lead: '刪除與移除', text: '一般資料錯誤公開回報；刪除帳號或涉及個資的，', link: { href: PRIVATE_REPORT_URL, label: '私密聯絡維護者', external: true } }
   ];
 </script>
 
@@ -26,15 +26,19 @@
   <meta name="description" content="UniCourse 的隱私權政策：查課不需帳號、帳號儲存的資料、哪些內容會公開、外部評論索引儲存的欄位、Cookie 用途與移除請求方式。" />
 </svelte:head>
 
+{#snippet toToc()}
+  <a class="to-toc" href="#toc">目錄 <span aria-hidden="true">↑</span></a>
+{/snippet}
+
 <LegalDoc title="隱私權政策" updated={UPDATED} {sections} {summary} sibling={{ href: '/terms', label: '使用條款' }}>
   <section aria-labelledby="browse">
-    <h2 id="browse">查課與登入</h2>
+    <div class="h2-row"><h2 id="browse">查課與登入</h2>{@render toToc()}</div>
     <p>查詢各校公開課程不需要帳號，本站不會要求你提供學號、姓名或電子郵件。課程資料可能未即時更新，請以校方公開系統為準。</p>
     <p>只有評分、發文、回覆與投票需要登入。登入後瀏覽器會儲存一個用於維持登入狀態的 Cookie；登出即結束目前的登入。</p>
   </section>
 
   <section aria-labelledby="account">
-    <h2 id="account">帳號資料</h2>
+    <div class="h2-row"><h2 id="account">帳號資料</h2>{@render toToc()}</div>
     <p>註冊時只儲存你選的帳號名稱與經雜湊處理的密碼；本站不會儲存明文密碼。你可以在<a href="/settings">帳號設定</a>填寫顯示名稱、就讀學校與自我介紹，這些欄位都是選填，也可以隨時清空。</p>
     <table role="table">
       <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">資料</th><th role="columnheader" scope="col">用途</th><th role="columnheader" scope="col">是否公開</th></tr></thead>
@@ -48,15 +52,14 @@
   </section>
 
   <section aria-labelledby="public">
-    <h2 id="public">公開內容</h2>
+    <div class="h2-row"><h2 id="public">公開內容</h2>{@render toToc()}</div>
     <p>帳號名稱、你填寫的公開個人資料，以及送出的課程評分、心得、文章與回覆都會公開顯示，也可能被搜尋引擎索引。請勿在公開內容中填寫學號、聯絡方式等不想公開的資料。</p>
     <p>你可以自行修改或刪除自己的評分與文章；刪除後不再顯示於站內，但已被搜尋引擎或他人保存的副本不在本站控制範圍。</p>
   </section>
 
   <section aria-labelledby="reviews">
-    <h2 id="reviews">外部評論索引儲存的資料</h2>
-    <p class="lead"><strong>存什麼：</strong>只有連結、標題、日期、作者帳號、看板、推文數與 120 字內摘要，沒有全文、推文或圖片。<strong>要移除某一筆：</strong>到<a href="#contact">移除與聯絡</a>私密告訴維護者即可。</p>
-    <p><span class="status live">已上線</span>為了在課程頁列出其他網站上的相關討論，本站為 PTT 的四個課程看板（NTUcourse、NTHU_Course、NCTU-Teacher、NCHU-Courses）2016 年起的公開文章建立了搜尋索引。每一筆只儲存下列欄位，不儲存全文、推文內容或圖片，也不儲存任何未公開的資料：</p>
+    <div class="h2-row"><h2 id="reviews">外部評論索引儲存的資料</h2><span class="status live">已上線</span>{@render toToc()}</div>
+    <p class="lead"><strong>存什麼：</strong>為了在課程頁列出相關討論，本站為 PTT 四個課程看板（NTUcourse、NTHU_Course、NCTU-Teacher、NCHU-Courses）2016 年起的公開文章建立索引，每筆只有下表的欄位，沒有全文、推文或圖片。<strong>要移除某一筆：</strong>到<a href="#contact">移除與聯絡</a>私密告訴維護者即可。</p>
     <table role="table">
       <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">欄位</th><th role="columnheader" scope="col">說明</th></tr></thead>
       <tbody role="rowgroup">
@@ -71,7 +74,7 @@
   </section>
 
   <section aria-labelledby="cookies">
-    <h2 id="cookies">Cookie 與記錄</h2>
+    <div class="h2-row"><h2 id="cookies">Cookie 與記錄</h2>{@render toToc()}</div>
     <ul>
       <li>登入 Cookie：維持登入狀態，登出或過期後失效。</li>
       <li>主題 Cookie（<code>uc_theme</code>）：只在你按下深淺色切換時設定，內容只有 light 或 dark，保存一年，讓頁面一開始就用你選的主題。沒有登入也沒有切換主題時，本站不設定任何 Cookie。</li>
@@ -81,7 +84,7 @@
   </section>
 
   <section aria-labelledby="contact">
-    <h2 id="contact">移除與聯絡</h2>
+    <div class="h2-row"><h2 id="contact">移除與聯絡</h2>{@render toToc()}</div>
     <p>先選管道：<strong>刪除帳號、涉及個資或不想公開的請求走私密聯絡</strong>，一般的資料處理問題可以公開回報。</p>
     <div class="contact-routes">
       <div>

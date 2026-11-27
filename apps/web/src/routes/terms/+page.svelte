@@ -1,6 +1,6 @@
 <script lang="ts">
   import { PRIVATE_REPORT_URL, PUBLIC_REPORT_URL } from '$lib/legal-contact';
-  import LegalDoc from '$lib/legal-doc.svelte';
+  import LegalDoc, { type GistPoint } from '$lib/legal-doc.svelte';
 
   const UPDATED = '2026-11-27';
   const sections = [
@@ -11,11 +11,11 @@
     { id: 'removal', title: '聯絡與移除' },
     { id: 'changes', title: '條款變更' }
   ];
-  const summary = [
-    '課程資料來自各校公開系統，可能比校方晚更新；選課與上課以校方為準。',
-    '查課不用登入；評分、發文與回覆需要帳號，內容會公開顯示並可能被搜尋引擎索引。',
-    '課程頁的「外部評價」索引 PTT 四個課程板 2016 年起的公開文章，只存標題、日期、作者帳號與 120 字以內的開頭摘要，不轉載全文；其他網站只給搜尋連結。',
-    '要更正資料或移除某一筆索引：一般錯誤公開回報，涉及個資或不想公開的請私密聯絡維護者。'
+  const summary: GistPoint[] = [
+    { lead: '課程資料', text: '來自各校公開系統，可能比校方晚更新；選課與上課以校方為準。' },
+    { lead: '帳號', text: '查課不用登入；評分、發文與回覆需要帳號，內容會公開並可能被搜尋引擎索引。' },
+    { lead: '外部評價', text: '只索引 PTT 四個課程板的公開文章標題與短摘要，不轉載全文；其他網站只給搜尋連結。' },
+    { lead: '更正與移除', text: '一般錯誤公開回報；涉及個資或不想公開的，', link: { href: PRIVATE_REPORT_URL, label: '私密聯絡維護者', external: true } }
   ];
 </script>
 
@@ -24,29 +24,33 @@
   <meta name="description" content="UniCourse 的使用條款：課程資料的來源與限制、帳號與社群規範、PTT 課程板外部評論索引的收錄範圍、儲存欄位與移除方式。" />
 </svelte:head>
 
+{#snippet toToc()}
+  <a class="to-toc" href="#toc">目錄 <span aria-hidden="true">↑</span></a>
+{/snippet}
+
 <LegalDoc title="使用條款" updated={UPDATED} {sections} {summary} sibling={{ href: '/privacy', label: '隱私權政策' }}>
   <section aria-labelledby="data">
-    <h2 id="data">課程資料</h2>
+    <div class="h2-row"><h2 id="data">課程資料</h2>{@render toToc()}</div>
     <p>UniCourse 彙整各校公開系統的課程資料，方便跨校查詢與比較歷年修課人數。資料可能晚於校方更新，實際選課、上課時間、名額與成績規定請以校方系統為準。</p>
     <p>標示「示範」的課程不是實際開課紀錄；各校的收錄進度與未收錄原因列在<a href="/schools">各校收錄狀態</a>。</p>
   </section>
 
   <section aria-labelledby="sources">
-    <h2 id="sources">資料來源與授權</h2>
+    <div class="h2-row"><h2 id="sources">資料來源與授權</h2>{@render toToc()}</div>
     <p>本站的資料有三種來源，每一筆課程都保留原始連結，可回到校方頁面核對：</p>
-    <table role="table">
+    <table role="table" class="sources">
       <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">資料</th><th role="columnheader" scope="col">來源</th><th role="columnheader" scope="col">授權與使用方式</th></tr></thead>
       <tbody role="rowgroup">
-        <tr role="row"><td role="cell" data-label="資料">學校名錄</td><td role="cell" data-label="來源">教育部大專校院名錄等開放資料</td><td role="cell" data-label="授權與使用方式">政府資料開放授權條款；依原始檔重新產生，不手動修改。</td></tr>
-        <tr role="row"><td role="cell" data-label="資料">課程與修課人數</td><td role="cell" data-label="來源">各校公開課程查詢系統、教育部課程資源網</td><td role="cell" data-label="授權與使用方式">只抓取無需登入的公開頁面，遵守各站 robots 規則，夜間低頻更新。</td></tr>
-        <tr role="row"><td role="cell" data-label="資料">課程網站總覽</td><td role="cell" data-label="來源">UniCourse 逐校盤點</td><td role="cell" data-label="授權與使用方式">列在<a href="/landscape">課程網站總覽</a>，資料檔隨原始碼公開。</td></tr>
+        <tr role="row"><td role="cell" data-label="資料">學校名錄</td><td role="cell" data-label="來源">教育部大專校院名錄等開放資料</td><td role="cell" data-label="授權與使用">政府資料開放授權條款；依原始檔重新產生，不手動修改。</td></tr>
+        <tr role="row"><td role="cell" data-label="資料">課程與修課人數</td><td role="cell" data-label="來源">各校公開課程查詢系統、教育部課程資源網</td><td role="cell" data-label="授權與使用">只抓取無需登入的公開頁面，遵守各站 robots 規則，夜間低頻更新。</td></tr>
+        <tr role="row"><td role="cell" data-label="資料">課程網站總覽</td><td role="cell" data-label="來源">UniCourse 逐校盤點</td><td role="cell" data-label="授權與使用">列在<a href="/landscape">課程網站總覽</a>，資料檔隨原始碼公開。</td></tr>
       </tbody>
     </table>
     <p>校方系統要求登入、使用驗證碼或以 robots 規則拒絕抓取時，本站不會收錄該校資料，並在各校收錄狀態頁標示「受阻」。本站的程式碼與資料檔以開源方式公開於 GitHub。</p>
   </section>
 
   <section aria-labelledby="account">
-    <h2 id="account">帳號與社群</h2>
+    <div class="h2-row"><h2 id="account">帳號與社群</h2>{@render toToc()}</div>
     <p>查課不用登入；評分、發文、回覆與投票需要帳號。請妥善保管登入資訊，一個人只用一個帳號。</p>
     <ul>
       <li>尊重其他使用者：不冒用身分、不騷擾、不公開他人的個人資料。</li>
@@ -57,9 +61,15 @@
   </section>
 
   <section aria-labelledby="reviews">
-    <h2 id="reviews">外部評論索引</h2>
-    <p class="lead"><strong>索引什麼：</strong>PTT 四個課程板 2016 年起公開文章的標題、日期、作者帳號與 120 字內摘要，不存全文。<strong>要移除某一筆：</strong>到<a href="#removal">聯絡與移除</a>私密告訴維護者即可，不必公開提出。</p>
-    <p><span class="status live">已上線</span>課程頁的「外部評價」區列出其他網站上與這門課相關的公開文章。本站只做搜尋索引，不轉載全文：讀者看到的是標題、日期與開頭摘要，點標題會回到原網站閱讀全文。</p>
+    <div class="h2-row"><h2 id="reviews">外部評論索引</h2><span class="status live">已上線</span>{@render toToc()}</div>
+    <!-- One paragraph answers the two questions readers come with; the lists below hold the detail. -->
+    <p class="lead"><strong>收什麼：</strong>PTT 四個課程板 2016 年起的公開文章。本站只做搜尋索引、不轉載全文，課程頁顯示標題、日期與開頭摘要，點標題回到原網站。<strong>怎麼移除：</strong>到<a href="#removal">聯絡與移除</a>私密告訴維護者即可，不必公開提出。</p>
+    <h3>會保存、不會保存什麼</h3>
+    <ul>
+      <li><strong>會保存：</strong>連結、標題、發文日期、作者帳號（PTT ID，不含暱稱）、看板、推文數、內文開頭不超過 120 字的摘要，以及從標題比對出的學期、課程與教師。</li>
+      <li><strong>不會保存：</strong>全文、推文內容與圖片。索引只用於搜尋與連結，不用於訓練模型，也不提供給第三方。</li>
+      <li>顯示摘要時會去掉評價範本的欄位提示（例如「哪一學年度修課」），只留作者寫的內容；剩下的太少時只顯示標題。比對以標題中的課名與教師名為準，可能有錯配或漏配；課程頁會把本班教師的文章排在前面並標示出來。</li>
+    </ul>
     <h3>目前收錄的看板</h3>
     <p>只收錄 PTT（批踢踢實業坊）上專門討論課程的四個看板，從 2016 年起的文章。</p>
     <!-- Phones start with the list folded (markup closed); desktop CSS keeps it open. -->
@@ -75,25 +85,21 @@
         </tbody>
       </table>
     </details>
-    <h3>儲存與顯示的內容</h3>
-    <ul>
-      <li>每篇只儲存：連結、標題、發文日期、作者帳號（PTT ID，不含暱稱）、看板、推文數、內文開頭不超過 120 字的摘要，以及從標題比對出的學期、課程與教師。不存全文、推文內容與圖片。</li>
-      <li>課程頁顯示摘要時會去掉評價範本的欄位提示（例如「哪一學年度修課」），只留作者寫的內容；剩下的內容太少時只顯示標題。</li>
-      <li>比對以標題中的課名與教師名為準，可能有錯配或漏配；課程頁會把本班教師的文章排在前面並標示出來。</li>
-    </ul>
     <h3>為什麼可以收錄、哪些網站只給連結</h3>
-    <ul>
-      <li>只收錄站方 robots 檔以 <code>Content-Signal: search=yes</code> 明確允許建立搜尋索引的網站；PTT 屬於這一類，同時標明 <code>ai-train=no</code>。</li>
-      <li>歐趴糖、Dcard、想鑑你 NTU Rating 等沒有明確允許的網站，課程頁只提供用課名與教師組成的站外搜尋連結；本站不抓取、不儲存這些網站的任何內容。</li>
-      <li>索引內容只用於搜尋與連結，不用於訓練模型，也不提供給第三方。</li>
-    </ul>
-    <div class="h3-row"><h3>更新與移除</h3><a class="shortcut" href={PRIVATE_REPORT_URL} rel="noopener external">私密聯絡 <span aria-hidden="true">↗</span></a></div>
-    <p>索引由維護者定期重新抓取並匯入，目前不是每晚自動更新，因此新文章會晚一段時間才出現。原文在 PTT 刪除後，本站不會自動得知；請用下方<a href="#removal">聯絡與移除</a>的管道告訴我們，該筆索引會被移除。</p>
-    <p>各站的處理方式也列在<a href="/landscape#third-party">課程網站總覽的第三方查課網站</a>。</p>
+    <details class="phone-fold">
+      <summary>收錄依據<span class="fold-count">：robots 檔的 Content-Signal，以及只給連結的網站</span></summary>
+      <ul>
+        <li>只收錄站方 robots 檔以 <code>Content-Signal: search=yes</code> 明確允許建立搜尋索引的網站；PTT 屬於這一類，同時標明 <code>ai-train=no</code>。</li>
+        <li>歐趴糖、Dcard、想鑑你 NTU Rating 等沒有明確允許的網站，課程頁只提供用課名與教師組成的站外搜尋連結；本站不抓取、不儲存這些網站的任何內容。</li>
+        <li>各站的處理方式也列在<a href="/landscape#third-party">課程網站總覽的第三方查課網站</a>。</li>
+      </ul>
+    </details>
+    <h3>更新與移除</h3>
+    <p class="update-note">索引由維護者定期重新抓取並匯入，不是每晚自動更新，新文章會晚一段時間才出現。原文在 PTT 刪除後，本站不會自動得知；<a class="private" href={PRIVATE_REPORT_URL} rel="noopener external">私密聯絡維護者<span aria-hidden="true"> ↗</span></a>或用下方<a href="#removal">聯絡與移除</a>的任一管道告訴我們，該筆索引會被移除。</p>
   </section>
 
   <section aria-labelledby="removal">
-    <h2 id="removal">聯絡與移除</h2>
+    <div class="h2-row"><h2 id="removal">聯絡與移除</h2>{@render toToc()}</div>
     <p>先選管道：<strong>涉及個資、帳號或不想公開的請求走私密聯絡</strong>，一般的資料錯誤可以公開回報。</p>
     <div class="contact-routes">
       <div>
@@ -114,7 +120,7 @@
   </section>
 
   <section aria-labelledby="changes">
-    <h2 id="changes">條款變更</h2>
+    <div class="h2-row"><h2 id="changes">條款變更</h2>{@render toToc()}</div>
     <p>條款有實質更動時會更新頁首的日期；重大變更會在首頁公告。繼續使用本站即表示你同意更新後的條款。</p>
   </section>
 </LegalDoc>

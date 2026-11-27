@@ -1,6 +1,7 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { UNAVAILABLE, apiMessage } from '$lib/community-messages';
 import { publishedCapacity } from '$lib/course-history';
+import { usualSectionsForPartial } from '$lib/ui/partial-terms';
 import { catalog } from '$lib/server/catalog';
 import type { CourseHistory } from '@unicourse/api-client';
 import { field, requireUser } from '$lib/server/community-forms';
@@ -52,6 +53,8 @@ function courseSummary(history: CourseHistory) {
   const newest = latest?.offerings[0];
   if (!latest || !newest) return null;
   const instructors = [...new Set(latest.offerings.flatMap((offering) => offering.instructors))];
+  // The same rule as the course page: far fewer sections than usual means the term's total is partial.
+  const usualSections = usualSectionsForPartial(latest.offerings.length, history.terms.slice(1).map((term) => term.offerings.length));
   return {
     id: history.latestActiveOfferingId ?? newest.id,
     title: history.title,
@@ -66,6 +69,8 @@ function courseSummary(history: CourseHistory) {
     latestSections: latest.offerings.length,
     latestEnrolled: latest.enrolled,
     latestCapacity: publishedCapacity(latest.capacity),
+    partial: usualSections !== null,
+    usualSections,
     instructors: instructors.slice(0, 2),
     instructorCount: instructors.length
   };
