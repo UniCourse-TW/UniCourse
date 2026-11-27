@@ -12,9 +12,8 @@
   const id = $props.id();
   let years = $derived([...periods].reverse());
   let compact = $derived(years.length <= 2);
-  let recentYears = $derived(years.slice(0, 3));
   let previewSize = $derived(Math.min(8, rows.length));
-  let phonePreviewSize = $derived(Math.min(previewSize, rows.filter((row) => recentYears.some((year) => row.points[year])).length));
+  let phonePreviewSize = $derived(Math.min(4, rows.filter((row) => years.slice(0, 4).some((year) => row.points[year])).length));
   let sameTitles = $derived(rows.reduce((counts, row) => counts.set(row.label, (counts.get(row.label) ?? 0) + 1), new Map<string, number>()));
   let points = $derived(rows.flatMap((row) => Object.values(row.points)));
   let maxEnrollment = $derived(Math.max(0, ...points.map((point) => point?.enrolled ?? 0)));
@@ -46,8 +45,14 @@
 
 {#snippet matrixRow(row: TeachingRow, extra: boolean, phoneExtra: boolean)}
   <tr class:extra class:phone-extra={phoneExtra}>
-    <th scope="row" class="course">
-      <span>{row.label}</span> <small class="browse-code">{row.id}</small>
+    <th scope="row" class="course" class:long-title={row.label.length > 12}>
+      <span class="course-title">{row.label}</span>
+      {#if row.label.length > 12}
+        <details class="course-name">
+          <summary title="展開完整課名"><span>{row.label}</span><span class="name-arrow" aria-hidden="true"></span></summary>
+        </details>
+      {/if}
+      <small class="browse-code">{row.id}</small>
       {#if (sameTitles.get(row.label) ?? 0) > 1 && row.department}<span class="course-unit">{row.department}</span>{/if}
     </th>
     {#each years as year (year)}
@@ -61,7 +66,7 @@
             </span>
             {#if point.enrolled !== null && maxEnrollment > 0}
               <span class="meter" aria-hidden="true">
-                <i class:partial={point.partial} style:inline-size={`${point.enrolled / maxEnrollment * 100}%`}></i>
+                <i class:partial={point.partial} class:positive={point.enrolled > 0} style:inline-size={`${Math.sqrt(point.enrolled / maxEnrollment) * 100}%`}></i>
               </span>
             {:else if point.partial}<i class="partial-key" aria-hidden="true"></i>{/if}
           {/snippet}
@@ -92,21 +97,22 @@
 {/snippet}
 
 {#if rows.length && years.length}
-  <div class="matrix" class:compact class:three={years.length === 3} style:--year-count={years.length}>
+  <div class="matrix" class:compact class:three={years.length === 3} class:four={years.length === 4} style:--year-count={years.length}>
     <div class="matrix-toolbar" class:overflows class:measured={frameWidth > 0}>
       <ul class="matrix-legend" aria-label="修課人次圖例" role="list">
-        {#if maxEnrollment > 0}<li><i class="scale-key" aria-hidden="true"></i> 人次（滿格 {displayValue(maxEnrollment)}）</li>{/if}
+        {#if maxEnrollment > 0}<li><i class="scale-key" aria-hidden="true"></i> 已公布人次（平方根刻度，滿格 {displayValue(maxEnrollment)}）</li>{:else}<li>已公布修課人次</li>{/if}
         <li><span aria-hidden="true">—</span> 未開課</li>
-        {#if points.some((point) => point?.enrolled === null)}<li>未公布＝人數未公布</li>{/if}
         {#if points.some((point) => point?.partial)}<li><i class="partial-key" aria-hidden="true"></i>只收錄部分班次（推估）</li>{/if}
       </ul>
       <div class="matrix-navigation">
-        <p class="scroll-hint" id={`${id}-hint`}>左右捲動 · <span aria-live="polite">{firstVisible === lastVisible ? years[firstVisible] : `${years[firstVisible]}–${years[lastVisible]}`} 學年</span></p>
         {#if overflows}
+          <p class="scroll-hint" id={`${id}-hint`}><strong aria-live="polite">{firstVisible === lastVisible ? years[firstVisible] : `${years[firstVisible]}–${years[lastVisible]}`} 學年</strong><span>／共 {years.length} 學年</span></p>
           <div class="matrix-arrows">
             <button type="button" aria-label="查看較新學年" aria-controls={id} disabled={position <= 1} onclick={() => scrollYear(-1)}>←</button>
             <button type="button" aria-label="查看較早學年" aria-controls={id} disabled={position >= tableWidth - frameWidth - 1} onclick={() => scrollYear(1)}>→</button>
           </div>
+        {:else}
+          <p class="scroll-hint">左右捲動查看各學年</p>
         {/if}
       </div>
     </div>
@@ -146,8 +152,10 @@
   .matrix-navigation { justify-content: space-between; color: var(--ink-2); font-size: var(--t-sm); }
   .matrix-toolbar:not(.overflows) .matrix-navigation { display: none; }
   .matrix-arrows { display: flex; gap: var(--space-1); }
-  .matrix-arrows button { min-inline-size: var(--target-min); min-block-size: var(--target-min); padding: 0; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font: inherit; font-size: 1rem; cursor: pointer; }
-  .matrix-arrows button:disabled { background: var(--panel); color: var(--muted); cursor: default; }
+  .matrix-arrows button { min-inline-size: var(--target-min); min-block-size: var(--target-min); padding: 0; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--brand-wash); color: var(--brand-ink); font: 700 1.1rem var(--font-sans); cursor: pointer; }
+  .matrix-arrows button:disabled { background: var(--panel); color: var(--ink-2); cursor: default; }
+  .scroll-hint { margin: 0; }
+  .scroll-hint strong { color: var(--ink); font-variant-numeric: tabular-nums; }
   .matrix-frame { container-type: inline-size; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
   .matrix-scroll { --course-width: clamp(13rem, 34cqi, 28rem); --year-width: 4.5rem; position: relative; overflow-x: auto; border-radius: inherit; scrollbar-width: thin; scroll-padding-inline-start: var(--course-width); }
   .matrix-scroll:focus-visible { outline-offset: -2px; }
@@ -155,25 +163,27 @@
   .compact .matrix-frame { max-inline-size: 44rem; }
   .compact .matrix-scroll { --course-width: 13rem; }
   .compact table { min-width: 0; }
-  th, td { --matrix-line: color-mix(in srgb, var(--control-line) 30%, var(--line)); border-block-end: 1px solid var(--matrix-line); border-inline-end: 1px solid var(--matrix-line); text-align: center; }
+  th, td { --matrix-line: color-mix(in srgb, var(--control-line) 45%, var(--line)); border-block-end: 1px solid var(--matrix-line); border-inline-end: 1px solid var(--matrix-line); text-align: center; }
   :is(th, td):last-child { border-inline-end: 0; }
   tbody tr:last-child > * { border-block-end: 0; }
   thead th { padding: .45rem; background: var(--table-head); color: var(--ink-2); font-weight: 700; }
   .course { width: var(--course-width); padding: .4rem .65rem; text-align: start; line-height: 1.38; overflow-wrap: anywhere; }
   tbody th { font-weight: 650; }
   .course small { display: inline-block; color: var(--ink-2); font-weight: 600; }
+  .course-name { display: none; }
   .course-unit { display: block; color: var(--ink-2); font-size: var(--t-sm); font-weight: 500; }
   td { padding: .13rem; }
   tbody tr:hover, tbody tr:focus-within { background: var(--hover-row); }
-  .year-cell { display: grid; place-content: center; justify-items: center; gap: .13rem; min-block-size: var(--target-min); padding: .15rem; border-radius: var(--radius-control); color: var(--brand-ink); text-decoration: none; }
+  .year-cell { display: grid; place-content: center; justify-items: center; gap: .17rem; min-block-size: var(--target-min); padding: .15rem; border-radius: var(--radius-control); color: var(--brand-ink); text-decoration: none; }
   .year-cell:hover { background: var(--brand-wash); }
   .year-cell:focus-visible { outline-offset: -2px; }
-  .target-term { color: var(--ink-2); font: var(--t-sm) / 1.2 var(--font-mono); white-space: nowrap; text-decoration: underline; text-decoration-color: var(--control-line); text-underline-offset: .18em; }
+  .target-term { margin-block-start: .12rem; color: var(--brand-ink); font: var(--t-sm) / 1.2 var(--font-mono); white-space: nowrap; text-decoration: underline; text-underline-offset: .2em; }
   .measurement { color: var(--ink); font-size: var(--t-md); font-weight: 700; line-height: 1.1; }
   .measurement.unknown { font-size: var(--t-sm); font-weight: 500; }
   .meter, .scale-key, .partial-key { display: block; inline-size: 2.9rem; block-size: .25rem; border-radius: var(--radius-pill); }
   .meter { background: color-mix(in srgb, var(--control-line) 25%, var(--line)); }
   .meter i { display: block; block-size: 100%; border-radius: inherit; }
+  .meter .positive { min-inline-size: 3px; }
   .meter i, .scale-key { background: var(--brand); }
   .scale-key, .partial-key { inline-size: 1rem; }
   .meter .partial, .partial-key { background: var(--partial-hatch), var(--brand-wash); }
@@ -195,16 +205,28 @@
     .matrix-toolbar:not(.measured) .matrix-navigation { display: flex; }
     .compact .matrix-toolbar:not(.measured) .matrix-navigation { display: none; }
     .matrix-navigation { inline-size: 100%; min-block-size: var(--target-min); }
-    .matrix-scroll { --course-width: clamp(7.25rem, 36cqi, 10rem); --year-width: calc((100cqi - var(--course-width)) / 3); }
+    .matrix-scroll { --course-width: clamp(6.75rem, 30cqi, 10rem); --year-width: calc((100cqi - var(--course-width)) / 4); }
     .compact .matrix-scroll { --course-width: clamp(7.5rem, 45cqi, 11rem); }
     .course { position: sticky; inset-inline-start: 0; z-index: 1; padding-inline: .5rem; box-shadow: var(--sticky-shadow); }
     tbody .course { background: var(--panel-raised); }
     tbody tr:focus-within .course { background: var(--hover-row); }
+    .long-title .course-title { display: none; }
+    .course-name { display: block; }
+    .course-name summary { display: grid; grid-template-columns: minmax(0, 1fr) .6rem; gap: .2rem; align-items: center; width: 100%; color: var(--ink); }
+    .course-name summary span:first-child { overflow: hidden; }
+    .course-name:not([open]) summary span:first-child { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+    .name-arrow { width: .38rem; height: .38rem; margin-block-start: -.2rem; border: solid var(--brand-ink); border-width: 0 1.5px 1.5px 0; rotate: 45deg; }
+    .course-name[open] .name-arrow { rotate: 225deg; }
   }
-  @media (min-width: 22.5625rem) and (max-width: 40rem) {
+  @media (min-width: 23.5rem) and (max-width: 40rem) {
+    :is(.three, .four) .matrix-toolbar:not(.measured) .matrix-navigation { display: none; }
+  }
+  @media (max-width: 23.499rem) {
     .three .matrix-toolbar:not(.measured) .matrix-navigation { display: none; }
+    .matrix-scroll { --year-width: calc((100cqi - var(--course-width)) / 3); }
   }
-  @media (max-width: 22.5rem) {
+  @media (max-width: 20rem) {
+    .three .matrix-toolbar:not(.measured) .matrix-navigation { display: flex; }
     .matrix-scroll { --year-width: calc((100cqi - var(--course-width)) / 2); }
   }
 </style>

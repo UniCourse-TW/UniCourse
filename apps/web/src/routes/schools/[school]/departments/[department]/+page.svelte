@@ -21,8 +21,8 @@
   let base = $derived(departmentHref(department.school, department.department));
   let termLabel = $derived(data.term === 'all' ? '所有學期' : `${data.term} 學期`);
   let distribution = $derived([
-    { label: '必修', count: data.breakdown.required, color: 'var(--series-1)' },
-    { label: '選修', count: data.breakdown.elective, color: 'var(--series-2)' },
+    { label: '必修', count: data.breakdown.required, color: 'var(--seq-4)' },
+    { label: '選修', count: data.breakdown.elective, color: 'var(--seq-2)' },
     { label: '通識', count: data.breakdown.general, color: 'var(--series-3)' },
     { label: '其他', count: data.breakdown.other, color: 'var(--series-4)' },
     { label: '未分類', count: data.breakdown.unknown, color: 'var(--axis)' }
@@ -40,6 +40,7 @@
   ]);
   let historical = $derived([...(data.trends ?? [])].reverse());
   let partial = $derived(partialTerms(historical.map(({ term, offerings }) => [term, offerings])));
+  let missingEnrollment = $derived(historical.some(({ enrolled }) => enrolled === null));
   let historicalColumns = $derived<TableColumn<(typeof historical)[number]>[]>([
     { id: 'term', label: '學期', value: ({ term }) => term },
     { id: 'offerings', label: '開課班次', value: ({ offerings }) => offerings, numeric: true },
@@ -85,6 +86,7 @@
 
   <section class="browse-stack timetable" id="offerings" aria-labelledby="timetable-title">
     <nav class="term-links semester-links" aria-label="切換學期">
+      <span class="control-label" aria-hidden="true">學期</span>
       <div class="all-terms"><a href={termHref('all')} aria-current={data.term === 'all' ? 'true' : undefined}>所有學期</a></div>
       {#each recentTerms as term (term)}
         <a href={termHref(term)} aria-current={term === data.term ? 'true' : undefined}>{term}</a>
@@ -100,11 +102,17 @@
         {/key}
       {/if}
     </nav>
-    <div class="department-summary">
-      <div>
-        <SectionHeader title={`${termLabel}課表`} id="timetable-title" />
-        <p class="browse-note"><strong>{displayValue(data.total)} 班</strong>{#if courseCount !== null} · {displayValue(courseCount)} 門課{/if}{#if data.complete} · {displayValue(data.teachers)} 位授課教師{/if}</p>
-      </div>
+    <div>
+      <SectionHeader title={`${termLabel}課表`} id="timetable-title" />
+      <p class="browse-note"><strong>{displayValue(data.total)} 班</strong>{#if courseCount !== null} · {displayValue(courseCount)} 門課{/if}{#if data.complete} · {displayValue(data.teachers)} 位授課教師{/if}</p>
+    </div>
+    <div class="timetable-toolbar">
+      <nav class="term-links class-links" aria-label={data.classInPage ? '本頁班次類別' : '班次類別'}>
+        <span class="control-label" aria-hidden="true">類別</span>
+        {#each [{ value: '', label: '不限類別' }, ...classOptions] as option (option.value)}
+          <a href={classHref(option.value)} aria-current={option.value === data.classFilter ? 'true' : undefined}>{option.label}</a>
+        {/each}
+      </nav>
       {#if distribution.length}
         <div class="distribution">
           <ul aria-label="必選修分布（班次）" role="list">
@@ -120,16 +128,9 @@
           {#if !data.complete}<p class="browse-note">統計樣本：{displayValue(data.sampleSize)} 班。</p>{/if}
         </div>
       {/if}
-    </div>
-    <div class="timetable-toolbar">
-      <nav class="term-links class-links" aria-label={data.classInPage ? '本頁班次類別' : '班次類別'}>
-        {#each [{ value: '', label: '不限類別' }, ...classOptions] as option (option.value)}
-          <a href={classHref(option.value)} aria-current={option.value === data.classFilter ? 'true' : undefined}>{option.label}</a>
-        {/each}
-      </nav>
       {#key data.query + ':' + (page.url.searchParams.get('sort') ?? '')}
         <details class="search-options" open={hasSearch}>
-          <summary>搜尋與排序{#if data.query}<span class="query-tag">{data.query}</span>{/if}</summary>
+          <summary>找課名或教師{#if data.query}<span class="query-tag">{data.query}</span>{/if}</summary>
           <form class="timetable-controls" action={`${base}#offerings`} method="GET" aria-label="課表篩選">
             <input type="hidden" name="term" value={data.term} />
             {#if data.classFilter}<input type="hidden" name="class_filter" value={data.classFilter} />{/if}
@@ -164,7 +165,7 @@
         {#if data.totalPages > 1}
           <div class="phone-pagination"><Pagination url={new URL('#offerings', page.url)} page={data.page} totalPages={data.totalPages} label="課表上方分頁" /></div>
         {/if}
-        <p class="browse-note import-note">人數、名額與餘額為匯入時紀錄</p>
+        <p class="browse-note import-note">人數與名額為匯入時紀錄，即時名額請查校方。</p>
       </div>
       <SchoolsOfferingTable offerings={data.offerings} ratings={data.ratings} mode="department" caption={`${termLabel}開課班次`} showTerm={data.term === 'all'} />
     {:else}
@@ -189,23 +190,21 @@
     {#if data.trends === null}
       <ErrorState title="暫時無法取得歷年開課統計" retryHref={page.url.pathname + page.url.search} />
     {:else}
-      {#if historical.length > 3}
-        <p class="browse-note">細線分隔學年，柱下的 1、2 分別為上、下學期。</p>
+      {#if historical.length > 3 || partial.size || missingEnrollment}
+        <div class="history-legend">
+          {#if historical.length > 3}<p class="browse-note"><span class="desktop-legend">學年以細線分隔，1、2 為上、下學期。</span><span class="phone-legend">細線分隔學年，同年各學期由左至右排列。</span></p>{/if}
+          {#if partial.size}<p class="browse-note partial-legend"><span aria-hidden="true"></span>只收錄部分班次（推估）</p>{/if}
+          {#if missingEnrollment}<p class="browse-note">修課人次空白：校方未公布</p>{/if}
+        </div>
       {/if}
       <div class="history-charts">
-        <TrendChart label="開課班次" unit="班" condensed termPairs yearTicks highlight={data.term} points={historical.map(({ term, offerings }) => ({ term, value: offerings, partial: partial.has(term) }))} termHref={termHref}>
+        <TrendChart label="開課班次" unit="班" condensed termPairs yearTicks yearsOnly showPartialLegend={false} highlight={data.term} points={historical.map(({ term, offerings }) => ({ term, value: offerings, partial: partial.has(term) }))} termHref={termHref}>
           {#snippet header()}{#if selectedTrend && historical.length > 3}<p class="selected-value"><span aria-label={`所選學期 ${data.term}`}>{data.term}</span><strong>{displayValue(selectedTrend.offerings)} 班</strong></p>{/if}{/snippet}
         </TrendChart>
-        <TrendChart label="已公布修課人次" unit="人次" condensed termPairs yearTicks highlight={data.term} points={historical.map(({ term, enrolled }) => ({ term, value: enrolled, partial: partial.has(term) }))} termHref={termHref}>
+        <TrendChart label="已公布修課人次" unit="人次" condensed termPairs yearTicks yearsOnly showPartialLegend={false} highlight={data.term} points={historical.map(({ term, enrolled }) => ({ term, value: enrolled, partial: partial.has(term) }))} termHref={termHref}>
           {#snippet header()}{#if selectedTrend && historical.length > 3}<p class="selected-value"><span aria-label={`所選學期 ${data.term}`}>{data.term}</span><strong>{selectedTrend.enrolled == null ? '未公布' : `${displayValue(selectedTrend.enrolled)} 人次`}</strong></p>{/if}{/snippet}
         </TrendChart>
       </div>
-      {#if partial.size || historical.some(({ enrolled }) => enrolled === null)}
-        <div class="history-legend">
-          {#if partial.size}<p class="browse-note partial-legend"><span aria-hidden="true"></span>只收錄部分班次（推估）</p>{/if}
-          {#if historical.some(({ enrolled }) => enrolled === null)}<p class="browse-note">修課人次圖的空白表示校方未公布。</p>{/if}
-        </div>
-      {/if}
       {#if historical.length > 3}
         <ChartValues label="歷年開課變化" summary="查看各學期數值與課表" columns={historicalColumns} rows={historical} rowKey={({ term }) => term} rowHref={({ term }) => termHref(term)} />
       {/if}
@@ -225,7 +224,6 @@
   .department-page .browse-head { gap: var(--space-2); }
   .history { margin-block-start: var(--space-4); padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); }
   .timetable { margin-block-start: var(--space-1); }
-  .department-summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(14rem, 17rem); align-items: end; gap: var(--space-3); }
   .history-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
   .history-charts :global(figure) { padding: var(--space-2) var(--space-3); }
   .history-charts :global(figcaption) { margin-block-end: var(--space-2); }
@@ -239,6 +237,7 @@
   .history-charts :global(.period-values .partial > small) { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
   .history-charts :global(.chart-legend) { display: none; }
   .history-legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
+  .phone-legend { display: none; }
   .partial-legend { display: flex; align-items: center; gap: var(--space-2); }
   .partial-legend span { inline-size: .9rem; block-size: .55rem; background: color-mix(in srgb, var(--series-1) 45%, var(--panel-raised)); border-radius: 2px; }
   .selected-value { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-block-end: var(--space-3) !important; color: var(--brand-ink); font-variant-numeric: tabular-nums; }
@@ -261,7 +260,8 @@
   .term-links { display: flex; align-items: center; gap: .25rem; }
   .term-links a, .semester-links summary { flex: none; min-height: var(--target-min); align-content: center; border-radius: var(--radius-control); padding: 0 .625rem; background: var(--chip); color: var(--ink-2); font-size: var(--t-sm); text-decoration: none; }
   .term-links a[aria-current] { background: var(--brand-wash); color: var(--brand-ink); font-weight: 750; box-shadow: inset 0 -2px var(--brand); }
-  .section-links a { color: var(--brand-ink); font-weight: 650; }
+  .section-links a { min-inline-size: var(--target-min); color: var(--brand-ink); font-weight: 650; }
+  .control-label { flex: none; margin-inline-end: var(--space-1); color: var(--ink-2); font-size: var(--t-sm); font-weight: 650; }
   .term-links a { display: inline-grid; align-items: center; font-variant-numeric: tabular-nums; }
   .term-links a:hover, .semester-links summary:hover { background: var(--brand-wash); }
   .semester-links { flex-wrap: wrap; }
@@ -275,20 +275,22 @@
   .search-icon::after { position: absolute; content: ''; inset: 90% auto auto 82%; border-block-start: 1.5px solid var(--muted); inline-size: .36rem; rotate: 45deg; transform-origin: left; }
   .timetable-controls input[type='search'] { inline-size: 100%; min-inline-size: 0; min-height: var(--target-min); padding-inline: 2rem .5rem; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font: inherit; font-size: 1rem; }
   input::placeholder { color: var(--muted); opacity: 1; }
-  .distribution { display: grid; gap: .3rem; }
+  .distribution { display: grid; flex: 1 1 13rem; gap: .3rem; max-inline-size: 18rem; margin-inline-end: auto; margin-inline-start: var(--space-2); }
   .segments { display: flex; gap: 2px; height: .375rem; overflow: hidden; border-radius: var(--radius-pill); }
   .segments > span { flex-basis: 0; }
   .distribution ul { display: flex; flex-wrap: wrap; list-style: none; gap: .25rem .65rem; padding: 0; margin: 0; font-size: var(--t-sm); }
   .distribution li { display: flex; align-items: baseline; gap: .35rem; white-space: nowrap; }
   .distribution li span { display: inline-block; width: .55rem; height: .55rem; border-radius: 50%; }
   @media (max-width: 45rem) {
-    .department-summary { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
-    .distribution { max-inline-size: 24rem; }
+    .distribution { order: -1; flex-basis: 100%; max-inline-size: 100%; margin-inline: 0; }
     .history-charts { grid-template-columns: minmax(0, 1fr); }
     .phone-pagination { display: block; }
     .results-summary { align-items: center; justify-content: space-between; gap: var(--space-1) var(--space-2); }
     .results-summary .import-note { flex-basis: 100%; padding-inline-start: 0; border-inline-start: 0; }
     .history-charts :global(.plot) { column-gap: var(--space-1); }
+    .history-charts :global(.semester-ticks) { display: none; }
+    .desktop-legend { display: none; }
+    .phone-legend { display: inline; }
     .term-links a, .semester-links summary { padding-inline: .5rem; }
     .class-links a { padding-inline: .45rem; }
     .search-options summary { padding-inline: .3rem; }
