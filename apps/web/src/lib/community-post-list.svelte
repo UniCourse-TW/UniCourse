@@ -46,8 +46,8 @@
               <span class="cm-type" data-type={post.type}>{postTypeLabels[post.type]}</span>
               {#if post.school && showCourse}
                 <a class="over ctx" href={forumHref({ school: post.school, courseCode: post.courseCode ?? undefined })}>
-                  <!-- School, course and code are separate parts (each kept whole) with a visible divider. -->
-                  <span class="part">{schoolNames[post.school] ?? post.school}</span>{#if post.courseCode}<span class="divider" aria-hidden="true">·</span><span class="part course">{courseTitle ?? post.courseCode}</span>{#if !showAuthor && courseTitle}<span class="part mono code">{post.courseCode}</span>{/if}{/if}
+                  <!-- Gaps keep the school, course and code distinct even when the link wraps. -->
+                  <span class="part">{schoolNames[post.school] ?? post.school}</span>{#if post.courseCode}<span class="part course">{courseTitle ?? post.courseCode}</span>{#if !showAuthor && courseTitle}<span class="part mono code">{post.courseCode}</span>{/if}{/if}
                 </a>
               {/if}
             </p>
@@ -58,7 +58,7 @@
               <span class="tags">{#if !(post.school && showCourse)}<span class="cm-type tag-type" data-type={post.type}>{postTypeLabels[post.type]}</span>{/if}{#each (showCourse ? post.tags.slice(0, 2) : post.tags) as tag (tag)}<a class="over tag" href={forumHref({ tag })}>#{tag}</a>{/each}</span>
             {/if}
           </div>
-          <!-- Time first in the markup, so the phone line reads「11/27 13:04 … 回覆 0 · 分數 0」; desktop
+          <!-- Time first in the markup, so the phone line reads「11/27 13:04 … 回覆 0　分數 0」; desktop
                places each value in its own column. -->
           <dl class="stats">
             <div class="when"><dt>發表於</dt><dd class="num"><time datetime={post.createdAt} title={dateTime(post.createdAt)}>{shortDateTime(post.createdAt)}</time></dd></div>
@@ -89,15 +89,15 @@
     border-block-end: 1px solid var(--line);
     color: var(--muted);
     background: var(--table-head);
-    font-size: var(--t-sm);
+    font-size: max(0.8125rem, var(--t-sm));
     font-weight: 600;
   }
   .cols span:not(:first-child) { text-align: end; }
   ol { margin: 0; padding: 0; list-style: none; }
-  li + li { border-block-start: 1px solid var(--line); }
+  li + li { border-block-start: 1px solid color-mix(in srgb, var(--control-line) 46%, var(--line)); }
   article { position: relative; align-items: center; padding-block: var(--space-2); }
   article:hover, article:focus-within { background: var(--hover-row); }
-  /* Title, summary, then one muted line: category and course, author, tags (clipped, never a 4th line). */
+  /* Title and summary each take a row. Context, author and tags share the remaining space. */
   .main { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; min-inline-size: 0; grid-row: 1; grid-column: 1; }
   h3 { flex-basis: 100%; min-inline-size: 0; margin: 0 !important; font-size: var(--t-md) !important; font-weight: 600 !important; letter-spacing: 0 !important; line-height: 1.5 !important; }
   .excerpt {
@@ -125,7 +125,6 @@
   }
   .kicker .cm-type { font-size: 0.8125rem; }
   .kicker .part { overflow-wrap: anywhere; }
-  .kicker .divider { color: var(--muted); }
   .kicker .code { color: var(--muted); font-size: 0.8125rem; }
   .kicker .course { font-weight: 600; }
   .kicker .cm-type[data-type='article'] { color: var(--brand-ink); background: var(--brand-wash); }
@@ -133,16 +132,14 @@
      the brand colour is kept for the title, the row's main link. Tags are the only chips. */
   .ctx { display: inline-flex; flex-wrap: wrap; gap: 0 0.35em; color: var(--ink-2) !important; text-decoration: none; }
   .with-context .author { font-size: var(--t-base); }
-  /* The underline sits under the words only, never under the divider between school and course. */
+  /* Underline each part so the course and school remain distinct when they wrap. */
   .ctx .part, .author { text-decoration: underline; text-decoration-color: var(--axis); text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
   .ctx:hover { color: var(--brand-ink) !important; }
   .ctx:hover :is(.part), .author:hover { text-decoration-color: currentColor; }
-  .who { flex: none; min-inline-size: 0; }
+  .who { flex: 0 1 auto; min-inline-size: 0; overflow-wrap: anywhere; }
   .post-list:not(.with-context) .author::before { content: '@'; }
-  .tags { display: flex; flex: 1 1 0; flex-wrap: nowrap; gap: 0 var(--space-2); min-inline-size: 0; overflow: hidden; white-space: nowrap; }
-  .tag { flex: none; padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2) !important; font-size: 0.8125rem; line-height: 1.6; text-decoration: none; }
-  .with-context .tags { flex: 0 1 auto; flex-wrap: wrap; overflow: visible; }
-  .with-context .tag { flex: 0 1 auto; white-space: normal; overflow-wrap: anywhere; }
+  .tags { display: flex; flex: 0 1 auto; flex-wrap: wrap; gap: 0 var(--space-2); min-inline-size: 0; align-items: center; }
+  .tag { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2) !important; font-size: 0.8125rem; line-height: 1.6; text-decoration: none; overflow-wrap: anywhere; }
   .tag:hover { color: var(--brand-ink) !important; text-decoration: underline; }
   .tag-type { display: none; flex: none; font-size: 0.8125rem; }
   .tag-type[data-type='article'] { color: var(--brand-ink); background: var(--brand-wash); }
@@ -162,53 +159,38 @@
   dt { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   dd { margin: 0; color: var(--ink-2); font-size: var(--t-base); font-variant-numeric: tabular-nums; }
   .when dd { color: var(--ink-2); }
-  .with-context .cols { font-size: 0.8125rem; }
   /* Replies and score in one weight; only the sign carries colour (green up, red down, grey zero). */
   dd.cm-score { font-weight: 400; }
   dd.cm-score[data-sign='zero'] { color: var(--muted); }
 
   @media (max-width: 40rem) {
     .cols { display: none; }
-    /* Phones: title, summary, category and course; then「author · time」with replies and score held at the
-       right end of the same line (one fixed spot on every row); tags last, on their own line. */
-    article { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; padding: var(--space-3); }
+    article { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; padding: var(--space-2) var(--space-3); }
     .main { display: contents; }
-    h3 { order: 0; }
-    .excerpt { order: 1; -webkit-line-clamp: 2; line-clamp: 2; }
-    .kicker { order: 2; flex-basis: 100%; margin-block-start: var(--space-2) !important; }
-    .who { order: 3; display: flex; max-inline-size: 8.5em; margin-block-start: var(--space-1) !important; }
-    .author { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .who::after { content: '·'; margin-inline-start: var(--space-2); color: var(--muted); }
-    .stats { order: 4; display: flex; flex: 1 1 auto; gap: 0; margin: var(--space-1) 0 0; font-size: var(--t-sm); }
-    .stats div { display: flex; gap: 0.25em; align-items: baseline; text-align: start; }
-    .stats .replies { margin-inline-start: auto; padding-inline-start: var(--space-3); }
-    .stats .score::before { content: '·'; margin-inline: 0.5em; color: var(--muted); }
-    .tags { order: 5; flex: 1 1 100%; flex-wrap: wrap; row-gap: var(--space-1); margin-block-start: var(--space-2) !important; }
-    /* No course to name (a course's own page): the type badge leads the tag line instead of taking a line. */
+    .excerpt { -webkit-line-clamp: 2; line-clamp: 2; }
+    .kicker { order: 1; }
     .kicker.solo { display: none; }
+    .kicker .code { display: none; }
+    .tags { order: 2; gap: 0 var(--space-1); }
     .tags .tag-type { display: inline-block; }
-    dt { position: static; inline-size: auto; block-size: auto; overflow: visible; clip: auto; color: var(--muted); font-size: var(--t-sm); }
-    dd { font-size: var(--t-sm); }
+    .kicker, .tags, .who { margin-block-start: 0 !important; }
+    .ctx, .tag { display: inline-flex; align-items: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); }
+    .tag { justify-content: center; padding-inline: var(--space-1); background: transparent; }
+    .tag:hover { background: var(--chip); }
+
+    /* Keep the metadata on its own line. The author and date stay on the left, engagement on the right. */
+    article::after { content: ''; order: 3; flex-basis: 100%; }
+    .who { order: 4; max-inline-size: 34%; }
+    .author { display: block; overflow: hidden; min-inline-size: var(--target-min); line-height: var(--target-min); text-overflow: ellipsis; white-space: nowrap; }
+    .stats { order: 5; display: flex; flex: 1 1 auto; flex-wrap: wrap; gap: 0 var(--space-2); margin: 0; align-items: baseline; white-space: nowrap; }
+    .stats div { display: flex; gap: 0.25em; align-items: baseline; }
+    .stats .replies { margin-inline-start: auto; }
+    dt { position: static; inline-size: auto; block-size: auto; overflow: visible; clip: auto; color: var(--muted); }
+    :is(dt, dd) { font-size: max(0.8125rem, var(--t-sm)); }
     .when dt { display: none; }
-    .with-context article { padding-block: var(--space-2); }
-    .with-context .kicker { margin-block-start: 0 !important; flex-basis: auto; }
-    .with-context :is(.ctx, .tag) {
-      display: inline-flex;
-      align-items: center;
-      min-inline-size: var(--target-min);
-      min-block-size: var(--target-min);
-    }
-    .with-context .tag { justify-content: center; background: transparent; padding-inline: var(--space-1); }
-    .with-context .tag:hover { background: var(--chip); }
-    .with-context .who { order: 5; margin-block-start: 0 !important; max-inline-size: min(9em, 36%); }
-    .with-context .who::after { content: none; }
-    .with-context .author { display: block; min-inline-size: var(--target-min); line-height: var(--target-min); }
-    .with-context .kicker .code { display: none; }
-    .with-context .stats { order: 6; flex: 1 0 auto; gap: var(--space-2); margin: 0; align-items: baseline; white-space: nowrap; }
-    .with-context :is(dt, dd) { font-size: 0.8125rem; }
-    .with-context .stats .replies { margin-inline-start: 0; }
-    .with-context .stats .score::before { content: none; }
-    .with-context .tags { order: 3; flex: 0 1 auto; margin-block-start: 0 !important; gap: 0 var(--space-1); }
-    .with-context article::after { content: ''; order: 4; flex-basis: 100%; }
+
+    /* On the course page, the author and tags can share one touch-height row. */
+    .post-list:not(.with-context) article { padding-block: 0.375rem; }
+    .post-list:not(.with-context) .who { order: 2; }
   }
 </style>

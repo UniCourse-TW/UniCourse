@@ -47,10 +47,12 @@
   const SPARSE = 5;
   const DISTRIBUTION_MIN = 3;
   let sparse = $derived(ratingCount < SPARSE && profile.posts.length < SPARSE);
+  let limitedRatings = $derived(ratingCount > 0 && ratingCount < DISTRIBUTION_MIN);
+  const ratingThreshold = `滿 ${DISTRIBUTION_MIN} 則顯示平均與分布`;
   let averageShown = $derived(average !== null && ratingCount >= DISTRIBUTION_MIN ? average.toFixed(1) : null);
   /** Which schools the ratings cover, said next to the rating count (not as the person's own school). */
   let coverage = $derived(
-    schoolCounts.length === 0 ? undefined : ratedSchool ? `涵蓋 1 所：${ratedSchool}` : `涵蓋 ${schoolCounts.length} 所學校`
+    schoolCounts.length === 0 ? undefined : ratedSchool ? `評過${ratedSchool}的課程` : `評過 ${schoolCounts.length} 所學校的課程`
   );
 
   let hydrated = $state(false);
@@ -79,7 +81,6 @@
 {#snippet jumpTile(section: 'ratings' | 'posts', label: string, value: number, unit: string, note?: string)}
   <a class="tile-link" href="#{section}" aria-label="查看{section === 'ratings' ? '評價' : '文章'}，共 {value} {unit}">
     <StatTile {label} {value} {unit} {note} />
-    <span class="tile-arrow" aria-hidden="true">↓</span>
   </a>
 {/snippet}
 
@@ -91,8 +92,8 @@
         <h1>{name}</h1>
         <p class="handle">
           <span class="mono">@{profile.username}</span>
-          {#if schoolName}<span class="sep">·</span>{schoolName}{/if}
-          <span class="sep">·</span><time datetime={profile.createdAt}>{slashDate(profile.createdAt)}</time> 加入
+          {#if schoolName}<span>{schoolName}</span>{/if}
+          <span><time datetime={profile.createdAt}>{slashDate(profile.createdAt)}</time> 加入</span>
         </p>
       </div>
       <!-- Bio and edit button start at the avatar's left edge, in line with the tiles below on phones. -->
@@ -105,7 +106,7 @@
       <section class="stats-side" aria-label="活動摘要">
         <!-- The activity counts link directly to their lists. -->
         <StatRow label="活動統計">
-          {@render jumpTile('ratings', '課程評價', ratingCount, '則', coverage ?? '還沒有評價')}
+          {@render jumpTile('ratings', '課程評價', ratingCount, '則', limitedRatings ? ratingThreshold : coverage ?? '還沒有評價')}
           {@render jumpTile('posts', '文章', profile.posts.length, '篇', profile.posts.length ? `收到 ${replies} 則回覆` : '還沒有文章')}
           {#if averageShown}<StatTile label="平均給分" value={averageShown} unit="/ 5" note={`${ratingCount} 則評價`} />{/if}
         </StatRow>
@@ -117,7 +118,7 @@
   {#if !sparse}
   <section class="summary" aria-label="活動摘要">
     <StatRow label="活動統計">
-      {@render jumpTile('ratings', '課程評價', ratingCount, '則', ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : averageShown ? `平均給分 ${averageShown} / 5` : undefined)}
+      {@render jumpTile('ratings', '課程評價', ratingCount, '則', ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : averageShown ? `平均給分 ${averageShown} / 5` : limitedRatings ? ratingThreshold : undefined)}
       {@render jumpTile('posts', '文章', profile.posts.length, '篇', profile.posts.length >= POST_CAP ? `顯示最近 ${POST_CAP} 篇` : undefined)}
       <StatTile label="文章收到的回覆" value={replies} unit="則" />
       {#if topSchool}
@@ -142,9 +143,7 @@
         </div>
       {/if}
     </div>
-    {#if ratingCount > 0 && ratingCount < DISTRIBUTION_MIN}
-      <p class="rating-context">目前有 {ratingCount} 則評價，滿 {DISTRIBUTION_MIN} 則才顯示平均與分布。</p>
-    {/if}
+    {#if limitedRatings && coverage}<p class="rating-context">{coverage}</p>{/if}
     {#if ratingCount >= DISTRIBUTION_MIN && average !== null}
       <div class="dist">
         <h3 class="eyebrow">給分分布・平均給分 <span class="num avg">{average.toFixed(1)}</span> / 5</h3>
@@ -163,7 +162,7 @@
         {/snippet}
       </EmptyState>
     {:else}
-      <div class="table-frame">
+      <div class="table-frame" class:compact={limitedRatings}>
         <table>
           <caption class="cm-sr">{name} 的課程評價</caption>
           <thead>
@@ -180,7 +179,7 @@
                 </th>
                 <td data-label="給分" class="score-cell">
                   <span class="num score">{rating.score} / 5</span>
-                  <span class="stars" aria-hidden="true"><Stars score={rating.score} /></span>
+                  {#if !limitedRatings}<span class="stars"><Stars score={rating.score} decorative /></span>{/if}
                 </td>
                 <td data-label="時間" class="num when"><time datetime={rating.updatedAt} title={dateTime(rating.updatedAt)}>{shortDateTime(rating.updatedAt)}</time></td>
                 <td data-label="評論" class="review">
@@ -215,7 +214,6 @@
 </div>
 
 <style>
-  .profile .sep { margin-inline: 0.4em; color: var(--axis); }
   .identity { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; }
   /* Wide screens: the person on the left, the three activity tiles filling the right. */
   .identity.with-stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr); }
@@ -223,10 +221,10 @@
   .person > .bio, .person > .edit { grid-column: 1 / -1; }
   .edit { justify-self: start; margin-block-start: var(--space-3); }
   /* The full tile is a jump link with a visible hover and focus treatment. */
-  .tile-link { position: relative; display: block; min-inline-size: 0; border-radius: var(--radius-panel); color: inherit !important; text-decoration: none; }
-  .tile-link :global(.tile) { block-size: 100%; border-color: var(--control-line); transition: border-color 0.15s, background-color 0.15s; }
-  .tile-link :global(dt) { padding-inline-end: var(--space-5); color: var(--brand-ink); font-weight: 650; }
-  .tile-arrow { position: absolute; inset-block-start: var(--space-2); inset-inline-end: var(--space-3); color: var(--brand-ink); font-size: var(--t-lg); font-weight: 650; }
+  .tile-link { display: block; min-inline-size: 0; border-radius: var(--radius-panel); color: inherit !important; text-decoration: none; }
+  .tile-link :global(.tile) { block-size: 100%; transition: border-color 0.15s, background-color 0.15s; }
+  .tile-link :global(dt) { color: var(--brand-ink); font-weight: 650; }
+  .tile-link :global(dt)::after { content: '↓' / ''; margin-inline-start: 0.35em; }
   .tile-link:is(:hover, :focus-visible) :global(.tile) { border-color: var(--brand); background: var(--brand-wash); }
   .stats-side { min-inline-size: 0; }
   .stats-side :global(.stat-row) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -243,7 +241,7 @@
     font-weight: 650;
   }
   .who { min-inline-size: 0; padding-block-start: var(--space-1); }
-  .handle { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; }
+  .handle { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); overflow-wrap: anywhere; margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; }
   .bio { max-inline-size: 52em; margin-block-start: var(--space-3) !important; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
   .summary { margin-block-start: var(--space-4); }
   .summary :global(.stat-row) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -310,6 +308,25 @@
   .score-cell { white-space: nowrap; }
   .when { color: var(--muted); white-space: nowrap; }
 
+  /* A small sample reads as a list: course, review and score share one compact row. */
+  @media (min-width: 40.001rem) {
+    .compact thead { display: none; }
+    .compact :is(table, tbody) { display: block; }
+    .compact tr {
+      display: grid;
+      grid-template-columns: minmax(10rem, 24%) minmax(0, 1fr) auto;
+      grid-template-areas: 'course review score' 'course review when';
+      gap: 0 var(--space-3);
+      padding: var(--space-2) var(--space-4);
+      align-items: start;
+    }
+    .compact tr + tr { border-block-start: 1px solid var(--line); }
+    .compact tr > :is(th, td):nth-child(n) { padding: 0; border: 0; }
+    .compact th { grid-area: course; }
+    .compact .review { grid-area: review; }
+    .compact .score-cell { grid-area: score; text-align: end; }
+    .compact .when { grid-area: when; text-align: end; }
+  }
   @media (max-width: 56rem) {
     .identity.with-stats { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
   }
@@ -324,7 +341,6 @@
     .stats-side :global(.tile) { padding: var(--space-2) var(--space-3); }
     .stats-side :global(.tile dd) { font-size: var(--t-2xl); }
     .stats-side :global(.tile p) { line-height: 1.4; }
-    .tile-arrow { inset-block-start: var(--space-1); }
     /* Stack: each rating becomes a short card-like row; column names come from data-label. */
     thead { display: none; }
     table, tbody, tr, tbody :is(th, td) { display: block; }

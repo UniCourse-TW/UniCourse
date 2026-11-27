@@ -46,7 +46,6 @@
   const fmt = new Intl.NumberFormat('zh-TW');
   let summary = $derived(course?.summary ?? null);
   let rating = $derived(course?.rating && course.rating.count > 0 ? course.rating : null);
-  let signedOutHref = $derived(loginHref(`${here}${page.url.search}`));
   let replyLoginHref = $derived(loginHref(`${here}${page.url.search}#reply-form`));
   let registerHref = $derived(loginHref(`${here}${page.url.search}#reply-form`, 'register'));
   const replyPrompts = {
@@ -56,6 +55,7 @@
   };
   let replyLabel = $derived(post.replies.length ? '寫回覆' : '寫第一則回覆');
   let replyPrompt = $derived(post.type === 'reply' ? undefined : replyPrompts[post.type]);
+  let firstReplyGuide = $derived(!post.replies.length ? replyPrompt : undefined);
 
   /** The box grows with the text (JavaScript only), so a long answer never scrolls inside a 3-row frame. */
   function autogrow(box: HTMLTextAreaElement) {
@@ -110,7 +110,6 @@
   {@const isReply = kind === '回覆'}
   {#snippet tally()}
     <span class="tally">
-      {#if isReply}<span class="label">此回覆</span>{/if}
       <span class="cm-score" data-sign={scoreSign(item.score)} aria-label="{kind}分數" aria-live={user ? 'polite' : undefined}>{signed(item.score)}</span>
       <span class="label">分</span>
     </span>
@@ -128,11 +127,16 @@
         </button>
       </form>
       {#if !isReply}
-        <a class="action reply-link" href="#reply-content">{replyLabel} <span aria-hidden="true">↓</span></a>
+        <a class="action reply-link" href="#reply-content">{post.replies.length ? '寫回覆' : '前往回覆'} <span aria-hidden="true">↓</span></a>
       {/if}
     {:else}
       {@render tally()}
-      <a class="action reply-link" href={signedOutHref}>{isReply ? '登入後可投票' : '登入後可推噓與回覆'} <span aria-hidden="true">→</span></a>
+      {#if !isReply}
+        <div class="login-actions" role="group" aria-label="登入或建立帳號後即可推噓與回覆">
+          <a class="cm-btn" href={replyLoginHref}>登入並返回本文</a>
+          <a class="cm-btn secondary" href={registerHref}>建立帳號並返回本文</a>
+        </div>
+      {/if}
     {/if}
   </div>
   {#if messageFor(item.id)}<p class="cm-alert" role="alert">{messageFor(item.id)}</p>{/if}
@@ -143,7 +147,7 @@
   {#if isAuthor || user?.isAdmin}
     <!-- Author tools expand beside the author or inline when a form is open. -->
     <details class="more" open={form?.action === 'edit' && form.target === item.id && 'message' in form}>
-      <summary class="more-btn" title={isAuthor ? `編輯或刪除這則${kind}` : '管理員選項'}>
+      <summary class="more-btn" aria-label={isAuthor ? `管理${kind}` : '管理員選項'}>
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="currentColor"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
         <span class="more-label">{isAuthor ? `管理${kind}` : '管理員'}</span><span class="more-caret" aria-hidden="true">▾</span>
       </summary>
@@ -187,16 +191,18 @@
 
 {#snippet byline(item: Item, kind: '文章' | '回覆')}
   <div class="meta">
-    <span class="person">
-      <a class="author" href={profileHref(item.author.username)}>{authorName(item.author)}</a>
-      {#if kind === '回覆' && item.author.username === post.author.username}<span class="op">原 PO</span>{/if}
-      {#if item.author.displayName}<span class="handle">@{item.author.username}</span>{/if}
-    </span>
+    <div class="byline">
+      <span class="person">
+        <a class="author" href={profileHref(item.author.username)}>{authorName(item.author)}</a>
+        {#if kind === '回覆' && item.author.username === post.author.username}<span class="op">原 PO</span>{/if}
+        {#if item.author.displayName}<span class="handle">@{item.author.username}</span>{/if}
+      </span>
+      <span class="timestamp">
+        <time class="num" datetime={item.createdAt}>{dateTime(item.createdAt)}</time>
+        {#if edited(item)}<span title="最後編輯 {dateTime(item.updatedAt)}">已編輯</span>{/if}
+      </span>
+    </div>
     {@render manage(item, kind)}
-    <span class="timestamp">
-      <time class="num" datetime={item.createdAt}>{dateTime(item.createdAt)}</time>
-      {#if edited(item)}<span class="sep" aria-hidden="true">·</span><span title="最後編輯 {dateTime(item.updatedAt)}">已編輯</span>{/if}
-    </span>
   </div>
 {/snippet}
 
@@ -205,10 +211,8 @@
   <nav class="crumbs" aria-label="麵包屑">
     <a href="/forum">論壇</a>
     {#if post.school}
-      <span class="sep" aria-hidden="true">/</span>
       <a href={forumHref({ school: post.school })}>{schoolName}</a>
       {#if post.courseCode}
-        <span class="sep" aria-hidden="true">/</span>
         {#if course?.summary}
           <a href="/courses/{course.summary.id}" title="{course.summary.title} 課程頁">{course.summary.title}</a>
         {:else}
@@ -236,28 +240,25 @@
         {#if summary}
           <h2 class="eyebrow course-heading">這門課</h2>
           <p class="course-title">
-            <a href="/courses/{summary.id}">{summary.title}<span class="history-link" aria-hidden="true"> 看歷年資料 <span aria-hidden="true">→</span></span></a>
+            <a href="/courses/{summary.id}">{summary.title}</a>
             <span class="mono code">{summary.courseCode}</span>
             {#if summary.isDemo}<Badge label="示範" tone="demo" />{/if}
           </p>
         {/if}
-        {#if summary}
-          <p class="sub teachers">
-            <span class="num">{summary.latestTerm} · {summary.partial ? '僅收錄' : '收錄'} {summary.latestSections} 班</span>
-            {#if summary.instructors.length} · {summary.instructors.join('、')}{#if summary.instructorCount > summary.instructors.length}<span class="nowrap"> 等 {summary.instructorCount} 位</span>{/if}{/if}
-          </p>
-        {/if}
         <details class="course-details">
-          <summary>查看收錄資訊與討論 <span class="inline-n">（另有 {course.otherCount} 篇）</span></summary>
+          <summary>{summary ? '收錄與討論' : '相關課程與討論'}</summary>
           {#if summary}
-            <p class="sub course-school">{[summary.schoolName, summary.department].filter(Boolean).join(' · ')}</p>
+            <p class="sub">{[summary.schoolName, summary.department].filter(Boolean).join('　')}</p>
+            {#if summary.instructors.length}
+              <p class="sub">{summary.instructors.join('、')}{#if summary.instructorCount > summary.instructors.length} 等 {summary.instructorCount} 位{/if}</p>
+            {/if}
             <dl class="facts">
               <div>
                 <dt>收錄學期</dt>
                 <dd class="num">{summary.terms} 個學期{#if summary.terms > 1}<small>{summary.firstTerm}–{summary.latestTerm}</small>{/if}</dd>
               </div>
               <div>
-                <dt>歷史修課／名額</dt>
+                <dt><span class="num">{summary.latestTerm}</span> {summary.partial ? '僅收錄' : '已收錄'} {summary.latestSections} 班<small>修課人數／名額</small></dt>
                 <dd class="num">
                   <span class="nowrap">{#if summary.latestEnrolled != null}{fmt.format(summary.latestEnrolled)}{:else}<span title="校方未公布修課人數">—</span>{/if}
                   / {#if summary.latestCapacity != null}{fmt.format(summary.latestCapacity)}{:else}<span title="校方未公布名額">—</span>{/if}</span>
@@ -266,7 +267,7 @@
               <div>
                 <dt>同學評價</dt>
                 <dd class="num">
-                  {#if rating}<span class="star" aria-hidden="true">★</span> {rating.average?.toFixed(1)}<span class="inline-n">（{rating.count} 則）</span>{:else}尚無評價{/if}
+                  {#if rating}<span class="rating"><span class="star" aria-hidden="true">★</span> {rating.average?.toFixed(1)} <span class="sample">（{rating.count} 則）</span></span>{:else}尚無評價{/if}
                 </dd>
               </div>
             </dl>
@@ -290,7 +291,7 @@
                   {#each course.others as other (other.id)}
                     <li>
                       <a href={postHref(other.id)}>{other.title}</a>
-                      <span class="n num">{postTypeLabels[other.type]} · {other.replyCount} 回覆</span>
+                      <span class="n num">{postTypeLabels[other.type]} <span class="nowrap">{other.replyCount} 回覆</span></span>
                     </li>
                   {/each}
                 </ul>
@@ -306,11 +307,14 @@
 
     <section class="replies" aria-labelledby="replies-title">
       <div class="replies-head">
-        <h2 id="replies-title">{post.replies.length ? `回覆（${post.replies.length}）` : '還沒有回覆'}</h2>
+        <h2 id="replies-title">回覆（{post.replies.length}）</h2>
         {#if post.replies.length >= SORT_TOGGLE_AT}
-          <nav class="sort" aria-label="回覆排序">
-            <a href={sortHref('oldest')} aria-current={newestFirst ? undefined : 'true'}>最早</a>
-            <a href={sortHref('newest')} aria-current={newestFirst ? 'true' : undefined}>最新</a>
+          <nav class="sort-tools" aria-labelledby="reply-sort">
+            <span id="reply-sort">回覆排序</span>
+            <div class="sort">
+              <a href={sortHref('oldest')} aria-current={newestFirst ? undefined : 'true'}>最早</a>
+              <a href={sortHref('newest')} aria-current={newestFirst ? 'true' : undefined}>最新</a>
+            </div>
           </nav>
         {/if}
       </div>
@@ -331,8 +335,10 @@
         <form method="POST" action="?/reply" class="reply-form cm-form" id="reply-form" use:enhance={submitReply}>
           <div class="cm-field">
             <div class="cm-label"><label for="reply-content">{replyLabel}</label><span class="cm-hint">以 {user.displayName || `@${user.username}`} 的身分</span></div>
+            {#if firstReplyGuide}<p class="reply-guide" id="reply-guide">{firstReplyGuide}</p>{/if}
             <textarea id="reply-content" class="cm-input" name="content" required rows="2" maxlength="20000" defaultValue={replyDraft}
-              placeholder={post.replies.length ? replyPrompt : '在此輸入你的回覆'} aria-describedby={!post.replies.length && replyPrompt ? 'reply-guide reply-status' : 'reply-status'}
+              placeholder={post.replies.length ? replyPrompt : undefined}
+              aria-describedby={firstReplyGuide ? 'reply-guide reply-status' : 'reply-status'}
               oninput={(event) => { replyText = event.currentTarget.value; autogrow(event.currentTarget); }}></textarea>
           </div>
           {#if form?.action === 'reply' && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
@@ -344,28 +350,19 @@
               {:else}<span class="hint">{hydrated && replyEmpty ? '輸入內容後才能送出' : '純文字，保留換行'}</span>{/if}
             </p>
             <span class="cm-count" aria-live="polite">{fmt.format(replyLength)} / 20,000 字</span>
-            {#if !post.replies.length && replyPrompt}<p class="reply-guide" id="reply-guide">{replyPrompt}</p>{/if}
             <!-- Without JavaScript the button is always live; with it, an empty box cannot be sent. -->
-            <button class="cm-btn send" aria-busy={replying} aria-disabled={hydrated && replyEmpty || undefined} disabled={replying || (hydrated && replyEmpty)}>{replying ? '送出中…' : '送出回覆'}</button>
+            <button class="cm-btn send" aria-busy={replying} aria-describedby="reply-status" disabled={replying || (hydrated && replyEmpty)}>{replying ? '送出中…' : '送出回覆'}</button>
           </div>
         </form>
-      {:else}
-        <div class="login" id="reply-form" tabindex="-1">
-          <h3>參與討論</h3>
-          <div class="login-actions">
-            <a class="cm-btn" href={replyLoginHref}>登入並回到這篇討論</a>
-            <a class="cm-btn secondary" href={registerHref}>建立帳號並返回</a>
-          </div>
-        </div>
       {/if}
     </section>
   </div>
 </div>
 
 <style>
-  .thread-page .sep { margin-inline: 0.4em; color: var(--axis); }
-  .crumbs { display: flex; flex-wrap: wrap; align-items: center; margin-block-end: var(--space-3); color: var(--muted); font-size: var(--t-base); }
-  .crumbs a { display: inline-flex; align-items: center; justify-content: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); color: var(--brand-ink); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand-ink) 45%, transparent); }
+  .crumbs { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; margin-block-end: var(--space-3); color: var(--muted); font-size: var(--t-base); }
+  .crumbs a { display: inline-flex; align-items: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); color: var(--brand-ink); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand-ink) 45%, transparent); }
+  .crumbs a:not(:last-child)::after { content: '/' / ''; margin-inline-start: var(--space-2); color: var(--muted); }
   .crumbs a:hover { text-decoration-color: currentColor; }
 
   .layout { display: grid; row-gap: var(--space-6); grid-template-columns: minmax(0, 1fr); }
@@ -379,13 +376,15 @@
   .kicker a { display: inline-flex; align-items: center; justify-content: center; padding-inline: var(--space-2); border-radius: var(--radius-control); color: var(--ink-2); background: var(--chip); text-decoration: none; font-weight: 600; }
   .kicker a:hover { color: var(--brand-ink); text-decoration: underline; }
   h1 { margin-block-start: var(--space-2) !important; font-size: clamp(1.375rem, 3.5vw, 1.625rem) !important; }
-  .meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; margin-block-start: var(--space-1); color: var(--muted); font-size: 0.8125rem; line-height: 1.5; }
-  .person { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; min-inline-size: 0; }
+  .meta { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-3); align-items: start; margin-block-start: var(--space-2); color: var(--muted); font-size: var(--t-sm); line-height: 1.5; }
+  .meta:has(.more) { margin-block-start: var(--space-1); }
+  .byline, .person, .timestamp { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; min-inline-size: 0; }
+  .byline { align-self: center; gap: 0 var(--space-3); overflow-wrap: anywhere; }
   .meta .author { color: var(--ink); font-size: var(--t-md); font-weight: 650; text-decoration: underline; text-decoration-color: var(--control-line); }
   .meta .author:hover { color: var(--brand-ink); text-decoration-color: currentColor; }
   .timestamp { color: var(--ink-2); }
   .op { padding: 0 6px; border-radius: var(--radius-pill); color: var(--brand-ink); background: var(--brand-wash); font-weight: 600; }
-  .thread-page :is(.mono, .kicker, .kicker .cm-type, .manage-note, .eyebrow, .inline-n, .facts dt, .facts small, .others .n, .cm-hint, .cm-count, .sort) {
+  .thread-page :is(.mono, .kicker, .kicker .cm-type, .manage-note, .eyebrow, .facts dt, .facts small, .others .n, .cm-hint, .cm-count, .sort) {
     font-size: max(0.8125rem, var(--t-sm));
   }
   .content {
@@ -398,7 +397,7 @@
   .content p { margin: 0; white-space: pre-wrap; }
   .content p + p { margin-block-start: 0.75em; }
 
-  .controls { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; margin-block-start: var(--space-3); }
+  .controls { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: center; margin-block-start: var(--space-3); }
   .more { position: relative; display: inline-flex; align-items: center; }
   .more > summary { list-style: none; }
   .more > summary::-webkit-details-marker { display: none; }
@@ -406,6 +405,8 @@
     display: inline-flex;
     gap: 0.3em;
     align-items: center;
+    justify-content: center;
+    min-inline-size: var(--target-min);
     min-block-size: var(--target-min);
     padding: 0 var(--space-2);
     border: 1px solid var(--line);
@@ -428,6 +429,7 @@
   .more:has(.panel[open]) > .more-btn { display: none; }
   .more:has(.panel[open]) { display: block; }
   .vote { display: inline-flex; gap: var(--space-2); align-items: center; }
+  .vote .tally { justify-content: center; min-inline-size: 2.5rem; }
   .tally { display: inline-flex; gap: 0.3em; align-items: baseline; }
   .tally .label { color: var(--muted); font-size: 0.8125rem; font-weight: 600; }
   .tally .cm-score { font-size: var(--t-lg); font-weight: 650; }
@@ -475,7 +477,7 @@
   .action.delete { color: var(--down) !important; }
   .danger > .action:hover, .danger > .action:focus-visible { color: var(--down) !important; background: color-mix(in srgb, var(--down) var(--status-tint), var(--panel-raised)); }
   /* An open panel takes the full row right under the byline; the other tool follows it as a line. */
-  .more:has(.panel[open]) { flex-basis: 100%; order: 10; margin: var(--space-2) 0 0; }
+  .more:has(.panel[open]) { grid-column: 1 / -1; margin-block-start: var(--space-2); }
   .manage:has(.panel[open]) { display: grid; }
   .panel[open] { padding: var(--space-3) var(--space-4) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .panel[open] > .action { margin-inline-start: calc(-1 * var(--space-2)); color: var(--ink) !important; }
@@ -489,13 +491,16 @@
   .submit-row .status { flex: 1 1 auto; margin: 0 !important; font-size: var(--t-base); }
   .submit-row .ok { color: var(--up); font-weight: 600; }
   .submit-row .hint, .submit-row .cm-count, .reply-guide { color: var(--ink-2); font-size: 0.8125rem; }
-  .reply-guide { order: 1; flex-basis: 100%; }
+  .reply-form textarea::placeholder { color: var(--muted); opacity: 1; }
   .reply-form textarea {
     scroll-margin-block-start: 8.5rem;
     border-color: color-mix(in srgb, var(--ink-2) 65%, var(--control-line));
   }
-  .reply-form textarea::placeholder { color: var(--muted); opacity: 1; }
-  .login-actions { display: flex; flex-wrap: wrap; width: 100%; gap: var(--space-2); align-items: center; }
+  .send:disabled:not([aria-busy='true']) {
+    color: var(--ink-2) !important;
+    opacity: 1;
+  }
+  .login-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
 
   .course {
     position: relative;
@@ -507,7 +512,6 @@
     font-size: var(--t-base);
   }
   .eyebrow { color: var(--ink-2) !important; font-size: max(0.8125rem, var(--t-sm)) !important; font-weight: 600 !important; letter-spacing: 0 !important; }
-  .history-link { display: none; }
   .course-details > summary {
     display: flex;
     align-items: center;
@@ -528,7 +532,8 @@
       .course-details::details-content { display: contents; content-visibility: visible; }
     }
   }
-  .inline-n { color: var(--muted); font-weight: 400; font-size: var(--t-sm); }
+  .rating { white-space: nowrap; }
+  .sample { color: var(--muted); font-weight: 400; font-size: var(--t-sm); }
   .course-title { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: baseline; margin-block-start: var(--space-2) !important; }
   .course-title a { font-size: var(--t-lg); font-weight: 650; }
   .code { color: var(--muted); }
@@ -537,13 +542,12 @@
   .others-title { margin: 0; }
   .new-post { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-weight: 600; text-decoration: none; }
   .new-post:hover { text-decoration: underline; }
-  /* Four facts as compact rows (label left, value right) rather than four tiles with one number each. */
+  /* The compact fact rows pair left-aligned labels with right-aligned values. */
   .facts { display: grid; margin: var(--space-2) 0; border-block-start: 1px solid var(--line); }
   .facts > div { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: baseline; justify-content: space-between; padding-block: var(--space-2); border-block-end: 1px solid var(--line); }
   .facts dt { color: var(--muted); font-size: var(--t-sm); }
   .facts dd { margin: 0; font-weight: 600; text-align: end; }
-  .facts dd small { display: block; color: var(--muted); font-weight: 400; font-size: var(--t-sm); }
-  .teachers { margin-block-end: var(--space-2) !important; }
+  .facts small { display: block; color: var(--muted); font-weight: 400; font-size: var(--t-sm); }
   .nowrap { white-space: nowrap; }
   .others-empty { display: grid; margin-block-start: var(--space-3); padding-block-start: var(--space-2); border-block-start: 1px solid var(--line); }
   .star { color: var(--warn); }
@@ -556,6 +560,7 @@
   .replies { min-inline-size: 0; }
   .replies-head { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: baseline; justify-content: space-between; }
   .replies h2 { font-size: var(--t-xl) !important; }
+  .sort-tools { display: flex; gap: var(--space-2); align-items: center; color: var(--muted); font-size: var(--t-sm); }
   .sort { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--radius-pill); background: var(--chip); font-size: var(--t-sm); }
   .sort a { display: inline-flex; align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--ink-2); font-weight: 600; text-decoration: none; }
   .sort a[aria-current='true'] { color: var(--ink); background: var(--panel-raised); box-shadow: inset 0 0 0 1px var(--line); }
@@ -566,46 +571,44 @@
   .reply .meta { gap: 0 var(--space-2); margin-block-start: 0 !important; }
   .reply .content { margin-block-start: var(--space-1); }
   .reply .controls { margin-block-start: var(--space-2); }
-  .reply-form, .login { scroll-margin-block-start: 7rem; margin-block-start: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .reply-form { scroll-margin-block-start: 7rem; margin-block-start: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .reply-form .cm-label { justify-content: flex-start; gap: 0 var(--space-3); }
   .reply-form .cm-hint { color: var(--ink-2); }
-  .login { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
-  .login h3 { flex-basis: 100%; }
 
   @media (max-width: 56rem) {
     .layout.with-aside { grid-template-columns: minmax(0, 1fr); }
-    .with-aside :is(.post, .replies, .course) { grid-column: 1; grid-row: auto; position: static; }
+    .with-aside :is(.post, .replies, .course) { grid-column: 1; grid-row: auto; }
+    .with-aside .course { position: relative; inset-block-start: auto; }
     .course-heading, .course-title .code { display: none !important; }
     .course { padding-block: 0; }
-    .course-title { margin-block-start: 0 !important; }
-    .course-title a { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 0 var(--space-2); min-block-size: var(--target-min); }
-    .history-link { display: inline; font-size: 0.8125rem; font-weight: 600; }
+    .course-title { margin-block-start: 0 !important; padding-inline-end: 7rem; }
+    .course-title a { display: inline-flex; align-items: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); font-size: var(--t-base); overflow-wrap: anywhere; }
+    .course-title + .course-details > summary { position: absolute; inset-block-start: 0; inset-inline-end: var(--space-4); }
     .course-details[open] { padding-block-end: var(--space-3); }
-    .teachers + .course-details { border-block-start: 1px solid var(--line); }
-    .others li a { display: flex; align-items: center; min-block-size: var(--target-min); }
+    .others li a { display: flex; align-items: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); }
   }
   @media (max-width: 40rem) {
     .layout { row-gap: var(--space-3); }
     .crumbs { margin-block-end: 0; }
     .kicker a, .author { min-inline-size: var(--target-min); min-block-size: var(--target-min); }
     .author { display: inline-flex; align-items: center; }
-    .author, .more-btn { margin-block: -0.375rem; }
+    .author { margin-block: -0.5rem; }
     .kicker a { background: transparent; }
     .kicker a:hover { background: var(--chip); }
     h1 { margin-block-start: 0 !important; }
     .meta { gap: 0 var(--space-2); }
-    .meta { position: relative; }
-    .more { position: static; }
-    .manage { inset-inline: 0 auto; max-inline-size: 100%; }
-    .timestamp { flex-basis: 100%; }
+    .more-label, .more-caret { display: none; }
+    .more-btn { padding: 0; background: transparent; }
+    .more-btn svg { inline-size: 1.25rem; block-size: 1.25rem; }
+    .manage { max-inline-size: calc(100vw - 3rem); }
     .content { margin-block-start: var(--space-2); }
     .content p + p { margin-block-start: 0.5em; }
     .controls, .reply .controls { margin-block-start: var(--space-1); }
     .reply { padding-inline-start: var(--space-3); }
     .submit-row { gap: var(--space-1) var(--space-2); }
     .submit-row .status:empty { display: none; }
-    .submit-row .send { order: 2; flex-basis: 100%; }
-    .login, .reply-form { padding: var(--space-3); }
+    .submit-row .send { flex-basis: 100%; }
+    .reply-form { padding: var(--space-3); }
     .login-actions .cm-btn { padding-inline: var(--space-2); }
   }
 </style>

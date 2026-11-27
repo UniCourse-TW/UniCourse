@@ -75,7 +75,7 @@
       {#if data.latest}<span>最新發文 <time class="num" datetime={data.latest}>{shortDateTime(data.latest)}</time></span>{/if}
     </p>
     <div class="cm-actions">
-      <a class="rules" href="/terms#account"><span aria-hidden="true">ⓘ</span>發文規則</a>
+      <a class="rules" href="/terms#account" aria-label="發文規則"><span aria-hidden="true">ⓘ</span>規則</a>
       {#if data.user}
         <CommunityCompose
           open={composeOpen}
@@ -101,7 +101,12 @@
     <!-- The same submit button applies the keyword, course scope and sort selection. -->
     <button class="cm-btn submit">搜尋</button>
     <details class="scope">
-      <summary>{data.sortable ? '篩選與排序' : '更多篩選'}{#if data.oldest} · 最早發文{/if}<span class="chev" aria-hidden="true"></span></summary>
+      <summary>
+        {data.sortable ? '篩選與排序' : '更多篩選'}
+        <span class="chev" aria-hidden="true"></span>
+        {#if !filters.school}<span class="scope-note">全部學校</span>{/if}
+        {#if data.oldest}<span class="scope-note">最早發文</span>{/if}
+      </summary>
       <div class="scope-fields" role="group" aria-label={data.sortable ? '篩選與排序' : '進階篩選'}>
         <FilterSelect name="school" label="學校" options={schoolOptions} value={filters.school} allLabel="全部學校" />
         <label class="code-field">
@@ -165,7 +170,7 @@
   </div>
 
   <!-- A young forum (fewer than 10 posts) puts the course suggestions beside the list on wide screens, and
-       right under it on phones, with one line above the list pointing at them. -->
+       right under it on phones, with a jump link after the list. -->
   <div class="board" class:rail={invite}>
   <section aria-labelledby="results" class="results">
     {#if data.posts.posts.length === 0}
@@ -203,9 +208,9 @@
     {:else}
       <div class="list-head">
         <h2 id="results">{filtered ? '符合的文章' : data.oldest ? '文章' : '最新文章'}<span class="count num">{fmt.format(total)} 篇</span></h2>
-        {#if invite}<a class="young-note" href="#sparse-title">論壇剛開張 · 看熱門課程 <span aria-hidden="true">↘</span></a>{/if}
       </div>
       <CommunityPostList posts={data.posts.posts} {schoolNames} courseTitles={data.courseTitles} dense label={filtered ? '符合的文章' : '文章'} />
+      {#if invite}<a class="young-note" href="#sparse-title">論壇剛開張，從熱門課程寫心得 <span aria-hidden="true">↓</span></a>{/if}
       {#if pages > 1}
         <footer class="pager">
           <p class="num">第 {fmt.format(first)}–{fmt.format(last)} 篇<span class="sep">·</span>共 {fmt.format(total)} 篇</p>
@@ -219,11 +224,11 @@
     <aside class="sparse" aria-labelledby="sparse-title">
       <div class="sparse-head">
         <div class="sparse-title">
-          <h2 id="sparse-title">{data.suggestionsSchool ? `${data.suggestionsSchool}熱門課程` : '熱門課程'}</h2>
+          <h2 id="sparse-title">{data.suggestionsSchool ? `${data.suggestionsSchool}熱門課程` : '熱門課程'} <span>依修課人次</span></h2>
           <a href="/">查其他課程 →</a>
         </div>
         <p class="sparse-dek" id="suggest-scale">
-          <span>依各課收錄期間的累計修課人次排序</span>
+          <span>各課收錄期間累計</span>
           {#if topEnrolled > 0}<span class="scale num">尺度 0–{fmt.format(topEnrolled)} 人次</span>{/if}
         </p>
       </div>
@@ -239,7 +244,7 @@
               <tr>
                 <th scope="row" class="suggest-course">
                   <a class="row-link" href="/courses/{entry.offeringId}">{entry.title}</a>
-                  <span class="muted"><span class="nowrap">{entry.schoolName}</span><span class="sep">·</span><span class="mono">{entry.courseCode}</span></span>
+                  <span class="muted"><span>{entry.schoolName}</span><span class="mono">{entry.courseCode}</span></span>
                 </th>
                 <td class="suggest-count">
                   <!-- Bars share one scale starting at 0 (the footnote names the full bar), so the courses compare at a glance. -->
@@ -303,19 +308,19 @@
     align-items: center;
     gap: var(--space-2);
     min-block-size: var(--target-min);
-    padding: 0 var(--space-3);
-    border: 1px solid var(--control-line);
+    padding: 0 var(--space-2);
     border-radius: var(--radius-control);
-    background: var(--panel-raised);
-    color: var(--ink-2);
+    color: var(--brand-ink);
     font-size: var(--t-base);
     font-weight: 600;
     cursor: pointer;
     list-style: none;
   }
   .scope summary::-webkit-details-marker { display: none; }
-  .scope .chev::before { content: '▾' / ''; color: var(--muted); }
-  .scope[open] .chev::before { content: '▴' / ''; }
+  .scope .chev::before { content: '+' / ''; }
+  .scope[open] .chev::before { content: '−' / ''; }
+  .scope summary:hover { background: var(--hover-row); }
+  .scope-note { color: var(--muted); font-size: var(--t-sm); font-weight: 400; }
   .scope-fields { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; padding-block-start: var(--space-2); }
   .scope-fields :global(.field label) { font-size: 0.8125rem; }
   .code-field {
@@ -366,6 +371,7 @@
   .board { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); align-items: start; }
   @media (min-width: 64rem) {
     .board.rail { grid-template-columns: minmax(0, 1fr) 20rem; gap: var(--space-8); }
+    .board.rail .list-head { min-block-size: var(--target-min); }
   }
   .sparse { display: grid; gap: var(--space-2); min-inline-size: 0; container: suggest / inline-size; }
   .sparse h2 { scroll-margin-block-start: 7rem; margin: 0; font-size: var(--t-lg); font-weight: 650; letter-spacing: var(--tracking-heading); }
@@ -382,19 +388,19 @@
   .row-link::after { content: ''; position: absolute; inset: 0; }
   .row-link:focus-visible::after { outline: var(--focus-ring); outline-offset: -3px; border-radius: var(--radius-control); }
   .suggest-course a { font-weight: 650; }
-  .suggest .muted { display: block; color: var(--muted); font-size: 0.8125rem; }
+  .suggest .muted { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--muted); font-size: 0.8125rem; }
   .suggest .count-col { inline-size: 45%; }
   .suggest-count { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-3); align-items: center; }
-  /* Thin, slightly softened bars: they rank the courses but stay quieter than the post titles. */
+  /* Thin bars use the same solid brand fill as the first three rows on the homepage. */
   .suggest-count .bar { block-size: 0.375rem; border-radius: 2px; background: var(--chip); overflow: hidden; }
-  .suggest-count .bar > span { display: block; block-size: 100%; border-radius: 2px; background: color-mix(in srgb, var(--brand) 52%, var(--panel-raised)); }
+  .suggest-count .bar > span { display: block; block-size: 100%; border-radius: 2px; background: var(--brand); }
   .suggest-count .value { color: var(--ink); font-weight: 600; text-align: end; white-space: nowrap; }
   .suggest-count small { margin-inline-start: 0.25em; color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
   .suggest-count .range { grid-column: 1 / -1; color: var(--muted); font-size: var(--t-sm); }
   .suggest-act { inline-size: 1%; text-align: end !important; }
   .write { position: relative; z-index: 1; display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
-  .nowrap { white-space: nowrap; }
   .sparse-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--space-2); }
+  .sparse-title h2 > span { color: var(--muted); font-size: var(--t-sm); font-weight: 500; white-space: nowrap; }
   .sparse-title a { display: inline-flex; min-block-size: var(--target-min); align-items: center; font-size: 0.8125rem; }
   .forum .mono, .forum :is(.cm-chip, .rules, .young-note, .sparse-dek, .suggest th, .suggest small, .suggest .range, .write, .code-field, .sort-field) {
     font-size: max(0.8125rem, var(--t-sm));
@@ -433,9 +439,8 @@
   .sort-field select { min-block-size: var(--target-min); padding: 0 var(--space-2); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink); font: inherit; color-scheme: var(--ui-color-scheme); }
   .submit { flex: none; order: 1; }
   .toolbar > .clear { order: 2; }
-  .facts { display: flex; flex-wrap: wrap; gap: 0 0.35em; }
+  .facts { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); }
   .facts > span { white-space: nowrap; }
-  .facts > span + span::before { content: '·'; margin-inline-end: 0.35em; color: var(--axis); }
   /* A real target next to the main button, not a stray small link. */
   .rules { display: inline-flex; gap: 0.35em; align-items: center; min-block-size: var(--target-min); padding-inline: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; text-decoration: none; }
   .rules:hover { border-color: var(--control-line); background: var(--hover-row); color: var(--ink); }
@@ -444,9 +449,7 @@
     .search { flex: 1 1 10rem; }
     .toolbar > .submit { flex: 0 0 auto; padding-inline: var(--space-4); }
     .scope { flex: 1 1 100%; }
-    .scope summary { justify-content: space-between; inline-size: 100%; }
     .facts > span:first-child { flex-basis: 100%; }
-    .facts > span:nth-child(2)::before { content: none; }
     .scope-fields :global(.field) { flex: 1 1 100%; }
     .scope-fields :global(.field select) { flex: 1; max-inline-size: none; }
     .code-field, .sort-field { flex: 1 1 100%; }
@@ -455,13 +458,8 @@
     /* The removable chips below already clear each filter; the text link only adds a wrapped row here. */
     .toolbar > .clear { display: none; }
     .chip-bar { margin-block-end: var(--space-2); }
-    /* Category chips scroll sideways rather than wrapping into a tall block. */
-    .types {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      scrollbar-width: none;
-      max-inline-size: 100%;
-      padding-block: 3px;
-    }
+    .board { gap: var(--space-3); }
+    .cm-head { margin-block-end: var(--space-4); }
+    .rules { padding-inline: var(--space-2); }
   }
 </style>
