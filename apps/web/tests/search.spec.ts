@@ -93,6 +93,8 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
   await expect(history.getByRole('row', { name: /115-1/ })).toContainText('本頁');
   // The bar key is visible on the table itself (phones too), not packed into the column header.
   await expect(page.getByText('刻線＝100%')).toBeVisible();
+  // Numbers and the fill rate are separate columns.
+  await expect(history.getByRole('columnheader', { name: '滿額率' })).toHaveCount(1);
   await expect(history.getByRole('row', { name: /114-2/ }).getByRole('link', { name: /114-2/ })).toHaveAttribute('href', /^\/courses\/\d+$/);
 
   // The course page breadcrumb leads to the department page.

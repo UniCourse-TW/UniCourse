@@ -26,11 +26,11 @@
       return {
         title: '找不到這個開課班次',
         description: '這個連結可能已失效。用課名、課號或教師搜尋其他學期的開課。',
-        hint: '課號可在舊課表或校方課程頁查到；課名或教師姓名也可以。',
-        context: offeringId ? `失效連結的班次編號：${offeringId}（不是課號）` : undefined,
-        // The data routes lead (coverage first), the forum stays a site-wide way out.
+        hint: '課號在舊課表或校方課程頁上',
+        context: offeringId ? pathname : undefined,
+        // Only course-finding routes here: coverage first, then home (the forum is not a way to a course).
         secondary: SCHOOLS,
-        also: [{ href: '/', label: '回首頁' }, FORUM],
+        also: [{ href: '/', label: '回首頁' }],
         search: true,
         query: courseCode,
         crossTerm: Boolean(courseCode)

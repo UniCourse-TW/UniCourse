@@ -14,10 +14,10 @@
   // Five points, each lead jumping to the section with the detail.
   const summary: GistPoint[] = [
     { lead: '查課', href: '#browse', text: '不用帳號；本站不要求學號、姓名或電子郵件。' },
-    { lead: '帳號與公開', href: '#account', text: '只存帳號名稱與雜湊後的密碼，其餘欄位選填；評分、文章與回覆會公開，投票只顯示合計。' },
-    { lead: '外部評價', href: '#reviews', text: '只索引 PTT 課程板公開文章的標題與 120 字內摘要，不存全文。' },
-    { lead: 'Cookie 與記錄', href: '#cookies', text: '登入 30 天、主題偏好一年；請求時間、路徑與 IP 只為排除故障短期保留。' },
-    { lead: '刪除與移除', href: '#contact', text: '一般資料錯誤公開回報；刪除帳號或涉及個資的，', link: { href: PRIVATE_REPORT_URL, label: '在 GitHub 私密回報', external: true } }
+    { lead: '帳號與公開', href: '#account', text: '只存帳號名稱與雜湊後的密碼；評分、文章與回覆會公開。' },
+    { lead: '外部評價', href: '#reviews', text: '只索引 PTT 課程板的標題與短摘要，不存全文。' },
+    { lead: '保存期限', href: '#cookies', text: '', lines: ['登入 Cookie：30 天', '主題偏好：一年', '伺服器記錄：只為排除故障短期保留'] },
+    { lead: '刪除帳號', href: '#contact', text: '私密聯絡維護者，不必公開。' }
   ];
 </script>
 
@@ -47,6 +47,7 @@
         <tr role="row"><td role="cell">個人投票</td><td role="cell" data-label="用途">計算分數</td><td role="cell" data-label="公開範圍">只公開合計</td></tr>
       </tbody>
     </table>
+    <p class="section-end"><a href="#toc"><span aria-hidden="true">↑</span> 回目錄</a></p>
   </section>
 
   <section aria-labelledby="public">
@@ -57,7 +58,8 @@
 
   <section aria-labelledby="reviews">
     <div class="h2-row"><h2 id="reviews">外部評論索引儲存的資料</h2></div>
-    <p>本站索引 PTT 四個課程看板自 2016 年起的公開文章，供課程頁列出相關討論。</p>
+    <!-- What a reader finds first; what is stored and the technical rules fold below. -->
+    <p>課程頁會列出 PTT 四個課程看板 2016 年起、提到該課的公開文章：標題、日期與 120 字內的開頭摘要，點標題回到原文。索引不用於訓練模型，也不提供給第三方。</p>
     <details class="doc-fold">
       <summary>查看索引儲存的 5 類資料</summary>
       <table role="table" class="review-data stacked">
@@ -71,43 +73,49 @@
         </tbody>
       </table>
     </details>
-    <p>只收錄站方 robots 檔以 <code>Content-Signal</code> 明確允許搜尋的網站；歐趴糖、Dcard 等其他網站只提供搜尋連結，不抓取任何內容。索引內容不用於訓練模型，也不提供給第三方。索引不會自動得知原文已刪除；要移除某一筆，請用下方<a href="#contact">聯絡與移除</a>的管道。收錄範圍詳見<a href="/terms#reviews">使用條款</a>。</p>
+    <details class="doc-fold">
+      <summary>哪些網站會被索引（技術說明）</summary>
+      <p>只收錄站方 robots 檔以 <code>Content-Signal</code> 明確允許搜尋的網站；歐趴糖、Dcard 等其他網站只提供搜尋連結，不抓取任何內容。收錄範圍詳見<a href="/terms#reviews">使用條款</a>。</p>
+    </details>
+    <p>索引不會自動得知原文已刪除；要移除某一筆，請用下方<a href="#contact">聯絡與移除</a>的管道。</p>
+    <p class="section-end"><a href="#toc"><span aria-hidden="true">↑</span> 回目錄</a></p>
   </section>
 
   <section aria-labelledby="cookies">
     <div class="h2-row"><h2 id="cookies">Cookie 與記錄</h2></div>
-    <p>登入維持 30 天，主題偏好保存一年。請求記錄只短期保留。</p>
+    <p>登入維持 30 天，主題偏好保存一年；伺服器記錄只保留到排除故障與防止濫用所需為止。本站沒有第三方追蹤或廣告程式碼。</p>
     <details class="doc-fold">
-      <summary>查看 Cookie 用途與記錄範圍</summary>
+      <summary>Cookie 名稱與記錄欄位</summary>
       <ul>
         <li>登入 Cookie（<code>uc_session</code>）：維持登入 30 天，登出時結束目前的登入。</li>
         <li>主題 Cookie（<code>uc_theme</code>）：只在你按下深淺色切換時設定，內容只有 light 或 dark，保存一年，讓頁面一開始就用你選的主題。沒有登入也沒有切換主題時，本站不設定任何 Cookie。</li>
-        <li>伺服器記錄：為了排除故障與防止濫用，會短期保留請求時間、路徑與來源 IP，不用於廣告，也不與第三方分享。</li>
-        <li>本站沒有第三方追蹤或廣告程式碼。</li>
+        <li>伺服器記錄：請求時間、路徑與來源 IP，不用於廣告，也不與第三方分享。</li>
       </ul>
     </details>
+    <p class="section-end"><a href="#toc"><span aria-hidden="true">↑</span> 回目錄</a></p>
   </section>
 
   <section aria-labelledby="contact">
     <div class="h2-row"><h2 id="contact">聯絡與移除</h2></div>
     <p>先選管道：<strong>刪除帳號、涉及個資或不想公開的請求走私密聯絡</strong>，一般的資料處理問題可以公開回報。</p>
+    <p class="routes-shared">兩個管道都在 GitHub 送出（免費帳號即可，不需要會寫程式）；請附上相關頁面連結，通常七天內在同一則回報回覆。</p>
     <div class="contact-routes">
       <div>
         <p class="route-kind">私密聯絡</p>
         <h3>刪除帳號或移除個資</h3>
         <p>刪除帳號、移除與你有關的索引，或處理其他私人請求。</p>
-        <p class="route-access">需 GitHub 帳號 · 僅維護者可見</p>
-        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">在 GitHub 私密回報 <span aria-hidden="true">↗</span></a>
-        <ul class="route-meta"><li>附上相關頁面連結</li><li>通常七天內在同一則回報回覆</li></ul>
+        <p class="route-needs">請寫明：帳號名稱或相關頁面、希望刪除或移除什麼。不要寫密碼。</p>
+        <p class="route-access">僅維護者可見</p>
+        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密申請刪除帳號或移除個資 <span aria-hidden="true">↗</span></a>
       </div>
       <div>
         <p class="route-kind">公開回報</p>
         <h3>可公開的資料錯誤</h3>
-        <p>回報錯配的外部文章或其他資料錯誤。請勿附上個資。</p>
-        <p class="route-access">需 GitHub 帳號 · 所有人可見</p>
+        <p>回報錯配的外部文章或其他資料錯誤，請勿附上個資。</p>
+        <p class="route-access">所有人可見</p>
         <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 公開回報 <span aria-hidden="true">↗</span></a>
-        <ul class="route-meta"><li>附上相關頁面連結</li><li>通常七天內在同一則 issue 回覆</li></ul>
       </div>
     </div>
+    <p class="section-end"><a href="#toc"><span aria-hidden="true">↑</span> 回目錄</a></p>
   </section>
 </LegalDoc>

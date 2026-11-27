@@ -13,6 +13,8 @@
     href?: string;
     text: string;
     link?: { href: string; label: string; external?: boolean };
+    /** Short facts on lines of their own under the sentence (e.g. one retention period per line). */
+    lines?: readonly string[];
   }
 </script>
 
@@ -102,15 +104,16 @@
         <h2 id="gist-title">白話重點</h2>
         <ul>
           {#each summary as point, index (index)}
-            <li><strong>{#if point.href}<a class="lead-link" href={point.href}>{point.lead}</a>{:else}{point.lead}{/if}</strong>{point.text}{#if point.link}<a href={point.link.href} rel={point.link.external ? 'noopener external' : undefined}>{point.link.label}{#if point.link.external}<span aria-hidden="true"> ↗</span>{/if}</a>。{/if}</li>
+            <li><strong>{#if point.href}<a class="lead-link" href={point.href}>{point.lead}</a>{:else}{point.lead}{/if}</strong>{point.text}{#if point.link}<a href={point.link.href} rel={point.link.external ? 'noopener external' : undefined}>{point.link.label}{#if point.link.external}<span aria-hidden="true"> ↗</span>{/if}</a>。{/if}{#if point.lines?.length}<span class="gist-lines">{#each point.lines as line (line)}<span>{line}</span>{/each}</span>{/if}</li>
           {/each}
         </ul>
       </section>
     {/if}
     <nav class="doc-toc" id="toc" aria-label="目錄">
-      <!-- Closed in the markup so phones start collapsed; desktop CSS keeps the list visible regardless. -->
-      <details bind:this={tocDetails}>
-        <summary>目錄<span class="toc-hint">：展開 {sections.length} 個章節</span></summary>
+      <!-- Open in the markup: desktop shows the sticky list, phones show the sections as a row of chips near the
+           top (the jump list), which the reader can still fold away. -->
+      <details bind:this={tocDetails} open>
+        <summary>目錄<span class="toc-hint">・{sections.length} 個章節</span></summary>
         <ol>
           {#each sections as section (section.id)}
             <li>
@@ -148,6 +151,8 @@
   .gist ul { display: grid; gap: var(--space-1); margin: 0; padding-inline-start: 1.2em; color: var(--ink); font-size: var(--t-md); line-height: 1.75; }
   .gist li strong { margin-inline-end: 0.35em; color: var(--ink); font-weight: 650; }
   .gist li strong::after { content: '：'; }
+  .gist-lines { display: grid; margin-block-start: 2px; color: var(--ink-2); font-size: var(--t-base); line-height: 1.6; }
+  .gist-lines span::before { content: '・'; color: var(--muted); }
   .gist a { font-weight: 600; }
   .gist .lead-link { color: var(--ink); text-decoration-color: color-mix(in srgb, var(--brand) 60%, transparent); text-underline-offset: 0.2em; }
   .gist .lead-link:hover { color: var(--brand-ink); }
@@ -173,8 +178,9 @@
   .doc-toc li a:hover { background: var(--brand-wash); color: var(--brand-ink); }
   .doc-toc li a[aria-current='true'] { border-inline-start-color: var(--brand); color: var(--brand-ink); font-weight: 600; background: var(--brand-wash); }
   /* Sub-sections hang off a rule under their parent, so they never read as siblings of it. */
-  .doc-toc .sub { display: grid; margin: 0 0 var(--space-1) var(--space-4); padding: 0; border-inline-start: 1px solid var(--control-line); list-style: none; }
-  .doc-toc .sub a { min-block-size: 2rem; color: var(--ink-2); font-size: var(--t-base); }
+  .doc-toc .sub { display: grid; margin: 0 0 var(--space-1) var(--space-5); padding: 0; border-inline-start: 1px solid var(--control-line); list-style: none; }
+  .doc-toc .sub a { min-block-size: 2rem; color: var(--ink-2); font-size: var(--t-sm); }
+  .doc-toc .sub a::before { content: '–'; margin-inline-end: var(--space-1); color: var(--muted); }
   .doc-toc .sibling { margin-block-start: var(--space-1); padding-block-start: var(--space-1); border-block-start: 1px solid var(--line); }
   .doc-toc .sibling a { color: var(--brand-ink); font-weight: 600; }
 
@@ -182,6 +188,8 @@
      52 em at the prose size and tables fill it. */
   .prose :global(section) { max-inline-size: 52em; }
   .prose { min-inline-size: 0; font-size: 0.9375rem; line-height: 1.85; overflow-wrap: anywhere; hanging-punctuation: none; }
+  /* No orphan characters at the end of a paragraph (「覆。」 alone on a line), on phones or desktop. */
+  .prose :global(:is(p, li, td, h3)), .gist li { text-wrap: pretty; }
   .prose :global(h2) { margin: var(--space-8) 0 var(--space-2); font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); scroll-margin-block-start: 4.75rem; }
   .prose :global(h3) { margin: var(--space-6) 0 var(--space-1); font-size: var(--t-lg); font-weight: 650; line-height: var(--leading-tight); scroll-margin-block-start: 4.75rem; }
   .prose :global(p), .prose :global(ul), .prose :global(ol) { margin: 0 0 var(--space-3); }
@@ -226,6 +234,11 @@
   .prose :global(.doc-fold summary:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: var(--radius-control); }
   .prose :global(.doc-fold > :not(summary)) { inline-size: calc(100% - 2 * var(--space-3)); margin-inline: var(--space-3); }
   .toc-fab { display: none; }
+  /* Section ends get a small way back to the jump list on phones; desktop has the sticky contents. */
+  .prose :global(.section-end) { display: none; }
+  /* Shared conditions for both contact routes, said once before the two cards. */
+  .prose :global(.routes-shared) { color: var(--ink-2); font-size: var(--t-base); }
+  .prose :global(.contact-routes .route-needs) { color: var(--ink-2); font-size: var(--t-base); }
   .next { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-6) 0 0; padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); font-size: var(--t-base); font-weight: 500; }
   .next a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); }
   .next .back { color: var(--ink-2); }
@@ -244,11 +257,20 @@
     .prose :global(.stacked td[data-label])::before { content: attr(data-label); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; line-height: inherit; }
     .prose :global(.stacked td:first-child) { display: block; padding-block-end: var(--space-1); font-weight: 600; }
     .prose :global(.stacked td:first-child)::before { display: none; }
-    .prose :global(.stacked.account-data td[data-label]) { grid-template-columns: 4rem minmax(0, 1fr); }
-    .prose :global(.stacked.boards tr) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0 var(--space-2); }
-    .prose :global(.stacked.boards td[data-label]) { display: block; white-space: normal; }
+    /* Boards read top to bottom: board name, then its school, then the remark. */
+    .prose :global(.stacked.boards td[data-label]) { display: block; padding: 0; white-space: normal; }
     .prose :global(.stacked.boards td[data-label])::before { display: none; }
-    .prose :global(.stacked.boards td:last-child) { grid-column: 1 / -1; color: var(--ink-2); }
+    .prose :global(.stacked.boards td:first-child) { padding-block-end: 0; }
+    .prose :global(.stacked.boards td:last-child) { color: var(--ink-2); font-size: 0.8125rem; }
+    /* Account data: the name with its public status beside it, the purpose on the line below. */
+    .prose :global(.stacked.account-data tr) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-2); align-items: baseline; }
+    .prose :global(.stacked.account-data td:first-child) { grid-row: 1; grid-column: 1; padding: 0; }
+    .prose :global(.stacked.account-data td:last-child) { grid-row: 1; grid-column: 2; display: block; padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--chip); color: var(--ink); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
+    .prose :global(.stacked.account-data td:last-child)::before { display: none; }
+    .prose :global(.stacked.account-data td:nth-child(2)) { grid-row: 2; grid-column: 1 / -1; display: block; color: var(--ink-2); font-size: 0.8125rem; }
+    .prose :global(.stacked.account-data td:nth-child(2))::before { display: none; }
+    .prose :global(.section-end) { display: block; margin: var(--space-2) 0 0; font-size: var(--t-sm); }
+    .prose :global(.section-end a) { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: 2rem; color: var(--ink-2); text-decoration: none; }
     .prose :global(.review-data td:first-child) { inline-size: auto; }
     .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: auto; white-space: normal; }
   }
@@ -268,6 +290,12 @@
     .doc-toc details[open] summary::after { content: '▴'; }
     .doc-toc summary:focus-visible { outline: var(--focus-ring); outline-offset: calc(-1 * var(--focus-offset)); border-radius: var(--radius-panel); }
     .doc-toc li a { min-block-size: var(--target-min); }
+    /* Phones: the contents are a wrapping row of section chips (the jump list); sub-sections and the sibling
+       link are left to the desktop list and the header. */
+    .doc-toc ol { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0 var(--space-3) var(--space-3); }
+    .doc-toc li a { padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink); font-size: var(--t-base); }
+    .doc-toc li a[aria-current='true'] { border-color: var(--control-line); background: var(--panel-raised); color: var(--ink); font-weight: 500; }
+    .doc-toc .sub, .doc-toc .sibling { display: none; }
     .toc-hint { display: inline; }
     .doc-toc summary { justify-content: flex-start; }
     .doc-toc summary::after { margin-inline-start: auto; }

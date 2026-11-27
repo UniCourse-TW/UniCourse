@@ -111,6 +111,8 @@
     return out;
   });
   let yearMax = $derived(Math.max(1, ...perYear.map((entry) => entry.count)));
+  /** The busiest year, named under the chart so the counts have an anchor without a y axis. */
+  let peakYear = $derived(perYear.reduce<{ year: number; count: number } | undefined>((best, entry) => (entry.count > (best?.count ?? 0) ? entry : best), undefined));
 
   // Filters work after hydration; without JavaScript the default order and「顯示全部」still do.
   let ready = $state(false);
@@ -199,6 +201,8 @@
         <article>
           <h3 class="title" title={row.post.title}>
             <a href={row.post.url} target="_blank" rel="noopener noreferrer nofollow">{row.post.title}<span class="out" aria-hidden="true">↗</span><span class="sr-only">（開啟 {row.post.sourceLabel} 原文）</span></a>
+            <!-- Phones show the push count on the title line, so the meta line has room and the excerpt gets two lines. -->
+            {#if row.post.pushScore}<span class="push title-push num" class:down={row.post.pushScore < 0} aria-hidden="true">推 {pushLabel(row.post.pushScore)}</span>{/if}
           </h3>
           <p class="meta">
             {#if row.mine}<span class="badge-mine">本班教師</span>{/if}
@@ -208,7 +212,7 @@
             {#if row.teachers.length && !row.mine}<span class="post-teacher">{row.teachers.join('、')}</span>{/if}
             {#if boards.length > 1}<span class="board">{row.post.board}</span>{/if}
             {#if row.author}<span class="author">{row.author}</span>{/if}
-            {#if row.post.pushScore}<span class="push num" class:down={row.post.pushScore < 0}>推 {pushLabel(row.post.pushScore)}</span>{/if}
+            {#if row.post.pushScore}<span class="push meta-push num" class:down={row.post.pushScore < 0}>推 {pushLabel(row.post.pushScore)}</span>{/if}
             {#if !row.parts.length}
               <!-- No excerpt: a small tag on the meta line instead of a line of its own. -->
               <span class="title-only" title="這篇的開頭沒有可摘錄的心得文字，請點標題看原文">只收錄標題</span>
@@ -284,6 +288,7 @@
 
     <div class="layout">
       <aside class="summary" aria-label="外部文章摘要">
+        <h3 class="col-head">找文章：依教師、類型篩選</h3>
         <!-- Two different filters, kept apart so nobody adds them up: this offering's teacher (a match on
              the title), then the post types (which add up to the total). -->
         <!-- This offering's teacher vs everyone else: two toggles that split the total, so a reader can go
@@ -292,10 +297,12 @@
           <button type="button" class="figure mine-toggle" aria-pressed={scope === 'mine'} disabled={!ready || mineCount === 0} onclick={() => (scope = scope === 'mine' ? '' : 'mine')}>
             <span class="fig-label">本班教師{#if instructors.length} {instructors.join('、')}{/if}</span>
             <span class="fig-value"><b class="num">{displayValue(mineCount)}</b><span class="fig-unit">篇</span></span>
+            {#if mineCount > 0 && mineCount < rows.length}<span class="fig-act" aria-hidden="true">{scope === 'mine' ? '顯示全部' : '只看這組'}</span>{/if}
           </button>
           <button type="button" class="figure" aria-pressed={scope === 'others'} disabled={!ready || mineCount === rows.length} onclick={() => (scope = scope === 'others' ? '' : 'others')}>
             <span class="fig-label">其他教師與未標教師</span>
             <span class="fig-value"><b class="num">{displayValue(rows.length - mineCount)}</b><span class="fig-unit">篇</span></span>
+            {#if mineCount > 0 && mineCount < rows.length}<span class="fig-act" aria-hidden="true">{scope === 'others' ? '顯示全部' : '只看這組'}</span>{/if}
           </button>
         </div>
         <div class="kinds" role="group" aria-label="文章類型">
@@ -338,7 +345,7 @@
 
         {#if perYear.length > 1}
           <figure class="block years">
-            <figcaption>每年發文數（篇） <span class="cap-range num">{perYear[0].year}–{perYear.at(-1)?.year} 年</span></figcaption>
+            <figcaption>每年發文數（篇）{#if peakYear}<span class="cap-range num">最多 {peakYear.count} 篇（{peakYear.year}）</span>{/if}</figcaption>
             <div class="columns" role="img" aria-label={`每年發文數：${perYear.map((entry) => `${entry.year} 年 ${entry.count} 篇`).join('、')}`}>
               {#each perYear as entry (entry.year)}
                 <!-- A year without posts is left blank above its axis label (no zero-height bar, no 0). -->
@@ -356,6 +363,7 @@
       </aside>
 
       <div class="posts">
+        <h3 class="col-head">讀文章：標題與開頭摘要，點標題看原文</h3>
         <div class="list-bar">
           <p class="status" role="status" aria-live="polite">
             {#if activeFilters}
@@ -476,6 +484,8 @@
   .query { font-weight: 500; }
 
   .layout { display: grid; grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
+  /* Finding (filters, left) and reading (posts, right) are two columns with their own heads and a rule between. */
+  .layout > .posts { padding-inline-start: var(--space-6); border-inline-start: 1px solid var(--line); }
   /* The summary column follows the reader down the long post list instead of ending in blank space. */
   .layout > .summary { position: sticky; inset-block-start: 4.75rem; }
   .summary { display: grid; gap: var(--space-4); min-inline-size: 0; }
@@ -488,6 +498,9 @@
   .fig-label { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
   .figure b { color: var(--ink); font-size: var(--t-xl); font-weight: 650; }
   .fig-unit { margin-inline-start: 0.25em; }
+  .fig-act { color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; }
+  .col-head { color: var(--ink); font-size: var(--t-base); font-weight: 650; }
+  .title-push { display: none; margin-inline-start: var(--space-2); font-size: var(--t-sm); white-space: nowrap; }
   .block { display: grid; gap: var(--space-2); }
   .teachers { display: grid; gap: 3px; padding: 0; list-style: none; }
   .teachers.collapsible:not(:has(+ .more-teachers[open])) li.extra { display: none; }
@@ -501,7 +514,7 @@
   .teacher .name { display: inline-flex; gap: var(--space-1); align-items: center; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .here, .badge-mine { flex: none; padding: 0 6px; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-size: var(--t-xs); font-weight: 650; line-height: 1.6; }
   .teacher .bar { display: block; block-size: 8px; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
-  .teacher .bar span { display: block; block-size: 100%; border-radius: inherit; background: color-mix(in srgb, var(--brand) 60%, var(--panel)); }
+  .teacher .bar span { display: block; min-inline-size: 4px; block-size: 100%; border-radius: inherit; background: color-mix(in srgb, var(--brand) 60%, var(--panel)); }
   .teacher.mine .bar span, .teacher[aria-pressed='true'] .bar span { background: var(--brand); }
   .teacher .n { color: var(--ink-2); text-align: end; white-space: nowrap; }
   .more-teachers summary, .more summary { display: flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; list-style: none; cursor: pointer; }
@@ -521,6 +534,7 @@
 
   .posts { display: grid; gap: var(--space-2); min-inline-size: 0; }
   .posts > .toolbar { order: -1; }
+  .posts > .col-head { order: -2; }
   .toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: end; justify-content: space-between; }
   .kinds { display: flex; flex-wrap: wrap; gap: var(--space-1); }
   .summary > .kinds { margin-block-start: calc(-1 * var(--space-2)); }
@@ -548,7 +562,7 @@
   .grow-btn { min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; }
   .grow-btn:hover { background: var(--hover-row); }
   .grow .clear { min-block-size: var(--target-min); margin: 0; }
-  .meta .title-only { padding: 0 6px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--muted); font-size: var(--t-sm); line-height: 1.5; }
+  .meta .title-only { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-sm); line-height: 1.5; }
   .status b { color: var(--ink); }
   .clear { margin-inline-start: var(--space-2); padding: 0; border: 0; background: none; color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
   .none { padding: var(--space-4) 0; color: var(--ink-2); }
@@ -566,10 +580,10 @@
   .title a:focus-visible { outline: none; }
   article:has(a:focus-visible) { outline: var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-control); }
   .out { margin-inline-start: 0.25em; color: var(--muted); font-size: 0.85em; font-weight: 500; }
-  .meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; color: var(--ink-2); font-size: 0.8125rem; }
+  .meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; color: var(--ink-2); font-size: var(--t-base); }
   .meta .author { color: var(--muted); }
-  .meta .push { color: var(--up); font-weight: 650; }
-  .meta .push.down { color: var(--down); }
+  .push { color: var(--up); font-weight: 650; }
+  .push.down { color: var(--down); }
   .excerpt { display: -webkit-box; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
   .excerpt .label { margin-inline-end: 0.35em; padding: 0 4px; border-radius: 3px; background: var(--chip); color: var(--muted); font-size: var(--t-xs); font-weight: 650; }
   .excerpt .sep { color: var(--muted); }
@@ -581,6 +595,8 @@
     .external:not(.compact) { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'layout' 'elsewhere'; }
     .layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
     .layout > .summary { position: static; }
+    .layout > .posts { padding-inline-start: 0; border-inline-start: 0; }
+    .col-head { grid-column: 1 / -1; }
     .summary { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
     .figures { grid-column: 1 / -1; }
   }
@@ -604,7 +620,10 @@
     .meta { gap: 0 var(--space-2); }
     .meta .post-teacher { max-inline-size: 8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     article { padding-block: var(--space-2); }
-    .excerpt { -webkit-line-clamp: 1; line-clamp: 1; }
+    .excerpt { -webkit-line-clamp: 2; line-clamp: 2; }
+    .meta-push { display: none; }
+    .title-push { display: inline; }
+    .col-head { display: none; }
     .toolbar:not(.open) { display: none; }
     .toolbar { padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); }
     .filter-toggle { display: inline-flex; }
