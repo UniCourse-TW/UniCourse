@@ -1963,6 +1963,60 @@
         }
       }
     },
+    "/api/ratings/stats": {
+      "get": {
+        "tags": [
+          "ratings"
+        ],
+        "operationId": "batchRatingStats",
+        "parameters": [
+          {
+            "name": "courses",
+            "in": "query",
+            "description": "1–200 comma-separated school:courseCode pairs. Escape literal commas and backslashes in course codes with a backslash before URL encoding.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stats for known courses in request order, deduplicated; unknown courses are omitted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CourseRatingStats"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/schools": {
       "get": {
         "tags": [],
@@ -2464,6 +2518,7 @@
           "latestOfferingId",
           "latestActiveOfferingId",
           "trend",
+          "sectionsByTerm",
           "isDemo"
         ],
         "properties": {
@@ -2512,6 +2567,17 @@
           "schoolName": {
             "type": "string"
           },
+          "sectionsByTerm": {
+            "type": "object",
+            "description": "Imported class section counts, including withdrawn offerings, by term.",
+            "additionalProperties": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "propertyNames": {
+              "type": "string"
+            }
+          },
           "terms": {
             "type": "integer",
             "format": "int64",
@@ -2533,6 +2599,25 @@
               "$ref": "#/components/schemas/EnrollmentPoint"
             },
             "description": "Up to ten terms with offerings, newest first, including withdrawn offerings."
+          }
+        }
+      },
+      "CourseRatingStats": {
+        "type": "object",
+        "required": [
+          "school",
+          "courseCode",
+          "stats"
+        ],
+        "properties": {
+          "courseCode": {
+            "type": "string"
+          },
+          "school": {
+            "type": "string"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/RatingStats"
           }
         }
       },

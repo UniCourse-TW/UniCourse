@@ -12,6 +12,7 @@ mod coverage;
 mod external_reviews;
 mod history;
 mod institutions;
+mod ratings;
 mod search;
 
 pub use browse::*;
@@ -19,6 +20,7 @@ pub use coverage::*;
 pub use external_reviews::*;
 pub use history::*;
 pub use institutions::*;
+pub use ratings::*;
 pub use search::{search, search_page};
 
 /// School slugs accepted in snapshots: every `slug` in `data/institutions.json`, the single source

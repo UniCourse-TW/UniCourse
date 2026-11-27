@@ -81,6 +81,10 @@ active offerings only. Institutions without data remain in the directory with em
 
 Errors have a stable `code` and a human-readable `message`. Signed-in users who have not rated a
 known course get `200 null` from `GET .../ratings/me`; an unknown course returns `404 not_found`.
+`GET /api/ratings/stats?courses=nthu:DEMO201,ntnu:DEMO101` returns `{school, courseCode, stats}`
+for up to 200 requested pairs, in request order without duplicates. Known unrated courses have
+zero counts, and unknown courses are omitted. Escape literal commas and backslashes in course
+codes with a backslash before URL encoding the query value.
 Profile ratings include `latestOfferingId`, or `null` if the course has no offering. Forum list
 filters accept only `announcement`, `article`, and `question`. Post, reply, and rating timestamps
 include fractional seconds so clients can detect edits made within the same second.

@@ -372,6 +372,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ratings/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["batchRatingStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/schools": {
         parameters: {
             query?: never;
@@ -546,6 +562,10 @@ export interface components {
             offerings: number;
             school: string;
             schoolName: string;
+            /** @description Imported class section counts, including withdrawn offerings, by term. */
+            sectionsByTerm: {
+                [key: string]: number;
+            };
             /**
              * Format: int64
              * @description Distinct terms with an offering of this course.
@@ -556,6 +576,11 @@ export interface components {
             titleEn?: string | null;
             /** @description Up to ten terms with offerings, newest first, including withdrawn offerings. */
             trend: components["schemas"]["EnrollmentPoint"][];
+        };
+        CourseRatingStats: {
+            courseCode: string;
+            school: string;
+            stats: components["schemas"]["RatingStats"];
         };
         CourseTerm: {
             /** Format: int64 */
@@ -2507,6 +2532,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CourseRanking"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    batchRatingStats: {
+        parameters: {
+            query: {
+                /** @description 1–200 comma-separated school:courseCode pairs. Escape literal commas and backslashes in course codes with a backslash before URL encoding. */
+                courses: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stats for known courses in request order, deduplicated; unknown courses are omitted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CourseRatingStats"][];
                 };
             };
             400: {

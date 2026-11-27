@@ -368,6 +368,24 @@ async fn ratings_upsert_and_stats(pool: PgPool) {
         stats.body,
         json!({ "count": 2, "average": 3.5, "histogram": [0, 1, 0, 0, 1] })
     );
+    let batch = call(
+        &app,
+        "GET",
+        "/api/ratings/stats?courses=nthu:DEMO201,nthu:DEMO201,ntu:DEMO201,ntnu:DEMO101",
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(batch.status, StatusCode::OK);
+    assert_eq!(
+        batch.body,
+        json!([
+            { "school": "nthu", "courseCode": "DEMO201", "stats": stats.body },
+            { "school": "ntnu", "courseCode": "DEMO101", "stats": {
+                "count": 0, "average": null, "histogram": [0, 0, 0, 0, 0]
+            }}
+        ])
+    );
     let list = call(&app, "GET", base, None, None).await;
     let list = list.body.as_array().unwrap();
     assert_eq!(list.len(), 2);
@@ -456,6 +474,52 @@ async fn ratings_upsert_and_stats(pool: PgPool) {
     unicourse_catalog::refresh_rankings(&pool).await.unwrap();
     let profile = call(&app, "GET", "/api/users/bob", None, None).await;
     assert_eq!(profile.body["ratings"][0]["latestOfferingId"], Value::Null);
+}
+
+#[sqlx::test(migrator = "MIGRATOR")]
+async fn batch_rating_stats_validates_pairs_and_counts_all_rows(pool: PgPool) {
+    let offerings = (1..=15)
+        .map(|index| synthetic_offering(&format!("COURSE{index:02}"), "Test course", 1))
+        .chain([synthetic_offering("A,B\\C", "Punctuation", 1)])
+        .collect();
+    import_offerings(&pool, NTHU, offerings).await;
+    let app = unicourse_api::router(pool);
+    let pairs = (1..=15)
+        .map(|index| format!("nthu:COURSE{index:02}"))
+        .chain(["nthu:A%5C%2CB%5C%5CC".to_owned()])
+        .collect::<Vec<_>>()
+        .join(",");
+    let response = call(
+        &app,
+        "GET",
+        &format!("/api/ratings/stats?courses={pairs}"),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(response.status, StatusCode::OK);
+    assert_eq!(response.body.as_array().unwrap().len(), 16);
+    assert_eq!(response.body[14]["courseCode"], "COURSE15");
+    assert_eq!(response.body[15]["courseCode"], "A,B\\C");
+
+    for invalid in [
+        "".to_owned(),
+        "missing-code".into(),
+        "nthu:".into(),
+        "nthu:%00".into(),
+        vec!["nthu:COURSE01"; 201].join(","),
+    ] {
+        let response = call(
+            &app,
+            "GET",
+            &format!("/api/ratings/stats?courses={invalid}"),
+            None,
+            None,
+        )
+        .await;
+        assert_eq!(response.status, StatusCode::BAD_REQUEST);
+        assert_eq!(response.body["code"], "invalid_query");
+    }
 }
 
 #[sqlx::test(migrator = "MIGRATOR")]
@@ -827,6 +891,7 @@ async fn rankings_overview_and_browsing(pool: PgPool) {
     .unwrap();
     assert_eq!(linear["latestOfferingId"], latest);
     assert_eq!(linear["latestActiveOfferingId"], latest);
+    assert_eq!(linear["sectionsByTerm"], json!({"114-2": 1, "115-1": 1}));
     assert_eq!(
         linear["trend"],
         json!([
