@@ -118,6 +118,8 @@
     font-size: var(--t-sm);
     line-height: 1.5;
   }
+  .kicker .cm-type { font-size: 0.8125rem; }
+  .kicker .cm-type[data-type='article'] { color: var(--brand-ink); background: var(--brand-wash); }
   .kicker a { color: var(--ink-2); text-decoration: none; }
   .kicker a:hover { color: var(--brand-ink); text-decoration: underline; }
   /* Author and tags share one muted line under the summary; spacing, not bullet characters, separates them. */
@@ -127,10 +129,10 @@
   .by .author { color: var(--ink-2); }
   .by .author::before { content: '@'; color: var(--muted); }
   /* Tags are small chips, so they never read as part of the summary. */
-  .by .tag { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); line-height: 1.6; }
+  .by .tag { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-sm); line-height: 1.6; }
   /* Links above the stretched title link stay clickable on their own. */
   .over { position: relative; z-index: 1; }
-  h3 { margin-block: 0.125rem 0 !important; font-size: var(--t-md) !important; font-weight: 600 !important; letter-spacing: 0 !important; line-height: 1.45 !important; }
+  h3 { margin-block: 0.125rem 0 !important; font-size: var(--t-md) !important; font-weight: 600 !important; letter-spacing: 0 !important; line-height: 1.5 !important; }
   /* Titles read as links: brand colour, underline on hover, a full-row focus ring. */
   .title { color: var(--brand-ink) !important; text-decoration: none; }
   .title::after { content: ''; position: absolute; inset: 0; z-index: 0; }
@@ -138,7 +140,7 @@
   .title:focus-visible { outline: none !important; }
   .title:focus-visible::after { outline: var(--focus-ring); outline-offset: -3px; border-radius: var(--radius-control); }
   .excerpt {
-    margin-block-start: 0.125rem !important;
+    margin-block-start: var(--space-1) !important;
     color: var(--ink-2);
     font-size: 0.8125rem;
     line-height: 1.55;

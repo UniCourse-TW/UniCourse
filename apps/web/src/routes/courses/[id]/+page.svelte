@@ -8,7 +8,6 @@
   import { fillRatio, nearlyFull, publishedCapacity } from '$lib/course-history';
   import { averageScore, courseKey } from '$lib/community-format';
   import { labelledExtra } from '$lib/course-extra';
-  import { postKind } from '$lib/course-external-text';
   import { englishTitle } from '$lib/course-title';
   import { shortDateTime } from '$lib/community-format';
   import { importedAt, isHttpUrl, meeting, requirement } from '$lib/format';
@@ -65,26 +64,21 @@
   let externalTotal = $derived(data.externalReviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0);
   // Indexed posts move above the site's own sections while those are both still empty, so the page's
   // most useful signal is not below two empty states.
-  let externalFirst = $derived(externalTotal > 0 && ratingCount === 0 && data.posts?.total === 0);
+  let communityEmpty = $derived(stats != null && ratingCount === 0 && data.posts?.total === 0);
+  let externalFirst = $derived(externalTotal > 0 && communityEmpty);
+  let discussionHref = $derived(data.user ? composeHref : loginHref(composeHref));
   // With no site ratings yet, the fourth tile shows the indexed posts instead of a second empty state.
   let externalTile = $derived(externalTotal > 0 && stats != null && ratingCount === 0);
-  let externalReviews = $derived(
-    (data.externalReviews?.posts ?? []).filter((post) => postKind(post.tag) === 'review').length
-  );
-  let externalQuestions = $derived(
-    (data.externalReviews?.posts ?? []).filter((post) => postKind(post.tag) === 'question').length
-  );
   let updated = $derived(shortDateTime(course.importedAt));
   let importDay = $derived(updated.split(' ')[0]);
   let externalLabel = $derived(
     data.externalReviews?.sources.length === 1 ? data.externalReviews.sources[0].sourceLabel.replace(/\s*批踢踢$/u, '') : '外站'
   );
-
-  // Long text sits last and starts collapsed on phones; desktops keep it open (it is server-rendered open).
   let aboutOpen = $state(true);
   onMount(() => {
     if (window.matchMedia('(max-width: 40rem)').matches) aboutOpen = false;
   });
+
 
   /** A field whose whole value is one web address. */
   function fieldUrl(value: string) {
@@ -136,11 +130,13 @@
         {#if course.instructors.length}
           <span class="item people">{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{/each}</span>
         {:else}<span class="item muted">教師未公布</span>{/if}
-        <span class="item">{#if course.credits != null}<b class="num">{credits(course.credits)}</b> 學分{:else}學分未公布{/if}</span>
-        <span class="item">{#if requirementLabel}<b>{requirementLabel}</b>{#if requirementDetail}<a class="detail" href="#requirement-detail" title={`校方原文：「${requirementDetail}」`} aria-label="必選修的校方原文">ⓘ</a>{/if}{:else}必選修未公布{/if}</span>
         {#if course.language}<span class="item">{course.language}授課</span>{/if}
         {#if course.campus}<span class="item">{course.campus}</span>{/if}
         {#if course.grade}<span class="item">{course.grade}</span>{/if}
+      </p>
+      <p class="headline-facts" aria-label="學分與必選修">
+        <span class="item">{#if course.credits != null}<b class="num">{credits(course.credits)}</b> 學分{:else}學分未公布{/if}</span>
+        <span class="item">{#if requirementLabel}<b>{requirementLabel}</b>{#if requirementDetail}<a class="detail" href="#requirement-detail" title={`校方原文：「${requirementDetail}」`} aria-label="必選修的校方原文">ⓘ</a>{/if}{:else}必選修未公布{/if}</span>
       </p>
     </div>
     <div class="actions">
@@ -198,7 +194,7 @@
     {#if termTotal}
       <div class="tile" class:partial={termTotal.partial}>
         <!-- Short label; that only some sections were collected is said once, under the chart and in the table. -->
-        <dt>{termTotal.term}・{displayValue(termTotal.offeringCount)} 班合計</dt>
+        <dt>{termTotal.term}・已收錄班次合計</dt>
         {#if termTotal.enrolled == null && termTotal.capacity != null}
           <dd><span class="value num">{displayValue(termTotal.capacity)}</span><small>名額</small></dd>
         {:else if termTotal.enrolled != null}
@@ -206,12 +202,12 @@
         {:else}
           <dd><span class="value">—</span><small>人數未公布</small></dd>
         {/if}
-        <dd class="note"><a href="#history">各班與歷年&nbsp;↓</a></dd>
+        <dd class="note"><a href="#history">{displayValue(termTotal.offeringCount)} 班・各班與歷年 ↓</a></dd>
       </div>
     {/if}
     <div class="tile">
       {#if totals?.enrolledTotal != null}
-        <dt>歷年累計</dt>
+        <dt>跨學期累計修課人次</dt>
         <dd><span class="value num">{displayValue(totals.enrolledTotal)}</span><small>人次</small></dd>
         <dd class="note"><a href="#history">{displayValue(totals.terms)} 期・{displayValue(totals.offerings)} 班&nbsp;↓</a></dd>
       {:else if totals?.capacityTotal != null}
@@ -224,7 +220,7 @@
         <dd><span class="value num">{displayValue(totals.terms)}</span><small>期</small></dd>
         <dd class="note"><a href="#history">{displayValue(totals.offerings)} 班・未公布人數&nbsp;↓</a></dd>
       {:else}
-        <dt>歷年累計</dt>
+        <dt>跨學期累計修課人次</dt>
         <dd><span class="value">—</span></dd>
         <dd class="note">暫時無法取得</dd>
       {/if}
@@ -233,12 +229,7 @@
       {#if externalTile}
         <dt>外站討論（{externalLabel}）</dt>
         <dd><span class="value num">{displayValue(externalTotal)}</span><small>篇</small></dd>
-        <dd class="note"><a href="#external-reviews">心得 {displayValue(externalReviews)}・提問 {displayValue(externalQuestions)}&nbsp;↓</a></dd>
-        <!-- All three sources from the head: indexed posts above, the site's own ratings and threads here. -->
-        <dd class="note links">
-          {#if stats}<a href="#ratings">站內評價 {displayValue(ratingCount)}&nbsp;↓</a>{/if}
-          {#if data.posts}<a href="#forum-title">站內討論 {displayValue(data.posts.total)}&nbsp;↓</a>{/if}
-        </dd>
+        <dd class="note"><a href="#external-reviews">看索引與來源 ↓</a></dd>
       {:else}
         <dt>同學評價</dt>
         {#if stats && ratingCount > 0}
@@ -249,14 +240,16 @@
         {:else}
           <dd><span class="value">—</span></dd>
         {/if}
-        <dd class="note links">
-          {#if stats}<a href="#ratings">{ratingCount > 0 ? '看評價' : '成為第一個評分'}&nbsp;↓</a>{:else}評價暫時無法取得{/if}
-          {#if data.posts}<a href="#forum-title">站內討論 {displayValue(data.posts.total)} 篇&nbsp;↓</a>{/if}
-          {#if externalTotal > 0}<a href="#external-reviews">外站 {displayValue(externalTotal)} 篇&nbsp;↓</a>{/if}
-        </dd>
+        {#if !stats}<dd class="note">評價暫時無法取得</dd>{/if}
       {/if}
     </div>
   </dl></div>
+
+  <nav class="section-links" aria-label="本頁段落">
+    <a href="#ratings">站內評價{#if stats} <span class="num">{displayValue(ratingCount)}</span>{/if} ↓</a>
+    <a href="#forum-title">站內討論{#if data.posts} <span class="num">{displayValue(data.posts.total)}</span>{/if} ↓</a>
+    <a href="#external-reviews">外站討論 ↓</a>
+  </nav>
 
   <section class="history" aria-labelledby="history">
     <div class="section-head">
@@ -277,31 +270,34 @@
   {/if}
 
   <!-- Site ratings and site threads side by side; indexed posts from other sites get the full width below. -->
-  <div class="community">
-    <CommunityRatings ratings={data.ratings} user={data.user} {form} courseCode={course.courseCode} />
+  <div class="community" class:combined={communityEmpty}>
+    <CommunityRatings ratings={data.ratings} user={data.user} {form} courseCode={course.courseCode}
+      firstDiscussionHref={communityEmpty ? discussionHref : undefined} />
 
-    <section class="forum" aria-labelledby="forum-title">
-      <div class="section-head row">
-        <div>
-          <h2 id="forum-title">站內討論{#if data.posts}（{displayValue(data.posts.total)}）{/if}</h2>
-          <p class="sub">UniCourse 論壇裡標記這門課的文章。</p>
+    {#if !communityEmpty}
+      <section class="forum" aria-labelledby="forum-title">
+        <div class="section-head row">
+          <div>
+            <h2 id="forum-title">站內討論{#if data.posts}（{displayValue(data.posts.total)}）{/if}</h2>
+            <p class="sub">UniCourse 論壇裡標記這門課的文章。</p>
+          </div>
+          <div class="actions">
+            <a class="button primary" href={discussionHref}>發表關於這門課的文章</a>
+            <a class="button" href={forumList}>在論壇查看</a>
+          </div>
         </div>
-        <div class="actions">
-          <a class="button primary" href={data.user ? composeHref : loginHref(composeHref)}>發表關於這門課的文章</a>
-          <a class="button" href={forumList}>在論壇查看</a>
-        </div>
-      </div>
-      {#if !data.posts}
-        <EmptyState title="站內討論暫時無法取得" description="課程資料不受影響，請稍後再試。" tone="error" />
-      {:else if data.posts.posts.length}
-        <div class="cm"><CommunityPostList posts={data.posts.posts} schoolNames={{ [course.school]: course.schoolName }} courseTitles={{ [courseKey(course.school, course.courseCode)]: course.title }} showCourse={false} dense label="這門課的站內討論" /></div>
-        {#if data.posts.total > data.posts.posts.length}
-          <p class="small"><a href={forumList}>查看全部 {displayValue(data.posts.total)} 篇 →</a></p>
+        {#if !data.posts}
+          <EmptyState title="站內討論暫時無法取得" description="課程資料不受影響，請稍後再試。" tone="error" />
+        {:else if data.posts.posts.length}
+          <div class="cm"><CommunityPostList posts={data.posts.posts} schoolNames={{ [course.school]: course.schoolName }} courseTitles={{ [courseKey(course.school, course.courseCode)]: course.title }} showCourse={false} dense label="這門課的站內討論" /></div>
+          {#if data.posts.total > data.posts.posts.length}
+            <p class="small"><a href={forumList}>查看全部 {displayValue(data.posts.total)} 篇 →</a></p>
+          {/if}
+        {:else}
+          <EmptyState title="還沒有人討論這門課" description="問問修過的同學作業量、給分或考古題。" />
         {/if}
-      {:else}
-        <EmptyState title="還沒有人討論這門課" description="問問修過的同學作業量、給分或考古題。" />
-      {/if}
-    </section>
+      </section>
+    {/if}
   </div>
 
   {#if !externalFirst}
@@ -377,12 +373,14 @@
   /* Everything else about the class on one wrapping line: term, code, teachers, credits, 必選修, language. */
   /* Each item carries its dot in the gap before it; the row clips anything left of its edge, so a wrapped
      line never starts with a stray「・」. */
-  .meta { display: flex; flex-wrap: wrap; gap: 0.125rem 1.5em; align-items: center; color: var(--ink-2); font-size: var(--t-base); overflow: clip; overflow-clip-margin: 4px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 0.125rem 1.5em; align-items: center; color: var(--ink-2); font-size: var(--t-md); overflow: clip; overflow-clip-margin: 4px; }
   .meta .item { position: relative; white-space: nowrap; }
   .meta .item.people { white-space: normal; }
   .meta .item::before { content: '·'; position: absolute; inset-inline-start: -1.5em; inline-size: 1.5em; color: var(--muted); text-align: center; }
-  .meta b { color: var(--ink); font-weight: 650; }
-  .meta .detail { margin-inline-start: 2px; color: var(--muted); font-size: var(--t-sm); text-decoration: none; }
+  .headline-facts { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; margin-block-start: var(--space-1) !important; color: var(--ink-2); font-size: var(--t-md); }
+  .headline-facts .item { padding: 1px var(--space-2); border-radius: var(--radius-pill); background: var(--chip); }
+  .headline-facts b { color: var(--ink); font-weight: 650; }
+  .headline-facts .detail { margin-inline-start: 2px; color: var(--muted); font-size: var(--t-sm); text-decoration: none; }
   .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: end; }
   .actions-note { flex-basis: 100%; color: var(--muted); font-size: var(--t-xs); text-align: end; }
   .button { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-base); font-weight: 650; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
@@ -399,21 +397,20 @@
   .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); margin: 0; }
   .tiles.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .tile { display: grid; align-content: start; gap: var(--space-1); min-inline-size: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
-  .tile dt { color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
+  .tile dt { color: var(--ink-2); font-size: var(--t-base); font-weight: 650; }
   .tile dd { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; margin: 0; min-inline-size: 0; }
   .tile .value { font-size: var(--t-3xl); font-weight: 600; line-height: var(--leading-tight); overflow-wrap: anywhere; }
   .tile small { color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
-  .tile .note { color: var(--muted); font-size: var(--t-sm); }
+  .tile .note { color: var(--ink-2); font-size: 0.8125rem; }
   .tile .note a { color: var(--ink-2); text-decoration: none; }
   .tile .value.small-value { font-size: var(--t-xl); }
   .tile .thin .value { color: var(--muted); font-size: var(--t-xl); }
   .tile.partial .value { color: var(--ink-2); }
   .tile .note a:hover { color: var(--brand-ink); text-decoration: underline; }
-  .tile .note.links { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); }
   .tile .sample { margin-inline-start: var(--space-1); color: var(--ink-2); font-weight: 600; white-space: nowrap; }
   .tile .sample.sparse { padding: 0 6px; border-radius: var(--radius-pill); background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 40%, transparent); }
   .nowrap { white-space: nowrap; }
-  .tile .past { margin-inline-end: 0.4em; padding: 0 5px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 650; white-space: nowrap; }
+  .tile .past { margin-inline-end: 0.4em; padding: 0 5px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: 0.8125rem; font-weight: 650; white-space: nowrap; }
   .lead-facts { padding-block: var(--space-2) var(--space-4); }
   .meter { display: block !important; block-size: 10px; margin-block: var(--space-1) 0 !important; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .meter span { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); }
@@ -427,14 +424,11 @@
   .section-head.row { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); align-items: end; justify-content: space-between; }
   .sub { color: var(--muted); font-size: var(--t-base); overflow-wrap: anywhere; }
 
-  /* Two equal-height columns, so the ratings card and the discussion column end on one line. */
-  .community { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); align-items: stretch; }
-  .community > :global(.ratings) { block-size: 100%; }
-  /* The thread list (or its empty state) takes the column's remaining height, so both cards end level. */
-  .community > .forum { grid-template-rows: auto 1fr; grid-auto-rows: auto; align-content: stretch; }
-  .community > .forum > .cm { display: grid; }
-  .community > .forum > .cm > :global(.post-list) { block-size: 100%; }
-
+  .section-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); margin-block: calc(-1 * var(--space-3)); font-size: var(--t-base); }
+  .section-links a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
+  .course-page :is(#history, #forum-title), .course-page :global(:is(#ratings, #external-reviews)) { scroll-margin-block-start: 7.5rem; }
+  .community { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); align-items: start; }
+  .community.combined { grid-template-columns: minmax(0, 1fr); }
 
   .about { display: grid; gap: var(--space-2); }
   .about details > p { max-inline-size: 52rem; }

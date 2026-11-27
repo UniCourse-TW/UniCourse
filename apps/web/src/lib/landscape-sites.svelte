@@ -16,11 +16,8 @@
   }
 
   let { label, sites, showOperator = false, collapseAfter, header = false }: Props = $props();
-  let head = $derived(collapseAfter && sites.length > collapseAfter + 2 ? sites.slice(0, collapseAfter) : sites);
+  let head = $derived(collapseAfter && sites.length > collapseAfter ? sites.slice(0, collapseAfter) : sites);
   let tail = $derived(sites.slice(head.length));
-
-  /** Descriptions longer than about one line open with the row instead of wrapping it. */
-  const LONG = 28;
 
   /** A click anywhere on a row with notes (not on a link or the disclosure itself) opens them. */
   function toggleRow(event: MouseEvent) {
@@ -41,7 +38,7 @@
 
 {#snippet row(site: Site)}
   {@const official = isOfficial(site)}
-  {@const detail = Boolean(site.notes || site.repo || (site.features && site.features.length > LONG))}
+  {@const detail = Boolean(site.notes || site.repo || site.features)}
   <!-- The description shows one line; the rest and the survey notes open from anywhere on the row (the
        cell's disclosure is the keyboard and no-JS control). -->
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (the summary is the keyboard control) -->
@@ -59,7 +56,7 @@
     <span class="features">
       {#if detail}
         <details class="more">
-          <summary><span class="text">{site.features ?? '—'}</span><span class="chev" aria-hidden="true"></span><span class="sr-only">（說明與原始碼）</span></summary>
+          <summary><span class="text">{site.features ?? '說明與原始碼'}</span><span class="chev" aria-hidden="true"></span><span class="sr-only">（說明與原始碼）</span></summary>
           {#if site.notes || site.repo || (site.operatorName && official && !showOperator)}<dl>
             {#if site.notes}<dt>說明</dt><dd>{site.notes}</dd>{/if}
             {#if site.operatorName && official && !showOperator}<dt>營運者</dt><dd>{operatorLabels[site.operator]}（{site.operatorName}）</dd>{/if}
@@ -144,7 +141,8 @@
   .third .kind { color: var(--series-2); }
   /* Name and host share a line when they fit, so most rows stay one line tall. */
   .name { display: flex; flex-wrap: wrap; column-gap: var(--space-2); align-items: baseline; min-inline-size: 0; }
-  .name a { color: var(--brand-ink); font-weight: 600; text-underline-offset: 0.15em; overflow-wrap: anywhere; }
+  .name a { color: var(--brand-ink); font-weight: 600; text-underline-offset: 0.15em; text-decoration: none; overflow-wrap: anywhere; }
+  .name a:hover { text-decoration: underline; }
   .name a:focus-visible, summary:focus-visible, dd a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: 2px; }
   .rest > summary:focus-visible { outline-offset: calc(-1 * var(--focus-offset)); }
   .ext { color: var(--muted); font-weight: 400; }
@@ -201,6 +199,16 @@
     .cats { grid-area: cats; }
     .login { grid-area: login; text-align: end; }
     .features { grid-area: features; }
+  }
+  @media (max-width: 40rem) {
+    li { grid-template-columns: max-content minmax(0, 1fr) auto; grid-template-areas: 'kind name status' 'login cats features'; align-items: baseline; }
+    .host { display: none; }
+    .login { text-align: start; }
+    .features { inline-size: 100%; }
+    .features > .text { display: none; }
+    .more:not([open]) .text { display: none; }
+    .more > summary { min-block-size: 2rem; align-items: center; }
+    li:has(.more[open]) { grid-template-areas: 'kind name status' 'login cats cats' 'features features features'; }
   }
   @media (prefers-reduced-motion: no-preference) {
     li { transition: background-color 120ms; }

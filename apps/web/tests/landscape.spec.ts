@@ -10,6 +10,14 @@ test('the old static address redirects and the page renders from the bundled dat
   // Desktop shows the sortable table; phones get one short row per site instead.
   const thirdParty = page.getByRole('table', { name: /第三方查課網站/ }).or(page.getByRole('list', { name: '第三方查課網站' }));
   await expect(thirdParty.filter({ visible: true })).toHaveCount(1);
+  await page.locator('a[href="#third-party"]').first().click();
+  await expect(page).toHaveURL(/#third-party$/);
+  const thirdHeading = page.locator('#third-party');
+  await expect(thirdHeading).toBeInViewport();
+  await expect.poll(() => thirdHeading.evaluate((heading) => {
+    const toolbar = document.getElementById('filters')!;
+    return heading.getBoundingClientRect().top - toolbar.getBoundingClientRect().bottom;
+  })).toBeGreaterThanOrEqual(0);
   // Each school is one summary row; a fragment link opens that school's sites and its UniCourse link.
   await expect(page.getByRole('heading', { name: /^各校（\d+ 所）$/ })).toBeVisible();
   const ntu = page.locator('#ntu');
