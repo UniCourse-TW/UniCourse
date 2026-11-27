@@ -34,3 +34,33 @@ pointing at `http://localhost:80` (same as the other `*.observe.tw` sites); this
 and is done by the operator, not by the deploy scripts.
 
 Rollback: `docker compose ... down` keeps `/srv/unicourse/pg`; re-run `up -d` with the previous `UNICOURSE_TAG`.
+
+## Batch job health and completion
+
+`ingest` and `ingest-tvc` share the API image but run only `unicourse-ingest`,
+not the HTTP server. Their service-level healthchecks are disabled; the API
+service still inherits the image's `/api/schools` HTTP probe unchanged.
+Disabled healthchecking is not evidence that an import finished.
+
+For each job, retain its exact invocation and foreground `docker compose run`
+exit status (or the exact container's terminal state/exit before removal).
+A nonzero exit is a failed job, a running job is not complete, and an absent
+`--rm` container with no retained terminal result is **unknown**, not success.
+This change does not add durable job-result storage or repair earlier missing
+completion evidence. The existing refresh units separate crawl and ingest with
+`;`, so the shell attempts ingest even if crawl exits nonzero. The shell reports
+the ingest exit status. Check the crawl result separately.
+
+Run the deployment regression suite with Python 3, Docker Compose, and curl:
+
+```sh
+just check-deploy
+```
+
+The test renders real effective Compose with synthetic substitutions and models
+its override of the Dockerfile healthcheck. It executes the original probe
+against a synthetic loopback HTTP fixture (only its URL is remapped), and runs
+the refresh shell commands with a task-local fake Docker executable to check
+successful, failed, missing and still-running job outcomes. The suite also runs
+as part of `just check`, without a Docker daemon, database, or production
+environment file.

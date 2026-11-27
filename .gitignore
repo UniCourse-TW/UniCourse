@@ -7,4 +7,5 @@ node_modules/
 .env
 /snapshots/
 /crawlers/*/.cache/
+/deploy/tests/__pycache__/
 /docs/ui-climb/shots/

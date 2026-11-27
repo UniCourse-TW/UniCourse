@@ -15,7 +15,7 @@ dev: db seed
 codegen:
     bash scripts/codegen.sh
 
-check:
+check: check-deploy
     cargo fmt --all --check
     cargo clippy --locked --workspace --all-targets -- -D warnings
     cargo test --locked --workspace
@@ -32,6 +32,9 @@ test-e2e: seed
 check-crawlers:
     corepack pnpm --filter './crawlers/*' check
     corepack pnpm --filter './crawlers/*' test
+
+check-deploy:
+    python3 -I -m unittest discover -s deploy/tests
 
 crawl *ARGS:
     bash scripts/crawl-all.sh {{ARGS}}
