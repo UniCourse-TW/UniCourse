@@ -87,7 +87,7 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(historySection.getByRole('link', { name: '115-1', exact: true })).toBeVisible();
   await expect(page.getByRole('list', { name: '校內累計修課人次排行' })).toBeVisible();
   await expect(historySection.getByText('每學期開課班次 · 114-2 至 115-1')).toBeVisible();
-  await expect(page.getByRole('region', { name: /開課單位/ }).getByRole('searchbox', { name: '搜尋系所' })).toBeVisible();
+  await expect(page.getByRole('region', { name: /開課單位/ }).getByRole('searchbox', { name: '搜尋開課單位' })).toBeVisible();
 
   await page.getByRole('link', { name: '示範數學系' }).click();
   await expect(page).toHaveURL(`/schools/nthu/departments/${encodeURIComponent('示範數學系')}`);
@@ -161,7 +161,7 @@ test('derives directory coverage from crawler status and imported offerings', as
 
   const shortcuts = page.getByRole('list', { name: '收錄狀態統計' });
   async function openShortcuts() {
-    if (!(await shortcuts.isVisible())) await page.getByText('體系、收錄與來源捷徑').click();
+    if (!(await shortcuts.isVisible())) await page.getByText('篩選與排序').click();
     await expect(shortcuts).toBeVisible();
   }
   await openShortcuts();
@@ -198,20 +198,23 @@ test('derives directory coverage from crawler status and imported offerings', as
   await expect(nthu.getByRole('img', { name: /國立清華大學.*114 學年：1 學期/ })).toBeVisible();
 
   if (institutions.length > 20) {
+    await expect(page.getByRole('navigation', { name: '學校名錄上方分頁' }).getByRole('link', { name: '下一頁' })).toBeVisible();
     await page.getByRole('navigation', { name: '學校名錄分頁' }).getByRole('link', { name: '下一頁' }).click();
     await expect(page).toHaveURL(/\?page=2/);
     await expect(rows).toHaveCount(Math.min(20, institutions.length - 20));
     await page.waitForLoadState('networkidle');
+    await openShortcuts();
     const sort = page.getByRole('combobox', { name: '名錄排序' });
     await sort.selectOption('offerings:desc');
     await expect(page).toHaveURL(/directory_order=offerings%3Adesc/);
+    await openShortcuts();
     await expect(sort).toHaveValue('offerings:desc');
   }
 
   const status = page.getByRole('combobox', { name: '收錄狀態' });
   // A cold dev server can re-render the page after the first click and close the disclosure again.
   await expect(async () => {
-    if (!(await status.isVisible())) await page.getByText('更多篩選', { exact: true }).click();
+    if (!(await status.isVisible())) await page.getByText('篩選與排序', { exact: true }).click();
     await expect(status).toBeVisible({ timeout: 1000 });
   }).toPass({ timeout: 20_000 });
   await status.selectOption('live');

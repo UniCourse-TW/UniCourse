@@ -4,7 +4,7 @@
   import { importedAt, isHttpUrl, shortImportedAt } from '$lib/format';
   import { coveragePeriod, directoryStatus, directoryStatusLabels, kindLabel } from '$lib/institutions';
   import { departmentHref, overviewSearchHref, rankingHref, schoolHref } from '$lib/overview-paths';
-  import OverviewRankingTrend, { rankingTrendCaption } from '$lib/overview-ranking-trend.svelte';
+  import SchoolsRankingTrend from '$lib/schools-ranking-trend.svelte';
   import OverviewRankingValues from '$lib/overview-ranking-values.svelte';
   import SchoolsTermHistory from '$lib/schools-term-history.svelte';
   import Badge from '$lib/ui/Badge.svelte';
@@ -34,16 +34,30 @@
   let searchHref = $derived(`/?${new URLSearchParams({ school: school.slug, term: 'all' })}`);
   let coverageTerms = $derived(institution?.terms ?? school.terms);
   let period = $derived(coveragePeriod(coverageTerms));
-  let terms = $derived([...new Set([...coverageTerms, ...(data.trends ?? []).map(({ term }) => term)])].sort());
+  let terms = $derived.by(() => {
+    const observed = new Set([...coverageTerms, ...(data.trends ?? []).map(({ term }) => term)]);
+    const ordered = [...observed].sort();
+    if (!ordered.length) return ordered;
+    const first = ordered[0];
+    const last = ordered[ordered.length - 1];
+    for (let year = Number(first.split('-')[0]); year <= Number(last.split('-')[0]); year += 1) {
+      for (const semester of [1, 2]) {
+        const term = `${String(year).padStart(3, '0')}-${semester}`;
+        if (term > first && term < last) observed.add(term);
+      }
+    }
+    return [...observed].sort();
+  });
   let trendsByTerm = $derived(new Map(data.trends?.map((row) => [row.term, row])));
   let partial = $derived(partialTerms((data.trends ?? []).map(({ term, offerings }) => [term, offerings])));
   let chartTerm = $derived(terms.at(-1));
+  let termOptions = $derived((data.trends ?? []).slice().sort((left, right) => right.term.localeCompare(left.term)).map(({ term }) => ({ value: term, label: term })));
   let enrollmentTerms = $derived((data.trends ?? []).filter(({ enrolled }) => enrolled != null));
   let ranked = $derived((data.rankings ?? []).filter((row) => row.enrolledTotal != null));
   let capacities = $derived((data.rankings ?? []).filter((row) => row.enrolledTotal == null && row.capacityTotal != null));
   let hasDemoRankings = $derived(data.rankings?.some(({ isDemo }) => isDemo) ?? false);
   let trendTerms = $derived(terms.slice(-6));
-  let trendCaption = $derived(rankingTrendCaption(trendTerms, ranked));
+  const trendCaption = '每格一學期，從 0 起算，以各課近期最高人數為滿格。— 表示近期修課人數未公布，虛線與＊表示部分班次。';
   let busiest = $derived((data.trends ?? []).reduce<(typeof enrollmentTerms)[number] | undefined>((peak, row) => !peak || row.offerings > peak.offerings ? row : peak, undefined));
   let clearUnits = $derived(changeQuery(new URL('#departments', page.url), (params) => { params.delete('unit'); params.delete('page'); }));
   let maxEnrolled = $derived(Math.max(1, ...ranked.map((row) => row.enrolledTotal ?? 0)));
@@ -68,7 +82,7 @@
 
 {#snippet unitFilter()}
   <FilterBar action={`${schoolHref(school.slug)}#departments`} label="搜尋開課單位" clearHref={units.query ? clearUnits : undefined} hidden={data.includeNonAcademic ? { include_non_academic: 'true' } : {}}>
-    <label class="browse-field">搜尋系所{#key units.query}<input name="unit" type="search" defaultValue={units.query} maxlength="100" placeholder="輸入開課單位名稱" />{/key}</label>
+    <label class="browse-field">搜尋開課單位{#key units.query}<input name="unit" type="search" defaultValue={units.query} maxlength="100" placeholder="輸入開課單位名稱" />{/key}</label>
     <FilterSelect name="unit_sort" label="排序" allLabel={null} value={units.sort} options={[{ value: 'offerings', label: '班次最多' }, { value: 'courses', label: '課程最多' }, { value: 'name', label: '名稱' }]} />
   </FilterBar>
 {/snippet}
@@ -92,7 +106,7 @@
     </div>
   </header>
 
-  <nav class="browse-inline jump-links" aria-label="跳至本頁章節"><a href="#term-history">歷年收錄</a><a href="#departments">開課單位</a><a href="#ranking">校內排行</a></nav>
+  <nav class="browse-inline jump-links" aria-label="跳至本頁章節"><a href="#departments">查開課單位 ↓</a><a href="#term-history">歷年收錄</a><a href="#ranking">校內排行</a></nav>
 
   <div class="browse-compact-stats"><StatRow label="收錄概況">
     <StatTile label="開課班次" value={institution?.offerings ?? school.offerings} unit="班" />
@@ -114,7 +128,7 @@
       {@const previous = terms.length > 1 ? trendsByTerm.get(terms[terms.length - 2]) : undefined}
       {#key current?.term}
       <SchoolsTermHistory label={`每學期開課班次${period ? ` · ${period}` : ''}`} points={terms.map((term) => ({ term, value: trendsByTerm.get(term)?.offerings ?? null, partial: partial.has(term) }))}
-        termHref={(term) => overviewSearchHref({ school: school.slug, term })} kind="line" yearsOnly highlight={chartTerm}>
+        termHref={(term) => overviewSearchHref({ school: school.slug, term })} kind={partial.size ? 'column' : 'line'} yearsOnly zeroBaseline highlight={chartTerm}>
         {#snippet header()}
           <div class="chart-header">
             <div>
@@ -123,14 +137,6 @@
               {/if}
               {#if busiest}<p class="browse-note">最多班次 <strong>{busiest.term} · {displayValue(busiest.offerings)} 班</strong></p>{/if}
             </div>
-            <form action="/" method="GET" aria-label="依學期查本校課程" onchange={(event) => {
-              const term = new FormData(event.currentTarget).get('term');
-              if (typeof term === 'string') chartTerm = term;
-            }}>
-              <input type="hidden" name="school" value={school.slug} />
-              <FilterSelect name="term" label="學期" allLabel={null} value={chartTerm} options={[...(data.trends ?? [])].sort((left, right) => right.term.localeCompare(left.term)).map(({ term }) => ({ value: term, label: term }))} />
-              <button class="browse-button">查該期</button>
-            </form>
           </div>
         {/snippet}
       </SchoolsTermHistory>
@@ -146,6 +152,16 @@
   <div class="school-details">
     <section class="browse-stack unit-section" aria-labelledby="departments">
       <SectionHeader title="開課單位（{displayValue(units.total)}）" id="departments" description="班次條以最多班次的單位為滿格。課程依課號去重。" />
+      {#if termOptions.length}
+        <form class="term-lookup" action="/" method="GET" aria-label="依學期查本校課程" onchange={(event) => {
+          const term = new FormData(event.currentTarget).get('term');
+          if (typeof term === 'string') chartTerm = term;
+        }}>
+          <input type="hidden" name="school" value={school.slug} />
+          <FilterSelect name="term" label="學期" allLabel={null} value={chartTerm} options={termOptions} />
+          <button class="browse-button">查該期課程</button>
+        </form>
+      {/if}
       {#if units.total}<div class="unit-filter">{@render unitFilter()}</div>{/if}
       {#if units.rows.length}
         <div class="term-tools"><p class="browse-note">共 {displayValue(units.matched)} 個單位 · 顯示 {displayValue(units.start)}–{displayValue(units.start + units.rows.length - 1)} 個</p>
@@ -177,7 +193,8 @@
         <ErrorState title="暫時無法取得校內排行" retryHref={page.url.pathname + page.url.search} />
       {:else}
         {#if ranked.length}
-          <div class="desktop-rank"><DataTable caption={`校內累計修課人次排行｜${trendCaption}`} columns={rankColumns} rows={ranked} rowKey={(row) => row.courseCode} rowHref={courseHref} stickyColumn="course" minWidth="20rem" maxHeight="none" scrollHint={false}>
+          <p class="browse-note rank-caption">{trendCaption}</p>
+          <div class="desktop-rank"><DataTable caption="校內累計修課人次排行" columns={rankColumns} rows={ranked} rowKey={(row) => row.courseCode} rowHref={courseHref} stickyColumn="course" minWidth="20rem" maxHeight="none" scrollHint={false}>
             {#snippet cell(row, column)}
               {#if column.id === 'course'}
                 <span class="browse-course-cell">
@@ -187,17 +204,20 @@
               {:else if column.id === 'enrolled'}
                 <BarCell value={row.enrolledTotal ?? null} max={maxEnrolled} />
               {:else if column.id === 'trend'}
-                <OverviewRankingTrend course={row} terms={trendTerms} />
+                <SchoolsRankingTrend course={row} terms={trendTerms} />
               {:else}{displayValue(column.value?.(row))}{/if}
             {/snippet}
           </DataTable></div>
           <div class="mobile-rank">
-            <p class="browse-note rank-caption">{trendCaption}</p>
             <ol aria-label="校內累計修課人次排行" role="list">
               {#each ranked as row, index (row.courseCode)}
                 <li>
                   <a href={courseHref(row)}>{index + 1}. {row.title}</a>
-                  <div class="rank-measures"><div><p class="browse-note"><span class="browse-code">{row.courseCode}</span> · {row.terms} 學期 {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}</p><BarCell value={row.enrolledTotal ?? null} max={maxEnrolled} unit="人次" /></div><OverviewRankingTrend course={row} terms={trendTerms} /></div>
+                  <div class="rank-measures">
+                    <p class="browse-note"><span class="browse-code">{row.courseCode}</span> · {row.terms} 期 {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}</p>
+                    <SchoolsRankingTrend course={row} terms={trendTerms} />
+                    <div class="rank-total"><BarCell value={row.enrolledTotal ?? null} max={maxEnrolled} unit="人次" /></div>
+                  </div>
                 </li>
               {/each}
             </ol>
@@ -219,13 +239,16 @@
 </div>
 
 <style>
+  .school-page h1 { font-size: var(--t-2xl); font-weight: 650; }
   .school-page { gap: var(--space-3); }
   .school-page .browse-crumbs + .browse-head { margin-block-start: calc(-1 * var(--space-2)); }
-  .unit-section { --bar-cell-track-size: clamp(2.5rem, 11vw, 8rem); }
+  .unit-section { --bar-cell-track-size: 8rem; }
   .unit-total :global(.bar-cell) { display: grid; grid-template-columns: minmax(0, 1fr) 6ch; }
-  .term-tools, .chart-header, .chart-header form { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+  .term-tools, .chart-header, .term-lookup { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+  .term-lookup { align-items: end; }
+  .unit-section :global(td), .unit-section :global(th) { padding-inline: var(--unit-table-gutter, .625rem); }
   .term-tools { justify-content: space-between; }
-  .chart-header { margin-block-end: var(--space-3); }
+  .chart-header { margin-block-end: var(--space-2); }
   .school-page .browse-compact-stats :global(.tile > p) { font-size: .8125rem; }
   .jump-links { gap: var(--space-3); border-block-end: 1px solid var(--line); }
   .jump-links a { min-block-size: var(--target-min); align-content: center; text-decoration: none; font-weight: 650; }
@@ -237,13 +260,16 @@
   .school-details { display: grid; gap: var(--space-4); align-items: start; }
   .capacity-details summary { width: fit-content; min-height: var(--target-min); align-content: center; color: var(--brand-ink); cursor: pointer; }
   @media (min-width: 67rem) {
-    .school-details { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+    .school-details { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .desktop-rank :global(table) { table-layout: fixed; }
+  }
+  @media (min-width: 67rem) and (pointer: fine) {
+    .unit-section :global(.row-link) { min-block-size: 2rem; }
   }
   .browse-button { justify-self: start; }
   @media (max-width: 40rem) {
     .desktop-rank { display: none; }
-    .unit-section { --unit-offerings-width: 6rem; --unit-share-width: 4.25rem; --unit-count-width: 3.5rem; --table-pad-inline: .35rem; }
+    .unit-section { --unit-offerings-width: 7rem; --unit-share-width: 4rem; --unit-count-width: 3rem; --unit-table-gutter: .35rem; }
     .unit-section :global(thead th) { white-space: normal; }
     .unit-total :global(.bar-cell) { gap: var(--space-1); grid-template-columns: minmax(0, 1fr) 5ch; }
     .unit-filter :global(form) { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
@@ -257,8 +283,9 @@
     .mobile-rank li + li { border-block-start: 1px solid var(--line); }
     .mobile-rank li a { display: flex; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
     .mobile-rank .browse-code { display: inline; }
-    .rank-measures { --ranking-trend-width: clamp(36px, 14vw, 64px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(7.25rem, 55%); align-items: center; gap: var(--space-2); }
-    .rank-measures :global(.bar-cell) { width: min(100%, 9rem); --bar-cell-track-size: clamp(1.5rem, 8vw, 2.75rem); white-space: nowrap; font-size: var(--t-sm); }
-    p.rank-caption { margin-block-end: var(--space-2); }
+    .rank-measures { display: grid; grid-template-columns: minmax(0, 1fr) minmax(6rem, 40%); align-items: center; gap: var(--space-1) var(--space-3); }
+    .rank-total { grid-column: 1 / -1; }
+    .rank-total :global(.bar-cell) { display: grid; grid-template-columns: minmax(0, 1fr) max-content; font-size: var(--t-sm); }
+    .rank-total :global(.track) { block-size: 5px; }
   }
 </style>

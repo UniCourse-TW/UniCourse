@@ -22,6 +22,7 @@ test('the old static address redirects and the page renders from the bundled dat
   await expect(page.getByRole('heading', { name: /^各校（\d+ 所）$/ })).toBeVisible();
   const ntu = page.locator('#ntu');
   await expect(ntu.getByRole('heading', { level: 3 })).toContainText('國立臺灣大學');
+  await expect(ntu.locator(':scope > summary')).toContainText(/運作 \d+\s*停止 \d+\s*不明 \d+/);
   await expect(ntu.getByRole('list', { name: '國立臺灣大學的課程網站' })).toBeHidden();
   await page.goto('/landscape#ntu');
   await expect(ntu.getByRole('list', { name: '國立臺灣大學的課程網站' })).toBeVisible();

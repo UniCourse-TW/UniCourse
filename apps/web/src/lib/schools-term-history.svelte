@@ -3,10 +3,10 @@
   import TrendChart from '$lib/ui/TrendChart.svelte';
   import type { TrendPoint } from '$lib/ui/types';
 
-  let { label, points, termHref, unit = '班', compact = false, termPairs = false, highlight, header, kind = 'column', yearsOnly = false }: { label: string; points: TrendPoint[]; termHref?: (term: string) => string; unit?: string; compact?: boolean; termPairs?: boolean; highlight?: string; header?: Snippet; kind?: 'column' | 'line'; yearsOnly?: boolean } = $props();
+  let { label, points, termHref, unit = '班', compact = false, termPairs = false, highlight, header, kind = 'column', yearsOnly = false, zeroBaseline = false }: { label: string; points: TrendPoint[]; termHref?: (term: string) => string; unit?: string; compact?: boolean; termPairs?: boolean; highlight?: string; header?: Snippet; kind?: 'column' | 'line'; yearsOnly?: boolean; zeroBaseline?: boolean } = $props();
 </script>
 
-<div class="term-chart" class:compact><TrendChart {label} {points} {unit} {termHref} termPairs={termPairs && !yearsOnly} {yearsOnly} {highlight} {header} {kind} localScale={kind === 'line'} yearTicks linkedBars={Boolean(termHref) && !compact} condensed={compact} /></div>
+<div class="term-chart" class:compact><TrendChart {label} {points} {unit} {termHref} termPairs={termPairs && !yearsOnly} {yearsOnly} {highlight} {header} {kind} localScale={kind === 'line' && !zeroBaseline} yearTicks linkedBars={Boolean(termHref) && !compact} condensed={compact} /></div>
 
 <style>
   .term-chart :global(figure) { padding: var(--space-2) var(--space-3); }
