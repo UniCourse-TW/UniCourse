@@ -7,7 +7,15 @@
     { id: 'data', title: '課程資料' },
     { id: 'sources', title: '資料來源與授權' },
     { id: 'account', title: '帳號與社群' },
-    { id: 'reviews', title: '外部評論索引' },
+    {
+      id: 'reviews',
+      title: '外部評論索引',
+      children: [
+        { id: 'reviews-kept', title: '保存內容' },
+        { id: 'reviews-boards', title: '收錄看板' },
+        { id: 'reviews-removal', title: '更新與移除' }
+      ]
+    },
     { id: 'removal', title: '聯絡與移除' },
     { id: 'changes', title: '條款變更' }
   ];
@@ -64,17 +72,15 @@
     <div class="h2-row"><h2 id="reviews">外部評論索引</h2><span class="status live">已上線</span>{@render toToc()}</div>
     <!-- One paragraph answers the two questions readers come with; the lists below hold the detail. -->
     <p class="lead"><strong>收什麼：</strong>PTT 四個課程板 2016 年起的公開文章。本站只做搜尋索引、不轉載全文，課程頁顯示標題、日期與開頭摘要，點標題回到原網站。<strong>怎麼移除：</strong>到<a href="#removal">聯絡與移除</a>私密告訴維護者即可，不必公開提出。</p>
-    <h3>會保存、不會保存什麼</h3>
+    <h3 id="reviews-kept">會保存、不會保存什麼</h3>
     <ul>
       <li><strong>會保存：</strong>連結、標題、發文日期、作者帳號（PTT ID，不含暱稱）、看板、推文數、內文開頭不超過 120 字的摘要，以及從標題比對出的學期、課程與教師。</li>
       <li><strong>不會保存：</strong>全文、推文內容與圖片。索引只用於搜尋與連結，不用於訓練模型，也不提供給第三方。</li>
       <li>顯示摘要時會去掉評價範本的欄位提示（例如「哪一學年度修課」），只留作者寫的內容；剩下的太少時只顯示標題。比對以標題中的課名與教師名為準，可能有錯配或漏配；課程頁會把本班教師的文章排在前面並標示出來。</li>
     </ul>
-    <h3>目前收錄的看板</h3>
+    <h3 id="reviews-boards">目前收錄的看板</h3>
     <p>只收錄 PTT（批踢踢實業坊）上專門討論課程的四個看板，從 2016 年起的文章。</p>
-    <!-- Phones start with the list folded (markup closed); desktop CSS keeps it open. -->
-    <details class="phone-fold">
-      <summary>看板清單<span class="fold-count">：4 個看板、對應學校與備註</span></summary>
+    <!-- Four rows: shown in full on every device (phones stack the columns). -->
       <table role="table" class="boards">
         <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">看板</th><th role="columnheader" scope="col">對應學校</th><th role="columnheader" scope="col">備註</th></tr></thead>
         <tbody role="rowgroup">
@@ -84,17 +90,17 @@
           <tr role="row"><td role="cell" data-label="看板">NCHU-Courses</td><td role="cell" data-label="對應學校">國立中興大學</td><td role="cell" data-label="備註">文章較少</td></tr>
         </tbody>
       </table>
-    </details>
     <h3>為什麼可以收錄、哪些網站只給連結</h3>
+    <!-- Phones fold the technical part behind a plain title; the robots terms stay inside. -->
     <details class="phone-fold">
-      <summary>收錄依據<span class="fold-count">：robots 檔的 Content-Signal，以及只給連結的網站</span></summary>
+      <summary><span class="fold-title"><span class="fold-label">哪些網站可以收錄</span><span class="fold-count">：PTT 可以；其他網站只給連結</span></span></summary>
       <ul>
         <li>只收錄站方 robots 檔以 <code>Content-Signal: search=yes</code> 明確允許建立搜尋索引的網站；PTT 屬於這一類，同時標明 <code>ai-train=no</code>。</li>
         <li>歐趴糖、Dcard、想鑑你 NTU Rating 等沒有明確允許的網站，課程頁只提供用課名與教師組成的站外搜尋連結；本站不抓取、不儲存這些網站的任何內容。</li>
         <li>各站的處理方式也列在<a href="/landscape#third-party">課程網站總覽的第三方查課網站</a>。</li>
       </ul>
     </details>
-    <h3>更新與移除</h3>
+    <h3 id="reviews-removal">更新與移除</h3>
     <p class="update-note">索引由維護者定期重新抓取並匯入，不是每晚自動更新，新文章會晚一段時間才出現。原文在 PTT 刪除後，本站不會自動得知；<a class="private" href={PRIVATE_REPORT_URL} rel="noopener external">私密聯絡維護者<span aria-hidden="true"> ↗</span></a>或用下方<a href="#removal">聯絡與移除</a>的任一管道告訴我們，該筆索引會被移除。</p>
   </section>
 
@@ -107,15 +113,16 @@
         <h3>可公開的資料錯誤</h3>
         <p>更正課程資料、回報錯配的外部文章。請不要附上學號、聯絡方式等個人資料。</p>
         <p class="route-row"><a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 建立 issue <span aria-hidden="true">↗</span></a><span class="route-tag">結果公開</span></p>
+        <p class="route-meta"><span>需要免費的 GitHub 帳號</span><span>請附頁面連結</span><span>通常七天內回覆在同一則 issue</span></p>
       </div>
       <div>
         <p class="route-kind">私密聯絡</p>
         <h3>含個資或不想公開的請求</h3>
-        <p>移除索引中與你有關的文章、帳號問題，或任何不想公開提出的請求；文章作者、被提及的教師或當事人都可以提出。用 GitHub 的私密回報表單送出。</p>
+        <p>移除索引中與你有關的文章、帳號問題，或任何不想公開提出的請求；文章作者、被提及的教師或當事人都可以提出。用 GitHub 的私密回報表單送出，目前沒有不經 GitHub 的私密管道。</p>
         <p class="route-row"><a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密回報給維護者 <span aria-hidden="true">↗</span></a><span class="route-tag private">僅維護者可見</span></p>
+        <p class="route-meta"><span>需要免費的 GitHub 帳號</span><span>請附頁面連結</span><span>通常七天內回覆在同一則回報</span></p>
       </div>
     </div>
-    <p>請附上相關頁面的連結。請求通常在七天內處理，結果會回覆在同一則 issue 或私密回報中。</p>
     <p>移除索引不影響原網站上的文章；要刪除原文請聯絡該網站。</p>
   </section>
 

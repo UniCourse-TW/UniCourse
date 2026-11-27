@@ -92,14 +92,15 @@
         <h3>可公開的資料錯誤</h3>
         <p>一般的資料處理問題、錯配的外部文章。請不要附上學號、聯絡方式等個人資料。</p>
         <p class="route-row"><a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 建立 issue <span aria-hidden="true">↗</span></a><span class="route-tag">結果公開</span></p>
+        <p class="route-meta"><span>需要免費的 GitHub 帳號</span><span>請附頁面連結</span><span>通常七天內回覆在同一則 issue</span></p>
       </div>
       <div>
         <p class="route-kind">私密聯絡</p>
         <h3>含個資或不想公開的請求</h3>
-        <p>刪除帳號、移除與你有關的索引，或任何不想公開提出的請求；文章作者、被提及的教師或當事人都可以提出。用 GitHub 的私密回報表單送出。</p>
+        <p>刪除帳號、移除與你有關的索引，或任何不想公開提出的請求；文章作者、被提及的教師或當事人都可以提出。用 GitHub 的私密回報表單送出，目前沒有不經 GitHub 的私密管道。</p>
         <p class="route-row"><a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密回報給維護者 <span aria-hidden="true">↗</span></a><span class="route-tag private">僅維護者可見</span></p>
+        <p class="route-meta"><span>需要免費的 GitHub 帳號</span><span>請附頁面連結</span><span>通常七天內回覆在同一則回報</span></p>
       </div>
     </div>
-    <p>請附上相關頁面的連結。請求通常在七天內處理，結果會回覆在同一則 issue 或私密回報中。</p>
   </section>
 </LegalDoc>

@@ -86,15 +86,32 @@
 .cm-btn.danger { color: var(--on-brand) !important; background: var(--down); border-color: var(--down); }
 .cm-btn.block { inline-size: 100%; }
 .cm-btn[aria-busy='true'] { opacity: 0.6; cursor: progress; filter: none; }
-/* Disabled keeps the brand outline (the main action stays findable) but no opacity: the label is muted
-   ink on the raised panel, which clears WCAG AA (5.9:1 light, 7.2:1 dark) in both themes. */
+/* Busy keeps the label at full contrast (5.0:1 light, 5.5:1 dark): only the fill softens, and a 16 px
+   ring turns beside the words (static under prefers-reduced-motion). */
+.cm-btn[aria-busy='true'] { background: color-mix(in srgb, var(--brand) 78%, var(--panel)); border-color: transparent; cursor: progress; filter: none; }
+.cm-btn[aria-busy='true']::before {
+  content: '';
+  flex: none;
+  inline-size: 1rem;
+  block-size: 1rem;
+  border: 2px solid color-mix(in srgb, currentColor 35%, transparent);
+  border-block-start-color: currentColor;
+  border-radius: 50%;
+  animation: cm-spin 0.8s linear infinite;
+}
+@keyframes cm-spin { to { rotate: 360deg; } }
+/* Disabled is grey, not an outline: nothing to confuse with the secondary kind. The muted label on the chip
+   grey clears WCAG AA (5.7:1 light, 5.9:1 dark). */
 .cm-btn:disabled:not([aria-busy='true']) {
   color: var(--muted) !important;
-  background: var(--panel-raised);
-  border-color: color-mix(in srgb, var(--brand) 55%, var(--line));
+  background: var(--chip);
+  border-color: var(--line);
   cursor: not-allowed;
   filter: none;
 }
+/* Signing out is the quiet danger kind (red label, red-tinted outline), the same on every page. */
+.cm-btn.leave { color: var(--down) !important; background: var(--panel-raised); border-color: color-mix(in srgb, var(--down) 60%, var(--line)); }
+.cm-btn.leave:hover { background: color-mix(in srgb, var(--down) var(--status-tint), var(--panel-raised)); filter: none; }
 
 /* Form fields: label row (label + hint/counter on the right) above a 44 px control. */
 .cm-form { display: grid; gap: var(--space-3); }
@@ -128,9 +145,10 @@
 textarea.cm-input { resize: vertical; line-height: var(--leading-body); }
 select.cm-input { block-size: var(--target-min); padding-block: 0; }
 .cm-input:focus-visible { border-color: var(--brand); }
-.cm-input[aria-invalid='true'] { border-color: var(--down); }
-/* An invalid field keeps one colour when focused: the red border and a red ring, not red plus purple. */
-.cm-input[aria-invalid='true']:focus-visible { border-color: var(--down); outline-color: var(--down); }
+/* An invalid field has a 2 px red border and nothing else. Focused, the ring hugs the border in the same
+   red, so the field reads as one thicker red frame, never a red frame inside a purple one. */
+.cm-input[aria-invalid='true'] { border-color: var(--down); box-shadow: inset 0 0 0 1px var(--down); }
+.cm-input[aria-invalid='true']:focus-visible { box-shadow: none; outline: 2px solid var(--down); outline-offset: 0; }
 
 /* Messages. */
 .cm-alert, .cm-ok {
