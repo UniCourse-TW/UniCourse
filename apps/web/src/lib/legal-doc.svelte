@@ -138,7 +138,8 @@
   .doc-toc .sibling a { color: var(--brand-ink); font-weight: 600; }
 
   /* Long-form text: 15 px on 1.8; running text keeps a 46 em measure, tables may use the full column. */
-  .prose :global(:is(p, ul, ol, h2, h3)) { max-inline-size: 46em; }
+  /* One measure for text and tables alike: each section is 46 em at the prose size, tables fill it. */
+  .prose :global(section) { max-inline-size: 46em; }
   .prose { min-inline-size: 0; max-inline-size: 58em; font-size: var(--t-md); line-height: var(--leading-prose); overflow-wrap: anywhere; hanging-punctuation: none; }
   .prose :global(h2) { margin: var(--space-8) 0 var(--space-2); font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); scroll-margin-block-start: var(--space-4); }
   .prose :global(section:first-of-type h2) { margin-block-start: 0; }
@@ -146,7 +147,7 @@
   .prose :global(p), .prose :global(ul), .prose :global(ol) { margin: 0 0 var(--space-3); }
   .prose :global(ul), .prose :global(ol) { padding-inline-start: 1.4em; }
   .prose :global(li) { margin-block-end: var(--space-1); }
-  .prose :global(table) { inline-size: 100%; max-inline-size: 46em; margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); border-collapse: separate; border-spacing: 0; overflow: hidden; background: var(--panel-raised); font-size: var(--t-base); line-height: var(--leading-table); }
+  .prose :global(table) { inline-size: 100%; margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); border-collapse: separate; border-spacing: 0; overflow: hidden; background: var(--panel-raised); font-size: var(--t-base); line-height: var(--leading-table); }
   .prose :global(th), .prose :global(td) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
   .prose :global(th) { background: var(--table-head); color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .prose :global(tr:last-child td) { border-block-end: 0; }

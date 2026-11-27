@@ -218,7 +218,7 @@
   .key.fill { background: var(--brand); }
   .key.cap { background: var(--brand-wash); box-shadow: inset 0 0 0 1px var(--control-line); }
   .key.dashed { border: 1.5px dashed color-mix(in srgb, var(--muted) 75%, transparent); }
-  .key.mark { block-size: 3px; border-radius: 2px; background: var(--brand); }
+  .key.mark { background: color-mix(in srgb, var(--brand) 18%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 35%, transparent); }
 
   .plot { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--space-2); }
   .y { position: relative; block-size: 9.5rem; min-inline-size: 1.5rem; color: var(--muted); font-size: var(--t-xs); }
@@ -232,7 +232,8 @@
   .slot .cap { background: var(--brand-wash); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--control-line) 60%, transparent); }
   .slot .cap.dashed { background: color-mix(in srgb, var(--muted) 8%, transparent); box-shadow: none; border: 1.5px dashed color-mix(in srgb, var(--muted) 75%, transparent); border-block-end: 0; }
   .slot.current .cap.dashed { border-style: solid; border-color: var(--brand); background: var(--brand-wash); }
-  .slot.current::before { content: ''; position: absolute; inset-block-end: -0.5rem; inset-inline: 15%; block-size: 3px; border-radius: 2px; background: var(--brand); }
+  /* The offering's own term gets a faint full-height band, so it is findable among similar bars. */
+  .slot.current::before { content: ''; position: absolute; inset: 0 8%; border-radius: 3px 3px 0 0; background: color-mix(in srgb, var(--brand) 12%, transparent); }
   .slot .fill { background: color-mix(in srgb, var(--brand) 72%, var(--panel-raised)); }
   .slot.current .fill { background: var(--brand); }
   .slot.withdrawn .fill { background: color-mix(in srgb, var(--muted) 60%, var(--panel-raised)); }

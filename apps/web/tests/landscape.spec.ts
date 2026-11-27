@@ -55,7 +55,7 @@ test('unknown pages and courses get a helpful 404 with a search box', async ({ p
 
   response = await page.goto('/courses/999999999');
   expect(response?.status()).toBe(404);
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('找不到這門課程');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('找不到這個開課班次');
   await page.getByRole('searchbox').fill('資料');
   await page.getByRole('button', { name: '搜尋課程' }).click();
   await expect(page).toHaveURL(/\/\?term=all&q=%E8%B3%87%E6%96%99$/);

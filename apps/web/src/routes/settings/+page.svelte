@@ -51,6 +51,34 @@
   }
 
   const length = (text: string) => [...text].length;
+
+  // 147 schools: a filter box narrows the list by name, short name (清大 → 國立清華大學) or English name.
+  let schoolQuery = $state('');
+  function matches(school: { name: string; nameEn?: string | null; slug: string }, query: string) {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    if (school.slug.includes(q) || (school.nameEn ?? '').toLowerCase().includes(q)) return true;
+    // Characters in order, so 清大 and 臺科 match the full Chinese name.
+    let at = 0;
+    for (const char of school.name) if (char === q[at]) at += 1;
+    return at === q.length;
+  }
+  let shownSchools = $derived(data.schools.filter((school) => school.slug === current.school || matches(school, schoolQuery)));
+
+  // In-page navigation marks the panel in view.
+  let inView = $state('public');
+  onMount(() => {
+    if (!('IntersectionObserver' in window)) return;
+    const panels = ['public', 'account'].map((id) => document.getElementById(id)).filter((node): node is HTMLElement => Boolean(node));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) if (entry.isIntersecting) inView = entry.target.id;
+      },
+      { rootMargin: '-30% 0px -60% 0px' }
+    );
+    panels.forEach((panel) => observer.observe(panel));
+    return () => observer.disconnect();
+  });
 </script>
 
 <svelte:head>
@@ -77,18 +105,19 @@
   <header class="cm-head">
     <h1>設定</h1>
     <p class="cm-dek">
-      <span class="mono">@{data.profile.username}</span><span class="sep">·</span><time datetime={data.profile.createdAt}>{slashDate(data.profile.createdAt)}</time> 加入<span class="sep">·</span><a href={profileHref(data.profile.username)}>查看公開個人頁 →</a>
+      <span class="mono">@{data.profile.username}</span><span class="sep">·</span><time datetime={data.profile.createdAt}>{slashDate(data.profile.createdAt)}</time> 加入<span class="sep">·</span><a href={profileHref(data.profile.username)}>查看已公開的個人頁 →</a>
     </p>
   </header>
 
+  <!-- In-page navigation, pinned above both columns; links share the panel titles and focus the panel. -->
+  <nav class="sections" aria-label="設定項目">
+    <a href="#public" aria-current={inView === 'public' ? 'true' : undefined}>公開資料 <span aria-hidden="true">↓</span></a>
+    <a href="#account" aria-current={inView === 'account' ? 'true' : undefined}>帳號 <span aria-hidden="true">↓</span></a>
+  </nav>
+
   <div class="layout">
     <div class="panels">
-      <!-- In-page navigation, pinned above the panels it jumps between. -->
-      <nav class="sections" aria-label="設定項目">
-        <a href="#public">公開資料</a>
-        <a href="#account">帳號、密碼與登出</a>
-      </nav>
-      <section id="public" class="cm-panel" aria-labelledby="public-title">
+      <section id="public" class="cm-panel" aria-labelledby="public-title" tabindex="-1">
         <h2 id="public-title">公開資料</h2>
         <p class="lead">這些資料會顯示在你的<a href={profileHref(data.profile.username)}>個人頁</a>，以及你的評價、文章與回覆旁。</p>
         <form method="POST" class="cm-form" use:enhance={save} oninput={onInput} onchange={onInput}>
@@ -112,9 +141,15 @@
           <!-- `selected` on options keeps a choice made before hydration; `value` on the select would reset it. -->
           <div class="cm-field">
             <div class="cm-label"><label for="school">所屬學校</label><span class="cm-hint">選填</span></div>
+            {#if hydrated}
+              <input class="cm-input school-filter" type="search" placeholder="輸入校名或簡稱篩選，例如 清大" aria-label="篩選學校清單"
+                aria-controls="school" bind:value={schoolQuery} oninput={(event) => event.stopPropagation()}
+                onkeydown={(event) => { if (event.key === 'Enter') event.preventDefault(); }} />
+              {#if schoolQuery.trim()}<p class="cm-hint" aria-live="polite">符合 {data.schools.filter((school) => matches(school, schoolQuery)).length} 所，在下方清單選擇。</p>{/if}
+            {/if}
             <select id="school" class="cm-input" name="school">
               <option value="" selected={!values.school}>不顯示學校</option>
-              {#each data.schools as school (school.slug)}
+              {#each shownSchools as school (school.slug)}
                 <option value={school.slug} selected={school.slug === values.school}>{school.name}</option>
               {/each}
             </select>
@@ -132,13 +167,13 @@
           </div>
           <!-- Phones have no side preview: the same card folds open here, next to 儲存. -->
           <details class="preview-fold">
-            <summary>預覽公開個人頁</summary>
+            <summary>{hydrated && dirty ? '預覽未儲存的變更' : '預覽個人頁'} <span class="chev" aria-hidden="true">▾</span></summary>
             {@render previewCard()}
           </details>
         </form>
       </section>
 
-      <section id="account" class="cm-panel" aria-labelledby="account-title">
+      <section id="account" class="cm-panel" aria-labelledby="account-title" tabindex="-1">
         <h2 id="account-title">帳號</h2>
         <p class="lead">只有你能開啟這個管理區；帳號名稱本身仍會公開顯示。</p>
         <dl class="facts">
@@ -168,14 +203,22 @@
 
 <style>
   .settings .sep { margin-inline: 0.4em; color: var(--axis); }
-  .sections { position: sticky; inset-block-start: 0; z-index: 2; display: flex; gap: var(--space-1); padding-block: var(--space-1); border-block-end: 1px solid var(--line); background: var(--bg); }
-  .sections a { display: inline-flex; align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border-radius: var(--radius-control); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-decoration: none; }
+  .sections { position: sticky; inset-block-start: 0; z-index: 2; display: flex; gap: var(--space-1); margin-block-end: var(--space-4); border-block-end: 1px solid var(--line); background: var(--bg); }
+  .sections a { display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border-block-end: 2px solid transparent; margin-block-end: -1px; color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-decoration: none; }
+  .sections a span { color: var(--muted); font-weight: 500; }
   .sections a:hover { color: var(--brand-ink); background: var(--hover-row); }
+  .sections a[aria-current='true'] { border-block-end-color: var(--brand); color: var(--brand-ink); }
+  .cm-panel:focus { outline: none; }
+  .cm-panel:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .school-filter { margin-block-end: var(--space-1); }
+  .save-row .cm-btn:disabled:not([aria-busy='true']) { color: var(--ink-2) !important; background: transparent; border-color: var(--control-line); }
   .sections a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .preview-fold { display: none; }
-  .preview-fold summary { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; cursor: pointer; }
+  .preview-fold summary { display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
+  .preview-fold summary::-webkit-details-marker { display: none; }
+  .preview-fold[open] .chev { rotate: 180deg; }
   .preview-fold[open] { display: grid; gap: var(--space-2); }
-  .layout { display: grid; grid-template-columns: minmax(0, 42rem) minmax(16rem, 20rem); gap: var(--space-6); align-items: start; }
+  .layout { display: grid; grid-template-columns: minmax(0, 42rem) minmax(16rem, 1fr); gap: var(--space-6); align-items: start; }
   .panels { display: grid; gap: var(--space-4); min-inline-size: 0; }
   .cm-panel { scroll-margin-block-start: 5rem; }
   h2 { font-size: var(--t-lg) !important; }
@@ -194,7 +237,9 @@
   .cm-btn.neutral { color: var(--ink-2) !important; background: var(--panel-raised); border-color: var(--control-line); }
   .cm-btn.neutral:hover { background: var(--hover-row); filter: none; }
 
-  .preview { position: sticky; inset-block-start: 5rem; display: grid; gap: var(--space-2); }
+  /* The preview column is a panel of its own, so its top lines up with the form card beside it. */
+  .preview { position: sticky; inset-block-start: 4rem; display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .preview .preview-card { background: var(--panel-raised); }
   .eyebrow { color: var(--muted) !important; font-size: var(--t-sm) !important; letter-spacing: 0 !important; }
   .preview-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .avatar { display: grid; place-items: center; inline-size: 3rem; block-size: 3rem; border-radius: 50%; color: var(--brand-ink); background: var(--brand-wash); font-size: 1.25rem; font-weight: 650; }

@@ -87,33 +87,27 @@
       </p>
       {#if profile.bio}<p class="bio">{profile.bio}</p>
       {:else if isMe}<p class="bio empty">還沒有自我介紹・<a href="/settings">到設定新增</a>（只有你看得到這行）</p>{/if}
-      <nav class="jump" aria-label="本頁段落">
-        <a href="#ratings">課程評價 <span class="num">{ratingCount}</span></a>
-        <a href="#posts">發表的文章 <span class="num">{profile.posts.length}</span></a>
-      </nav>
+      {#if !sparse}
+        <nav class="jump" aria-label="本頁段落">
+          <a href="#ratings">課程評價 <span class="num">{ratingCount}</span> <span aria-hidden="true">↓</span></a>
+          <a href="#posts">發表的文章 <span class="num">{profile.posts.length}</span> <span aria-hidden="true">↓</span></a>
+        </nav>
+      {/if}
     </div>
     {#if isMe}<a class="cm-btn secondary edit" href="/settings">編輯個人資料</a>{/if}
   </header>
 
   {#if sparse}
-    <!-- Little activity: one line of counts; the distribution folds away until there is more to show. -->
+    <!-- Little activity: one row of counts; the first two double as links to their sections. -->
     <section class="summary-line" aria-label="活動摘要">
       <div role="group" aria-label="活動統計">
         <dl class="counts">
-          <div><dt>課程評價</dt><dd class="num">{ratingCount} 則{#if average !== null}<span class="sub">平均 {average.toFixed(1)}／5</span>{/if}</dd></div>
-          <div><dt>發表文章</dt><dd class="num">{profile.posts.length} 篇</dd></div>
+          <div class="link-cell"><dt>課程評價</dt><dd class="num"><a href="#ratings">{ratingCount} 則{#if average !== null}<span class="sub">平均 {average.toFixed(1)}／5</span>{/if}<span class="arrow" aria-hidden="true">↓</span></a></dd></div>
+          <div class="link-cell"><dt>發表文章</dt><dd class="num"><a href="#posts">{profile.posts.length} 篇<span class="arrow" aria-hidden="true">↓</span></a></dd></div>
           <div><dt>文章的回覆數</dt><dd class="num">{replies} 則</dd></div>
           <div><dt>評過的學校</dt><dd>{schoolSpread}</dd></div>
         </dl>
       </div>
-      {#if ratingCount && average !== null}
-        <details class="dist-fold">
-          <summary>看給分分布</summary>
-          <div class="dist compact-dist">
-            <BarList label="給分分布" items={histogram} unit="則" showValues={false} />
-          </div>
-        </details>
-      {/if}
     </section>
   {:else}
   <section class="summary" aria-label="活動摘要">
@@ -156,6 +150,13 @@
         {/snippet}
       </EmptyState>
     {:else}
+      {#if sparse && ratingCount >= 2 && average !== null}
+        <!-- A few ratings: the distribution sits with them, small and always visible. -->
+        <div class="dist compact-dist inline-dist">
+          <p class="eyebrow">給分分布<span class="sep">·</span>平均 <span class="num avg">{average.toFixed(1)}</span><span class="cm-hint">（滿分 5）</span></p>
+          <BarList label="給分分布" items={histogram} unit="則" showValues={false} />
+        </div>
+      {/if}
       <div class="table-frame">
         <table>
           <caption class="cm-sr">{name} 的課程評價</caption>
@@ -244,13 +245,20 @@
   .summary :global(.stat-row > :nth-child(4) dd) { font-size: var(--t-xl); line-height: 1.3; min-block-size: 2.1rem; display: flex; align-items: center; }
   .bio.empty { color: var(--muted); font-size: var(--t-sm); }
   .summary-line { display: grid; gap: var(--space-2); margin-block-start: var(--space-5); }
-  .counts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); margin: 0; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: var(--space-2); margin: 0; }
+  .counts > div { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .counts .link-cell { position: relative; }
+  .counts .link-cell:hover { border-color: var(--control-line); background: var(--hover-row); }
+  .counts .link-cell a { display: flex; flex-wrap: wrap; align-items: baseline; color: inherit; text-decoration: none; }
+  .counts .link-cell a::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+  .counts .link-cell a:focus-visible { outline: none; }
+  .counts .link-cell:has(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .counts .arrow { margin-inline-start: auto; color: var(--brand-ink); font-size: var(--t-base); }
+  .inline-dist { max-inline-size: 28rem; margin-block-end: var(--space-3); }
   .counts div { display: grid; gap: 2px; min-inline-size: 0; }
   .counts dt { color: var(--muted); font-size: var(--t-sm); }
   .counts dd { margin: 0; font-size: var(--t-lg); font-weight: 650; }
   .counts .sub { margin-inline-start: var(--space-2); color: var(--ink-2); font-size: var(--t-sm); font-weight: 500; }
-  .dist-fold summary { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; cursor: pointer; }
-  .dist-fold .dist { max-inline-size: 28rem; }
   .compact-dist :global(.bar-row) { min-block-size: 1.25rem; }
   .dist { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; margin-block-end: var(--space-2) !important; color: var(--ink-2) !important; font-size: var(--t-sm) !important; letter-spacing: 0 !important; }
@@ -306,7 +314,7 @@
     .edit { grid-column: 1 / -1; }
     .jump a { min-block-size: var(--target-min); }
     .summary :global(.stat-row) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .counts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+    .counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     /* Stack: each rating becomes a short card-like row; column names come from data-label. */
     thead { display: none; }
     table, tbody, tr, tbody :is(th, td) { display: block; }

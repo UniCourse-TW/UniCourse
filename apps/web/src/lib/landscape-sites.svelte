@@ -148,6 +148,10 @@
   .more > summary::-webkit-details-marker { display: none; }
   .clamp { flex: 1 1 auto; min-inline-size: 0; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .more[open] .clamp { white-space: normal; }
+  /* Wide screens have room for two lines of description before the disclosure is needed. */
+  @media (min-width: 56rem) {
+    .clamp { display: -webkit-box; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+  }
   .more.long[open] .clamp { display: none; }
   .toggle { flex: none; color: var(--brand-ink); font-weight: 600; white-space: nowrap; }
   .toggle::before { content: '＋ '; color: var(--muted); font-weight: 400; }
