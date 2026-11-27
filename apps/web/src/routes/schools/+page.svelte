@@ -53,6 +53,17 @@
     return null;
   }
 
+  function importState(school: Institution) {
+    if (directoryStatus(school) === 'pending_import') {
+      if (sourceInfo(school)?.shortName === '資源網') return '資源網已接入，待匯入班次';
+      const source = school.status === 'partial' ? '部分接入' : '爬蟲已接入';
+      return school.terms.length ? `${source}，目前無可查班次` : `${source}，本站尚無匯入`;
+    }
+    if (school.status === 'blocked') return '課程來源存取受阻';
+    if (school.status === 'planned') return '已列入收錄規劃';
+    return '尚未開始收錄';
+  }
+
   function statusHref(status: string) {
     return changeQuery(new URL('#directory', page.url), (params) => {
       params.delete('page');
@@ -104,7 +115,7 @@
 {/snippet}
 
 {#snippet sourceDetails(school: Institution)}
-  {#if school.latestImportedAt}<p class="browse-note">最近更新：{importedAt(school.latestImportedAt)}（臺北時間）</p>{/if}
+  {#if school.latestImportedAt}<p class="browse-note">最近更新 {importedAt(school.latestImportedAt)}（臺北時間）</p>{/if}
   {#if school.note}<p class="browse-note">{school.note}</p>{/if}
   {#if sourceInfo(school)?.href === '#resource-network'}<a href="#resource-network">課程資源網說明</a>{/if}
   {#if school.issue}<a href={`${ISSUES_URL}/${school.issue}`} rel="external">{school.name}收錄紀錄 ↗</a>{/if}
@@ -116,12 +127,10 @@
     <div class="browse-stack">
       <h1>各校收錄狀態</h1>
       <p class="browse-dek">
-        <span>教育部大專校院開放資料 · {displayValue(data.total)} 所</span>
-        {#if data.updatedAt}<span>課程資料更新於 <time datetime={data.updatedAt}>{importedAt(data.updatedAt)}</time>（臺北時間）</span>{:else}<span>尚無課程匯入紀錄</span>{/if}
+        <span>教育部大專校院名錄 · {displayValue(data.total)} 所</span>
+        <a class="source-link" href="#sources" aria-label="資料來源與統計口徑">ⓘ 資料來源</a>
+        {#if data.updatedAt}<span>更新於 <time datetime={data.updatedAt}>{importedAt(data.updatedAt)}</time>（臺北時間）</span>{:else}<span>尚無課程匯入紀錄</span>{/if}
       </p>
-    </div>
-    <div class="browse-actions">
-      <a class="browse-button" href="#sources">資料來源</a>
     </div>
   </header>
 
@@ -132,13 +141,13 @@
       <div class="coverage-progress">
         <p class="browse-note">依收錄學期數分布</p>
         <div class="status-segments" aria-hidden="true">
-          {#each depth as { label, count, color } (label)}
-            <span style:flex-grow={count} style:background={color}></span>
+          {#each depth as { id, count, color } (id)}
+            <span class={id} style:flex-grow={count} style:background-color={color} hidden={!count}></span>
           {/each}
         </div>
         <ul class="depth-key" aria-label="收錄學期分布" role="list">
           {#each depth as { id, label, count, color } (id)}
-            <li><i style:background={color} aria-hidden="true"></i><a href={`/schools?depth=${id}#directory`}>{label} <strong>{displayValue(count)} 所</strong></a></li>
+            <li><i class={id} style:background-color={color} aria-hidden="true"></i><a href={`/schools?depth=${id}#directory`}>{label} <strong>{displayValue(count)} 所</strong></a></li>
           {/each}
         </ul>
       </div>
@@ -187,17 +196,18 @@
     {#if filtered}<p class="browse-note">已篩選：{[filters.q, filters.system && systemLabels[filters.system], filters.ownership && ownershipLabels[filters.ownership], filters.status && directoryStatusLabels[filters.status], depth.find(({ id }) => id === filters.depth)?.label, filters.source && '校方來源'].filter(Boolean).join(' · ')} · <a href="/schools">清除篩選</a></p>{/if}
 
     {#if filters.depth === 'empty'}
-      <p class="browse-note">校名旁標示收錄進度。展開該校明細可查看已知原因與收錄紀錄。</p>
+      <p class="browse-note">每列標示目前的收錄進度，可展開查看來源與收錄紀錄。</p>
     {/if}
 
     {#if data.rows.length}
+      <p id="resource-network" class="browse-note">校方每日更新。教育部課程資源網每週更新，未提供上課時間、教室及名額。</p>
       <div class="table-meta">
         <p class="browse-note">{filtered ? '符合條件' : '共'} {displayValue(data.shown)} 所 · 顯示 {data.start + 1}–{data.end} 所{#if uniformStatus} · 本頁皆{directoryStatusLabels[uniformStatus]}（{displayValue(data.rows.length)} 所）{/if}</p>
         <Pagination url={new URL('#directory', page.url)} page={data.page} totalPages={data.totalPages} label="學校名錄上方分頁" />
       </div>
       {#if data.years.length}
         <div class="legend browse-note" aria-label="學年覆蓋圖例">
-          <strong>學年覆蓋</strong>
+          <strong>學年覆蓋{#if yearsLabel} <span class="legend-years">{yearsLabel}</span>{/if}</strong>
           {#each legend as item (item.value)}
             <span><span aria-hidden="true"><Heatstrip cells={[{ period: '覆蓋', value: item.value }]} hatchPartial /></span>{item.label}</span>
           {/each}
@@ -239,14 +249,12 @@
                   </th>
                   {#if !uniformStatus}<td role="cell" class="status-cell wide-column">
                     <StatusPill status={status === 'pending_import' ? 'planned' : status} label={directoryStatusLabels[status]} />
-                    {#if status === 'pending_import'}
-                      <small>{school.status === 'partial' ? '部分接入' : '爬蟲已接入'}，{school.terms.length ? '目前無可查班次' : '本站尚無匯入'}</small>
-                    {/if}
+                    {#if !imported}<small>{importState(school)}</small>{/if}
                   </td>{/if}
                   <td role="cell" class="coverage">
                     {#if imported}
                       <Heatstrip {cells} label={school.name} hatchPartial />
-                    {:else}<span title="本站尚無可查詢的班次">—</span>{/if}
+                    {:else}<span title="本站尚無可查詢的班次">—</span>{#if uniformStatus}<small class="desktop-reason">{importState(school)}</small>{/if}{/if}
                   </td>
                   <td role="cell" class="numeric term-column" title={imported ? undefined : '本站尚無可查詢的班次'}>
                     {displayValue(imported ? school.terms.length : null)}
@@ -262,15 +270,16 @@
                     {:else}<span title={school.note ?? '尚無來源說明'}>—</span>{/if}</div>
                     <details class="full-coverage mobile-coverage">
                       <summary aria-label={`${school.name}的收錄明細`}>
-                        {#if imported && source}
-                          {#if school.latestImportedAt}<time datetime={school.latestImportedAt}>{source.shortName} · {source.frequency}</time>{:else}{source.shortName} · {source.frequency}{/if}
-                        {:else if imported && school.latestImportedAt}
-                          <time datetime={school.latestImportedAt}>更新 {shortImportedAt(school.latestImportedAt).split(' ')[0]}</time>
-                        {:else}{directoryStatusLabels[status]}{/if}
+                        <span>
+                          {#if imported}
+                            {#if source}<span>{source.shortName}・{source.frequency}</span>{/if}
+                            {#if school.latestImportedAt}<time datetime={school.latestImportedAt} title={`${importedAt(school.latestImportedAt)}（臺北時間）`}>{shortImportedAt(school.latestImportedAt).split(' ')[0]}</time>{/if}
+                            {#if !source && !school.latestImportedAt}來源未標示{/if}
+                          {:else}{importState(school)}{/if}
+                        </span>
                       </summary>
                       <p class="browse-note">{school.code} · {ownershipLabels[school.ownership]} · {systemLabels[school.system]}</p>
                       {#if imported}<p class="browse-note">涵蓋 {coveragePeriod(school.terms)} · 最新 {school.terms[0]}</p>{/if}
-                      {#if status === 'pending_import'}<small>{school.status === 'partial' ? '部分接入' : '爬蟲已接入'}，{school.terms.length ? '目前無可查班次' : '本站尚無匯入'}</small>{/if}
                       {@render sourceDetails(school)}
                     </details>
                   </td>
@@ -293,7 +302,6 @@
   <section id="sources" class="browse-stack" aria-labelledby="source-heading">
     <h2 id="source-heading">資料來源與統計口徑</h2>
     <p class="browse-note">名錄來自教育部的<a href="https://data.gov.tw/dataset/6091">大專校院名錄</a>（<a href="https://stats.moe.gov.tw/files/opendata/u1_new.csv">教育部原始 CSV ↗</a>）、<a href="https://data.gov.tw/dataset/6236">宗教研修學院概況</a>與<a href="https://data.gov.tw/dataset/6237">空大及大專進修學校概況</a>。班次與收錄期間採 UniCourse 匯入資料。</p>
-    <p id="resource-network" class="browse-note">「校方」是各校課程系統，每日更新。「資源網」指教育部的大學校院及技職校院課程資源網，每週更新，不含上課時間、教室及名額。</p>
   </section>
 </div>
 
@@ -301,7 +309,8 @@
   .directory-page h1 { font-size: var(--t-2xl); font-weight: 650; }
   .directory-page { gap: var(--space-4); }
   .directory-page .browse-stack { gap: var(--space-2); }
-  .directory { padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
+  .directory { padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); }
+  .source-link { display: inline-flex; align-items: center; gap: .2em; min-block-size: 1.5rem; font-size: var(--t-sm); white-space: nowrap; }
   .directory-page .browse-note { text-wrap: pretty; }
   :is(#directory, #sources, #resource-network) { scroll-margin-block-start: 6.25rem; }
   .national-status { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-2); }
@@ -314,13 +323,16 @@
   .advanced-filters > summary { min-block-size: var(--target-min); align-content: center; cursor: pointer; width: fit-content; color: var(--brand); font-size: var(--t-base); font-weight: 650; }
   .directory-filter button { cursor: pointer; font-family: inherit; }
   .status-segments { display: flex; block-size: .45rem; overflow: hidden; border-radius: var(--radius-pill); }
-  .status-segments span { flex-basis: 0; }
+  .status-segments span:not([hidden]) { flex-basis: 0; min-inline-size: 3px; }
+  :is(.status-segments span, .depth-key i).recent { background-image: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--ink) 40%, transparent) 4px 5px); }
+  .depth-key strong { font-variant-numeric: tabular-nums; }
   .depth-key { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1) var(--space-2); list-style: none; padding: 0; margin: 0; color: var(--ink-2); font-size: var(--t-sm); }
   .depth-key a { min-block-size: var(--target-min); display: inline-flex; align-items: center; gap: .25em; }
   .depth-key i { display: inline-block; inline-size: .6rem; block-size: .6rem; margin-inline-end: var(--space-1); border-radius: 50%; }
   small { color: var(--muted); font-size: var(--t-sm); font-weight: normal; }
   .table-meta { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-2); }
   .legend, .legend > span { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .5rem; font-size: var(--t-sm); }
+  .legend-years { font-family: var(--font-mono); font-weight: 500; }
   .legend { --heatstrip-empty-line: var(--muted); margin-block: .18rem .35rem; --heatstrip-cell-size: 10px; }
   .system-filters { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1); margin: 0 0 var(--space-2); padding: 0; list-style: none; }
   .system-filters a { display: inline-flex; align-items: center; padding-inline: var(--space-2); min-block-size: var(--target-min); border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-sm); text-decoration: none; }
@@ -331,12 +343,12 @@
   caption { position: absolute; clip-path: inset(50%); inline-size: 1px; block-size: 1px; overflow: hidden; }
   th, td { text-align: start; padding: .18rem .55rem; border-bottom: 1px solid var(--line); background: var(--panel-raised); }
   th { font-weight: 650; }
-  thead th { padding-block: var(--space-1); height: var(--target-min); background: var(--table-head); white-space: nowrap; }
+  thead th { vertical-align: middle; padding-block: 0; height: var(--target-min); background: var(--table-head); white-space: nowrap; }
   thead a { display: inline-flex; align-items: center; min-block-size: var(--target-min); gap: .25rem; }
   .school-name { position: sticky; left: 0; z-index: 1; inline-size: 19%; min-inline-size: 10rem; box-shadow: 1px 0 var(--line); overflow-wrap: anywhere; }
   td.status-cell { inline-size: 10%; min-inline-size: 6rem; }
   .status-cell small { display: block; white-space: normal; margin-block-start: .15rem; }
-  .school-name a { display: block; width: fit-content; }
+  tbody .school-name a { display: block; width: fit-content; }
   .school-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .3rem; color: var(--muted); font-size: var(--t-xs); font-weight: 450; }
   .school-meta .browse-code { font-size: inherit; margin-inline-start: .2rem; }
   .ownership { padding-inline: .25em; border: 1px solid var(--line); border-radius: .2rem; }
@@ -352,11 +364,12 @@
   .coverage-ticks { font: var(--t-sm) / 1.2 var(--font-mono); }
   .coverage-ticks span { display: grid; justify-content: center; }
   .coverage :global(.cell) { inline-size: 100%; aspect-ratio: 1; block-size: auto; }
-  .directory-frame { --heatstrip-partial-hatch: repeating-linear-gradient(135deg, transparent 0 2px, var(--brand-ring) 2px 3px, transparent 3px 5px); --heatstrip-empty-line: var(--muted); }
+  .directory-frame { --heatstrip-partial-hatch: repeating-linear-gradient(135deg, transparent 0 2px, var(--brand-ring) 2px 3px, transparent 3px 5px); --heatstrip-empty-line: var(--ink-2); }
   .full-coverage > summary { white-space: nowrap; min-block-size: var(--target-min); align-content: center; color: var(--brand-ink); font-size: var(--t-sm); cursor: pointer; font-weight: 650; }
   .full-coverage > :not(summary) { overflow-wrap: anywhere; }
   .full-coverage a { display: flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-sm); }
   .mobile-coverage { display: none; }
+  .desktop-reason { margin-inline-start: var(--space-1); }
   .csv-link { min-height: var(--target-min); align-content: center; font-size: var(--t-sm); }
   .numeric { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
   td time { font-variant-numeric: tabular-nums; }
@@ -368,6 +381,7 @@
   .offering-column { min-inline-size: 10.5rem; border-inline-start: 1px solid var(--line); padding-inline-start: var(--space-3); }
   thead .offering-column { text-align: start; }
   .offering-column :global(.bar-cell) { display: grid; grid-template-columns: minmax(0, 1fr) 8ch; }
+  .offering-column :global(.fill) { min-inline-size: 3px; }
   .offering-column :global(.bar-cell > .ui-tabular) { grid-column: 2; }
   .browse-field input::placeholder { color: var(--muted); opacity: 1; }
   .unimported :is(.numeric, .coverage, .browse-code) { color: var(--muted); }
@@ -388,7 +402,7 @@
     .school-name, .coverage, .note-cell, .offering-column { inline-size: auto; min-inline-size: 0; }
     .school-name { position: static; box-shadow: none; grid-column: 1; grid-row: 1; }
     tbody .school-name { display: flex; flex-wrap: wrap; gap: 0 .3rem; align-items: center; }
-    .school-name a { display: flex; align-items: center; min-block-size: var(--target-min); }
+    tbody .school-name a { display: flex; align-items: center; min-block-size: var(--target-min); }
     .school-meta :not(.browse-code) { display: none; }
     .latest-term { font: var(--t-xs) / 1 var(--font-mono); }
     .term-column { grid-column: 2; grid-row: 1; }
@@ -396,22 +410,32 @@
     thead .offering-column { text-align: end; }
     .offering-column :global(.bar-cell) { grid-template-columns: minmax(0, 1fr) 6.75ch; }
     .coverage {
-      grid-column: 1 / 3;
+      grid-column: 1;
       grid-row: 2;
-      --coverage-cell-size: min(15px, calc((100% - (var(--coverage-years) - 1) * 2px) / var(--coverage-years)));
+      --coverage-cell-size: min(8px, calc((100% - (var(--coverage-years) - 1) * 2px) / var(--coverage-years)));
       padding-inline-start: .35rem;
       --heatstrip-gap: 2px;
     }
-    thead .coverage { height: auto; padding-block: var(--space-1) var(--space-2); }
+    thead .coverage { height: auto; padding-block: 0 var(--space-1); }
+    .coverage-ticks { font-size: var(--t-xs); }
+    .coverage-ticks span:first-child { justify-content: start; }
+    .coverage-ticks span:last-child { justify-content: end; }
+    .desktop-reason { display: none; }
     .mobile-coverage { display: block; }
-    .note-cell { grid-column: 3; grid-row: 2; justify-self: end; }
+    .note-cell { grid-column: 2 / -1; grid-row: 2; justify-self: end; padding-block: 0; }
     .note-cell:has(details[open]) { grid-column: 1 / -1; grid-row: 3; justify-self: stretch; }
-    .full-coverage > summary { position: relative; min-inline-size: 6.25rem; min-block-size: 2rem; text-align: end; }
-    .full-coverage:not([open]) > summary::after { content: ''; position: absolute; inset: -.75rem 0 0; }
+    .full-coverage > summary { position: relative; display: flex; min-block-size: 1.65rem; align-items: center; gap: var(--space-1); color: var(--muted); font-weight: 500; }
+    .full-coverage > summary::-webkit-details-marker { display: none; }
+    .full-coverage > summary::after { content: '▾'; color: var(--brand-ink); font-size: 1rem; }
+    .full-coverage[open] > summary::after { content: '▴'; }
+    .full-coverage summary time { margin-inline-start: var(--space-1); }
+    .full-coverage:not([open]) > summary::before { content: ''; position: absolute; inset: -1.1rem 0 0; }
     .full-coverage[open] { padding-block-end: var(--space-1); }
     .full-coverage[open] > summary { text-align: start; }
   }
   @media (max-width: 680px) {
+    .source-link { position: relative; }
+    .source-link::after { content: ''; position: absolute; inset: -0.625rem 0; }
     .national-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .coverage-progress { grid-column: 1 / -1; padding-block: var(--space-2); }
     .directory-filter { grid-template-columns: minmax(0, 1fr) auto; }

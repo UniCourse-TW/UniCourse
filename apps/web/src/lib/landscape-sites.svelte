@@ -52,8 +52,7 @@
   {@const hasNotes = Boolean(site.notes || site.repo || (site.operatorName && official && !showOperator))}
   {@const shortDescription = !hasNotes && Boolean(site.features && site.features.length <= 48)}
   {@const detail = hasNotes || Boolean(site.features)}
-  <!-- The description shows up to two lines; the rest and the survey notes open from anywhere on the row (the
-       cell's disclosure is the keyboard and no-JS control). -->
+  <!-- The whole row is a pointer shortcut. The summary also works from the keyboard and without JavaScript. -->
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (the summary is the keyboard control) -->
   <li class:third={!official} class:expandable={detail} onclick={detail ? toggleRow : undefined}>
     <span class="kind">{kindLabels[official ? 'official' : 'third']}</span>
@@ -196,8 +195,7 @@
   .more > summary { display: flex; gap: var(--space-2); align-items: baseline; justify-content: space-between; border-radius: var(--radius-control); cursor: pointer; list-style: none; }
   .more > summary::-webkit-details-marker { display: none; }
   .text { min-inline-size: 0; color: var(--ink-2); }
-  /* Long descriptions keep two lines in the preview. */
-  .more:not([open]) .text { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+  .more:not([open]) .text { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; }
   /* A quiet chevron instead of a repeated 「＋備註」 label on every row. */
   .chev { flex: none; inline-size: 1.25rem; color: var(--muted); text-align: center; }
   .chev::before { content: '▾'; }

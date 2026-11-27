@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/state';
+  import { navigating, page } from '$app/state';
   import type { CourseRanking } from '@unicourse/api-client';
   import { importedAt, isHttpUrl, shortImportedAt } from '$lib/format';
   import { coveragePeriod, directoryStatus, directoryStatusLabels, kindLabel } from '$lib/institutions';
@@ -49,8 +49,10 @@
   });
   let trendsByTerm = $derived(new Map(data.trends?.map((row) => [row.term, row])));
   let partial = $derived(partialTerms((data.trends ?? []).map(({ term, offerings }) => [term, offerings])));
-  let chartTerm = $derived(terms.at(-1));
-  let termOptions = $derived((data.trends ?? []).slice().sort((left, right) => right.term.localeCompare(left.term)).map(({ term }) => ({ value: term, label: term })));
+  let chartTerm = $derived((data.trends ?? []).reduce<string | undefined>(
+    (latest, { term }) => !latest || term > latest ? term : latest, undefined
+  ));
+  let termOptions = $derived((data.trends ?? []).slice().sort((left, right) => right.term.localeCompare(left.term)).map(({ term }) => ({ value: term, label: `${term} 學期` })));
   let enrollmentTerms = $derived((data.trends ?? []).filter(({ enrolled }) => enrolled != null));
   let ranked = $derived((data.rankings ?? []).filter((row) => row.enrolledTotal != null));
   let capacities = $derived((data.rankings ?? []).filter((row) => row.enrolledTotal == null && row.capacityTotal != null));
@@ -62,24 +64,27 @@
 
   const unitColumns: TableColumn<(typeof units.rows)[number]>[] = [
     { id: 'unit', label: '開課單位', value: (row) => row.name },
-    { id: 'offerings', label: '班次', headerNote: '相對最大值', numeric: true, value: (row) => row.offerings, width: 'var(--unit-offerings-width, 8rem)' },
+    { id: 'offerings', label: '班次', numeric: true, value: (row) => row.offerings, width: 'var(--unit-offerings-width, 8rem)' },
     { id: 'share', label: '全校占比', numeric: true, width: 'var(--unit-share-width, 5rem)' },
     { id: 'courses', label: '課程', numeric: true, value: (row) => row.courses, width: 'var(--unit-count-width, 4rem)' }
   ];
   const rankColumns: TableColumn<CourseRanking>[] = [
-    { id: 'course', label: '課程', value: (row) => row.title, width: '38%' },
+    { id: 'rank', label: '#', width: '40px', align: 'center' },
+    { id: 'course', label: '課程', value: (row) => row.title },
+    { id: 'latest', label: '最近收錄', width: '4.75rem' },
     { id: 'terms', label: '開課期數', numeric: true, value: (row) => row.terms, width: '5rem' },
     { id: 'offerings', label: '班次', numeric: true, value: (row) => row.offerings, width: '3.5rem' },
     { id: 'enrolled', label: '累計人次', numeric: true }
   ];
+  const latestTerm = (row: CourseRanking) => row.trend[0]?.term ?? Object.keys(row.sectionsByTerm).sort().at(-1);
   const courseHref = (row: CourseRanking) => `/courses/${row.latestActiveOfferingId ?? row.latestOfferingId}`;
 </script>
 
 <svelte:head><title>{school.name}｜UniCourse</title></svelte:head>
 
 {#snippet unitFilter()}
-  <FilterBar action={`${schoolHref(school.slug)}#departments`} label="搜尋開課單位" clearHref={units.query ? clearUnits : undefined} hidden={data.includeNonAcademic ? { include_non_academic: 'true' } : {}}>
-    <label class="browse-field">搜尋開課單位{#key units.query}<input name="unit" type="search" defaultValue={units.query} maxlength="100" placeholder="輸入開課單位名稱" />{/key}</label>
+  <FilterBar action={`${schoolHref(school.slug)}#departments`} label={`搜尋${school.name}的開課單位`} clearHref={units.query ? clearUnits : undefined} hidden={data.includeNonAcademic ? { include_non_academic: 'true' } : {}}>
+    <label class="browse-field">搜尋開課單位{#key units.query}<input name="unit" type="search" defaultValue={units.query} maxlength="100" placeholder="例如 資訊、通識、教務" />{/key}</label>
     <FilterSelect name="unit_sort" label="排序" allLabel={null} value={units.sort} options={[{ value: 'offerings', label: '班次最多' }, { value: 'courses', label: '課程最多' }, { value: 'name', label: '名稱' }]} />
   </FilterBar>
 {/snippet}
@@ -97,9 +102,21 @@
       </p>
       {#if institution?.note && institution.note !== '每日更新'}<p class="browse-note">{institution.note}</p>{/if}
     </div>
-    <div class="browse-actions">
-      <a class="browse-button browse-primary" href={searchHref}>搜尋這所學校的課程</a>
-      {#if institution?.website && isHttpUrl(institution.website)}<a class="browse-button" href={institution.website} rel="external">官網 ↗</a>{/if}
+    <div class="school-actions">
+      <div class="browse-actions">
+        <a class="browse-button browse-primary" href={searchHref}>搜尋這所學校的課程</a>
+        {#if institution?.website && isHttpUrl(institution.website)}<a class="browse-button" href={institution.website} rel="external">官網 ↗</a>{/if}
+      </div>
+      {#if termOptions.length}
+        <form class="term-lookup" action="/" method="GET" aria-label="依學期查本校課程" onchange={(event) => {
+          const term = new FormData(event.currentTarget).get('term');
+          if (typeof term === 'string') chartTerm = term;
+        }}>
+          <input type="hidden" name="school" value={school.slug} />
+          <FilterSelect name="term" label="查課學期" allLabel={null} value={chartTerm} options={termOptions} />
+          <button class="browse-button">查本校該期課程</button>
+        </form>
+      {/if}
     </div>
   </header>
 
@@ -119,34 +136,21 @@
     {#if data.trends === null}
       <ErrorState title="暫時無法取得班次走勢" retryHref={page.url.pathname + page.url.search} />
     {:else if data.trends.length}
-      {@const latest = terms.at(-1)}
-      {@const current = latest ? trendsByTerm.get(latest) : undefined}
-      {@const previous = terms.length > 1 ? trendsByTerm.get(terms[terms.length - 2]) : undefined}
-      {#key current?.term}
+      {@const current = chartTerm ? trendsByTerm.get(chartTerm) : undefined}
+      {@const previous = current ? trendsByTerm.get(terms[terms.indexOf(current.term) - 1]) : undefined}
       <SchoolsTermHistory label={`每學期開課班次${period ? ` · ${period}` : ''}`} points={terms.map((term) => ({ term, value: trendsByTerm.get(term)?.offerings ?? null, partial: partial.has(term) }))}
         termHref={(term) => overviewSearchHref({ school: school.slug, term })} kind={partial.size ? 'column' : 'line'} yearsOnly zeroBaseline highlight={chartTerm}>
         {#snippet header()}
           <div class="chart-header">
             <div>
               {#if current}
-                <p class="browse-note">最新一期 <a class="latest-term" href={overviewSearchHref({ school: school.slug, term: current.term })}>{current.term} 學期 · {displayValue(current.offerings)} 班{partial.has(current.term) ? '（部分班次）' : ''}</a>{#if previous && !partial.has(current.term) && !partial.has(previous.term)}<span> · 較上期 {current.offerings === previous.offerings ? '持平' : `${current.offerings > previous.offerings ? '+' : '−'}${displayValue(Math.abs(current.offerings - previous.offerings))} 班`}</span>{/if}</p>
+                <p class="browse-note">{current.term === terms.at(-1) ? '最新一期' : '所選學期'} <a class="latest-term" href={overviewSearchHref({ school: school.slug, term: current.term })}>{current.term} 學期 · {displayValue(current.offerings)} 班{partial.has(current.term) ? '（部分班次）' : ''}</a>{#if previous && !partial.has(current.term) && !partial.has(previous.term)}<span> · 較上期 {current.offerings === previous.offerings ? '持平' : `${current.offerings > previous.offerings ? '+' : '−'}${displayValue(Math.abs(current.offerings - previous.offerings))} 班`}</span>{/if}</p>
               {/if}
-              {#if busiest}<p class="browse-note">最多班次 <strong>{busiest.term} · {displayValue(busiest.offerings)} 班</strong></p>{/if}
+              {#if busiest}<p class="browse-note">最多班次 <strong>{busiest.term} 學期 · {displayValue(busiest.offerings)} 班</strong></p>{/if}
             </div>
           </div>
         {/snippet}
       </SchoolsTermHistory>
-      {/key}
-      {#if termOptions.length}
-        <form class="term-lookup" action="/" method="GET" aria-label="依學期查本校課程" onchange={(event) => {
-          const term = new FormData(event.currentTarget).get('term');
-          if (typeof term === 'string') chartTerm = term;
-        }}>
-          <input type="hidden" name="school" value={school.slug} />
-          <FilterSelect name="term" label="查課學期" allLabel={null} value={chartTerm} options={termOptions} />
-          <button class="browse-button">查本校該期課程</button>
-        </form>
-      {/if}
     {:else}
       <EmptyState title="目前沒有班次走勢" description="待有開課班次後，這裡會顯示各學期的變化。" />
     {/if}
@@ -154,7 +158,7 @@
   </section>
   <div class="school-details">
     <section class="browse-stack unit-section" aria-labelledby="departments">
-      <SectionHeader title="開課單位（{displayValue(units.total)}）" id="departments" description="歷年合計，課程依課號去重。" />
+      <SectionHeader title="開課單位（{displayValue(units.total)}）" id="departments" description={`歷年合計，課程依課號去重。${units.max ? `班次條滿格為 ${displayValue(units.max)} 班。` : ""}`} />
       {#if units.total}<div class="unit-filter">{@render unitFilter()}</div>{/if}
       {#if units.rows.length}
         <div class="term-tools"><p class="browse-note">共 {displayValue(units.matched)} 個單位 · 顯示 {displayValue(units.start)}–{displayValue(units.start + units.rows.length - 1)} 個</p>
@@ -174,25 +178,30 @@
     </section>
 
     <section class="browse-stack" aria-labelledby="ranking">
-      <SectionHeader title="歷年累計修課人次排行" id="ranking" description={`跨學期加總已公布的修課人次（不去重）；${data.includeNonAcademic ? '含' : '不含'}零學分及行政活動。`} />
+      <SectionHeader title="歷年累計修課人次排行" id="ranking" description={`${period ?? '歷年'}已公布的修課人次加總（不去重），${data.includeNonAcademic ? '含' : '不含'}零學分及行政活動。`} />
       <form method="GET" action={`${schoolHref(school.slug)}#ranking`}>
         {#if units.query}<input type="hidden" name="unit" value={units.query} />{/if}
         {#if units.sort !== 'offerings'}<input type="hidden" name="unit_sort" value={units.sort} />{/if}
         {#if units.page > 1}<input type="hidden" name="page" value={units.page} />{/if}
         <label class="rank-toggle"><input type="checkbox" name="include_non_academic" value="true" checked={data.includeNonAcademic} onchange={(event) => event.currentTarget.form?.requestSubmit()} /> 納入零學分及行政活動</label>
+        {#if navigating.to?.url.hash === '#ranking'}<span class="browse-note" role="status">更新排行中…</span>{/if}
         <noscript><button class="browse-button">套用</button></noscript>
       </form>
       {#if data.rankings === null}
         <ErrorState title="暫時無法取得校內排行" retryHref={page.url.pathname + page.url.search} />
       {:else}
         {#if ranked.length}
-          <div class="desktop-rank"><DataTable caption="校內累計修課人次排行" columns={rankColumns} rows={ranked} rowKey={(row) => row.courseCode} rowHref={courseHref} stickyColumn="course" minWidth="20rem" maxHeight="none" scrollHint={false}>
+          <div class="desktop-rank"><DataTable caption="校內累計修課人次排行" columns={rankColumns} rows={ranked} rowKey={(row) => row.courseCode} rowHref={courseHref} rowHeaderColumn="course" minWidth="20rem" maxHeight="none" scrollHint={false}>
             {#snippet cell(row, column)}
-              {#if column.id === 'course'}
+              {#if column.id === 'rank'}
+                <span class="rank-index">{ranked.indexOf(row) + 1}</span>
+              {:else if column.id === 'course'}
                 <span class="browse-course-cell">
-                  <span>{ranked.indexOf(row) + 1}. {row.title}</span><span class="browse-code">{row.courseCode}</span>
+                  <span>{row.title}</span><span class="browse-code">{row.courseCode}</span>
                   {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}
                 </span>
+              {:else if column.id === 'latest'}
+                <span class="browse-code">{latestTerm(row) ?? '—'}</span>
               {:else if column.id === 'enrolled'}
                 <BarCell value={row.enrolledTotal ?? null} max={maxEnrolled} />
               {:else}{displayValue(column.value?.(row))}{/if}
@@ -202,16 +211,16 @@
             <ol aria-label="校內累計修課人次排行" role="list">
               {#each ranked as row, index (row.courseCode)}
                 <li>
-                  <a href={courseHref(row)}>{index + 1}. {row.title}</a>
+                  <span class="rank-index" aria-label={`第 ${index + 1} 名`}>{index + 1}</span>
+                  <a href={courseHref(row)}>{row.title}</a>
                   <div class="rank-measures">
-                    <p class="browse-note">{displayValue(row.terms)} 期 · {displayValue(row.offerings)} 班 {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}</p>
+                    <p class="browse-note">近一期 {latestTerm(row) ?? '—'} · {displayValue(row.terms)} 期 · {displayValue(row.offerings)} 班 {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}</p>
                     <div class="rank-total"><BarCell value={row.enrolledTotal ?? null} max={maxEnrolled} unit="人次" /></div>
                   </div>
                 </li>
               {/each}
             </ol>
           </div>
-          <SchoolsRankingTrend courses={ranked} />
         {:else}
           <EmptyState title="尚無可排名的修課人數" description="未公布的人數不列入排行，也不視為 0。" />
         {/if}
@@ -221,7 +230,10 @@
             <BarList label="累計名額（不列入人次排行）" unit="名" items={capacities.map((row) => ({ label: row.title, value: row.capacityTotal ?? null, href: courseHref(row) }))} />
           </details>
         {/if}
-        <a class="browse-button" href={rankingHref(school.slug, true, data.includeNonAcademic)}>查看校內前 50 門 →</a>
+        <div class="browse-inline ranking-footer">
+          <a class="browse-button" href={rankingHref(school.slug, true, data.includeNonAcademic)}>查看校內前 50 門 →</a>
+          <SchoolsRankingTrend courses={ranked} />
+        </div>
       {/if}
     </section>
   </div>
@@ -230,37 +242,48 @@
 
 <style>
   .school-page h1 { font-size: var(--t-2xl); font-weight: 650; }
-  .school-page { gap: var(--space-3); }
+  .school-page { gap: var(--space-3); --school-shell-height: calc(3.75rem + 1px); }
   .school-page .browse-crumbs + .browse-head { margin-block-start: calc(-1 * var(--space-2)); }
   .unit-section { --bar-cell-track-size: 8rem; }
   .school-page :global(#term-history) { margin-block-start: var(--space-5); }
-  .school-page :global(:is(#term-history, #departments, #ranking)), #school-top { scroll-margin-block-start: 6.25rem; }
+  .school-page :global(:is(#term-history, #departments, #ranking)), #school-top { scroll-margin-block-start: calc(var(--school-shell-height) + var(--target-min) + var(--space-2)); }
   .school-page .browse-note { text-wrap: pretty; }
   .browse-field input::placeholder { color: var(--muted); opacity: 1; }
   .unit-total :global(.bar-cell) { display: grid; grid-template-columns: minmax(0, 1fr) 6ch; }
   .term-tools, .chart-header, .term-lookup { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+  .school-actions { display: grid; gap: var(--space-2); }
   .term-lookup { align-items: end; }
   .unit-section :global(td), .unit-section :global(th) { padding-inline: var(--unit-table-gutter, .625rem); }
   .term-tools { justify-content: space-between; }
   .chart-header { margin-block-end: var(--space-2); }
   .school-page .browse-compact-stats :global(.tile > p) { font-size: .8125rem; }
-  .jump-links { gap: var(--space-2); }
+  .jump-links { gap: var(--space-2); position: sticky; inset-block-start: var(--school-shell-height); z-index: 4; background: var(--bg); padding-block: var(--space-1); }
   .jump-links a { min-block-size: var(--target-min); align-content: center; padding-inline: var(--space-3); border-radius: var(--radius-pill); background: var(--chip); text-decoration: none; font-size: var(--t-base); font-weight: 650; }
   .back-to-top { justify-self: start; align-content: center; min-block-size: var(--target-min); font-size: var(--t-base); }
   .jump-links a:hover { text-decoration: underline; }
   .edition { white-space: nowrap; }
-  .rank-toggle { display: inline-flex; gap: var(--space-2); align-items: center; min-block-size: var(--target-min); cursor: pointer; }
+  .rank-toggle { display: inline-flex; padding-inline: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); gap: var(--space-2); align-items: center; min-block-size: var(--target-min); cursor: pointer; }
+  .rank-toggle input { inline-size: 1rem; block-size: 1rem; margin: 0; accent-color: var(--brand); }
+  .rank-toggle:has(input:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .rank-index { display: grid; place-items: center; font: var(--t-sm) var(--font-mono); color: var(--muted); }
+  .desktop-rank :global(:is(td, th):first-child) { padding-inline: 0; }
+  .desktop-rank :global(.browse-course-cell) { display: block; line-height: 1.35; padding-block: .2rem; }
+  .desktop-rank .browse-course-cell .browse-code { display: inline-block; margin-inline-start: .35em; font-size: var(--t-xs); }
+  .ranking-footer { align-items: start; gap: var(--space-1) var(--space-3); }
   .mobile-rank { display: none; }
   .desktop-rank { --bar-cell-track-size: clamp(2rem, 4vw, 4rem); }
   .desktop-rank :global(.bar-cell) { display: grid; justify-content: end; grid-template-columns: minmax(0, var(--bar-cell-track-size)) minmax(7ch, max-content); }
+  .school-details :global(.fill) { min-inline-size: 3px; }
   .school-details { display: grid; gap: var(--space-4); align-items: start; }
   .capacity-details summary { width: fit-content; min-height: var(--target-min); align-content: center; color: var(--brand-ink); cursor: pointer; }
   @media (min-width: 67rem) {
     .school-details { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .desktop-rank :global(table) { table-layout: fixed; }
+    .desktop-rank :global(td), .desktop-rank :global(tbody th) { padding-block: .2rem; }
+    .school-actions { justify-items: end; }
   }
   @media (min-width: 67rem) and (pointer: fine) {
-    .unit-section :global(.row-link) { min-block-size: 2rem; }
+    .school-details :global(.row-link) { min-block-size: 2rem; }
   }
   .browse-button { justify-self: start; }
   @media (max-width: 40rem) {
@@ -275,11 +298,15 @@
     .unit-filter :global(.actions a) { grid-column: 1 / -1; justify-self: start; }
     .mobile-rank { display: block; }
     .mobile-rank ol { list-style: none; padding: 0; margin: 0; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
-    .mobile-rank li { padding: 0 var(--space-3) var(--space-2); }
+    .mobile-rank li { display: grid; grid-template-columns: 1.75rem minmax(0, 1fr); align-items: center; column-gap: var(--space-2); padding: 0 var(--space-2) var(--space-1); }
+    .mobile-rank .rank-index { grid-row: 1; min-block-size: 1.75rem; border-radius: var(--radius-control); background: var(--chip); }
     .mobile-rank li + li { border-block-start: 1px solid var(--line); }
     .mobile-rank li a { display: flex; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
-    .rank-measures { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.75fr); align-items: center; gap: var(--space-1) var(--space-3); }
+    .rank-measures { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(5.5rem, max-content); align-items: center; gap: var(--space-1) var(--space-3); }
+    .rank-measures p { font-size: var(--t-sm); }
+    .rank-total { inline-size: 8rem; }
     .rank-total :global(.bar-cell) { display: grid; grid-template-columns: minmax(0, 1fr) max-content; font-size: var(--t-sm); }
     .rank-total :global(.track) { block-size: 5px; }
   }
+  @media (max-width: 39rem) { .school-page { --school-shell-height: calc(2 * var(--target-min) + var(--space-1) + 1px); } }
 </style>
