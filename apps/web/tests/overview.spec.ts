@@ -160,8 +160,12 @@ test('derives directory coverage from crawler status and imported offerings', as
     await expect(page.getByRole('columnheader', { name: '已匯入班次' })).toHaveAttribute('aria-sort', 'descending');
   }
 
-  await page.getByText('更多篩選', { exact: true }).click();
   const status = page.getByRole('combobox', { name: '收錄狀態' });
+  // A cold dev server can re-render the page after the first click and close the disclosure again.
+  await expect(async () => {
+    if (!(await status.isVisible())) await page.getByText('更多篩選', { exact: true }).click();
+    await expect(status).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 20_000 });
   await status.selectOption('live');
   await page.getByRole('button', { name: '套用篩選' }).click();
   await expect(page).toHaveURL(/\/schools\?.*status=live/);
