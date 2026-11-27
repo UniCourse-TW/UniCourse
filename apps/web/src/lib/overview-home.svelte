@@ -15,12 +15,11 @@
   import ErrorState from './ui/ErrorState.svelte';
   import FilterSelect from './ui/FilterSelect.svelte';
   import Heatstrip from './ui/Heatstrip.svelte';
-  import PartialTermLegend from './ui/PartialTermLegend.svelte';
   import SectionHeader from './ui/SectionHeader.svelte';
   import StatRow from './ui/StatRow.svelte';
   import StatTile from './ui/StatTile.svelte';
   import { displayValue } from './ui/format';
-  import { partialTerms } from './ui/partial-terms';
+  import { partialTermLabel, partialTerms } from './ui/partial-terms';
   import type { TableColumn } from './ui/types';
 
   let { schools, terms, overview }: { schools: School[]; terms: string[]; overview: Extract<PageData['content'], { kind: 'overview' }> } = $props();
@@ -46,7 +45,7 @@
     { id: 'school', label: '學校' },
     { id: 'terms', label: '學期數', numeric: true, width: '5rem' },
     { id: 'enrollment', label: '累計修課人次', numeric: true, width: '13rem' },
-    { id: 'trend', label: '修課走勢（人）', headerNote: '各課從 0 起，分別定尺度', width: '16rem' }
+    { id: 'trend', label: '修課走勢（人）', headerNote: '少於 6 期用點圖', width: '19rem' }
   ]);
 
   let rows = $derived.by(() => {
@@ -56,6 +55,7 @@
   let maximum = $derived(Math.max(0, ...rows.map((course) => metricValue(course) ?? 0)));
   let trendCaption = $derived(rankingTrendCaption(trendTerms));
   let compactRanking = $derived(overview.diverse && !overview.expanded && rows.length > 5);
+  let defaultTerm = $derived(terms[0]);
   let recentPeriod = $derived(coveragePeriod(overview.recentTerms));
   let hasPartialTrend = $derived(rows.some((course) => partialTerms(Object.entries(course.sectionsByTerm)).size > 0));
   let rankedSchools = $derived(new Set(rows.filter((course) => course.rank !== null).map((course) => course.school)).size);
@@ -101,7 +101,7 @@
   <div>
     <p class="eyebrow">UniCourse <span>／</span> 大學課程觀測站</p>
     <h1>跨校查課，看十年修課人數。</h1>
-    <p class="dek">跨校比對開課班次、授課教師與歷年修課人數；從課名、教師或課號開始查。</p>
+    <p class="dek">比較各校班次、教師與歷年修課人數。</p>
     <p class="metadata">
       {#if latest}<span>更新於 <time datetime={latest} title={importedAt(latest)}>{shortImportedAt(latest)}</time>・臺北時間</span>{:else}<span>更新時間未公布</span>{/if}
       <span aria-hidden="true">·</span><a href="#coverage">資料來源</a>
@@ -110,14 +110,18 @@
 </header>
 
 <section class="search-panel" aria-labelledby="find-courses">
-  <h2 id="find-courses">搜尋課程</h2>
+  <h2 id="find-courses" class="visually-hidden">搜尋課程</h2>
   <OverviewSearchForm {schools} {terms} compact />
-  <div class="search-shortcuts"><button class="button text-action" form="course-search" name="all_terms" value="1">查全部學期</button><a class="summary-jump" href="#ranking">看累計修課排行 ↓</a></div>
+  <div class="search-shortcuts">
+    {#if defaultTerm}<p class="metadata">預設查 {defaultTerm}</p>{/if}
+    <button class="button text-action" form="course-search" name="all_terms" value="1">查全部學期</button>
+    <a class="summary-jump" href="#ranking">看累計修課排行 ↓</a>
+  </div>
+  <nav class="popular" aria-label="搜尋範例">
+    <span>搜尋範例</span>
+    {#each searchExamples as query (query)}<a href={overviewSearchHref({ query, term: 'all' })}>{query}</a>{/each}
+  </nav>
 </section>
-<nav class="popular" aria-label="搜尋範例">
-  <span>搜尋範例</span>
-  {#each searchExamples as query (query)}<a href={overviewSearchHref({ query, term: 'all' })}>{query}</a>{/each}
-</nav>
 
 <section class="home-section snapshot" aria-labelledby="snapshot-title">
   <div class="snapshot-heading">
@@ -192,17 +196,17 @@
       {#snippet action()}<a class="button secondary" href="/schools">看各校收錄狀態</a>{/snippet}
     </EmptyState>
   {:else}
-    <p class="metadata rank-chart-key">{trendPeriod ? `${trendPeriod} · ` : ''}{trendCaption}{#if hasPartialTrend} <span class="trend-key"><PartialTermLegend />（＊，暫無差值）</span>{/if}</p>
+    <p class="metadata rank-chart-key">累計條 0–{displayValue(maximum)} 人次。{trendPeriod ? `${trendPeriod} 走勢。` : ''}{trendCaption}{#if hasPartialTrend} <span class="trend-key"><i aria-hidden="true"></i>空心點或＊＝{partialTermLabel}</span>{/if}</p>
     <div class="desktop-ranking">
       <DataTable caption="累計修課人次與各期走勢" {columns} {rows}
         rowKey={(course) => course.latestOfferingId} rowHeaderColumn="course" minWidth="42rem" maxHeight="none" scrollHint={false}>
         {#snippet cell(course, column)}
           {#if column.id === 'rank'}<span class="rank-number">{displayValue(course.rank)}</span>
-          {:else if column.id === 'course'}<div class="rank-title">{@render courseTitle(course)}{#if course.lastOffered}<small>最近開課 {course.lastOffered}</small>{/if}</div>
+          {:else if column.id === 'course'}<div class="rank-title">{@render courseTitle(course)}</div>
           {:else if column.id === 'school'}<span class="school-meta">{course.schoolName} <small>{course.courseCode}</small></span>{#if course.isDemo}<Badge label="示範" tone="demo" />{/if}
           {:else if column.id === 'terms'}{displayValue(course.terms)}
           {:else if column.id === 'enrollment'}{@render metric(course)}
-          {:else if column.id === 'trend'}<OverviewRankingTrend {course} terms={trendTerms} recentTerms={overview.recentTerms} />{/if}
+          {:else if column.id === 'trend'}<OverviewRankingTrend {course} terms={trendTerms} lastOffered={course.lastOffered} />{/if}
         {/snippet}
       </DataTable>
     </div>
@@ -222,7 +226,7 @@
             </div>
             <span class="rank-meta">{course.schoolName} · <code>{course.courseCode}</code> · {course.terms} 學期{#if published && published < course.terms} · {published} 期有人數{/if} {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}</span>
             <div class="mobile-trend">
-              <OverviewRankingTrend {course} terms={trendTerms} recentTerms={overview.recentTerms} lastOffered={course.lastOffered} />
+              <OverviewRankingTrend {course} terms={trendTerms} lastOffered={course.lastOffered} />
             </div>
           </li>
         {/each}
@@ -253,6 +257,7 @@
   {:else if coveredSchools.length}
     <p class="coverage-summary"><strong>{displayValue(deepCoverage.length)} 所</strong>涵蓋 4 個學期以上，<strong>{displayValue(coveredSchools.length - deepCoverage.length)} 所</strong>收錄 1–3 個學期。</p>
     {#if deepCoverage.length}
+      <p class="metadata coverage-key">每格一學年。空框為未收錄，斜線一學期，實色兩學期。</p>
       <div class="coverage-schools">
         <DataTable caption="收錄至少 4 學期的學校" columns={coverageColumns} rows={deepCoverage} rowKey={(school) => school.slug} rowHref={(school) => schoolHref(school.slug)} minWidth="0" maxHeight="none" scrollHint={false}>
           {#snippet header(column)}
@@ -268,7 +273,6 @@
           {/snippet}
         </DataTable>
       </div>
-      <p class="metadata">每格一學年。空框為未收錄，斜線為一學期，實色為兩學期。</p>
     {/if}
     <a class="button secondary coverage-all" href="/schools">查看全部 {displayValue(overview.institutions.length)} 所學校 →</a>
   {:else}
@@ -285,7 +289,6 @@
   .dek { margin: var(--space-2) 0 0; color: var(--ink-2); }
   .metadata { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); margin: var(--space-1) 0 0; color: var(--muted); font-size: var(--t-sm); }
   .search-panel { margin-block-start: var(--space-5); padding: var(--space-4); background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-panel); }
-  .search-panel h2 { margin: 0 0 var(--space-2); font-size: var(--t-lg); line-height: var(--leading-tight); }
   .popular { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; margin-block-start: var(--space-2); color: var(--muted); font-size: var(--t-sm); }
   .popular a { display: inline-flex; align-items: center; min-height: var(--target-min); padding-inline: var(--space-3); border-radius: var(--radius-pill); background: var(--panel-raised); border: 1px solid var(--line); color: var(--brand-ink); font-weight: 630; text-decoration: none; }
   .popular a:hover { background: var(--brand-wash); }
@@ -294,12 +297,13 @@
   .snapshot-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
   .snapshot-period { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1); margin: 0; color: var(--muted); font-size: var(--t-sm); }
   .coverage-depth { display: flex; flex-wrap: wrap; column-gap: var(--space-2); }
-  .coverage-depth > span { white-space: nowrap; }
+  .coverage-depth > span { color: var(--ink-2); white-space: nowrap; }
+  .coverage-depth strong { color: var(--ink); font-size: var(--t-base); }
   .snapshot :global(.detail) { display: block; margin-inline-start: 0; }
   .rank-form { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
   .rank-toggle { display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--target-min); font-size: var(--t-sm); cursor: pointer; }
   .rank-toggle input { accent-color: var(--brand); }
-  #ranking[aria-busy='true'] .rank-form { opacity: 0.7; }
+  .rank-toggle:has(input:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .ranking-tools { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .ranking-views { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1); }
   .ranking-views > span { color: var(--muted); font-size: var(--t-sm); }
@@ -312,6 +316,7 @@
   .mobile-ranking, .more-ranking { display: none; }
   .rank-chart-key { display: block; margin: 0; text-wrap: pretty; }
   .trend-key { display: inline-flex; align-items: center; }
+  .trend-key i { inline-size: .55rem; block-size: .55rem; margin-inline-end: var(--space-1); border: 1px solid var(--brand); border-radius: 50%; }
   .desktop-ranking { --table-pad-block: 0.3rem; }
   .rank-title { display: grid; min-width: 0; }
   .course-title { overflow-wrap: anywhere; }
@@ -326,7 +331,13 @@
   .unpublished { color: var(--muted); }
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .coverage-summary { margin: 0; color: var(--ink-2); text-wrap: pretty; }
-  .coverage-schools { --table-pad-block: .25rem; --heatstrip-cell-size: .875rem; }
+  .coverage-key { margin: calc(-1 * var(--space-2)) 0 0; }
+  .coverage-schools { --table-pad-block: .25rem; --heatstrip-cell-size: .875rem; --heatstrip-tick-size: 0.75rem; }
+  .coverage-schools :global(tbody tr) { position: relative; }
+  .coverage-schools :global(tbody th.sticky) { position: static; box-shadow: none; }
+  .coverage-schools :global(.row-link::after) { content: ''; position: absolute; inset: 0; }
+  .coverage-schools :global(.row-link:focus-visible) { outline: none; }
+  .coverage-schools :global(.row-link:focus-visible::after) { inset: calc(var(--focus-offset) * 2); outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .coverage-name { text-wrap: balance; }
   .coverage-recent { display: block; }
   .rank-frame { min-width: 0; }
@@ -337,6 +348,7 @@
   .summary-jump { display: inline-flex; align-items: center; min-block-size: var(--target-min); justify-self: start; }
   .coverage-all { justify-self: start; }
   .search-shortcuts { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
+  .search-shortcuts .metadata { margin: 0; }
   .search-shortcuts button { cursor: pointer; }
   @media (max-width: 45rem) {
     .desktop-ranking { display: none; }
@@ -344,16 +356,21 @@
     .mobile-ranking { display: grid; margin: 0; padding: 0; list-style: none; }
     .rank-frame { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
     .rank-footer { border-block-start: 1px solid var(--line); padding: 0 var(--space-2); }
-    .mobile-ranking li { display: grid; grid-template-columns: 1rem minmax(0, 1fr) minmax(6.75rem, auto); column-gap: var(--space-2); align-items: center; padding: 0 var(--space-3) 2px; }
+    .mobile-ranking li { position: relative; display: grid; grid-template-columns: 1rem minmax(0, 1fr) auto; column-gap: var(--space-2); align-items: center; padding: 2px var(--space-3); }
     .mobile-ranking li + li { border-top: 1px solid var(--line); }
     .more-ranking { display: block; border-block-start: 1px solid var(--line); }
     .more-ranking summary { width: fit-content; min-height: var(--target-min); padding-inline: var(--space-3); align-content: center; color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; cursor: pointer; }
     .more-ranking[open] .show-ranking, .more-ranking:not([open]) .hide-ranking { display: none; }
     .mobile-ranking .rank-number { justify-self: end; font-size: var(--t-base); }
     .mobile-course { font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
-    .mobile-course a { display: flex; align-items: center; min-height: var(--target-min); padding-block: var(--space-1); }
+    .mobile-course { padding-block: var(--space-1); }
+    .mobile-course a::after { content: ''; position: absolute; inset: 0; }
+    .mobile-course a:focus-visible { outline: none; }
+    .mobile-course a:focus-visible::after { inset: calc(var(--focus-offset) * 2); outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+    .mobile-ranking li:has(a:is(:hover, :focus-visible)) { background: var(--hover-row); }
     .mobile-total { display: grid; justify-items: end; text-align: end; font-size: var(--t-md); line-height: 1.3; }
     .mobile-total small { font-size: var(--t-sm); }
+    .mobile-total strong { white-space: nowrap; }
     .rank-meta { grid-column: 2 / -1; overflow-wrap: anywhere; line-height: 1.35; }
     .rank-meta code { font-family: var(--font-mono); }
     .mobile-trend { grid-column: 2 / -1; font-size: var(--t-base); }
@@ -361,7 +378,7 @@
     .mobile-metric :global(.bar-cell > .ui-tabular), .mobile-metric .capacity-label { display: none; }
     .mobile-metric .metric :global(.bar-cell) { --bar-cell-track-size: 100%; width: 100%; }
     .mobile-metric .metric :global(.track) { block-size: 4px; }
-    .coverage-schools { --heatstrip-cell-size: clamp(.45rem, 2.2vw, .875rem); --coverage-count-width: 4.5rem; --heatstrip-empty-line: var(--muted); }
+    .coverage-schools { --heatstrip-cell-size: 10px; --heatstrip-gap: 1px; --coverage-count-width: 4rem; --heatstrip-empty-line: var(--muted); }
     .coverage-name { font-size: var(--t-sm); }
   }
   @media (max-width: 37rem) {
@@ -369,6 +386,7 @@
     .hero img { width: 36px; height: 36px; }
     h1 { font-size: var(--t-2xl); text-wrap: initial; }
     .search-panel { padding: var(--space-3); }
+    .search-shortcuts { column-gap: var(--space-1); }
     .popular { gap: var(--space-1); }
     .popular a { padding-inline: var(--space-2); }
     .snapshot { gap: var(--space-2); }

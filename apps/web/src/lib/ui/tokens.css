@@ -5,8 +5,8 @@
   --line: #e4e4e7;
   --axis: #a1a1aa;
   --ink: #18181b;
-  --ink-2: #3f3f46;
-  --muted: #62626c;
+  --ink-2: #38383f;
+  --muted: #575761;
   --brand: #5630a5;
   --brand-ink: #472485;
   --brand-wash: #efe9fb;
@@ -37,8 +37,8 @@
 
   --font-sans: 'PingFang TC', 'Noto Sans TC', 'Noto Sans CJK TC', 'Microsoft JhengHei', system-ui, sans-serif;
   --font-mono: ui-monospace, 'IBM Plex Mono', Menlo, monospace;
-  --t-xs: 0.6875rem;
-  --t-sm: 0.75rem;
+  --t-xs: 0.8125rem;
+  --t-sm: var(--t-xs);
   --t-base: 0.875rem;
   --t-md: 0.9375rem;
   --t-lg: 1.0625rem;
@@ -81,8 +81,8 @@
     --line: #27272a;
     --axis: #3f3f46;
     --ink: #ededed;
-    --ink-2: #d4d4d8;
-    --muted: #a1a1aa;
+    --ink-2: #dedee2;
+    --muted: #aeaeb7;
     --brand: #b79cf0;
     --brand-ink: #c9b5f5;
     --brand-wash: #2b2440;
@@ -117,8 +117,8 @@
   --line: #27272a;
   --axis: #3f3f46;
   --ink: #ededed;
-  --ink-2: #d4d4d8;
-  --muted: #a1a1aa;
+  --ink-2: #dedee2;
+  --muted: #aeaeb7;
   --brand: #b79cf0;
   --brand-ink: #c9b5f5;
   --brand-wash: #2b2440;
@@ -145,6 +145,11 @@
 }
 
 .ui-tabular { font-variant-numeric: tabular-nums; }
+
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
 
 /* Keep inactive controls legible, including in browsers that dim native text. */
 :is(button, input, select, textarea):disabled,
