@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { catalog } from '$lib/server/catalog';
+import { loadCourseExternalReviews } from '$lib/server/course-external-reviews';
 import { browseRatings } from '$lib/schools-offering-ratings';
 import { buildTeachingMatrix, offeringEdition } from '$lib/schools-offerings';
 import type { PageServerLoad } from './$types';
@@ -29,9 +30,15 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const totalPages = Math.max(1, Math.ceil(matches.length / pageSize));
   const page = Number.isSafeInteger(requestedPage) ? Math.min(Math.max(1, requestedPage), totalPages) : 1;
   const rows = matches.slice((page - 1) * pageSize, page * pageSize);
-  const [summaryRatings, ratings] = await Promise.all([
+  const recentCodes = [...new Set(offerings.map(({ courseCode }) => courseCode))].slice(0, 5);
+  const [summaryRatings, ratings, courseReviews] = await Promise.all([
     browseRatings(client, instructor.school, offerings),
-    term || courseCode || page > 1 ? browseRatings(client, instructor.school, rows) : null
+    term || courseCode || page > 1 ? browseRatings(client, instructor.school, rows) : null,
+    externalReviews?.data && !externalReviews.data.posts.length ? Promise.all(recentCodes.map(async (code) => {
+      const row = offerings.find(({ courseCode }) => courseCode === code)!;
+      const reviews = await loadCourseExternalReviews(fetch, instructor.school, code);
+      return { id: row.id, title: row.title, count: reviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0 };
+    })) : []
   ]);
 
   return {
@@ -40,6 +47,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
     matrix: buildTeachingMatrix(offerings), trends: trendResult?.data ?? null, summaryRatings,
     ratings: ratings ?? summaryRatings,
     externalReviews: externalReviews?.data ?? null,
+    courseReviews: courseReviews.filter(({ count }) => count > 0),
     listed: offerings.length,
     updatedAt: offeringEdition(offerings)
   };

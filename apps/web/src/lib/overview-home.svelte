@@ -5,7 +5,7 @@
   import { importedAt } from './format';
   import { coveragePeriod, hasSchoolPage } from './institutions';
   import { overviewSearchHref, popularSearches, rankingHref, schoolHref } from './overview-paths';
-  import OverviewRankingTrend from './overview-ranking-trend.svelte';
+  import OverviewRankingTrend, { rankingTrendCaption } from './overview-ranking-trend.svelte';
   import OverviewSearchForm from './overview-search-form.svelte';
   import Badge from './ui/Badge.svelte';
   import BarCell from './ui/BarCell.svelte';
@@ -28,15 +28,16 @@
     { id: 'school', label: '學校' },
     { id: 'terms', label: '學期數', numeric: true, width: '5rem' },
     { id: 'enrollment', label: '累計修課人數', numeric: true, width: '13rem' },
-    { id: 'trend', label: '近期走勢', width: '8rem' }
+    { id: 'trend', label: '近期走勢', width: '11rem' }
   ];
 
   let rows = $derived.by(() => {
     let rank = 0;
-    return (overview.rankings ?? []).map((course) => ({ ...course, rank: metricValue(course) !== null ? ++rank : null }));
+    return (overview.rankings ?? []).map((course) => ({ ...course, rank: course.enrolledTotal != null ? ++rank : null }));
   });
   let maximum = $derived(Math.max(0, ...rows.map((course) => metricValue(course) ?? 0)));
   let trendTerms = $derived(terms.slice(0, 10).reverse());
+  let trendCaption = $derived(rankingTrendCaption(trendTerms));
   let trendMax = $derived(Math.max(0, ...rows.flatMap((course) => course.trend.filter(({ term }) => trendTerms.includes(term)).map(({ enrolled }) => enrolled ?? 0))));
   let latest = $derived(overview.latest);
   let period = $derived(coveragePeriod(overview.totals?.terms ?? []));
@@ -108,7 +109,7 @@
 {/snippet}
 
 <section class="home-section" id="ranking" aria-labelledby="ranking-title" aria-busy={rankingPending}>
-  <SectionHeader id="ranking-title" title="歷史累計修課人數排行" description="同校同課號，跨學期加總已公布的修課人次。開設多年、多班且有公布人數的課（如逢甲通識）容易排在前面，不代表單期熱度。">
+  <SectionHeader id="ranking-title" title="歷史累計修課人數排行" description="同校同課號，跨學期加總已公布人次；不是單期熱度。">
     {#snippet actions()}
       <form method="GET" action="/#ranking" class="rank-form" onchange={applySchool}>
         {#if overview.expanded}<input type="hidden" name="rank_limit" value="50" />{/if}
@@ -119,11 +120,11 @@
       </form>
     {/snippet}
   </SectionHeader>
-  <p class="metadata">目前{overview.includeNonAcademic ? '納入' : '排除'}零學分及班會、導師時間等行政活動；學分未公布不視為零。</p>
   <div class="ranking-tools">
+    <div class="rank-scope"><Badge label="僅已公布修課人數列入名次" /></div>
     <details class="ranking-method">
       <summary>計算方式</summary>
-      <p>依榜上所示班次的課名與學分判定是否列入。未公布修課人數的課以累計名額排列在後，並以斜紋標示；兩者皆未公布不列名次。</p>
+      <p>目前{overview.includeNonAcademic ? '納入' : '排除'}零學分及班會、導師時間等行政活動；學分未公布不視為零。開設多年、多班的課較容易上榜。只公布名額的課以斜紋顯示，列在有修課人數的課之後。</p>
     </details>
     {#if rows.length >= 10 || overview.expanded}
       <a class="button text-action expand-ranking" href={rankHref}>{overview.expanded ? '顯示前 10 筆' : '查看前 50 筆'} <span aria-hidden="true">→</span></a>
@@ -138,9 +139,8 @@
       {#snippet action()}<a class="button secondary" href="/schools">看各校收錄狀態</a>{/snippet}
     </EmptyState>
   {:else}
-    {#if trendTerms.length}<p class="metadata">近期走勢：<span class="ui-tabular">{trendTerms[0]}{trendTerms.length > 1 ? ` 至 ${trendTerms.at(-1)}` : ''}</span>，缺期不連線；紀錄較少時列最近有數值的學期。</p>{/if}
     <div class="desktop-ranking">
-      <DataTable caption="同一尺度比較人數與名額；走勢由左至右為舊到新。" {columns} {rows}
+      <DataTable caption={trendCaption} {columns} {rows}
         rowKey={(course) => course.latestOfferingId} rowHeaderColumn="course" minWidth="42rem" maxHeight="none" scrollHint={false}>
         {#snippet cell(course, column)}
           {#if column.id === 'rank'}<span class="rank-number">{displayValue(course.rank)}</span>
@@ -152,7 +152,7 @@
         {/snippet}
       </DataTable>
     </div>
-    <div class="mobile-rank-key" aria-hidden="true"><span>累計修課人數</span><span>近期人數／走勢</span></div>
+    <p class="metadata mobile-rank-caption">{trendCaption}</p>
     <ol class="mobile-ranking" aria-label="累計修課人數排行" role="list">
       {#each rows as course (course.latestOfferingId)}
         <li>
@@ -162,10 +162,8 @@
             <span class="rank-meta">{course.schoolName} · {course.courseCode} · {course.terms} 學期 {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}</span>
             <div class="rank-metric">
               {#if metricValue(course) === null}<span class="unpublished">人數與名額未公布</span>
-              {:else}
-                {@render metric(course)}
-                <OverviewRankingTrend {course} terms={trendTerms} max={trendMax} />
-              {/if}
+              {:else}<span class="mobile-metric" title={course.enrolledTotal == null ? '累計名額' : '累計修課人次'}>{@render metric(course)}</span>{/if}
+              <OverviewRankingTrend {course} terms={trendTerms} max={trendMax} />
             </div>
           </div>
         </li>
@@ -240,7 +238,8 @@
   .button { display: inline-flex; justify-content: center; align-items: center; gap: var(--space-1); min-height: var(--target-min); padding-inline: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--brand-ink); font: 650 var(--t-base) / var(--leading-table) var(--font-sans); text-decoration: none; cursor: pointer; }
   .secondary { border-color: var(--control-line); }
   .button:hover { background: var(--brand-wash); }
-  .mobile-ranking, .mobile-rank-key, .expand-mobile { display: none; }
+  .rank-scope { display: flex; align-items: center; }
+  .mobile-ranking, .mobile-rank-caption, .expand-mobile { display: none; }
   .desktop-ranking { --table-pad-block: 0.3rem; }
   .rank-title { display: grid; min-width: 0; }
   .course-title { overflow-wrap: anywhere; }
@@ -269,6 +268,8 @@
   .coverage-panel .coverage-count { text-align: end; white-space: nowrap; }
   @media (max-width: 45rem) {
     .desktop-ranking, .expand-ranking { display: none; }
+    .mobile-rank-caption { display: block; }
+    .mobile-course small { display: none; }
     .expand-mobile { display: inline-flex; justify-self: start; }
     .mobile-ranking { display: grid; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
     .mobile-ranking li { display: grid; grid-template-columns: 1.5rem minmax(0, 1fr); gap: var(--space-2); align-items: start; padding: var(--space-1) var(--space-3) var(--space-2); }
@@ -276,9 +277,9 @@
     .mobile-ranking .rank-number { margin-top: var(--space-3); font-size: var(--t-base); }
     .mobile-course { display: flex; flex-direction: column; justify-content: center; min-height: var(--target-min); width: fit-content; max-width: 100%; font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
     .rank-meta { overflow-wrap: anywhere; }
-    .rank-metric, .mobile-rank-key { display: grid; grid-template-columns: minmax(0, 1fr) minmax(6.75rem, .75fr); gap: var(--space-2); align-items: center; }
-    .mobile-rank-key { padding-inline: calc(var(--space-3) + 1.5rem + var(--space-2)) var(--space-3); font-size: var(--t-sm); color: var(--muted); }
+    .rank-metric { display: grid; grid-template-columns: minmax(0, 1fr) minmax(9rem, 1fr); gap: var(--space-2); align-items: center; }
     .rank-metric .metric { justify-content: start; }
+    .mobile-metric { min-width: 0; }
     .rank-metric .unpublished { font-size: var(--t-sm); }
     .rank-metric .metric :global(.bar-cell) { --bar-cell-track-size: 3.5rem; width: auto; }
   }

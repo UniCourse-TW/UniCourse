@@ -71,9 +71,9 @@
 
 {#snippet rating(row: Offering)}
   {@const stats = ratings.get(row.courseCode)}
-  <a class="rating-note" href={`${courseHref(row)}#ratings`}>看課程評價</a>
-  {#if stats?.average != null}<small class="rating-sample ui-tabular">{stats.average.toFixed(1)} 分 · {displayValue(stats.count)} 則</small>
-  {:else if stats}<small class="rating-sample">尚無評價</small>{/if}
+  {#if stats?.average != null}<a class="rating-sample ui-tabular" href={`${courseHref(row)}#ratings`} aria-label={`${row.title}的課程評價：${stats.average.toFixed(1)} 分，${displayValue(stats.count)} 則`}>{stats.average.toFixed(1)} 分 · {displayValue(stats.count)} 則</a>
+  {:else if stats}<small class="rating-sample">尚無評價</small>
+  {:else}<small class="rating-sample">{stats === null ? '評價暫無法取得' : '本頁未查詢'}</small>{/if}
 {/snippet}
 
 {#snippet schedule(row: Offering)}
@@ -81,6 +81,7 @@
 {/snippet}
 
 <div class="table-view">
+  <p class="browse-note offering-legend">條長＝各班滿額比例；— 表示未公布。</p>
   <DataTable {caption} rows={offerings} {columns} rowKey={(row) => row.id} rowHref={courseHref} clientSort minWidth="47rem" maxHeight="none">
     {#snippet cell(row, column)}
       {#if column.id === 'course'}
@@ -104,30 +105,30 @@
     {@const time = scheduleLines(row)}
     <li>
       <div class="card-title">
-        <div class="card-course">
-          <a href={courseHref(row)}>{row.title}</a>
-          <div class="card-meta">
-            {#if showTerm}<span class="browse-code">{row.term}</span>{/if}{@render code(row)}
-            {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}
-          </div>
+        <a class="card-course" href={courseHref(row)}>{row.title}</a>
+        <div class="card-rating" aria-label="課程評價">{@render rating(row)}</div>
+        <div class="card-meta">
+          {#if showTerm}<span class="browse-code">{row.term}</span>{/if}{@render code(row)}
+          {#if category(row)}<span title={requirement(row)}>{category(row)}</span>{/if}
+          {#if mode === 'department' && row.grade}<span>{row.grade} 年級</span>{/if}
+          {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}
         </div>
         {@render enrollment(row)}
       </div>
       <div class="card-meta secondary-meta">
         {#if mode === 'department'}<span class="people">{@render teachers(row)}</span>
         {:else}<span class="people">{@render unit(row)}</span>{/if}
-        {#if category(row)}<span class="category" title={requirement(row)}>{category(row)}</span>{/if}
-        {#if mode === 'department' && row.grade}<span>{row.grade} 年級</span>{/if}
+        {#if time.length}<span aria-hidden="true">·</span><span class="meeting">{time.join('；')}</span>{/if}
       </div>
-      {#if time.length === 1}<p class="meeting">{time[0]}</p>
-      {:else if time.length > 1}<details class="meeting"><summary>{time[0]}、另 {time.length - 1} 個時段</summary>{#each time.slice(1) as slot, index (index)}<p>{slot}</p>{/each}</details>{/if}
-      <div class="card-rating">{@render rating(row)}</div>
     </li>
   {/each}
 </ul>
+<p class="phone-legend browse-note">條長＝各班滿額比例；— 表示未公布。</p>
 
 <style>
-  .rating-note, .rating-sample { display: block; font-size: var(--t-sm); }
+  .rating-sample { display: block; font-size: var(--t-sm); }
+  .offering-legend { margin-block-end: var(--space-1); }
+  .phone-legend { display: none; }
   .offer-code { white-space: nowrap; }
   .category { display: block; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-view { display: none; }
@@ -141,19 +142,16 @@
   .slot { display: block; overflow-wrap: anywhere; }
   @media (max-width: 40rem) {
     .table-view { display: none; }
+    .phone-legend { display: block; }
     .card-view { display: grid; list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel-raised); }
-    .card-view li { min-inline-size: 0; padding: 0 var(--space-3) var(--space-1); overflow-wrap: anywhere; }
+    .card-view li { min-inline-size: 0; padding: 0 var(--space-3) var(--space-2); overflow-wrap: anywhere; }
     .card-view li + li { border-block-start: 1px solid var(--line); }
-    .card-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); }
-    .card-course a { display: flex; align-items: center; width: fit-content; min-block-size: var(--target-min); font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
+    .card-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-2); }
+    .card-course { display: flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
     .card-meta, .card-rating { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--muted); font-size: var(--t-sm); }
     .secondary-meta { margin-block-start: var(--space-1); }
-    .secondary-meta .category { max-inline-size: 9rem; }
     .people { color: var(--ink-2); }
-    .enrollment { text-align: end; font-size: var(--t-sm); }
-    .meeting { margin: var(--space-1) 0 0; color: var(--muted); font-size: var(--t-sm); }
-    .meeting summary { cursor: pointer; min-block-size: var(--target-min); align-content: center; }
-    .meeting p { margin: 0; }
+    .enrollment { text-align: end; font-size: var(--t-sm); gap: 0; }
     .card-rating a { min-block-size: var(--target-min); align-content: center; }
   }
 </style>

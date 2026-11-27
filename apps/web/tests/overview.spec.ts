@@ -8,18 +8,19 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   const ranking = page.getByRole('region', { name: '歷史累計修課人數排行' });
   const linearAlgebra = ranking.getByRole('listitem').filter({ hasText: 'DEMO201' });
   await expect(linearAlgebra.getByRole('link', { name: '線性代數' })).toHaveAttribute('href', /^\/courses\/\d+$/);
-  await expect(linearAlgebra.getByText('Linear Algebra (Demo)')).toBeVisible();
+  await expect(linearAlgebra.getByText('Linear Algebra (Demo)')).toBeHidden();
   await expect(linearAlgebra.getByText(/國立清華大學 · DEMO201/)).toBeVisible();
   await expect(linearAlgebra.getByText('示範', { exact: true })).toBeVisible();
   await expect(linearAlgebra.getByText(/2 學期/)).toBeVisible();
   await expect(linearAlgebra.getByText('113', { exact: true })).toBeVisible();
   await expect(linearAlgebra.getByText('115-1 · 58 人')).toBeVisible();
-  await expect(linearAlgebra.getByText('114-2 · 55 人')).toBeVisible();
+  await expect(linearAlgebra.getByText('114-2 · 55 人')).toHaveCount(0);
+  await expect(linearAlgebra.locator('.trend svg')).toHaveCount(0);
   const singleTerm = ranking.getByRole('listitem').filter({ hasText: 'DEMO202' });
   await expect(singleTerm.getByText('115-1 · 72 人')).toBeVisible();
   await expect(singleTerm.locator('svg')).toHaveCount(0);
   await ranking.getByText('計算方式', { exact: true }).click();
-  await expect(ranking.getByText(/以累計名額排列在後/)).toBeVisible();
+  await expect(ranking.getByText(/列在有修課人數的課之後/)).toBeVisible();
   await expect(ranking.getByRole('list').getByText('人數與名額未公布').first()).toBeVisible();
 
   const rankSchool = ranking.getByLabel('排行範圍');
@@ -55,12 +56,13 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await page.getByRole('link', { name: '示範數學系' }).click();
   await expect(page).toHaveURL(`/schools/nthu/departments/${encodeURIComponent('示範數學系')}`);
   await expect(page.getByRole('heading', { name: '示範數學系' })).toBeVisible();
-  const termLinks = page.getByRole('navigation', { name: '切換學期' });
-  await expect(termLinks.getByRole('link', { name: '115-1' })).toHaveAttribute('aria-current', 'page');
+  const termChoice = page.getByRole('combobox', { name: '選擇學期' });
+  await expect(termChoice).toHaveValue('115-1');
   await expect(page.getByRole('list', { name: '必選修分布' })).toBeVisible();
   await expect(page.getByRole('list', { name: '115-1 學期開課班次' }).getByText(/週二 第 3、4 節/)).toBeVisible();
   await expect(page.getByRole('list', { name: '115-1 學期開課班次' }).getByText('匯入時餘 2 名')).toBeVisible();
-  await termLinks.getByRole('link', { name: '114-2' }).click();
+  await termChoice.selectOption('114-2');
+  await page.getByRole('button', { name: '套用' }).click();
   await expect(page).toHaveURL(/\?term=114-2/);
   await expect(page.getByRole('list', { name: '114-2 學期開課班次' }).getByText(/週一 第 3、4 節/)).toBeVisible();
 
@@ -194,7 +196,8 @@ test('keeps school and department navigation usable without JavaScript', async (
     await expect(page.getByRole('table').locator('tbody tr:not(.group)')).toHaveCount(1);
     await page.getByRole('link', { name: '國立清華大學', exact: true }).click();
     await page.getByRole('link', { name: '示範數學系' }).click();
-    await page.getByRole('navigation', { name: '切換學期' }).getByRole('link', { name: '114-2' }).click();
+    await page.getByRole('combobox', { name: '選擇學期' }).selectOption('114-2');
+    await page.getByRole('button', { name: '套用' }).click();
     await expect(page).toHaveURL(/\?term=114-2/);
     await expect(page.getByRole('region', { name: '114-2 學期課表' }).getByText(/週一 第 3、4 節/).filter({ visible: true })).toBeVisible();
   } finally {

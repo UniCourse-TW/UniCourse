@@ -26,7 +26,7 @@ export function buildTeachingMatrix(offerings: Offering[]) {
     let entry = courses.get(course.courseCode);
     if (!entry) {
       const points: Record<string, MatrixPoint> = {};
-      entry = { row: { id: course.courseCode, label: `${course.title} · ${course.courseCode}`, points }, points, total: 0, latestYear: year };
+      entry = { row: { id: course.courseCode, label: course.title, points }, points, total: 0, latestYear: year };
       courses.set(course.courseCode, entry);
     }
     const point = entry.points[year] ?? { offerings: 0, enrolled: null, href: `/courses/${course.id}` };

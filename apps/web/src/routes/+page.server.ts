@@ -58,22 +58,26 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   const department = departmentMatches.length === 1 ? departmentMatches[0] : requestedDepartment;
   const filters = { query, school, department, term, sort };
   const options = terms?.data ?? [];
+  const scope = { school: school || undefined, term: term === 'all' ? undefined : term, department: department || undefined };
   const result = await client.GET('/api/courses/search', {
-    params: {
-      query: {
-        q: query || undefined, school: school || undefined, term: term === 'all' ? undefined : term,
-        department: department || undefined, sort, offset: (page - 1) * searchPageSize
-      }
-    }
+    params: { query: { ...scope, q: query || undefined, sort, offset: (page - 1) * searchPageSize } }
   }).catch(() => null);
   const totalPages = Math.max(1, Math.ceil((result?.data?.total ?? 0) / searchPageSize));
   if (result?.data && page > totalPages) redirect(307, overviewSearchHref({ ...filters, page: totalPages }));
+
+  const titlePrefix = query.match(/^\p{Script=Han}{4,}/u)?.[0];
+  const codePrefix = query.match(/^([A-Za-z]{1,8}\d{3,12})[-\s]+\w+$/)?.[1];
+  const shorter = titlePrefix ? Array.from(titlePrefix).slice(0, -1).slice(0, 6).join('') : codePrefix;
+  const near = result?.data?.total === 0 && shorter ? await client.GET('/api/courses/search', {
+    params: { query: { ...scope, q: shorter, sort: 'relevance' } }
+  }).catch(() => null) : null;
 
   return {
     schools: schools?.data ?? [],
     terms: term !== 'all' && !options.includes(term) ? [term, ...options] : options,
     content: {
       kind: 'search' as const, filters, page, totalPages, result: result?.data ? { ...result.data, courses: result.data.courses.slice(0, searchPageSize) } : null,
+      suggestion: shorter && near?.data?.total ? shorter : null,
       invalid: result?.response.status === 400,
       departments: departments?.data ?? [...new Set((result?.data?.courses ?? []).flatMap((course) => course.department ? [course.department] : []))].sort()
     }

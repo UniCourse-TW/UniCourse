@@ -26,7 +26,7 @@
   let enrollment = $derived(publishedEnrollment(data.trends));
   let rating = $derived(meanRating(data.summaryRatings));
   let ratedSample = $derived([...data.summaryRatings.values()].filter((value) => value !== null).length);
-  let ratingNote = $derived(rating.count ? `已查詢 ${displayValue(ratedSample)} 門課，共 ${displayValue(rating.count)} 則` : ratedSample ? `已查詢的 ${displayValue(ratedSample)} 門課尚無評價` : '暫未取得評價');
+  let ratingNote = $derived(`查詢 ${displayValue(ratedSample)} 門課 · 非教師評分`);
   let span = $derived(summary.terms.length > 1 ? `${summary.terms.at(-1)} 至 ${summary.terms[0]}` : summary.terms[0]);
   let termOptions = $derived([...new Set([...data.listedTerms, ...(data.term ? [data.term] : [])])].map((value) => ({ value, label: value })));
   let courseOptions = $derived(data.courseCode && !data.courses.some(({ value }) => value === data.courseCode)
@@ -64,12 +64,12 @@
     </div>
   </header>
 
-  <div class="browse-compact-stats"><StatRow label="歷年授課統計">
+  <div class="browse-compact-stats instructor-stats"><StatRow label="歷年授課統計">
     <StatTile label="歷年開課班次" value={summary.offerings} unit="班" note={truncated ? `列表含最近 ${displayValue(data.listed)} 班` : undefined} />
     <StatTile label="歷年授課課程" value={summary.courses} unit="門" note={truncated ? `列表含 ${displayValue(data.courses.length)} 門` : undefined} />
     <StatTile label="授課學期" value={summary.terms.length} unit="期" />
-    <div class="browse-wide-stat"><StatTile label="累計修課" value={enrollment} unit="人次" note={enrollment !== null ? '只加總已公布人數' : data.trends === null ? '統計暫未取得' : '未公布人數'} /></div>
-    {#if rating.count}<StatTile label="課程評價" value={rating.mean} unit="分" note={ratingNote} />{/if}
+    <StatTile label="累計修課" value={enrollment} unit="人次" note={enrollment !== null ? '僅計已公布' : data.trends === null ? '暫未取得' : '未公布人數'} />
+    {#if rating.count}<StatTile label="課程評價平均" value={rating.mean} unit={`分 · ${displayValue(rating.count)} 則`} note={ratingNote} />{/if}
   </StatRow></div>
 
   <section class="browse-stack" aria-labelledby="history">
@@ -100,7 +100,7 @@
     {/if}
   </section>
 
-  <SchoolsInstructorDiscussions reviews={data.externalReviews} retryHref={`${page.url.pathname}${page.url.search}#discussions`} />
+  <SchoolsInstructorDiscussions reviews={data.externalReviews} courseReviews={data.courseReviews} retryHref={`${page.url.pathname}${page.url.search}#discussions`} />
 </div>
 
 <style>
@@ -108,6 +108,7 @@
   .instructor-filters :global(.field) { flex: 0 1 auto; }
   .instructor-filters :global(select[name='course']) { min-inline-size: 0; max-inline-size: min(50vw, 17rem); }
   @media (max-width: 40rem) {
+    .instructor-stats :global(.stat-row) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .instructor-filters :global(form) { display: grid; grid-template-columns: minmax(5rem, auto) minmax(0, 1fr) auto; align-items: start; }
     .instructor-filters :global(.field) { min-inline-size: 0; }
     .instructor-filters :global(.field select) { min-inline-size: 0; max-inline-size: calc(100% - 2rem); }

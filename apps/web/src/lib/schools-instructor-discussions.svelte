@@ -7,7 +7,11 @@
   import SectionHeader from './ui/SectionHeader.svelte';
   import { displayValue } from './ui/format';
 
-  let { reviews, retryHref }: { reviews: ExternalReviews | null; retryHref: string } = $props();
+  let { reviews, courseReviews, retryHref }: {
+    reviews: ExternalReviews | null;
+    courseReviews: { id: string; title: string; count: number }[];
+    retryHref: string;
+  } = $props();
   const previewSize = 5;
   let total = $derived(reviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0);
   let posts = $derived(reviews?.posts.filter((post) => isHttpUrl(post.url)) ?? []);
@@ -50,6 +54,12 @@
       {:else}
         <p class="index-count"><strong>{total ? '暫無可開啟的索引連結' : '未索引到提及這位教師的文章'}</strong></p>
         <p class="browse-note">這不代表沒有討論；索引只涵蓋已收錄的來源與看板。</p>
+        {#if courseReviews.length}
+          <p class="browse-note"><strong>近期授課的課程有索引</strong>，文章不一定提及這位教師。</p>
+          <ul class="course-review-list" role="list">
+            {#each courseReviews as course (course.id)}<li><a href={`/courses/${course.id}#external-reviews`}>{course.title} · {displayValue(course.count)} 篇</a></li>{/each}
+          </ul>
+        {/if}
       {/if}
     </div>
     {#if links.length}
@@ -69,6 +79,8 @@
   .index-count, .post-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); }
   .index-count span, .post-meta { color: var(--muted); font-size: var(--t-sm); }
   .article-list { list-style: none; margin: var(--space-2) 0 0; padding: 0; }
+  .course-review-list { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin: 0; padding: 0; list-style: none; }
+  .course-review-list a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
   .article-list li { padding-block: var(--space-2); border-block-start: 1px solid var(--line); overflow-wrap: anywhere; }
   .article-list a, summary { display: block; width: fit-content; min-block-size: var(--target-min); align-content: center; font-weight: 650; }
   summary { display: list-item; color: var(--brand-ink); cursor: pointer; }

@@ -19,7 +19,7 @@
   let period = $derived(coveragePeriod(data.coverage.terms));
   let yearsLabel = $derived(data.years.length > 1 ? `${data.years[0]}–${data.years.at(-1)}` : data.years[0]);
   let recentYears = $derived(data.years.slice(-4));
-  const resourceNetwork = '資料來源：大學校院課程資源網（每週更新）';
+  const resourceNetwork = /^資料來源：(大學校院|技職校院)課程資源網（每週更新）(?:；\s*)?/;
   const resourceLimit = '無上課時間、教室與名額';
   const ownershipOptions = ownerships.map((value) => ({ value, label: ownershipLabels[value] }));
   const statusOptions = statuses.map((value) => ({ value, label: directoryStatusLabels[value] }));
@@ -118,7 +118,7 @@
         </li>
       {/each}
     </ul>
-    <p class="browse-note">「已收錄」指爬蟲已接入，且本站已有可查詢的班次；「待匯入」指已接入，但目前沒有可查詢的班次。</p>
+    <p class="browse-note">「待匯入」指已接入來源，尚無可查班次。點選狀態可篩選名錄。</p>
   </section>
 
   <section class="browse-stack" aria-labelledby="directory">
@@ -129,9 +129,9 @@
       <div class="table-meta">
         <p class="browse-note">{filtered ? '符合條件' : '共'} {displayValue(data.shown)} 所 · 顯示 {data.start + 1}–{data.end} 所</p>
         <div class="browse-note legend"><Heatstrip cells={[{ period: '一', value: 0 }, { period: '二', value: 1 }, { period: '三', value: 2 }]} label="覆蓋圖例" showCounts /> <span>各學年已收錄的學期數</span></div>
+        <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="學校名錄上方分頁" />
       </div>
-      <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="學校名錄上方分頁" />
-      <p class="browse-note swipe-hint" id="directory-hint">學年格顯示近期收錄。往右捲動看總班次、更新時間與說明；點校名看逐期資料。</p>
+      <p class="browse-note swipe-hint" id="directory-hint">往右捲動看更新時間與說明 <span aria-hidden="true">→</span></p>
       <!-- svelte-ignore a11y_no_noninteractive_tabindex (The named table region is horizontally scrollable.) -->
       <div class="directory-frame" role="region" aria-label="大專校院收錄狀態（表格）" aria-describedby="directory-hint" tabindex="0">
         <table>
@@ -140,7 +140,7 @@
             <th scope="col" class="school-name" aria-sort={sortState('name')}>{@render sortLabel('name', '學校')}</th>
             <th scope="col" aria-sort={sortState('status')}>{@render sortLabel('status', '收錄狀態')}</th>
             <th scope="col" class="coverage"><span class="desktop-coverage">學年覆蓋 {yearsLabel ?? ''}</span><span class="mobile-coverage">{recentYears.length > 1 ? `${recentYears[0]}–${recentYears.at(-1)}` : recentYears[0] ?? ''} 學年</span></th>
-            <th scope="col" class="numeric" aria-sort={sortState('terms')}>{@render sortLabel('terms', '學期')}</th>
+            <th scope="col" class="numeric term-count" aria-sort={sortState('terms')}>{@render sortLabel('terms', '學期')}</th>
             <th scope="col" class="numeric" aria-sort={sortState('offerings')}>{@render sortLabel('offerings', '已匯入班次')}</th>
             <th scope="col">類型</th>
             <th scope="col" aria-sort={sortState('updated')}>{@render sortLabel('updated', '最近更新')}</th>
@@ -153,8 +153,8 @@
                 {@const cells = yearCoverage(school.terms, data.years)}
                 {@const status = directoryStatus(school)}
                 {@const imported = hasImportedOfferings(school)}
-                {@const resourceNote = school.note?.startsWith(resourceNetwork)}
-                {@const noteDetail = resourceNote ? school.note?.slice(resourceNetwork.length).replace(/^；/, '') : school.note}
+                {@const resourceNote = school.note?.match(resourceNetwork)}
+                {@const noteDetail = resourceNote ? school.note?.slice(resourceNote[0].length) : school.note}
                 <tr class:unimported={!imported}>
                   <th scope="row" class="school-name">
                     {#if hasSchoolPage(school)}<a href={schoolHref(school.slug)}>{school.name}</a>{:else}{school.name}{/if}
@@ -164,23 +164,27 @@
                     <StatusPill status={status === 'pending_import' ? 'planned' : status} label={directoryStatusLabels[status]} />
                     {#if status === 'pending_import'}
                       <small>{school.status === 'partial' ? '部分接入' : '爬蟲已接入'}，{school.terms.length ? '目前無可查班次' : '本站尚無匯入'}</small>
+                    {:else if imported}
+                      <span class="mobile-coverage coverage-terms">{displayValue(school.offerings)} 班</span>
                     {/if}
                   </td>
                   <td class="coverage">
                     {#if imported}
-                      <div class="desktop-coverage"><Heatstrip {cells} label={`${school.name}：${cells.map(({ period, value }) => `${period} 學年 ${value} 學期`).join('、')}`} /><span class="coverage-terms">{coveragePeriod(school.terms)}</span></div>
+                      <div class="desktop-coverage" title={coveragePeriod(school.terms)}><Heatstrip {cells} label={`${school.name}：${coveragePeriod(school.terms)}；${cells.map(({ period, value }) => `${period} 學年 ${value} 學期`).join('、')}`} /></div>
                       <div class="mobile-coverage"><Heatstrip cells={cells.slice(-recentYears.length)} label={school.name} showCounts /><span class="coverage-terms">{displayValue(school.terms.length)} 學期</span></div>
                     {:else}<span title="本站尚無可查詢的班次">—</span>{/if}
                   </td>
-                  <td class="numeric" title={imported ? undefined : '本站尚無可查詢的班次'}>{displayValue(imported ? school.terms.length : null)}</td>
+                  <td class="numeric term-count" title={imported ? undefined : '本站尚無可查詢的班次'}>{displayValue(imported ? school.terms.length : null)}</td>
                   <td class="numeric" title={imported ? undefined : '本站尚無可查詢的班次'}>{displayValue(imported ? school.offerings : null)}</td>
                   <td>{kindLabel(school)}</td>
                   <td>{#if school.latestImportedAt}<time datetime={school.latestImportedAt} title={`${importedAt(school.latestImportedAt)}（臺北時間）`}><span aria-hidden="true">{shortImportedAt(school.latestImportedAt)}</span><span class="full-date">{importedAt(school.latestImportedAt)}（臺北時間）</span></time>{:else}<span title="未有匯入紀錄">—</span>{/if}</td>
                   <td class="note-cell">
-                    {#if resourceNote}<a class="source-badge" href="#resource-network"><Badge label="課程資源網" /></a>{/if}
-                    {#if noteDetail && (!resourceNote || noteDetail !== resourceLimit)}<span class="school-note" title={noteDetail}>{noteDetail}</span>{/if}
-                    {#if school.issue}<a href={`${ISSUES_URL}/${school.issue}`} rel="external">收錄紀錄 ↗</a>{/if}
-                    {#if !hasSchoolPage(school) && school.website && isHttpUrl(school.website)}<a href={school.website} rel="external" aria-label={`${school.name}官方網站`}>官網 ↗</a>{:else if !school.note && !school.issue}—{/if}
+                    {#if resourceNote}<span class="source-links"><a class="source-badge" href="#resource-network" title={noteDetail && noteDetail !== resourceLimit ? noteDetail : undefined}><Badge label={resourceNote[1] === '技職校院' ? '技職課程資源網' : '課程資源網'} /></a>
+                      {#if school.issue}<a href={`${ISSUES_URL}/${school.issue}`} rel="external" title={noteDetail ?? '收錄紀錄'} aria-label="收錄紀錄 ↗">↗</a>{/if}</span>
+                    {:else if school.issue}<a href={`${ISSUES_URL}/${school.issue}`} rel="external" title={noteDetail ?? undefined}>收錄紀錄 ↗</a>
+                    {:else if noteDetail}<span class="school-note" title={noteDetail}>{noteDetail}</span>
+                    {:else if !hasSchoolPage(school) && school.website && isHttpUrl(school.website)}<a href={school.website} rel="external" aria-label={`${school.name}官方網站`}>官網 ↗</a>
+                    {:else}—{/if}
                   </td>
                 </tr>
               {/each}
@@ -202,7 +206,7 @@
   <section id="sources" class="browse-stack" aria-labelledby="source-heading">
     <h2 id="source-heading">資料來源與統計口徑</h2>
     <p class="browse-note">名錄來自教育部的<a href="https://data.gov.tw/dataset/6091">大專校院名錄</a>、<a href="https://data.gov.tw/dataset/6236">宗教研修學院概況</a>與<a href="https://data.gov.tw/dataset/6237">空大及大專進修學校概況</a>。CSV 是教育部原始名錄，不含本站的收錄狀態。班次與收錄期間採 UniCourse 匯入資料。</p>
-    <p id="resource-network" class="browse-note"><Badge label="課程資源網" /> 表示資料來自大學校院課程資源網（每週更新），該來源未提供上課時間、教室及名額。</p>
+    <p id="resource-network" class="browse-note"><Badge label="課程資源網" /> <Badge label="技職課程資源網" /> 分別標示一般大學及技職校院的課程資源網（每週更新），不含上課時間、教室及名額。</p>
   </section>
 </div>
 
@@ -222,7 +226,7 @@
   .status-grid a:hover, .status-grid a[aria-current] { border-color: var(--brand); background: var(--brand-wash); }
   .status-grid strong { font-size: var(--t-2xl); line-height: var(--leading-tight); }
   small { color: var(--muted); font-size: var(--t-sm); font-weight: normal; }
-  .table-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-2); }
+  .table-meta { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-2); }
   .legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
   .swipe-hint { display: none; }
   .directory-frame { position: relative; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
@@ -248,11 +252,14 @@
   .coverage-terms { display: block; margin-block-start: .2rem; font: var(--t-xs) var(--font-mono); color: var(--muted); white-space: nowrap; }
   .mobile-coverage { display: none; }
   .source-badge { display: inline-flex; }
+  .source-links { display: inline-flex; align-items: baseline; gap: var(--space-1); }
+  .source-links a[rel] { padding-inline: var(--space-1); }
   .numeric { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
   td time { font-variant-numeric: tabular-nums; }
   .full-date { position: absolute; clip-path: inset(50%); inline-size: 1px; block-size: 1px; overflow: hidden; }
   .note-cell { min-inline-size: 8.5rem; }
-  .school-note { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  .school-note { display: block; max-inline-size: 10rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .browse-field input::placeholder { color: var(--muted); }
   .unimported :is(.numeric, .coverage, .browse-code) { color: var(--muted); }
   .note-cell a { white-space: nowrap; }
   #sources { border-block-start: 1px solid var(--line); padding-block-start: .85rem; }
@@ -265,6 +272,8 @@
     .school-name .browse-code { display: inline; margin-inline-start: .25rem; font-size: var(--t-xs); }
     td.status-cell { min-inline-size: 5.5rem; }
     .coverage { min-inline-size: 5.75rem; }
+    .term-count { display: none; }
+    .table-meta :global(nav) { display: none; }
     .desktop-coverage { display: none; }
     .mobile-coverage { display: block; }
     th, td { padding-inline: .45rem; }
