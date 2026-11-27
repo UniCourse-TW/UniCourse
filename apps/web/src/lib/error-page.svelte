@@ -30,8 +30,9 @@
 
   let { status, message, title, description, primary, secondary, also = [], search = false, query = '', retryHref }: Props = $props();
 
-  /** Searches that find courses at most schools, offered when the address gave no clue about the course. */
-  const examples = ['微積分', '普通心理學', '經濟學原理', '計算機概論'];
+  /** Fixed example searches that find courses at most schools (not a popularity list), offered when the
+      address gave no clue about the course; three, so they stay on one row at 390 px. */
+  const examples = ['微積分', '普通心理學', '計算機概論'];
 
   let notFound = $derived(status === 404);
   let heading = $derived(title ?? (notFound ? '找不到這個頁面' : '暫時無法顯示'));
@@ -96,9 +97,9 @@
       </label>
       <button type="submit">搜尋課程</button>
     </form>
-    <!-- The address names no course, so these are what other visitors search, not this course's school. -->
-    <nav class="examples" aria-label="其他人常搜">
-      <span class="examples-label">其他人常搜</span>
+    <!-- The address names no course, so these are fixed examples (labelled as such), not this course's school. -->
+    <nav class="examples" aria-label="試試這些課名">
+      <span class="examples-label">試試這些課名</span>
       <ul>{#each examples as example (example)}<li><a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: example })}`}>{example}</a></li>{/each}</ul>
     </nav>
   {/if}
@@ -131,7 +132,7 @@
     display: grid;
     gap: var(--space-2);
     justify-items: start;
-    inline-size: min(100%, 42rem);
+    inline-size: min(100%, 48rem);
     margin: var(--space-4) auto;
     padding: var(--space-6) var(--space-6);
     border: 1px solid var(--line);
@@ -223,8 +224,7 @@
     .examples { display: grid; gap: var(--space-2); inline-size: 100%; }
     .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); }
     .chip { min-block-size: 2.5rem; }
-    /* Each way out is its own 44 px row; the data route (各校收錄狀態) leads. */
-    .also ul { display: grid; gap: 0; }
-    .also a { inline-size: 100%; }
+    /* The ways out share wrapping 44 px rows (two per line) instead of one tall row each. */
+    .also ul { gap: 0 var(--space-4); }
   }
 </style>
