@@ -35,7 +35,7 @@
   let previewName = $derived(current.displayName.trim() || data.profile.username);
   let previewSchool = $derived(current.school ? (schoolNames[current.school] ?? '') : '');
   // One label for what the preview shows: the draft being typed, the version just saved, or the stored one.
-  let version = $derived(dirty ? '含未儲存的變更（尚未公開）' : savedVisible ? '已更新為剛儲存的內容' : '與目前公開的相同');
+  let version = $derived(dirty ? '含未儲存的變更（尚未公開）' : savedVisible ? '已儲存的版本（已公開）' : '與目前公開的相同');
   let joined = $derived(slashDate(data.profile.createdAt));
   let profile = $derived(profileHref(data.profile.username));
 
@@ -79,7 +79,7 @@
     <p class="cm-dek">
       <span class="who-line mono">@{data.profile.username}</span>
       <!-- The header keeps the same links in every state, so saving never moves the page. -->
-      <span class="sep dek-sep">·</span><a class="dek-link" href={profile}>查看公開個人頁 <span aria-hidden="true">→</span></a>
+      <span class="sep dek-sep">·</span><a class="dek-link" href={profile}>查看已公開的個人頁 <span aria-hidden="true">→</span></a>
       <!-- Phones stack the panels; this in-page jump (muted, unlike the link beside it) goes to the account panel. -->
       <a class="dek-link jump-link" href="#account">帳號與登出 <span aria-hidden="true">↓</span></a>
     </p>
@@ -131,15 +131,16 @@
           <div class="status" role="status">
             {#if saving}<span class="cm-sr">儲存中…</span>
             {:else if savedVisible}
-              <!-- One success message, with the updated page linked inside it. -->
-              <span class="ok"><span aria-hidden="true">✓</span><span>已儲存，<a href={profile}>個人頁</a>已更新</span></span>
+              <!-- One success message, then the updated page as its own full-size link. -->
+              <span class="ok"><span aria-hidden="true">✓</span><span>已儲存，個人頁已更新</span></span>
+              <a class="see" href={profile}>查看更新後的個人頁 <span aria-hidden="true">→</span></a>
             {:else if hydrated && dirty}<span class="pending">有 {changes} 項變更尚未儲存</span><span class="preview-note">預覽已即時更新</span>
             {:else if hydrated}<span class="idle">尚未變更，修改後才能儲存</span>{/if}
           </div>
         </div>
         <!-- Phones: the preview folds under the save line, its summary saying which version it shows. -->
         <details class="preview-fold">
-          <summary>預覽公開個人頁 <span class="version" class:draft={dirty}>{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
+          <summary>{dirty ? '預覽變更後的個人頁' : '預覽個人頁'} <span class="version" class:draft={dirty}>{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
           {@render previewCard()}
         </details>
       </form>
@@ -158,11 +159,11 @@
       <p class="lead">管理資訊僅自己可見，帳號名稱公開。</p>
       <!-- The facts first, then the two things to do (password help, sign out) side by side. -->
       <dl class="facts">
-        <div><dt>帳號</dt><dd><span class="mono">@{data.profile.username}</span> <span class="cm-hint">建立後無法更改</span></dd></div>
+        <div><dt>帳號</dt><dd><span class="mono">@{data.profile.username}</span><span class="cm-hint fixed">建立後無法更改</span></dd></div>
         <div><dt>加入於</dt><dd class="num">{joined}</dd></div>
         {#if data.profile.isAdmin}<div><dt>權限</dt><dd>管理員</dd></div>{/if}
         <div class="account-action">
-          <dt>登出</dt>
+          <dt>工作階段</dt>
           <dd>
             <p class="cm-hint">只登出這個瀏覽器。</p>
             <form method="POST" action="/auth?/logout"><button class="cm-btn leave">登出</button></form>
@@ -202,17 +203,17 @@
   .select-wrap .chev { position: absolute; inset-block-start: 50%; inset-inline-end: var(--space-3); translate: 0 -50%; color: var(--ink-2); pointer-events: none; }
   .save-row { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
   .save-row .cm-btn { min-inline-size: 6rem; }
-  .status { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; min-block-size: var(--target-min); font-size: 0.8125rem; }
+  /* The status takes the rest of the button's row; a second item (the profile link) wraps inside it. */
+  .status { display: flex; flex: 1 1 10rem; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; min-block-size: var(--target-min); font-size: 0.8125rem; }
   .ok { display: inline-flex; gap: 0.3em; align-items: center; padding: 0 var(--space-2); border-radius: var(--radius-pill); color: var(--up); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); font-size: var(--t-base); font-weight: 650; line-height: 1.9; }
-  .ok a { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 0.15em; }
+  .see { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-size: var(--t-base); font-weight: 600; }
   .preview-note { color: var(--ink-2); }
   @media (max-width: 56rem) { .preview-note { display: none; } }
   .pending { color: var(--warn); font-weight: 600; }
   .idle { color: var(--ink-2); }
-  /* Where a field shows (a public-scope hint) reads stronger than its plain character count, which sits
-     right after the label so the limit is seen before typing. */
-  .settings .cm-label { justify-content: flex-start; gap: 0 var(--space-3); }
-  .settings .cm-count { color: var(--muted); }
+  /* The character count sits at the field's right edge (label left, limit right), readable in both themes. */
+  .settings .cm-label { justify-content: space-between; gap: 0 var(--space-3); }
+  .settings .cm-count { color: var(--ink-2); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
   .settings .cm-field > .cm-hint { color: var(--ink-2); font-size: 0.8125rem; }
   .facts { display: grid; margin: 0; border-block-start: 1px solid var(--line); }
   .facts div { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: var(--space-3); padding-block: var(--space-2); border-block-end: 1px solid var(--line); font-size: var(--t-base); }
@@ -254,7 +255,8 @@
     .facts div { grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: center; }
     .facts dt { font-size: var(--t-sm); }
     .facts dd { text-align: end; }
-    .facts dd .cm-hint { display: inline; margin-inline-start: var(--space-1); }
+    /* The fixed-name note goes under the handle, so a long handle keeps its line. */
+    .facts dd .cm-hint.fixed { display: block; font-size: var(--t-sm); }
     .account-action dd { justify-content: end; }
     .account-action dd .cm-hint { display: none; }
     .facts .reset-row { grid-template-columns: minmax(0, 1fr); gap: 0; }

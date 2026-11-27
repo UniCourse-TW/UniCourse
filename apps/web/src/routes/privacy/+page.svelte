@@ -7,17 +7,17 @@
     { id: 'browse', title: '查課與登入' },
     { id: 'account', title: '帳號資料' },
     { id: 'public', title: '公開內容' },
-    { id: 'reviews', title: '外部評論索引儲存的資料' },
+    { id: 'reviews', title: '外部評論索引' },
     { id: 'cookies', title: 'Cookie 與記錄' },
     { id: 'contact', title: '聯絡與移除' }
   ];
-  // Five points, each lead jumping to the section with the detail.
+  // Five points, each lead jumping to the section with the detail; required and optional data are told apart.
   const summary: GistPoint[] = [
-    { lead: '查課', href: '#browse', text: '不用帳號；本站不要求學號、姓名或電子郵件。' },
-    { lead: '帳號與公開', href: '#account', text: '只存帳號名稱與雜湊後的密碼；評分、文章與回覆會公開。' },
+    { lead: '查課與註冊', href: '#browse', text: '查課不用帳號；註冊只要帳號名稱與密碼（雜湊後儲存）。' },
+    { lead: '公開什麼', href: '#account', text: '帳號名稱、評分與文章公開；顯示名稱、學校、自我介紹選填，填了才公開。' },
     { lead: '外部評價', href: '#reviews', text: '只索引 PTT 課程板的標題與短摘要，不存全文。' },
-    { lead: '保存期限', href: '#cookies', text: '', lines: ['登入 Cookie：30 天', '主題偏好：一年', '伺服器記錄：只為排除故障短期保留'] },
-    { lead: '刪除帳號', href: '#contact', text: '私密聯絡維護者，不必公開。' }
+    { lead: '保存期限', href: '#cookies', text: '登入 Cookie 30 天、主題偏好一年，伺服器記錄只短期保留。' },
+    { lead: '刪除帳號', href: '#contact', text: '私密聯絡維護者，不必公開：', link: { href: PRIVATE_REPORT_URL, label: '私密申請刪除', external: true } }
   ];
 </script>
 
@@ -26,7 +26,7 @@
   <meta name="description" content="UniCourse 的隱私權政策：查課不需帳號、帳號儲存的資料、哪些內容會公開、外部評論索引儲存的欄位、Cookie 用途與移除請求方式。" />
 </svelte:head>
 
-<LegalDoc title="隱私權政策" updated={UPDATED} {sections} {summary} sibling={{ href: '/terms', label: '使用條款' }}>
+<LegalDoc title="隱私權政策" updated={UPDATED} {sections} {summary} contactLabel="申請刪除帳號或移除資料" sibling={{ href: '/terms', label: '使用條款' }}>
   <section aria-labelledby="browse">
     <div class="h2-row"><h2 id="browse">查課與登入</h2></div>
     <p>查詢各校公開課程不需要帳號，本站不會要求你提供學號、姓名或電子郵件。課程資料可能未即時更新，請以校方公開系統為準。</p>
@@ -39,12 +39,12 @@
     <table role="table" class="account-data stacked">
       <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">資料</th><th role="columnheader" scope="col">用途</th><th role="columnheader" scope="col">是否公開</th></tr></thead>
       <tbody role="rowgroup">
-        <tr role="row"><td role="cell">帳號名稱</td><td role="cell" data-label="用途">登入與署名</td><td role="cell" data-label="公開範圍">公開</td></tr>
-        <tr role="row"><td role="cell">密碼雜湊</td><td role="cell" data-label="用途">驗證登入</td><td role="cell" data-label="公開範圍">不公開</td></tr>
-        <tr role="row"><td role="cell">顯示名稱</td><td role="cell" data-label="用途">個人頁與社群署名</td><td role="cell" data-label="公開範圍">公開（選填）</td></tr>
-        <tr role="row"><td role="cell">學校、自我介紹</td><td role="cell" data-label="用途">個人頁面</td><td role="cell" data-label="公開範圍">公開（選填）</td></tr>
-        <tr role="row"><td role="cell">評分、心得、文章與回覆</td><td role="cell" data-label="用途">社群內容</td><td role="cell" data-label="公開範圍">公開</td></tr>
-        <tr role="row"><td role="cell">個人投票</td><td role="cell" data-label="用途">計算分數</td><td role="cell" data-label="公開範圍">只公開合計</td></tr>
+        <tr role="row"><td role="cell">帳號名稱</td><td role="cell" data-label="用途">登入與署名</td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td></tr>
+        <tr role="row"><td role="cell">密碼雜湊</td><td role="cell" data-label="用途">驗證登入</td><td role="cell" data-label="公開範圍"><span class="scope private">不公開</span></td></tr>
+        <tr role="row"><td role="cell">顯示名稱</td><td role="cell" data-label="用途">個人頁與社群署名</td><td role="cell" data-label="公開範圍"><span class="scope optional">選填・公開</span></td></tr>
+        <tr role="row"><td role="cell">學校、自我介紹</td><td role="cell" data-label="用途">個人頁面</td><td role="cell" data-label="公開範圍"><span class="scope optional">選填・公開</span></td></tr>
+        <tr role="row"><td role="cell">評分、心得、文章與回覆</td><td role="cell" data-label="用途">社群內容</td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td></tr>
+        <tr role="row"><td role="cell">個人投票</td><td role="cell" data-label="用途">計算分數</td><td role="cell" data-label="公開範圍"><span class="scope private">只公開合計</span></td></tr>
       </tbody>
     </table>
     <p class="section-end"><a href="#toc"><span aria-hidden="true">↑</span> 回目錄</a></p>

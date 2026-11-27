@@ -185,7 +185,8 @@
         <dd><span class="value num">{displayValue(capacity)}</span><small>人</small></dd>
         <dd class="note">校方未公布修課人數</dd>
       {:else}
-        <dt>本班修課人數／名額</dt>
+        <!-- A finished class says so in its label, before the number (not as a footnote under the meter). -->
+        <dt>本班修課人數／名額{#if ratio != null && !latestTerm}<span class="tile-badge past"><span class="mono">{course.term}</span> 歷史班次</span>{/if}</dt>
         {#if course.enrolled != null}
           <dd><span class="value num">{displayValue(course.enrolled)}</span><small>/ {capacity != null ? `${displayValue(capacity)} 人` : '名額未公布'}</small></dd>
         {:else}
@@ -199,7 +200,7 @@
             <dd class="note" title="UniCourse 匯入校方資料當時的快照，即時名額以校方為準">{course.term} {ratio > 1 ? `超額，名額的 ${share}%` : `已選 ${share}%`}{#if full && ratio <= 1}，接近額滿{/if}・<span class="nowrap">{importDay} 匯入</span></dd>
           {:else}
             <!-- A finished class: its final result, said as history so it is not read as today's seats. -->
-            <dd class="note"><span class="past">{course.term} 歷史班次</span>{ratio > 1 ? `最終超額 ${share}%` : `最終選課 ${share}%`}</dd>
+            <dd class="note">{ratio > 1 ? `最終超額，名額的 ${share}%` : `最終選課 ${share}%`}</dd>
           {/if}
         {:else}
           <dd class="note">{capacity == null && course.enrolled != null ? '校方未公布名額' : '人數與名額未公布'}</dd>
@@ -209,7 +210,8 @@
     {#if termTotal}
       <div class="tile" class:partial={termTotal.partial}>
         <!-- The scope is in the label (how many sections the sum covers); the term goes in the sub-line. -->
-        <dt>同學期 {displayValue(termTotal.offeringCount)} 班合計</dt>
+        <!-- A partial term is flagged in the label row, so the sum is never read as the whole term. -->
+        <dt>同學期 {displayValue(termTotal.offeringCount)} 班合計{#if termTotal.partial}<span class="tile-badge warn" title="這一期的合計不能和其他學期直接比較">只收錄部分</span>{/if}</dt>
         {#if termTotal.enrolled == null && termTotal.capacity != null}
           <dd><span class="value num">{displayValue(termTotal.capacity)}</span><small>名額</small></dd>
         {:else if termTotal.enrolled != null}
@@ -217,7 +219,7 @@
         {:else}
           <dd><span class="value">—</span><small>人數未公布</small></dd>
         {/if}
-        <dd class="note"><a href="#history"><span class="mono">{termTotal.term}</span>・{#if termTotal.partial}<span title={`其他學期通常約 ${displayValue(termTotal.usualSections)} 班，這一期的合計不能和其他學期直接比較`}>只收錄部分</span>{:else}含本班{/if}&nbsp;↓</a></dd>
+        <dd class="note"><a href="#history"><span class="mono">{termTotal.term}</span>・{#if termTotal.partial && termTotal.usualSections}通常約 {displayValue(termTotal.usualSections)} 班{:else}含本班{/if}&nbsp;↓</a></dd>
       </div>
     {/if}
     <div class="tile">
@@ -255,7 +257,8 @@
         {:else}
           <dd><span class="value">—</span></dd>
         {/if}
-        {#if !stats}<dd class="note">評價暫時無法取得</dd>{/if}
+        {#if !stats}<dd class="note">評價暫時無法取得</dd>
+        {:else if ratingCount > 0 && ratingCount < 3}<dd class="note"><a href="#ratings">樣本少，僅供參考&nbsp;↓</a></dd>{/if}
       {/if}
     </div>
   </dl></div>
@@ -435,7 +438,11 @@
   .tile .sample { margin-inline-start: var(--space-1); color: var(--ink-2); font-weight: 600; white-space: nowrap; }
   .tile .sample.sparse { padding: 0 6px; border-radius: var(--radius-pill); background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 40%, transparent); }
   .nowrap { white-space: nowrap; }
-  .tile .past { margin-inline-end: 0.4em; padding: 0 5px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: 0.8125rem; font-weight: 650; white-space: nowrap; }
+  /* A small tag at the end of a tile label: a finished class (neutral) or a partial term (warn). */
+  .tile dt { display: flex; flex-wrap: wrap; gap: 2px var(--space-2); align-items: center; }
+  .tile-badge { padding: 0 6px; border-radius: var(--radius-pill); font-size: 0.8125rem; font-weight: 650; line-height: 1.5; white-space: nowrap; }
+  .tile-badge.past { background: var(--chip); color: var(--ink-2); }
+  .tile-badge.warn { background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent); }
   .lead-facts { padding-block: var(--space-2) var(--space-4); }
   .meter { display: block !important; block-size: 10px; margin-block: var(--space-1) 0 !important; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .meter span { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); }
@@ -490,10 +497,10 @@
     .tiles { gap: var(--space-2); }
     .tile { padding: var(--space-3); }
     .tile .value { font-size: var(--t-2xl); }
-    /* One line of section chips that scrolls sideways, so no chip wraps onto a line of its own. */
-    .section-links { flex-wrap: nowrap; gap: var(--space-2); margin-block: 0 var(--space-1); margin-inline: calc(-1 * var(--space-4)); padding-inline: var(--space-4); overflow-x: auto; scrollbar-width: none; }
-    .section-links::-webkit-scrollbar { display: none; }
-    .section-links a { flex: none; padding-inline: var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); text-decoration: none; white-space: nowrap; }
-    .section-links a.lead { border-radius: var(--radius-pill); }
+    /* Section chips in a two-column grid: every chip is visible at 390 px (none cut off at the edge); the
+       lead chip (indexed posts first) takes a row of its own. */
+    .section-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); margin-block: 0 var(--space-1); }
+    .section-links a { justify-content: center; padding-inline: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); text-align: center; text-decoration: none; }
+    .section-links a.lead { grid-column: 1 / -1; border-radius: var(--radius-control); }
   }
 </style>

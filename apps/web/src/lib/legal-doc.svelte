@@ -30,10 +30,12 @@
     sibling: { href: string; label: string };
     /** Plain-language points shown under the title, so readers get the gist before the full text. */
     summary?: readonly GistPoint[];
+    /** The header's shortcut to the contact section, named as the action readers come for. */
+    contactLabel?: string;
     children: Snippet;
   }
 
-  let { title, updated, sections, sibling, summary = [], children }: Props = $props();
+  let { title, updated, sections, sibling, summary = [], contactLabel, children }: Props = $props();
   let updatedLabel = $derived(updated.replaceAll('-', '/'));
   let contact = $derived(sections.find((section) => section.id === 'removal' || section.id === 'contact'));
 
@@ -94,7 +96,7 @@
     <h1>{title}</h1>
     <p class="meta">
       更新於 <time datetime={updated}>{updatedLabel}</time>
-      {#if contact}<span class="sep" aria-hidden="true">·</span><a href={`#${contact.id}`}>{contact.title}</a>{/if}
+      {#if contact}<span class="sep" aria-hidden="true">·</span><a class="contact-link" href={`#${contact.id}`}>{contactLabel ?? contact.title}</a>{/if}
       <span class="sep" aria-hidden="true">·</span><a class="arrow-link" href={sibling.href}><span>{sibling.label}</span><span aria-hidden="true">→</span></a>
     </p>
   </header>
@@ -179,7 +181,7 @@
   .doc-toc li a[aria-current='true'] { border-inline-start-color: var(--brand); color: var(--brand-ink); font-weight: 600; background: var(--brand-wash); }
   /* Sub-sections hang off a rule under their parent, so they never read as siblings of it. */
   .doc-toc .sub { display: grid; margin: 0 0 var(--space-1) var(--space-5); padding: 0; border-inline-start: 1px solid var(--control-line); list-style: none; }
-  .doc-toc .sub a { min-block-size: 2rem; color: var(--ink-2); font-size: var(--t-sm); }
+  .doc-toc .sub a { min-block-size: 2rem; color: var(--ink-2); font-size: 0.8125rem; }
   .doc-toc .sub a::before { content: '–'; margin-inline-end: var(--space-1); color: var(--muted); }
   .doc-toc .sibling { margin-block-start: var(--space-1); padding-block-start: var(--space-1); border-block-start: 1px solid var(--line); }
   .doc-toc .sibling a { color: var(--brand-ink); font-weight: 600; }
@@ -197,7 +199,7 @@
   .prose :global(li) { margin-block-end: 6px; }
   .prose :global(li:last-child) { margin-block-end: 0; }
   .prose :global(table) { inline-size: 100%; margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); border-collapse: separate; border-spacing: 0; overflow: hidden; background: var(--panel-raised); font-size: var(--t-base); line-height: var(--leading-table); }
-  .prose :global(th), .prose :global(td) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid color-mix(in srgb, var(--control-line) 35%, var(--line)); text-align: start; vertical-align: top; }
+  .prose :global(th), .prose :global(td) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
   .prose :global(th) { background: var(--table-head); color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .prose :global(tr:last-child td) { border-block-end: 0; }
   /* Code inside CJK sentences sits on a chip that moves to the next line whole; it never breaks mid-word. */
@@ -228,6 +230,11 @@
   .prose :global(.contact-routes .route-access) { margin-block-start: var(--space-1) !important; color: var(--ink); font-size: var(--t-base); font-weight: 650; }
   .prose :global(.account-data th:nth-child(-n+2)) { inline-size: 40%; }
   .prose :global(.account-data td:last-child) { white-space: nowrap; }
+  /* Who can see a piece of data, as one badge kind per answer (公開 / 選填公開 / 不公開 / 只公開合計). */
+  .prose :global(.scope) { display: inline-block; padding: 0 var(--space-2); border-radius: var(--radius-pill); font-size: 0.8125rem; font-weight: 650; line-height: 1.7; white-space: nowrap; }
+  .prose :global(.scope.public) { background: var(--brand-wash); color: var(--brand-ink); }
+  .prose :global(.scope.optional) { background: var(--brand-wash); color: var(--brand-ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 40%, transparent); }
+  .prose :global(.scope.private) { background: var(--chip); color: var(--ink-2); }
   .prose :global(.review-data td:first-child) { inline-size: 8rem; }
   .prose :global(.doc-fold) { margin-block-end: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); }
   .prose :global(.doc-fold summary) { min-block-size: var(--target-min); padding: var(--space-2) var(--space-3); scroll-margin-block-start: 5rem; color: var(--brand-ink); font-weight: 650; cursor: pointer; }
@@ -265,21 +272,22 @@
     /* Account data: the name with its public status beside it, the purpose on the line below. */
     .prose :global(.stacked.account-data tr) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-2); align-items: baseline; }
     .prose :global(.stacked.account-data td:first-child) { grid-row: 1; grid-column: 1; padding: 0; }
-    .prose :global(.stacked.account-data td:last-child) { grid-row: 1; grid-column: 2; display: block; padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--chip); color: var(--ink); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
+    .prose :global(.stacked.account-data td:last-child) { grid-row: 1; grid-column: 2; display: block; padding: 0; white-space: nowrap; }
     .prose :global(.stacked.account-data td:last-child)::before { display: none; }
     .prose :global(.stacked.account-data td:nth-child(2)) { grid-row: 2; grid-column: 1 / -1; display: block; color: var(--ink-2); font-size: 0.8125rem; }
     .prose :global(.stacked.account-data td:nth-child(2))::before { display: none; }
-    .prose :global(.section-end) { display: block; margin: var(--space-2) 0 0; font-size: var(--t-sm); }
-    .prose :global(.section-end a) { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: 2rem; color: var(--ink-2); text-decoration: none; }
+    /* A full-size way back at each section end: 44 px tall, outlined, not a small grey line. */
+    .prose :global(.section-end) { display: block; margin: var(--space-3) 0 0; }
+    .prose :global(.section-end a) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-decoration: none; }
     .prose :global(.review-data td:first-child) { inline-size: auto; }
     .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: auto; white-space: normal; }
   }
   @media (max-width: 56rem) {
     .doc-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
-    /* Phones: the folded contents right under the date, then the gist, then the text. */
+    /* Phones: the gist answers first, then the contents (the jump list), then the text. */
     .gist, .doc-toc, .has-gist .doc-toc, .prose { grid-column: 1; grid-row: auto; }
-    .doc-toc { order: 0; }
-    .gist { order: 1; }
+    .gist { order: 0; }
+    .doc-toc { order: 1; }
     .prose { order: 2; }
     .doc-toc { position: static; scroll-margin-block-start: 4.75rem; }
     .doc-toc details::details-content { content-visibility: auto; }

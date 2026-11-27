@@ -230,7 +230,7 @@
         </div>
       </div>
       <!-- The partial-term warning is the one prominent caption; how to read the axes stays short. -->
-      <p class="note">{#each partialNotes as group (group.terms.join())}<span class="partial-note"><i class="key partial" aria-hidden="true"></i>{group.terms.join('、')} 只收錄 {displayValue(group.count)} 班（通常約 {displayValue(group.usual)} 班），偏低不代表{capacityOnly ? '名額' : '人數'}驟減。</span>{/each}1、2 是上、下學期{#if gaps}；空格是沒有開課紀錄{/if}{#if hasUnpublished}；「·」是有開課但未公布人數{/if}。</p>
+      <p class="note">{#each partialNotes as group (group.terms.join())}<span class="partial-note"><i class="key partial" aria-hidden="true"></i>{group.terms.join('、')} 只收錄 {displayValue(group.count)} 班<span class="nb">（通常約 {displayValue(group.usual)} 班）</span>，偏低不代表{capacityOnly ? '名額' : '人數'}驟減。</span>{/each}1、2 是上、下學期{#if gaps}；空格是沒有開課紀錄{/if}{#if hasUnpublished}；「·」是有開課但未公布人數{/if}。</p>
     </figure>
   {/if}
 
@@ -244,10 +244,10 @@
       <p class="key-scope">{multiSection ? '各學期已收錄班次合計，新到舊' : '各學期，新到舊'}{#if capacityOnly}；校方未公布修課人數，只列名額{/if}</p>
       {#if hasBoth && !capacityOnly}
         <p class="key-bars">
-          <span><i class="tk fill" aria-hidden="true"></i>滿額率＝該期修課÷名額</span>
+          <span><i class="tk fill" aria-hidden="true"></i>滿額率＝修課÷名額</span>
           <span><i class="tk tick" aria-hidden="true"></i>刻線＝100%</span>
-          <span><i class="tk over" aria-hidden="true"></i>超過刻線＝超額</span>
-          {#if ratioMax > 1}<span><i class="tk track-key" aria-hidden="true"></i>整條＝名額的 {Math.round(ratioMax * 100)}%{#if rows.some((row) => (fill(row) ?? 0) > 2)}，更高的截在條尾{/if}</span>{/if}
+          {#if rows.some((row) => (fill(row) ?? 0) > 1)}<span><i class="tk over" aria-hidden="true"></i>橘色＝超額</span>{/if}
+          {#if ratioMax > 1}<span class="key-track"><i class="tk track-key" aria-hidden="true"></i>整條＝名額的 {Math.round(ratioMax * 100)}%{#if rows.some((row) => (fill(row) ?? 0) > 2)}，更高的截在條尾{/if}</span>{/if}
         </p>
       {/if}
     </div>
@@ -456,6 +456,8 @@
   .partial-badge { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 45%, transparent); }
   .partial-note { display: flex; gap: 0.4em; align-items: baseline; margin-block-end: 2px; color: var(--ink); }
   .partial-note .key { flex: none; translate: 0 1px; }
+  /* The parenthetical never breaks inside, so a wrapped warning keeps whole phrases together. */
+  .partial-note .nb { white-space: nowrap; }
   .track.blank { visibility: hidden; }
   .value { min-inline-size: 5.5rem; white-space: nowrap; }
   td.value { inline-size: 1%; }
@@ -504,7 +506,13 @@
     tr:not(:has(td.ratio)) td.value { grid-column: 2 / -1; }
     .names { grid-row: 2; grid-column: 1 / 3; align-self: center; }
     .sections { grid-row: 2; grid-column: 3; justify-content: end; min-inline-size: max-content; }
-    .ratio .cell-bar { gap: var(--space-1); }
+    /* The tag leads and the percentage ends the cluster, right beside 修課／名額, so a row's rate and its
+       numbers read as one group instead of two columns apart. */
+    .ratio .cell-bar { gap: var(--space-1); justify-content: end; }
+    .ratio .cell-bar > :is(.over, .only) { order: -1; }
+    /* The legend stays on one line: the track's full-scale note is in the desktop key only. */
+    .key-bars { flex-wrap: nowrap; gap: var(--space-3); font-size: var(--t-sm); white-space: nowrap; overflow: hidden; }
+    .key-bars .key-track { display: none; }
     .ratio .track { flex: 1 1 3rem; min-inline-size: 2rem; }
     .pct { min-inline-size: 0; }
     .names { min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); }

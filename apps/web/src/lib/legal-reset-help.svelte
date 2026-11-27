@@ -22,11 +22,18 @@
 <details class="reset-help" class:quiet class:start={align === 'start'} {id} bind:open>
   <summary><span class="label">{summary}</span><span class="chev" aria-hidden="true"></span></summary>
   <div class="body">
-    <p class="lead">本站不收 email，沒有自動重設；由維護者手動處理：</p>
+    <!-- The answer first (who resets it, how long), then the steps; what to write is a list of its own. -->
+    <p class="lead">沒有 email 自動重設：維護者手動處理，通常七天內回覆。</p>
     <ol>
-      <li><b>私密回報</b>（只有維護者看得到）。表單在 GitHub，免費註冊即可，不需要會寫程式。</li>
-      <li><b>寫明</b>帳號名稱、大約何時註冊、發過的一則評價或文章（若有）。<b>不要寫密碼。</b></li>
-      <li><b>等候回覆</b>：通常七天內在同一則回報說明下一步。</li>
+      <li><b>開私密回報</b>：只有維護者看得到。表單在 GitHub，免費註冊即可。</li>
+      <li><b>寫明</b>（<b>不要寫密碼</b>）：
+        <ul class="give">
+          <li>帳號名稱</li>
+          <li>大約何時註冊</li>
+          <li>發過的一則評價或文章（若有）</li>
+        </ul>
+      </li>
+      <li><b>等回覆</b>：在同一則回報說明下一步。</li>
     </ol>
     <a class="go" href={PRIVATE_REPORT_URL} rel="noopener external">開啟私密回報表單 <span aria-hidden="true">↗</span><span class="sr">（GitHub，外部網站）</span></a>
     <p class="alt">不想用 GitHub：可先建立新帳號繼續使用，舊帳號的評價與文章會留在原處。</p>
@@ -49,6 +56,8 @@
   ol { display: grid; gap: var(--space-1); padding-inline-start: 1.25rem; }
   li { text-wrap: pretty; }
   li b { color: var(--ink); font-weight: 650; }
+  .give { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin: 0; padding: 0; list-style: none; }
+  .give li::before { content: '・'; color: var(--muted); }
   .go { display: inline-flex; gap: 0.25em; align-items: center; justify-self: start; min-block-size: var(--target-min); font-size: var(--t-base); color: var(--brand-ink); font-weight: 650; text-underline-offset: 0.15em; }
   .go:focus-visible { outline: var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
   .alt { color: var(--ink-2); font-size: 0.8125rem; text-wrap: pretty; }

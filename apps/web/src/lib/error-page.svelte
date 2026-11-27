@@ -83,10 +83,10 @@
   {#if search}
     <form class="search" method="GET" action="/" role="search" aria-label="搜尋課程">
       <label class="search-field">
-        <span class="field-label">已知的課號、課名或教師{#if hint}<span class="field-hint">（{hint}）</span>{/if}</span>
+        <span class="field-label">課名、課號或教師</span>
         <span class="input-wrap">
           <svg class="icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-          <input bind:this={searchInput} type="search" name="q" defaultValue={query} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" />
+          <input bind:this={searchInput} type="search" name="q" defaultValue={query} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" aria-describedby={hint ? 'search-hint' : undefined} />
         </span>
       </label>
       <label class="scope-field">
@@ -101,6 +101,8 @@
       </label>
       <button type="submit">搜尋課程</button>
     </form>
+    <!-- Where to find the clue, as help text under the row (not inside the label, where it became the main text). -->
+    {#if hint}<p class="search-hint" id="search-hint">{hint}</p>{/if}
     {#if crossTerm}
       <a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: query })}`}>查「{query}」的其他學期 <span aria-hidden="true">→</span></a>
     {:else if !query && !back}
@@ -163,7 +165,7 @@
   .diagnostic a { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); margin-inline-start: auto; color: var(--brand-ink); font-weight: 600; text-underline-offset: 0.15em; }
   .diagnostic a:hover { color: var(--brand-ink); }
   .diagnostic a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .field-hint { color: var(--ink-2); font-weight: 400; }
+  .search-hint { margin: calc(-1 * var(--space-1)) 0 0; color: var(--ink-2); font-size: 0.8125rem; text-wrap: pretty; }
   /* Toolbar row: words (with the family's search icon), scope, button. */
   .search { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: end; inline-size: 100%; margin-block-start: var(--space-2); }
   .search-field { display: grid; flex: 1 1 14rem; gap: var(--space-1); }
