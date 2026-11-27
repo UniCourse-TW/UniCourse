@@ -7,10 +7,12 @@ test('searches Chinese titles, filters by school and opens the mobile details pa
   await page.getByRole('button', { name: '搜尋' }).click();
   // The overview page also lists demo courses named 資料結構 in the ranking, so wait for the search URL.
   await page.waitForURL(/[?&]q=/);
+  await page.getByText('資料結構 · 本頁 2 校、2 班', { exact: true }).filter({ visible: true }).click();
   await expect(page.getByRole('link', { name: '資料結構' })).toHaveCount(2);
   await expect(page.getByText('共 2 班次')).toBeVisible();
   await expect(page.getByRole('article').first().getByText('修課人數／名額未公布')).toBeVisible();
   await expect(page.getByRole('combobox', { name: '排序' })).toHaveValue('relevance');
+  await page.getByText('本頁學校捷徑', { exact: true }).click();
   await expect(page.getByRole('navigation', { name: '依學校縮小範圍' }).getByRole('link', { name: '國立臺灣師範大學 1 班' })).toBeVisible();
   await page.waitForLoadState('networkidle');
 
@@ -113,6 +115,8 @@ test('uses a desktop table and keeps all parts inside the phone viewport', async
   await expect(page).toHaveURL(/[?&]sort=enrolled(&|$)/);
   await expect(enrollmentHeader).toHaveAttribute('aria-sort', 'descending');
   await expect(table.getByRole('row').nth(1)).toContainText('58 / 60');
+  await page.getByRole('combobox', { name: '本頁分組' }).selectOption('term');
+  await expect(table.getByText('114-2 學期 · 本頁 1 班')).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('article')).toHaveCount(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
@@ -122,14 +126,15 @@ test('keeps global filters on pagination redirects and offers applicable empty-s
   await page.goto('/?q=線性&school=nthu&term=all&sort=title&page=9');
   await expect(page).toHaveURL('/?q=%E7%B7%9A%E6%80%A7&school=nthu&term=all&sort=title');
   await expect(page.getByText('顯示 1–2 筆 · 共 2 筆')).toBeVisible();
-  await page.goto('/?q=zzzz&term=all');
+  await page.goto('/?q=zzzz-no-such-course&term=all');
   await expect(page.getByRole('status')).toContainText('0 班次');
   const results = page.getByRole('region', { name: '搜尋結果' });
   await expect(results.getByRole('heading', { name: '沒有符合的課程' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '搜尋「zzzz」' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '搜尋「zzzz-no-such-course」' })).toBeVisible();
   await expect(page.getByRole('searchbox')).toHaveCount(1);
   await expect(results.getByRole('link', { name: '查全部學期' })).toHaveCount(0);
-  await expect(results.getByRole('searchbox', { name: '關鍵字' })).toHaveValue('zzzz');
+  await expect(results.getByRole('searchbox', { name: '關鍵字' })).toHaveValue('zzzz-no-such-course');
+  await expect(results.getByText(/已查所有學校 · 全部學期.*較短的課名/)).toBeVisible();
   await expect(results.getByRole('link', { name: '從學校瀏覽' })).toBeVisible();
   await page.goto('/?q=zzzz&school=nthu&term=115-1');
   await expect(results.getByRole('link', { name: '保留關鍵字，清除篩選' })).toHaveAttribute('href', '/?q=zzzz&term=all');
@@ -139,6 +144,7 @@ test('keeps global filters on pagination redirects and offers applicable empty-s
   await expect(results.getByRole('link', { name: '改搜所有學校' })).toHaveAttribute('href', '/?q=zzzz&term=115-1');
   await page.goto('/?q=線性代數錯&term=all');
   await results.getByRole('link', { name: '試搜「線性代數」' }).click();
+  await results.getByText('線性代數 · 本頁 1 校、2 班', { exact: true }).filter({ visible: true }).click();
   await expect(results.getByRole('link', { name: /^線性代數/ })).toHaveCount(2);
 });
 
@@ -155,8 +161,9 @@ test('submits a search and persists the SSR theme without JavaScript', async ({ 
     await nav.getByRole('button', { name: '切換為深色主題' }).click();
     await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(10, 10, 10)');
     await page.getByRole('searchbox', { name: '關鍵字' }).fill('資料');
-    await page.getByRole('button', { name: '搜尋', exact: true }).click();
+    await page.getByRole('button', { name: '查全部學期', exact: true }).click();
     await expect(page.getByRole('heading', { name: '搜尋「資料」' })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: '學期' })).toHaveValue('all');
     await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(10, 10, 10)');
     await nav.getByRole('button', { name: '切換為淺色主題' }).click();
     await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 255, 255)');

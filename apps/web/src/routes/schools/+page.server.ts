@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { coverage, coverageYears, directoryStatus, matches, parseFilters, schoolSorts, sortInstitutions, statuses, systems } from '$lib/institutions';
+import { coverage, coverageYears, directoryStatus, hasImportedOfferings, matches, parseFilters, schoolSorts, sortInstitutions, statuses, systems } from '$lib/institutions';
 import { catalog } from '$lib/server/catalog';
 import type { PageServerLoad } from './$types';
 
@@ -15,10 +15,10 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   const filters = parseFilters(url.searchParams);
   const shown = institutions.filter((institution) => matches(institution, filters));
   const [requestedSort, requestedOrder] = url.searchParams.get('directory_order')?.split(':') ?? [];
-  const sort = schoolSorts.find((value) => value === (url.searchParams.get('sort') ?? requestedSort)) ?? 'status';
+  const sort = schoolSorts.find((value) => value === (url.searchParams.get('sort') ?? requestedSort)) ?? 'terms';
   const order = url.searchParams.get('order') ?? requestedOrder;
   const direction = order === 'asc' || order === 'desc' ? order : sort === 'status' || sort === 'name' ? 'asc' : 'desc';
-  const pageSize = 24;
+  const pageSize = 50;
   const totalPages = Math.max(1, Math.ceil(shown.length / pageSize));
   const requestedPage = Number(url.searchParams.get('page'));
   const page = Number.isSafeInteger(requestedPage) ? Math.min(Math.max(1, requestedPage), totalPages) : 1;
@@ -36,6 +36,11 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     updatedAt: updatedAt ?? null,
     total: institutions.length,
     notStarted: institutions.filter((school) => directoryStatus(school) === 'none').map(({ name }) => name),
+    breadth: {
+      longer: institutions.filter((school) => hasImportedOfferings(school) && school.terms.length > 3).length,
+      recent: institutions.filter((school) => hasImportedOfferings(school) && school.terms.length <= 3).length
+    },
+    maxOfferings: Math.max(0, ...institutions.map(({ offerings }) => offerings)),
     coverage: coverage(institutions),
     counts: statuses.map((status) => ({
       status,

@@ -32,9 +32,9 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
 
   const { offerings: sample, terms, total, ...department } = result.data;
   const query = (url.searchParams.get('q') ?? '').trim().replace(/[\r\n\0]/g, ' ').slice(0, 100);
-  const sort = searchSorts.find(({ value }) => value === url.searchParams.get('sort'))?.value ?? 'relevance';
+  const sort = searchSorts.find(({ value }) => value === url.searchParams.get('sort'))?.value ?? (query ? 'relevance' : 'enrolled');
   const requestedPage = Number(url.searchParams.get('page'));
-  const pageSize = 16;
+  const pageSize = 50;
   const safePage = Number.isSafeInteger(requestedPage) ? Math.max(1, requestedPage) : 1;
   let page = Math.min(safePage, Math.max(1, Math.ceil(total / pageSize)));
   const results = (pageNumber: number) => client.GET('/api/courses/search', {
@@ -43,7 +43,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   let offerings = sample;
   let matches = total;
   let resultsError = false;
-  if (query || total > pageSize || sort !== 'relevance') {
+  if (total || query) {
     let search = await results(page);
     const finalPage = Math.max(1, Math.ceil((search?.data?.total ?? total) / pageSize));
     if (page > finalPage) {

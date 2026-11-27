@@ -9,6 +9,7 @@
     rows: readonly Row[];
     rowKey: (row: Row) => string | number;
     rowHref?: (row: Row) => string | null | undefined;
+    groupLabel?: (row: Row) => string | undefined;
     rowHeaderColumn?: string;
     stickyColumn?: string;
     clientSort?: boolean;
@@ -21,7 +22,7 @@
   }
 
   let {
-    caption, columns, rows, rowKey, rowHref, rowHeaderColumn, stickyColumn, clientSort = false, order,
+    caption, columns, rows, rowKey, rowHref, groupLabel, rowHeaderColumn, stickyColumn, clientSort = false, order,
     minWidth = '38rem', maxHeight = '30rem', scrollHint = true, cell, empty
   }: Props = $props();
 
@@ -94,6 +95,8 @@
       </thead>
       <tbody>
         {#each shownRows as row (rowKey(row))}
+          {@const label = groupLabel?.(row)}
+          {#if label}<tr class="row-group"><td colspan={columns.length}>{label}</td></tr>{/if}
           <tr>
             {#each columns as column, index (column.id)}
               {#if rowHeaderColumn === column.id || (rowHeaderColumn === undefined && index === 0)}
@@ -142,6 +145,7 @@
   table { inline-size: 100%; border-collapse: separate; border-spacing: 0; text-align: start; }
   caption { padding: var(--space-2) var(--space-3); text-align: start; color: var(--muted); font-size: var(--t-sm); }
   th, td { padding: var(--table-pad-block, 0.375rem) 0.625rem; border-block-end: 1px solid var(--line); text-align: start; }
+  .row-group td { padding-block: var(--space-1); background: var(--table-head); color: var(--ink-2); font-weight: 650; font-size: var(--t-sm); }
   thead th {
     position: sticky;
     inset-block-start: 0;
