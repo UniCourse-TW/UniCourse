@@ -106,16 +106,18 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(thread.getByRole('link', { name: '#期中考' })).toBeVisible();
   // The side card links back to the course.
   const card = page.getByRole('complementary', { name: '這門課' });
-  await expect(card.getByRole('link', { name: '查看課程' })).toHaveAttribute('href', `/courses/${course.id}`);
+  // On phones the card's course name is the link (the full card folds behind 詳情).
+  await expect(card.getByRole('link', { name: '線性代數', exact: true }).first()).toHaveAttribute('href', `/courses/${course.id}`);
 
   // Reply (the thread's 寫回覆 link jumps to the box, which names the signed-in identity), then upvote the question.
   await expect(thread.getByRole('link', { name: /^寫回覆/ })).toHaveAttribute('href', '#reply-form');
   await expect(page.locator('#reply-form')).toContainText('以 測試同學 的身分');
-  await page.getByLabel('我要回覆').fill(`同問 ${username}`);
+  // A thread with no replies asks for the first one; afterwards the box is the plain 寫回覆.
+  await page.getByLabel('寫第一則回覆').fill(`同問 ${username}`);
   await page.getByRole('button', { name: '送出回覆' }).click();
   await expect(page.getByRole('heading', { name: '回覆（1）' })).toBeVisible();
   await expect(page.getByRole('article', { name: '測試同學 的回覆' }).locator('.content')).toHaveText(`同問 ${username}`);
-  await expect(page.getByLabel('我要回覆')).toHaveValue('');
+  await expect(page.getByLabel('寫回覆', { exact: true })).toHaveValue('');
 
   // The author can edit their reply.
   const reply = page.getByRole('article', { name: '測試同學 的回覆' });
@@ -150,7 +152,11 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(page.getByRole('heading', { name: '測試同學' })).toBeVisible();
   const activity = page.getByRole('group', { name: '活動統計' });
   await expect(activity).toContainText('課程評價');
-  await expect(activity).toContainText('此帳號的平均給分');
+  await expect(activity).toContainText('平均給分');
+  // One rating is not an average: the tile waits for three and says so.
+  await expect(activity).toContainText('需 3 則評價');
+  // The count tiles double as jump links to their sections.
+  await expect(activity.getByRole('link', { name: /課程評價 1 則/ })).toHaveAttribute('href', '#ratings');
   // The number is the accessible score and the adjacent stars are decorative.
   await expect(page.getByRole('table', { name: /的課程評價/ }).getByText('4 / 5', { exact: true })).toBeVisible();
   // Exact: the post rows also name the course (「國立清華大學 線性代數 DEMO201」) in their forum link.

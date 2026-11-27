@@ -105,6 +105,8 @@ export const load: PageServerLoad = async ({ fetch, url, locals }) => {
       schoolName: entry.schoolName,
       courseCode: entry.courseCode,
       title: entry.title,
+      /** The course page (newest term) for the course name; 寫心得 opens the compose form instead. */
+      offeringId: entry.latestOfferingId,
       enrolledTotal: entry.enrolledTotal ?? null
     }));
   return {

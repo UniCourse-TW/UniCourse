@@ -45,7 +45,8 @@
               <span class="cm-type" data-type={post.type}>{postTypeLabels[post.type]}</span>
               {#if post.school && showCourse}
                 <a class="over" href={forumHref({ school: post.school, courseCode: post.courseCode ?? undefined })}>
-                  {schoolNames[post.school] ?? post.school}{#if courseTitle}&nbsp;<span class="course">{courseTitle}</span>{/if}{#if post.courseCode}&nbsp;<span class="mono">{post.courseCode}</span>{/if}
+                  <!-- School, course and code are separate parts (each kept whole) with a visible divider. -->
+                  <span class="part">{schoolNames[post.school] ?? post.school}</span>{#if courseTitle}<span class="divider">·</span><span class="part course">{courseTitle}</span>{/if}{#if post.courseCode}{' '}<span class="part mono code">{post.courseCode}</span>{/if}
                 </a>
               {/if}
             </p>
@@ -115,21 +116,24 @@
     gap: 0.125rem var(--space-2);
     align-items: center;
     color: var(--muted);
-    font-size: var(--t-sm);
+    font-size: 0.8125rem;
     line-height: 1.5;
   }
   .kicker .cm-type { font-size: 0.8125rem; }
+  .kicker .part { white-space: nowrap; }
+  .kicker .divider { margin-inline: 0.35em; color: var(--axis); }
+  .kicker .code { color: var(--muted); }
   .kicker .cm-type[data-type='article'] { color: var(--brand-ink); background: var(--brand-wash); }
   .kicker a { color: var(--ink-2); text-decoration: none; }
   .kicker a:hover { color: var(--brand-ink); text-decoration: underline; }
   /* Author and tags share one muted line under the summary; spacing, not bullet characters, separates them. */
-  .by { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; margin-block-start: 0.125rem !important; font-size: var(--t-sm); line-height: 1.5; }
+  .by { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; margin-block-start: 0.125rem !important; font-size: 0.8125rem; line-height: 1.5; }
   .by a { color: var(--muted); text-decoration: none; }
   .by a:hover { color: var(--brand-ink); text-decoration: underline; }
   .by .author { color: var(--ink-2); }
   .by .author::before { content: '@'; color: var(--muted); }
   /* Tags are small chips, so they never read as part of the summary. */
-  .by .tag { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-sm); line-height: 1.6; }
+  .by .tag { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; }
   /* Links above the stretched title link stay clickable on their own. */
   .over { position: relative; z-index: 1; }
   h3 { margin-block: 0.125rem 0 !important; font-size: var(--t-md) !important; font-weight: 600 !important; letter-spacing: 0 !important; line-height: 1.5 !important; }
