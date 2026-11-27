@@ -111,9 +111,12 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(card.getByRole('link', { name: '線性代數', exact: true }).first()).toHaveAttribute('href', `/courses/${course.id}`);
 
   // The first-reply link jumps to the box, which names the signed-in identity.
-  await thread.getByRole('link', { name: /^寫第一則回覆/ }).click();
+  await thread.getByRole('link', { name: /^前往回覆/ }).click();
   await expect(page.getByLabel('寫第一則回覆')).toBeFocused();
   await expect(page.locator('#reply-form')).toContainText('以 測試同學 的身分');
+  const send = page.getByRole('button', { name: '送出回覆' });
+  await expect(send).toBeDisabled();
+  await expect(send).toHaveAccessibleDescription('輸入內容後才能送出');
   // A thread with no replies asks for the first one; afterwards the box is the plain 寫回覆.
   await page.getByLabel('寫第一則回覆').fill(`同問 ${username}`);
   await page.getByRole('button', { name: '送出回覆' }).click();
@@ -144,7 +147,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   const guest = await browser.newPage();
   try {
     await guest.goto(new URL(threadPath, page.url()).href);
-    await guest.getByRole('link', { name: '建立帳號並返回' }).click();
+    await guest.getByRole('link', { name: '建立帳號並返回本文' }).click();
     await expect(guest.getByRole('heading', { name: '建立 UniCourse 帳號' })).toBeVisible();
     await expect(guest.locator('input[name="next"]')).toHaveValue(`${threadPath}#reply-form`);
   } finally {
@@ -164,13 +167,13 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   }).toPass({ timeout: 20_000 });
   await expect(page.getByRole('heading', { name: '測試同學' })).toBeVisible();
   const activity = page.getByRole('group', { name: '活動統計' });
-  // Below the sample threshold only the ratings section explains why there is no average or distribution.
-  const sampleNote = '目前有 1 則評價，滿 3 則才顯示平均與分布。';
-  await expect(page.getByRole('region', { name: '課程評價（1）' })).toContainText(sampleNote);
+  // The rating tile links to the list and explains the sample threshold.
+  const ratingTile = activity.getByRole('link', { name: /查看評價，共 1 則/ });
+  const sampleNote = '滿 3 則顯示平均與分布';
+  await expect(ratingTile).toHaveAttribute('href', '#ratings');
+  await expect(ratingTile).toContainText(sampleNote);
   await expect(page.getByText(sampleNote, { exact: true })).toHaveCount(1);
-  // The count tiles double as jump links to their sections.
-  await expect(activity.getByRole('link', { name: /查看評價，共 1 則/ })).toHaveAttribute('href', '#ratings');
-  // The number is the accessible score and the adjacent stars are decorative.
+  // A small sample shows the individual numeric score.
   await expect(page.getByRole('table', { name: /的課程評價/ }).getByText('4 / 5', { exact: true })).toBeVisible();
   // Exact: the post rows also name the course (「國立清華大學 線性代數 DEMO201」) in their forum link.
   await expect(page.getByRole('link', { name: '線性代數', exact: true })).toHaveAttribute('href', `/courses/${course.id}`);
