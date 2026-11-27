@@ -111,22 +111,19 @@
   {@const isAuthor = user?.username === item.author.username}
   {@const pending = pendingVotes.includes(item.id)}
   {@const isReply = kind === '回覆'}
-  {@const compact = isReply || item.score === 0}
   <div class="controls">
     {#if user}
-      <!-- The same worded pair (▲ 推 · 分數 · ▼ 噓) on the thread and on every reply; replies only sit tighter. -->
-      <form method="POST" action="?/vote" class="vote" class:compact aria-label={isReply ? `投票：${authorName(item.author)} 的回覆` : '本文投票'} use:enhance={voting(item.id)} aria-busy={pending}>
+      <form method="POST" action="?/vote" class="vote" aria-label={isReply ? `投票：${authorName(item.author)} 的回覆` : '本文投票'} use:enhance={voting(item.id)} aria-busy={pending}>
         <input type="hidden" name="target" value={item.id} />
         <button name="value" value={item.myVote === 1 ? 0 : 1} aria-pressed={item.myVote === 1} aria-label={isReply ? '推這則回覆' : undefined} disabled={pending}>
-          <span aria-hidden="true">▲</span>{#if !isReply}<span>推</span>{/if}
+          <span aria-hidden="true">▲</span><span>推</span>
         </button>
         <span class="cm-score" data-sign={scoreSign(item.score)} aria-label="{kind}分數" aria-live="polite">{signed(item.score)}</span>
         <button name="value" value={item.myVote === -1 ? 0 : -1} aria-pressed={item.myVote === -1} aria-label={isReply ? '噓這則回覆' : undefined} disabled={pending}>
-          <span aria-hidden="true">▼</span>{#if !isReply}<span>噓</span>{/if}
+          <span aria-hidden="true">▼</span><span>噓</span>
         </button>
       </form>
     {:else}
-      <!-- Visitors see the score as plain text: no frame, no leftover separators from the vote control. -->
       <p class="score-only">
         <span class="label">分數</span>
         <span class="cm-score" data-sign={scoreSign(item.score)} aria-label="{kind}分數">{signed(item.score)}</span>
@@ -136,14 +133,18 @@
       {#if user}
         <a class="action reply-link" href="#reply-form">寫回覆 <span aria-hidden="true">↓</span></a>
       {:else}
-        <a class="action reply-link" href="#reply-form">登入投票或回覆 <span aria-hidden="true">↓</span></a>
+        <a class="action reply-link" href={signedOutHref}>登入並回到這篇討論 <span aria-hidden="true">→</span></a>
         {#if post.replies.length >= SORT_TOGGLE_AT}<a class="action" href="#replies-title">看 {post.replies.length} 則回覆 <span aria-hidden="true">↓</span></a>{/if}
       {/if}
     {/if}
     {#if isAuthor || user?.isAdmin}
       <details class="more" open={form?.action === 'edit' && form.target === item.id && 'message' in form}>
-        <summary class="action more-btn">管理 <span class="chev" aria-hidden="true">▾</span><span class="cm-sr">{isReply ? `${authorName(item.author)} 的回覆` : '本文'}</span></summary>
-        <div class="manage" role="group" aria-label="這則{kind}的作者操作">
+        <summary class="action more-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6 4 4M4 20l4.5-1L20 7.5 16.5 4 5 15.5 4 20Z" /></svg>
+          {isAuthor ? '編輯／刪除選項' : '管理員選項'} <span class="chev" aria-hidden="true">▾</span>
+        </summary>
+        <div class="manage" role="group" aria-label="這則{kind}的管理選項">
+        <p class="manage-note">{isAuthor ? '作者可編輯，作者與管理員可刪除。' : '僅管理員可使用此選項。'}</p>
         <!-- Re-created after each save so the panels close again. -->
         {#key `${item.updatedAt}|${item.title}|${item.content}`}
           {#if isAuthor}
@@ -219,26 +220,22 @@
     </article>
 
     {#if course}
-      <!-- Desktop: a sticky card beside the thread. Phones: a short card under the thread (name, two key
-           numbers, 查看課程) whose details unfold from a separate 44 px toggle, so the first reply follows soon. -->
+      <!-- Phones keep the course summary visible and fold the detailed history. -->
       <aside class="course" aria-labelledby="course-card-title">
         <div class="course-head">
           <h2 id="course-card-title" class="eyebrow">這門課</h2>
           {#if summary}
-            <p class="head-title"><a href="/courses/{summary.id}">{summary.title}</a> <span class="mono code">{summary.courseCode}</span></p>
-            {#if post.replies.length}
-              <div class="head-facts num">
-                {#if summary.latestEnrolled != null}
-                  <p>{summary.latestTerm} 已收錄 {summary.latestSections} 班合計 · 歷史資料</p>
-                  <p><strong>{fmt.format(summary.latestEnrolled)}{#if summary.latestCapacity != null} / {fmt.format(summary.latestCapacity)}{/if}</strong> {summary.latestCapacity != null ? '修課／名額' : '人修課，名額未公布'}</p>
-                {:else}
-                  <p>{summary.terms} 個學期，最新一期修課人數未公布</p>
-                {/if}
-                {#if rating}<p>同學評價 <strong>{rating.average?.toFixed(1)} / 5</strong>（{rating.count} 則）</p>{/if}
-              </div>
-            {/if}
+            <p class="head-title">{summary.title} <span class="head-school">{summary.schoolName}</span></p>
+            <p class="head-facts num">
+              {#if summary.latestEnrolled != null}
+                {summary.latestTerm} 歷史資料 · <strong>{fmt.format(summary.latestEnrolled)}</strong> 人修課
+              {:else}
+                {summary.terms} 個收錄學期
+              {/if}
+              {#if rating} · 評價 <strong>{rating.average?.toFixed(1)}</strong>（{rating.count} 則）{/if}
+            </p>
           {:else}
-            <p class="head-title"><span class="mono">{post.courseCode}</span></p>
+            <p class="head-title"><span class="mono">{post.courseCode}</span> <span class="head-school">{schoolName}</span></p>
           {/if}
         </div>
         <details class="course-fold">
@@ -323,7 +320,7 @@
 
     <section class="replies" aria-labelledby="replies-title">
       <div class="replies-head">
-        <h2 id="replies-title">回覆（{post.replies.length}）</h2>
+        <h2 id="replies-title">{post.replies.length ? `回覆（${post.replies.length}）` : '還沒有回覆'}</h2>
         {#if post.replies.length >= SORT_TOGGLE_AT}
           <nav class="sort" aria-label="回覆排序">
             <a href={sortHref('oldest')} aria-current={newestFirst ? undefined : 'true'}>最早</a>
@@ -337,11 +334,15 @@
             <li id="reply-{reply.id}">
               <article class="reply" aria-label="{authorName(reply.author)} 的回覆">
                 <p class="meta">
-                  <a href={profileHref(reply.author.username)}>{authorName(reply.author)}</a>
-                  {#if reply.author.displayName}<span class="handle">@{reply.author.username}</span>{/if}
-                  {#if reply.author.username === post.author.username}<span class="op">原 PO</span>{/if}
-                  <span class="sep">·</span><time class="num" datetime={reply.createdAt}>{dateTime(reply.createdAt)}</time>
-                  {#if edited(reply)}<span class="sep">·</span><span title="最後編輯 {dateTime(reply.updatedAt)}">已編輯</span>{/if}
+                  <span class="person">
+                    <a href={profileHref(reply.author.username)}>{authorName(reply.author)}</a>
+                    {#if reply.author.username === post.author.username}<span class="op">原 PO</span>{/if}
+                    {#if reply.author.displayName}<span class="handle">@{reply.author.username}</span>{/if}
+                  </span>
+                  <span class="timestamp">
+                    <time class="num" datetime={reply.createdAt}>{dateTime(reply.createdAt)}</time>
+                    {#if edited(reply)}<span class="sep">·</span><span title="最後編輯 {dateTime(reply.updatedAt)}">已編輯</span>{/if}
+                  </span>
                 </p>
                 <div class="content">{#each paragraphs(reply.content) as paragraph, index (index)}<p>{paragraph}</p>{/each}</div>
                 {@render controls(reply, '回覆')}
@@ -351,12 +352,11 @@
         </ol>
       {/if}
       {#if user}
-        <form method="POST" action="?/reply" class="reply-form cm-form" class:first={post.replies.length === 0} id="reply-form" use:enhance={submitReply}>
+        <form method="POST" action="?/reply" class="reply-form cm-form"  id="reply-form" use:enhance={submitReply}>
           <div class="cm-field">
-            <div class="cm-label"><label for="reply-content">{post.replies.length ? '我要回覆' : '我要回覆（第一則）'}</label><span class="cm-hint">以 {user.displayName || `@${user.username}`} 的身分</span></div>
-            {#if post.replies.length === 0}<p class="cm-hint reply-prompt" id="reply-prompt">{replyPrompt}</p>{/if}
+            <div class="cm-label"><label for="reply-content">我要回覆</label><span class="cm-hint">以 {user.displayName || `@${user.username}`} 的身分</span></div>
             <textarea id="reply-content" class="cm-input" name="content" required rows="3" maxlength="20000" defaultValue={replyDraft}
-              placeholder={post.replies.length ? replyPrompt : '在這裡寫下你的回覆'} aria-describedby={post.replies.length ? 'reply-hint' : 'reply-prompt reply-hint'}
+              placeholder={post.replies.length ? replyPrompt : '寫下第一則回覆'} aria-describedby="reply-hint"
               oninput={(event) => { replyText = event.currentTarget.value; autogrow(event.currentTarget); }}></textarea>
           </div>
           {#if form?.action === 'reply' && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
@@ -369,15 +369,15 @@
             </p>
             <span class="cm-count" aria-live="polite">{fmt.format(replyLength)} / 20,000</span>
             <!-- Without JavaScript the button is always live; with it, an empty box cannot be sent. -->
-            <button class="cm-btn" aria-busy={replying} disabled={replying || (hydrated && replyEmpty)}>{replying ? '送出中…' : '送出回覆'}</button>
+            <button class="cm-btn" aria-busy={replying} aria-disabled={hydrated && replyEmpty || undefined} disabled={replying || (hydrated && replyEmpty)}>{replying ? '送出中…' : '送出回覆'}</button>
           </div>
         </form>
       {:else}
-        <div class="login" class:first={post.replies.length === 0} id="reply-form">
-          <h3>{post.replies.length ? '參與討論' : '寫下第一則回覆'}</h3>
+        <div class="login"  id="reply-form">
+          <h3>參與討論</h3>
           <p>登入或建立帳號後會回到這篇討論，就能投票與回覆。</p>
-          <a class="cm-btn" href={signedOutHref}>登入</a>
-          <a class="cm-btn secondary" href={registerHref}>建立帳號</a>
+          <a class="cm-btn" href={signedOutHref}>登入並回到這篇討論</a>
+          <a class="action register-link" href={registerHref}>建立帳號</a>
         </div>
       {/if}
     </section>
@@ -407,7 +407,7 @@
   .handle { margin-inline-start: 0.35em; }
   .op { margin-inline-start: 0.4em; padding: 0 6px; border-radius: var(--radius-pill); color: var(--brand-ink); background: var(--brand-wash); font-size: var(--t-xs); font-weight: 600; }
   .content {
-    max-inline-size: 44em;
+    max-inline-size: 52ic;
     margin-block-start: var(--space-4);
     font-size: var(--t-md);
     line-height: var(--leading-prose);
@@ -425,9 +425,10 @@
   .more[open] > .more-btn .chev { rotate: 180deg; }
   /* No content-visibility here: its paint containment would clip the dropdown to a zero-size box. */
   .more:not([open])::details-content { display: none; }
-  .manage { position: absolute; inset-block-start: calc(100% + 4px); inset-inline-end: 0; z-index: 5; display: grid; gap: 0; min-inline-size: 10rem; padding: var(--space-1); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 18%, transparent); }
+  .manage { position: absolute; inset-block-start: calc(100% + 4px); inset-inline-end: 0; z-index: 5; display: grid; gap: 0; min-inline-size: 14rem; max-inline-size: min(20rem, 88vw); padding: var(--space-1); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 18%, transparent); }
+  .manage-note { padding: var(--space-2) var(--space-3); color: var(--muted); font-size: var(--t-sm); }
   .manage .action { min-block-size: var(--target-min); padding-inline: var(--space-3); color: var(--ink) !important; }
-  .more:has(.panel[open]) .manage { position: static; inline-size: 100%; border: 0; padding: 0; background: transparent; box-shadow: none; }
+  .more:has(.panel[open]) .manage { max-inline-size: none; position: static; inline-size: 100%; border: 0; padding: 0; background: transparent; box-shadow: none; }
   .more:has(.panel[open]) > .more-btn { display: none; }
   .more:has(.panel[open]) { display: block; }
   .reply-link { gap: 0.3em; }
@@ -438,7 +439,7 @@
     gap: 0.25em;
     align-items: center;
     justify-content: center;
-    min-block-size: 2.5rem;
+    min-block-size: var(--target-min);
     min-inline-size: 3.5rem;
     padding: 0 var(--space-3);
     border: 1px solid var(--control-line);
@@ -457,13 +458,7 @@
   .vote button:disabled { cursor: progress; }
   .vote .cm-score { min-inline-size: 2.25rem; text-align: center; font-size: var(--t-md); }
   .vote .cm-score[data-sign='zero'] { color: var(--ink-2); }
-  /* Replies: smaller toggles, so a one-line answer does not carry a control bar as tall as the thread's. */
-  .vote.compact button { min-block-size: var(--target-min); min-inline-size: var(--target-min); padding-inline: var(--space-2); border-radius: var(--radius-control); font-size: var(--t-sm); }
-  .vote.compact button:not([aria-pressed='true']) { border-color: transparent; background: transparent; }
-  .vote.compact button:not([aria-pressed='true']):hover { background: var(--brand-wash); }
-  .vote.compact .cm-score { min-inline-size: 2rem; font-size: var(--t-base); }
-  /* Signed out: 「分數 +1」 as text, the same height as the row's other controls. */
-  .score-only { display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: 2.5rem; margin-inline-end: var(--space-2) !important; }
+  .score-only { display: inline-flex; gap: var(--space-2); align-items: center; min-block-size: 2rem; margin-inline-end: var(--space-2) !important; padding: 0 var(--space-3); border-radius: var(--radius-pill); background: var(--chip); }
   .score-only .label { color: var(--muted); font-size: var(--t-sm); }
   .score-only .cm-score { font-size: var(--t-md); }
 
@@ -482,7 +477,7 @@
   }
   .action::-webkit-details-marker { display: none; }
   .action:hover { color: var(--brand-ink) !important; background: var(--hover-row); }
-  .reply-link { color: var(--brand-ink) !important; }
+  .reply-link, .register-link { color: var(--brand-ink) !important; }
   /* Delete is the one destructive tool, so it carries the danger colour even before it is opened. */
   .action.delete { color: var(--down) !important; }
   .danger > .action:hover, .danger > .action:focus-visible { color: var(--down) !important; background: color-mix(in srgb, var(--down) var(--status-tint), var(--panel-raised)); }
@@ -498,10 +493,9 @@
   .confirm p { flex: 1 1 16rem; color: var(--ink-2); font-size: var(--t-base); }
   .row { display: flex; gap: var(--space-2); }
   .submit-row { flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--space-3); }
-  .submit-row .status { flex: 1 1 10rem; margin: 0 !important; font-size: var(--t-base); }
+  .submit-row .status { margin: 0 !important; font-size: var(--t-base); }
   .submit-row .ok { color: var(--up); font-weight: 600; }
   .submit-row .hint { color: var(--ink-2); font-size: var(--t-sm); }
-  .submit-row .cm-btn:disabled:not([aria-busy='true']) { background: transparent; border-color: var(--control-line); }
 
   .course {
     position: relative;
@@ -559,13 +553,15 @@
   .replies ol { margin: var(--space-2) 0 0; padding: 0; list-style: none; }
   .replies li + li .reply { border-block-start: 1px solid var(--line); }
   .reply { padding-block: var(--space-3); }
-  .reply .meta { margin-block-start: 0 !important; }
+  .reply .meta { gap: 0 var(--space-2); margin-block-start: 0 !important; }
+  .reply .handle { font-size: var(--t-sm); }
+  .reply .timestamp { color: var(--ink-2); }
   .reply .content { margin-block-start: var(--space-1); }
   .reply .controls { margin-block-start: var(--space-2); }
   .reply-form, .login { margin-block-start: var(--space-4); padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); scroll-margin-block-start: 5rem; }
-  .reply-form.first, .login { margin-block-start: var(--space-3); padding: var(--space-3) var(--space-4) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
-  .reply-form.first .cm-label { display: grid; gap: 2px; }
-  .reply-prompt { color: var(--ink-2); }
+  .reply-form, .login { margin-block-start: var(--space-3); padding: var(--space-3) var(--space-4) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .reply-form .cm-label { justify-content: flex-start; gap: 0 var(--space-3); }
+  .reply-form .cm-hint { color: var(--ink-2); }
   .login { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
   .login h3 { flex-basis: 100%; }
   .login p { flex: 1 1 100%; color: var(--ink-2); }
@@ -580,9 +576,9 @@
     .course { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding: var(--space-3) var(--space-3) 0; }
     .course-head { grid-column: 1 / -1; display: grid; gap: 2px; }
     .course-head .head-title { display: block; margin: 0; min-inline-size: 0; color: var(--ink); font-size: var(--t-base); font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; }
-    .course-head .head-title a { color: var(--ink); text-decoration: none; }
-    .course-head .head-title a:hover { color: var(--brand-ink); text-decoration: underline; }
-    .head-facts { display: grid; gap: 1px; color: var(--ink-2); font-size: var(--t-sm); line-height: 1.55; }
+    .course-head .eyebrow { position: absolute; clip-path: inset(50%); }
+    .head-school { margin-inline-start: 0.4em; color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
+    .head-facts { display: block; color: var(--ink-2); font-size: var(--t-sm); line-height: 1.55; }
     .course-fold { grid-column: 1 / -1; grid-row: 3; }
     .course-fold > summary { pointer-events: auto; cursor: pointer; }
     .fold-toggle { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); margin-inline-start: calc(-1 * var(--space-2)); padding: 0 var(--space-2); border-radius: var(--radius-control); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; }
@@ -604,12 +600,10 @@
   }
   @media (max-width: 40rem) {
     .crumbs { margin-block-end: var(--space-1); }
-    /* Phones: both vote targets at least 44 px on the thread and on every reply. */
-    .vote button { min-block-size: var(--target-min); }
-    /* Phones: one 「管理 ▾」 button on the row; the two tools drop down from it. */
+    .post .more { flex-basis: 100%; margin-inline-start: 0; }
+    .post .manage { inset-inline-start: 0; inset-inline-end: auto; }
+    .reply .timestamp { flex-basis: 100%; }
     .submit-row { gap: var(--space-2); }
-    .submit-row .cm-btn { margin-inline-start: auto; }
     .submit-row .status:empty { display: none; }
-    .submit-row .status { flex-basis: auto; }
   }
 </style>

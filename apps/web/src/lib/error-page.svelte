@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { popularSearches } from '$lib/overview-paths';
 
   /**
    * The shared error view (states.md §3–4): a human title first, the HTTP status demoted to an
@@ -18,7 +19,7 @@
     description?: string;
     primary?: Action;
     secondary?: Action;
-    /** Extra links after 你也可以. */
+    /** Extra links under 其他查找方式. */
     also?: readonly Action[];
     /** Show a course search box (course and unknown-page 404s). */
     search?: boolean;
@@ -32,9 +33,7 @@
 
   let { status, message, title, description, primary, secondary, also = [], search = false, query = '', crossTerm = false, context, retryHref }: Props = $props();
 
-  /** Fixed example searches that find courses at most schools (not a popularity list), offered when the
-      address gave no clue about the course; three, so they stay on one row at 390 px. */
-  const examples = ['微積分', '普通心理學', '計算機概論'];
+  const examples = popularSearches.slice(0, 3);
 
   let notFound = $derived(status === 404);
   let heading = $derived(title ?? (notFound ? '找不到這個頁面' : '暫時無法顯示'));
@@ -73,13 +72,18 @@
 
 <div class="error-wrap">
 <section class="error-page" class:outage={!notFound} aria-labelledby="error-title">
-  <p class="eyebrow"><span class="ui-tabular code">{status}</span>{#if context}<span>{context}</span>{:else if !notFound}暫時無法取得{#if message && message !== detail} · {message}{/if}{/if}</p>
+  <p class="eyebrow"><span class="ui-tabular code">{status}</span>{#if !notFound}暫時無法取得{#if message && message !== detail} · {message}{/if}{/if}</p>
   <h1 id="error-title">{heading}</h1>
   <p class="detail">{detail}</p>
   {#if search}
-    <!-- The scope select precedes the words in the markup (so the query string reads term, q) and
-         follows them on screen. -->
     <form class="search" method="GET" action="/" role="search" aria-label="搜尋課程">
+      <label class="search-field">
+        <span class="field-label">已知的課號、課名或教師</span>
+        <span class="input-wrap">
+          <svg class="icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <input bind:this={searchInput} type="search" name="q" defaultValue={query} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" />
+        </span>
+      </label>
       <label class="scope-field">
         <span class="field-label">學期</span>
         <span class="select-wrap">
@@ -90,21 +94,13 @@
           <span class="chev" aria-hidden="true">▾</span>
         </span>
       </label>
-      <label class="search-field">
-        <span class="field-label">原課號、課名或教師</span>
-        <span class="input-wrap">
-          <svg class="icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-          <input bind:this={searchInput} type="search" name="q" defaultValue={query} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" />
-        </span>
-      </label>
       <button type="submit">搜尋課程</button>
     </form>
-    <!-- The address names no course, so these are fixed examples (labelled as such), not this course's school. -->
     {#if crossTerm}
       <a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: query })}`}>查「{query}」的其他學期 <span aria-hidden="true">→</span></a>
     {:else if !query && !back}
-      <nav class="examples" aria-label="試試這些課名">
-        <span class="examples-label">試試這些課名</span>
+      <nav class="examples" aria-label="熱門搜尋">
+        <span class="examples-label">熱門搜尋</span>
         <ul>{#each examples as example (example)}<li><a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: example })}`}>{example}</a></li>{/each}</ul>
       </nav>
     {/if}
@@ -120,20 +116,21 @@
     </div>
   {/if}
   {#if also.length || search}
-    <nav class="also" aria-label="其他出路">
-      <span class="also-label">你也可以</span>
+    <nav class="also" aria-label="其他查找方式">
+      <span class="also-label">其他查找方式</span>
       <ul>
         {#if search}<li><a class="lead-out" href={second.href}><span>{second.label}</span><span aria-hidden="true">→</span></a></li>{/if}
         {#each also as link (link.href)}<li><a href={link.href}><span>{link.label}</span><span aria-hidden="true">→</span></a></li>{/each}
       </ul>
     </nav>
   {/if}
+  {#if context}<p class="diagnostic">{context}</p>{/if}
 </section>
 </div>
 
 <style>
   /* Desktop: the card sits in the upper middle of the main column instead of hugging the top. */
-  .error-wrap { display: grid; align-content: center; min-block-size: min(60vh, 36rem); }
+  .error-wrap { display: grid; align-content: center; min-block-size: min(52vh, 30rem); }
   .error-page {
     display: grid;
     gap: var(--space-2);
@@ -153,11 +150,11 @@
   .code { padding: 0 6px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--panel-raised); font-family: var(--font-mono); font-weight: 500; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .detail { margin: 0; color: var(--ink-2); }
+  .diagnostic { margin: var(--space-1) 0 0; color: var(--muted); font-size: var(--t-sm); font-variant-numeric: tabular-nums; }
   /* Toolbar row: words (with the family's search icon), scope, button. */
   .search { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: end; inline-size: 100%; margin-block-start: var(--space-2); }
-  .search-field { display: grid; flex: 1 1 14rem; order: 0; gap: var(--space-1); }
-  .scope-field { display: grid; flex: 0 0 auto; order: 1; gap: var(--space-1); }
-  .search button { order: 2; }
+  .search-field { display: grid; flex: 1 1 14rem; gap: var(--space-1); }
+  .scope-field { display: grid; flex: 0 0 auto; gap: var(--space-1); }
   .field-label { color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; }
   .input-wrap, .select-wrap { position: relative; display: block; }
   .input-wrap .icon { position: absolute; inset-block-start: 50%; inset-inline-start: var(--space-3); translate: 0 -50%; color: var(--muted); pointer-events: none; }
@@ -201,11 +198,10 @@
   button, .primary { color: var(--on-brand); background: var(--brand); border-color: var(--brand); }
   .actions .secondary { border-color: var(--brand); color: var(--brand-ink); background: var(--panel-raised); }
   .actions .secondary:hover { background: var(--brand-wash); }
-  /* Example searches are chips (36 px, 44 px on phones) that wrap, not a run of small links. */
   .examples { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: 0; }
   .examples-label { color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-  .chip { display: inline-flex; align-items: center; justify-content: center; min-block-size: 2.25rem; padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: var(--t-sm); font-weight: 600; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
+  .chip { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: var(--t-sm); font-weight: 600; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
   .chip:hover { color: var(--brand-ink); background: var(--brand-wash); }
   .chip:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .also { display: grid; gap: var(--space-1); inline-size: 100%; margin-block-start: var(--space-4); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
@@ -214,7 +210,6 @@
   .also a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-underline-offset: 0.15em; }
   /* The first way out (the data route: 各校收錄狀態) leads; the rest are plain links. */
   .also a.lead-out { color: var(--brand-ink); font-weight: 650; }
-  .also a[href='/forum'] { color: var(--muted); font-weight: 500; }
   .also a:hover { color: var(--brand-ink); }
 
   @media (max-width: 40rem) {
@@ -230,7 +225,6 @@
     /* The label on its own line, then one wrapping row of 40 px chips (no grid, so no ragged columns). */
     .examples { display: grid; gap: var(--space-2); inline-size: 100%; }
     .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-    .chip { min-block-size: var(--target-min); }
     /* The ways out share wrapping 44 px rows (two per line) instead of one tall row each. */
     .also ul { gap: 0 var(--space-4); }
   }

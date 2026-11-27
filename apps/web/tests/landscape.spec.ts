@@ -60,11 +60,15 @@ test('the legal documents have a table of contents and the review-index sections
   if (!(await toc.getByRole('link', { name: '外部評論索引' }).isVisible())) await toc.getByText('目錄').click();
   await expect(toc.getByRole('link', { name: '外部評論索引' })).toHaveAttribute('href', '#reviews');
   await expect(page.locator('#reviews')).toHaveText('外部評論索引');
-  await expect(page.getByText('不超過 120 字的摘要')).toBeVisible();
-  await expect(page.getByRole('link', { name: /在 GitHub 建立 issue/ })).toHaveAttribute('href', /github\.com/);
+  const storedFields = page.locator('details', { has: page.locator('#reviews-kept') });
+  await expect(storedFields.getByText('不超過 120 字的摘要')).toBeHidden();
+  await page.locator('#reviews-kept').click();
+  await expect(storedFields.getByText('不超過 120 字的摘要')).toBeVisible();
+  await expect(page.getByRole('link', { name: /在 GitHub 公開回報/ })).toHaveAttribute('href', /github\.com/);
 
   await page.goto('/privacy');
   await expect(page.getByRole('heading', { name: '外部評論索引儲存的資料' })).toBeVisible();
+  await page.getByText('查看索引儲存的 5 類資料', { exact: true }).click();
   await expect(page.getByRole('table').nth(1).getByRole('row')).toHaveCount(6);
 });
 
@@ -79,7 +83,8 @@ test('unknown pages and courses get a helpful 404 with a search box', async ({ p
   response = await page.goto('/courses/999999999');
   expect(response?.status()).toBe(404);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('找不到這個開課班次');
+  await expect(page.getByRole('combobox', { name: '學期', exact: true })).toHaveValue('all');
   await page.getByRole('searchbox').fill('資料');
   await page.getByRole('button', { name: '搜尋課程' }).click();
-  await expect(page).toHaveURL(/\/\?term=all&q=%E8%B3%87%E6%96%99$/);
+  await expect(page).toHaveURL((url) => url.pathname === '/' && url.searchParams.get('term') === 'all' && url.searchParams.get('q') === '資料');
 });

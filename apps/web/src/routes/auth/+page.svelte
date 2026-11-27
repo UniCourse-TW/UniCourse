@@ -1,6 +1,6 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import '$lib/community-ui.css';
   import { profileHref } from '$lib/community-paths';
   import { PRIVATE_REPORT_URL } from '$lib/legal-contact';
@@ -15,27 +15,37 @@
   // so a format mistake shows before the round trip. Whether a name is free is only known to the server.
   let checked = $state<{ username?: string | null; password?: string | null }>({});
   const usernamePattern = /^[A-Za-z0-9_]{3,32}$/;
-  function checkUsername(value: string) {
-    checked.username = !value ? undefined : usernamePattern.test(value) ? null : '帳號名稱需為 3–32 個英文字母、數字或底線（_）。';
+  function checkUsername(value: string, required = false) {
+    if (!value) {
+      checked.username = required ? '請輸入帳號名稱。' : undefined;
+      return;
+    }
+    checked.username = usernamePattern.test(value) ? null : '帳號名稱需為 3–32 個英文字母、數字或底線（_）。';
   }
-  function checkPassword(value: string) {
-    checked.password = !value ? undefined : value.length >= 8 ? null : `密碼需至少 8 個字元（目前 ${value.length} 個）。`;
+  function checkPassword(value: string, required = false) {
+    const length = [...value].length;
+    if (!length) {
+      checked.password = required ? '請輸入密碼。' : undefined;
+      return;
+    }
+    checked.password = length >= 8 ? null : `密碼需至少 8 個字元（目前 ${length} 個）。`;
   }
   // What is in the boxes right now (JavaScript only): drives the live length hint and the lockout
   // without another round trip.
   let typedUsername = $state('');
   let passwordLength = $state(0);
   let submitting = $state(false);
-  // A sign-in that takes longer than usual says so under the button, with the way on (retry) spelled out.
+  // Keep a slow request and its exit visible without moving the submit button.
   let slow = $state(false);
   let slowTimer: ReturnType<typeof setTimeout> | undefined;
+  let activeRequest: AbortController | undefined;
   // Caps Lock while typing a password is the usual reason for a wrong one: say so beside the field.
   let capsLock = $state(false);
   const readCapsLock = (event: KeyboardEvent) => (capsLock = event.getModifierState?.('CapsLock') ?? false);
   onMount(() => {
     hydrated = true;
     typedUsername = (document.getElementById('username') as HTMLInputElement | null)?.value ?? '';
-    return () => clearTimeout(slowTimer);
+    return stopWaiting;
   });
 
   let tabHref = (target: 'login' | 'register', username = '') => {
@@ -63,6 +73,7 @@
   }
   let returnTo = $derived(destination(data.next));
   let hasDestination = $derived(data.next !== '/');
+  let browseHref = $derived(data.next.startsWith('/?') ? data.next : '/');
 
   /**
    * Which field an error belongs to. Field errors show under that field and mark it invalid;
@@ -78,6 +89,13 @@
   }
   let errorAt = $derived(errorField(form?.message));
   let usernameError = $derived(errorAt === 'username' && (!hydrated || typedUsername.trim().toLowerCase() === form?.username?.toLowerCase()));
+  let editedPassword = $state(false);
+  let serverPasswordError = $derived(errorAt === 'password' && !editedPassword);
+  let passwordInvalid = $derived(serverPasswordError || Boolean(checked.password));
+  let checkedOnSubmit = $state(false);
+  let multipleErrors = $derived((checkedOnSubmit || Boolean(form?.message)) && [
+    usernameError || Boolean(checked.username), passwordInvalid, errorAt === 'displayName'
+  ].filter(Boolean).length > 1);
   let chosenName = $state('');
   let credentialError = $derived(mode === 'login' && form?.message === '帳號或密碼錯誤。');
   let tooMany = $derived(Boolean(form && 'lockedAt' in form && form.lockedAt));
@@ -127,19 +145,43 @@
     input.focus();
   }
 
-  const submit: SubmitFunction = ({ formElement }) => {
+  function stopWaiting() {
+    activeRequest?.abort();
+    activeRequest = undefined;
+    clearTimeout(slowTimer);
+    submitting = false;
+    slow = false;
+  }
+
+  const submit: SubmitFunction = async ({ formElement, formData, controller, cancel }) => {
+    if (activeRequest) {
+      cancel();
+      return;
+    }
+    const wasLogin = formElement.action.endsWith('?/login');
+    if (!wasLogin) {
+      checkUsername(String(formData.get('username') ?? '').trim(), true);
+      checkPassword(String(formData.get('password') ?? ''), true);
+      checkedOnSubmit = true;
+      if (multipleErrors) {
+        cancel();
+        await tick();
+        formElement.querySelector<HTMLElement>('#registration-errors')?.focus();
+        return;
+      }
+    }
+    activeRequest = controller;
     submitting = true;
     showPassword = false;
     capsLock = false;
     slow = false;
     clearTimeout(slowTimer);
-    slowTimer = setTimeout(() => (slow = true), 6000);
-    const wasLogin = formElement.action.endsWith('?/login');
+    slowTimer = setTimeout(() => (slow = true), 10_000);
     return async ({ result, update }) => {
+      if (activeRequest !== controller) return;
       await update({ reset: false });
-      submitting = false;
-      slow = false;
-      clearTimeout(slowTimer);
+      if (activeRequest !== controller) return;
+      stopWaiting();
       if (result.type !== 'failure') return;
       if (wasLogin && !result.data?.message?.startsWith('暫時無法')) {
         if (result.data?.message === '帳號或密碼錯誤。') failedAt = [...failedAt, Date.now()];
@@ -150,8 +192,11 @@
           if (!result.data?.lockedAt) password.focus();
         }
       } else {
-        const invalid = formElement.querySelector<HTMLInputElement>('input[aria-invalid="true"]');
-        invalid?.focus();
+        editedPassword = false;
+        await tick();
+        const target = formElement.querySelector<HTMLElement>('#registration-errors')
+          ?? formElement.querySelector<HTMLInputElement>('input[aria-invalid="true"]');
+        target?.focus();
       }
     };
   };
@@ -163,13 +208,13 @@
 
 {#snippet passwordToggle()}
   {#if hydrated}
-    <button type="button" class="toggle" aria-pressed={showPassword} aria-controls="password" disabled={submitting || locked}
+    <button type="button" class="toggle" aria-pressed={showPassword} aria-controls="password" disabled={submitting}
       onclick={() => (showPassword = !showPassword)}>
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" />
         {#if showPassword}<path d="M4 4l16 16" />{/if}
       </svg>
-      <span>{showPassword ? '隱藏' : '顯示'}</span><span class="sr-only">密碼</span>
+      <span>{showPassword ? '隱藏密碼' : '顯示密碼'}</span>
     </button>
   {/if}
 {/snippet}
@@ -190,16 +235,27 @@
   {#if capsLock}<p class="caps" role="status"><span aria-hidden="true">⇪</span> 大寫鎖定已開啟</p>{/if}
 {/snippet}
 
+{#snippet exitLine(label: string)}
+  <div class="after">
+    {#if submitting}
+      <a href={browseHref} onclick={stopWaiting} title="離開後，已收到的請求仍可能完成">停止等待並繼續查課 <span aria-hidden="true">→</span></a>
+    {:else}
+      <a href={browseHref}>{label} <span aria-hidden="true">→</span></a>
+    {/if}
+  </div>
+  {#if submitting && slow}<p class="request-note">若伺服器已收到請求，離開後仍可能完成。</p>{/if}
+{/snippet}
+
 <!-- Where the visitor lands afterwards, said once under the title (not in small print under the button). -->
 {#snippet returnLine(verb: string)}
-  <p class="return">{verb}後會回到：{#if hasDestination}<a href={data.next}>{returnTo}</a>{:else}首頁{/if}</p>
+  <p class="return">{verb}後會回到：{returnTo}{#if returnTo === '論壇發文'}（需登入）{/if}</p>
 {/snippet}
 
 <div class="cm auth">
   <div class="card">
     <div class="auth-heading">
       <img class="logo" src="/unicourse.png" alt="" width="36" height="36" />
-      <h1>{data.signedIn ? '你已登入' : mode === 'register' ? '建立帳號' : '登入 UniCourse'}</h1>
+      <h1>{data.signedIn ? '你已登入' : mode === 'register' ? '加入 UniCourse 社群' : '登入 UniCourse'}</h1>
     </div>
 
     {#if data.signedIn}
@@ -210,34 +266,23 @@
       <p class="why">現在可以評分、發文與回覆。</p>
       <a class="cm-btn block go-on" href={data.next}>{hasDestination ? `回到${returnTo}` : '回首頁，繼續查課'} <span aria-hidden="true">→</span></a>
       <nav class="signed-in" aria-label="帳號快捷操作">
-        <div class="account-links">
-          <a class="cm-btn secondary" href={profile}>公開個人頁</a>
-          <a class="cm-btn secondary" href="/settings">編輯個人資料</a>
-        </div>
-        {#if data.activity}
-          <div class="counts">
-            <a href="{profile}#ratings"><b class="num">{data.activity.ratings}</b> 則評價</a>
-            <a href="{profile}#posts"><b class="num">{data.activity.posts}</b> 篇文章</a>
-          </div>
-        {/if}
-        {#if data.next !== '/forum?compose=1'}<a href="/forum?compose=1">去論壇發文 <span aria-hidden="true">→</span></a>{/if}
+        <a class="activity" href={profile}>查看公開個人頁{#if data.activity} <span class="num">（{data.activity.ratings} 則評價、{data.activity.posts} 篇文章）</span>{/if}</a>
+        <a href="/settings">編輯個人資料</a>
       </nav>
       <form method="POST" action="?/logout" class="switch">
         <!-- Back to this form afterwards, so the other account can sign in right away. -->
         <input type="hidden" name="next" value={tabHref('login')} />
-        <p class="switch-title">登出或切換帳號</p>
-        <p>只登出這個瀏覽器，並回到登入頁。</p>
-        <button class="cm-btn leave">登出</button>
+        <p class="switch-title">登出</p>
+        <p>只登出這個瀏覽器。回到登入頁後可改用其他帳號。</p>
+        <button class="cm-btn leave">登出並返回登入頁</button>
       </form>
     {:else}
-      <p class="why">查課不用登入；評分、發文與回覆才需要帳號。</p>
-      {@render returnLine(mode === 'register' ? '建立' : '登入')}
+      <p class="why">查課不用登入。評分、發文與回覆才需要帳號。</p>
+      {@render returnLine(mode === 'register' ? '建立帳號' : '登入')}
 
-      <!-- Underline tabs, the same mark as the site navigation; the one way between the two forms.
-           While a form is on its way the tabs are inert, so nothing switches mid-flight. -->
-      <nav class="tabs" aria-label="表單切換" inert={submitting}>
-        <a href={tabHref('login')} aria-current={mode === 'login' ? 'page' : undefined}>登入</a>
-        <a href={tabHref('register')} aria-current={mode === 'register' ? 'page' : undefined}>建立帳號</a>
+      <nav class="tabs" aria-label="表單切換">
+        <a href={tabHref('login')} aria-current={mode === 'login' ? 'page' : undefined} onclick={stopWaiting}>登入</a>
+        <a href={tabHref('register')} aria-current={mode === 'register' ? 'page' : undefined} onclick={stopWaiting}>建立帳號</a>
       </nav>
 
       {#if mode === 'login'}
@@ -247,14 +292,22 @@
             <!-- Three distinct failures, same place: wrong credentials, a locked username, a busy API.
                  A wait gets a clock and amber; a mistake gets a cross and red, so colour is never the only cue.
                  The alert says what happened and what to do next; other ways out stay under the form. -->
-            <div id="auth-error" class="cm-alert form-alert" class:wait={tooMany || unavailable} role="alert">
-              <p class="alert-title">{@render alertIcon(tooMany || unavailable ? 'wait' : 'error')}<span>{tooMany ? '登入失敗太多次，暫停登入' : asTitle(form?.message ?? '')}</span></p>
+            <div id="auth-error" class="cm-alert form-alert" class:wait={tooMany || unavailable} role={tooMany ? undefined : 'alert'}>
+              <p class="alert-title" role={tooMany ? 'alert' : undefined}>
+                {@render alertIcon(tooMany || unavailable ? 'wait' : 'error')}
+                <span>{tooMany ? '登入失敗太多次，暫停登入' : asTitle(form?.message ?? '')}</span>
+                {#if tooMany}<span class="cm-sr">約一分鐘後可再試。</span>{/if}
+              </p>
               {#if credentialError}
-                <p class="alert-note">已保留帳號。確認拼字後，再輸入密碼。</p>
+                <p class="alert-note">已保留帳號。<a href="#username" onclick={(event) => { event.preventDefault(); document.getElementById('username')?.focus(); }}>確認帳號名稱</a>後，再輸入密碼。</p>
                 {#if hydrated && attemptsLeft <= WARN_FROM}<p class="alert-note count">還可再試 <b class="num">{attemptsLeft}</b> 次，之後會暫停登入一分鐘。</p>{/if}
               {:else if tooMany}
-                <p class="alert-wait">{!hydrated ? '約一分鐘後可在原頁再試，帳號已保留。' : unlocked ? '現在可以再按「登入」了。' : locked ? '帳號已保留，等待結束後可在原頁再試。' : '可改用其他帳號登入。'}</p>
-                <p class="alert-exit"><a href={data.next}>不登入，繼續查課 <span aria-hidden="true">→</span></a></p>
+                <p class="alert-wait">
+                  {#if unlocked}現在可以再按「登入」了。
+                  {:else if locked || !hydrated}
+                    約 <strong class="num">{locked ? remaining : retryAfter}</strong> 秒後可在這裡重試。可先輸入密碼，或改用其他帳號登入。
+                  {:else}可改用其他帳號登入。{/if}
+                </p>
               {:else if unavailable}<p class="alert-note">不是帳號或密碼的問題，稍後再按一次「登入」即可；查課不受影響。</p>{/if}
             </div>
             <p class="cm-sr" role="status">{unlocked ? '現在可以再按「登入」了。' : ''}</p>
@@ -270,36 +323,32 @@
               aria-describedby={describedBy((credentialError || tooMany) && 'auth-error')} />
           </div>
           <div class="cm-field">
-            <div class="cm-label"><label for="password">{credentialError ? '重新輸入密碼' : '密碼'}</label></div>
+            <div class="cm-label"><label for="password">密碼</label></div>
             <div class="password">
-              <!-- During the lockout the field is read-only too, so what the button says and what the box does agree. -->
               <input id="password" class="cm-input" name="password" type={showPassword ? 'text' : 'password'} autocomplete="current-password"
                 required maxlength="128" placeholder="輸入密碼"
-                readonly={submitting || locked}
+                readonly={submitting}
                 onkeydown={readCapsLock} onkeyup={readCapsLock} onblur={() => (capsLock = false)}
                 aria-describedby={describedBy((credentialError || locked) && 'auth-error')} />
               {@render passwordToggle()}
             </div>
-            <!-- Under the field, on its own 44 px row: the Caps Lock note (when on) and password help.
-                 There is no self-service reset, so the help says who does it instead of promising a mail. -->
-            <div class="under">
-              {@render capsNote()}
-              <details class="recover" id="recover" inert={submitting}>
-                <summary><span class="recover-link">忘記密碼？</span> <span class="recover-note">聯絡維護者需 GitHub 帳號</span></summary>
-                <p>目前沒有自助重設。<a href={PRIVATE_REPORT_URL} rel="noopener external">在 GitHub 私密回報<span aria-hidden="true"> ↗</span></a>給維護者（表單只有維護者看得到，需要免費的 GitHub 帳號），只寫帳號名稱，不要附上密碼。</p>
-              </details>
-            </div>
+            {@render capsNote()}
+            <a class="recover" href={PRIVATE_REPORT_URL} rel="noopener external">
+              聯絡維護者重設密碼 <span aria-hidden="true">↗</span>
+            </a>
+            <p class="recover-note">以 GitHub 帳號私密聯絡，填寫帳號名稱即可。</p>
           </div>
           <button class="cm-btn block" aria-busy={submitting} disabled={submitting || locked}>
-            {#if submitting}登入中…{:else if locked}<span class="num">{remaining}</span> 秒後可再試{:else if credentialError}重新登入{:else}登入{/if}
+            {#if submitting}{slow ? '連線較慢，仍在嘗試…' : '登入中…'}{:else if locked}等待重試{:else if credentialError}重新登入{:else}登入{/if}
           </button>
-          {#if !tooMany}
-            <p class="after"><a href={data.next}>不登入，繼續查課 <span aria-hidden="true">→</span></a></p>
-          {/if}
+          {@render exitLine('不登入，繼續查課')}
         </form>
       {:else}
         <form method="POST" action="?/register" class="cm-form" use:enhance={submit} novalidate={hydrated || undefined} aria-busy={submitting}>
           <input type="hidden" name="next" value={data.next} />
+          {#if multipleErrors}
+            <p id="registration-errors" class="cm-alert form-alert" role="alert" tabindex="-1">有多個欄位需要修正。依欄位提示調整後，再建立帳號。</p>
+          {/if}
           {#if errorAt === 'form'}
             <div id="auth-error" class="cm-alert form-alert" class:wait={unavailable} role="alert">
               <p class="alert-title">{@render alertIcon(unavailable ? 'wait' : 'error')}<span>{asTitle(form?.message ?? '')}</span></p>
@@ -318,23 +367,25 @@
               onblur={(event) => checkUsername(event.currentTarget.value)}
               oninput={(event) => { typedUsername = event.currentTarget.value; chosenName = ''; checkUsername(typedUsername); }}
               aria-invalid={usernameError || Boolean(checked.username) || undefined}
-              aria-describedby={describedBy('username-rule', (usernameError || checked.username) && 'username-error')} />
-            <p id="username-rule" class="rule">3–32 個英文字母、數字或底線（_）。{#if checked.username === null && !usernameError}<span class="ok"><span aria-hidden="true">✓</span> {chosenName ? '已填入，送出時確認能否使用' : '格式符合'}</span>{/if}</p>
+              aria-describedby={describedBy(!usernameError && 'username-rule', (usernameError || checked.username) && 'username-error')} />
             {#if usernameError && form?.message}
-              <p id="username-error" class="field-error" role="alert">{@render alertIcon('error')}{form.message}</p>
-              {#if takenName}
-                <!-- Two ways on: another name (one tap fills the box; whether it is free is checked on sending)
-                     or signing in with this one. The button stays live, so a new name can be sent at once. -->
-                <div class="taken-ways">
-                  {#if hydrated}
-                    <span class="suggest-label">點選填入其他名稱</span>
-                    <span class="suggest-row">{#each suggestions as name (name)}<button type="button" class="suggest-chip" onclick={() => useSuggestion(name)}><span class="mono">{name}</span></button>{/each}</span>
-                  {/if}
-                  {#if passwordLength >= 8}<p class="rule">密碼已保留，改好帳號就能再送出。</p>{/if}
+              <div class="name-error">
+                <p id="username-error" class="field-error" role="alert">{@render alertIcon('error')}{form.message}</p>
+                {#if takenName}
                   <a class="use-login" href={tabHref('login', takenName)}>這是你的帳號？用它登入 <span aria-hidden="true">→</span></a>
+                {/if}
+              </div>
+              {#if takenName && hydrated && suggestions.length}
+                <div class="taken-ways">
+                  <span class="suggest-label">試用其他帳號</span>
+                  <span class="suggest-row">{#each suggestions as name (name)}<button type="button" class="suggest-chip" onclick={() => useSuggestion(name)}>{name}</button>{/each}</span>
                 </div>
               {/if}
             {:else if checked.username}<p id="username-error" class="field-error" role="alert">{@render alertIcon('error')}{checked.username}</p>{/if}
+            {#if !usernameError}
+              <p id="username-rule" class="rule">3–32 個字元，可用英文字母、數字和底線。{#if checked.username === null && !chosenName}<span class="ok"><span aria-hidden="true">✓</span> 格式符合</span>{/if}</p>
+              {#if chosenName}<p class="rule" role="status">已填入 {chosenName}，送出時確認能否使用。</p>{/if}
+            {/if}
           </div>
           <div class="cm-field">
             <div class="cm-label near">
@@ -344,45 +395,48 @@
               <input id="password" class="cm-input" name="password" type={showPassword ? 'text' : 'password'} autocomplete="new-password"
                 required minlength="8" maxlength="128" placeholder="輸入密碼"
                 readonly={submitting}
-                onkeydown={readCapsLock} onkeyup={readCapsLock} onblur={(event) => { capsLock = false; checkPassword(event.currentTarget.value); }}
-                oninput={(event) => { passwordLength = event.currentTarget.value.length; if (checked.password) checkPassword(event.currentTarget.value); }}
-                aria-invalid={errorAt === 'password' || Boolean(checked.password) || undefined}
-                aria-describedby={describedBy('password-rule', 'password-state', (errorAt === 'password' || checked.password) && 'password-error')} />
+                onkeydown={readCapsLock} onkeyup={readCapsLock} onblur={() => (capsLock = false)}
+                oninput={(event) => {
+                  editedPassword = true;
+                  passwordLength = [...event.currentTarget.value].length;
+                  if (checked.password) checkPassword(event.currentTarget.value);
+                }}
+                aria-invalid={passwordInvalid || undefined}
+                aria-describedby={describedBy('password-rule', 'password-state', passwordInvalid && 'password-error')} />
               {@render passwordToggle()}
             </div>
-            <p id="password-rule" class="rule">8–128 字元，可用空格，區分大小寫。</p>
+            <p id="password-rule" class="rule">{#if passwordLength === 0}<span aria-hidden="true">○ </span>{/if}8–128 個字元，可用空格，區分大小寫。</p>
             <!-- Live feedback under the box (never beside the rule, where it wrapped onto the next line on phones). -->
             <div class="under">
               {@render capsNote()}
               <p id="password-state" class="rule state" aria-live="polite">
                 {#if hydrated && passwordLength > 0 && passwordLength < 8}目前 <b class="num">{passwordLength}</b> 字，還差 {8 - passwordLength} 字
-                {:else if checked.password === null || passwordLength >= 8}<span class="ok"><span aria-hidden="true">✓</span> 符合長度要求</span>{/if}
+                {:else if passwordLength >= 8}<span class="ok"><span aria-hidden="true">✓</span> 符合長度要求</span>{#if takenName} · 密碼已保留{/if}{/if}
               </p>
             </div>
-            {#if errorAt === 'password' && form?.message}{@render fieldError('password-error', 'password')}
+            {#if serverPasswordError}{@render fieldError('password-error', 'password')}
             {:else if checked.password}<p id="password-error" class="field-error" role="alert">{checked.password}</p>{/if}
           </div>
           <!-- The optional field is a text disclosure (no frame: a frame reads as a drop zone or an empty chip). -->
           <details class="optional" open={Boolean(form && 'displayName' in form && form.displayName) || errorAt === 'displayName'}>
-            <summary><span class="plus" aria-hidden="true"></span><span class="optional-label">加上顯示名稱（選填）</span></summary>
+            <summary><span class="plus" aria-hidden="true"></span><span class="optional-label">顯示名稱（選填） <span class="cm-hint">未填則以帳號署名</span></span></summary>
             <div class="cm-field">
               <div class="cm-label near"><label for="displayName">顯示名稱</label><span class="cm-hint">最多 50 字，之後可在設定改</span></div>
               <input id="displayName" class="cm-input" name="displayName" maxlength="50" autocomplete="nickname" placeholder="例如 小蔡"
                 readonly={submitting}
                 defaultValue={form && 'displayName' in form ? form.displayName : ''} aria-invalid={errorAt === 'displayName' || undefined}
                 aria-describedby={describedBy(errorAt === 'displayName' && 'display-error')} />
-              <p class="rule">未填時顯示帳號。</p>
               {@render fieldError('display-error', 'displayName')}
             </div>
           </details>
           <p class="terms">按下「建立帳號」即表示你同意<a href="/terms">使用條款</a>及<a href="/privacy">隱私權政策</a>。</p>
-          <button class="cm-btn block" aria-busy={submitting} disabled={submitting}>{submitting ? '建立中…' : '建立帳號'}</button>
-          <p class="after"><a href={data.next}>不建立帳號，繼續查課 <span aria-hidden="true">→</span></a></p>
+          <button class="cm-btn block" aria-busy={submitting} disabled={submitting}>{submitting ? (slow ? '連線較慢，仍在嘗試…' : '建立中…') : '建立帳號'}</button>
+          {@render exitLine('不建立帳號，繼續查課')}
         </form>
       {/if}
     {/if}
-    <p class="pending-note" role="status" class:cm-sr={!slow}>
-      {submitting ? slow ? '伺服器回應較慢，可以繼續等候或選擇繼續查課。' : mode === 'login' ? '登入中…' : '建立帳號中…' : ''}
+    <p class="cm-sr" role="status">
+      {submitting ? slow ? '連線較慢，仍在嘗試。' : mode === 'login' ? '登入中…' : '建立帳號中…' : ''}
     </p>
   </div>
 </div>
@@ -393,7 +447,7 @@
   .card {
     inline-size: min(100%, 27rem);
     padding: var(--space-6) var(--space-6) var(--space-5);
-    border: 1px solid var(--line);
+    border: 1px solid color-mix(in srgb, var(--control-line) 65%, var(--line));
     border-radius: var(--radius-panel);
     background: var(--panel);
   }
@@ -403,17 +457,15 @@
   h1 { font-size: 1.375rem !important; }
   .why { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
   .return { margin-block-start: 2px !important; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; }
-  .return a { font-weight: 600; }
   /* Display name first, handle after, the same order as the profile page. */
-  .identity { display: grid; gap: 2px; margin-block-start: var(--space-2) !important; font-size: var(--t-md); overflow-wrap: anywhere; }
+  .identity { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); margin-block-start: var(--space-2) !important; font-size: var(--t-md); overflow-wrap: anywhere; }
   .identity strong { font-weight: 700; }
   .identity .handle { color: var(--ink-2); }
   .go-on { margin-block-start: var(--space-4); }
-  .signed-in { display: grid; justify-items: start; gap: var(--space-1); margin-block-start: var(--space-3); }
-  .account-links, .counts { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); }
-  .signed-in a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-weight: 600; }
-  .signed-in .counts { color: var(--ink-2); font-size: var(--t-base); }
-  .signed-in .counts b { color: var(--ink); font-weight: 650; }
+  .signed-in { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); margin-block-start: var(--space-2); }
+  .signed-in a { display: inline-flex; flex-wrap: wrap; align-content: center; min-block-size: var(--target-min); font-weight: 600; }
+  .signed-in .activity { display: block; padding-block: var(--space-3) var(--space-2); }
+  .signed-in .activity .num { font-size: 0.8125rem; }
 
   /* Two tabs under a hairline; the current one carries the brand underline, the same mark as the site nav. */
   .tabs {
@@ -437,15 +489,13 @@
   .tabs a:hover { color: var(--brand-ink); background: var(--hover-row); }
   .tabs a[aria-current='page'] { color: var(--brand-ink); border-block-end-color: var(--brand); }
   .tabs a:focus-visible { outline: var(--focus-ring); outline-offset: calc(-1 * var(--focus-offset)); border-radius: var(--radius-control); }
-  /* While a form is on its way the other tab is not a way out: dimmed and inert. */
-  .tabs[inert] a:not([aria-current]) { opacity: 0.5; }
 
   /* The toggle is a ghost button inside the field (one control, one border), 44 px tall. */
   .password { position: relative; display: flex; }
-  .password .cm-input { padding-inline-end: 5.75rem; letter-spacing: normal; min-block-size: calc(var(--target-min) + 6px); }
+  .password .cm-input { padding-inline-end: 7.25rem; letter-spacing: normal; }
   .toggle {
     position: absolute;
-    inset-block: 3px;
+    inset-block: 0;
     inset-inline-end: 3px;
     display: inline-flex;
     gap: 0.3rem;
@@ -464,7 +514,7 @@
   .toggle:hover { background: var(--brand-wash); }
   .toggle[aria-pressed='true'] { color: var(--ink-2); }
   .toggle:focus-visible { outline: var(--focus-ring); outline-offset: 0; }
-  .toggle:disabled { color: var(--muted); cursor: default; }
+  .toggle:disabled { color: var(--muted); background: transparent; cursor: not-allowed; }
   /* Fields in flight keep their text but read as settled, not editable. */
   .cm-input:read-only:not(select) { color: var(--ink-2); background: var(--panel); border-color: var(--line); }
 
@@ -489,9 +539,10 @@
     font-weight: 600;
     line-height: 1.5;
   }
+  .name-error { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; }
+  .auth .cm-input[aria-invalid='true']:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .field-error:has(.alert-icon) { display: flex; gap: var(--space-1); align-items: flex-start; padding: 0; border: 0; background: transparent; color: var(--down); }
-  /* After a taken name: two suggestion chips in one row, the sign-in link on its own line (never broken mid-word). */
-  .taken-ways { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; margin-block-start: var(--space-1); font-size: 0.8125rem; color: var(--ink-2); }
+  .taken-ways { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; font-size: 0.8125rem; color: var(--ink-2); }
   .suggest-label { font-weight: 600; }
   .suggest-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .suggest-chip {
@@ -507,49 +558,34 @@
     cursor: pointer;
     touch-action: manipulation;
   }
-  .suggest-chip .mono { font-size: 1em; }
   .suggest-chip:hover { background: var(--brand-wash); border-color: var(--brand); }
   .suggest-chip:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .use-login { display: inline-flex; gap: 0.3em; align-items: center; flex-basis: 100%; min-block-size: var(--target-min); font-weight: 650; white-space: nowrap; }
-  .form-alert { display: grid; gap: 2px; background: color-mix(in srgb, var(--down) 24%, var(--panel-raised)); }
+  .use-login { display: inline-flex; gap: 0.3em; align-items: center; justify-self: start; min-block-size: var(--target-min); font-size: 0.8125rem; font-weight: 600; }
+  .form-alert { display: grid; gap: 2px; background: color-mix(in srgb, var(--down) 12%, var(--panel-raised)); }
   /* A wait (locked name, busy API) is not the visitor's mistake: amber and a clock, not red and a cross. */
-  .form-alert.wait { border-color: var(--warn); border-inline-start-width: 4px; background: color-mix(in srgb, var(--warn) 24%, var(--panel-raised)); }
+  .form-alert.wait { border-color: var(--warn); background: var(--warn-wash); }
   .alert-title { display: flex; gap: var(--space-2); align-items: flex-start; font-size: var(--t-md); font-weight: 650; line-height: 1.45; }
   .alert-icon { flex: none; margin-block-start: 0.2em; color: var(--down); }
-  .wait .alert-icon { color: var(--warn); }
+  .wait .alert-title, .wait .alert-icon { color: var(--warn); }
   .alert-note, .alert-wait { margin-block-start: 2px !important; color: var(--ink-2); font-size: var(--t-base); line-height: 1.55; }
   .alert-note b { color: var(--ink); font-weight: 700; }
   .alert-wait { color: var(--ink); }
-  .alert-exit { margin-block-start: var(--space-1) !important; font-size: 0.8125rem; }
-  .alert-exit a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
   /* Links inside a tinted alert use the ink colour with an underline, which clears AA on both tints. */
   .form-alert a { color: var(--ink); text-decoration: underline; }
   .cm-form { margin-block-start: var(--space-1); }
   .cm-form .cm-btn { margin-block-start: var(--space-1); }
-  .terms { margin-block-start: var(--space-1) !important; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; }
-  /* Each policy link has its own padded target. */
-  .terms a { display: inline-flex; align-items: center; min-block-size: var(--target-min); padding-inline: var(--space-1); font-weight: 600; }
-  .terms + .cm-btn { margin-block-start: var(--space-2); }
-  .after { display: flex; justify-content: center; margin-block-start: calc(-1 * var(--space-1)) !important; text-align: center; color: var(--ink-2); font-size: 0.8125rem; }
+  .terms { color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; }
+  .terms a { display: inline-flex; align-items: center; min-block-size: var(--target-min); padding-inline-start: var(--space-1); font-weight: 600; }
+  .after { display: flex; justify-content: center; margin-block-start: calc(-1 * var(--space-1)); text-align: center; color: var(--ink-2); font-size: 0.8125rem; }
   .after a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-weight: 600; }
   .after a:hover { color: var(--brand-ink); }
-  .pending-note { margin-block-start: var(--space-1) !important; text-align: center; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.5; }
-  .pending-note:empty { display: none; }
-  /* 忘記密碼？ with a short note on what help means; open, the full note takes the row under it. */
-  .recover { font-weight: 400; }
-  .recover summary { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; min-block-size: 2rem; margin-inline-start: calc(-1 * var(--space-1)); padding-inline: var(--space-1); border-radius: var(--radius-control); font-size: 0.8125rem; list-style: none; cursor: pointer; }
-  .recover-link { color: var(--brand-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
-  .recover-note { color: var(--muted); }
-  .recover[inert] .recover-link { color: var(--muted); }
-  .recover summary::-webkit-details-marker { display: none; }
-  .recover summary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .recover[open] { flex-basis: 100%; }
-  .recover[open] .recover-link { text-decoration: none; }
-  .recover p { padding: var(--space-1) var(--space-1) var(--space-2); color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; }
-  .recover p a { font-weight: 600; }
+  .request-note { margin-block-start: calc(-1 * var(--space-2)) !important; text-align: center; color: var(--ink-2); font-size: var(--t-sm); }
+  .recover { display: inline-flex; gap: var(--space-1); align-items: center; justify-self: start; min-block-size: var(--target-min); margin-block-end: calc(-1 * var(--space-2)); font-weight: 600; font-size: var(--t-base); }
+  .recover-note { color: var(--muted); font-size: var(--t-sm); }
+  .auth .cm-btn[aria-busy='true'] { color: var(--brand-ink) !important; background: var(--brand-wash); border-color: var(--brand); }
+  .auth .cm-btn[aria-busy='true']::before { border-color: var(--control-line); border-block-start-color: var(--brand-ink); }
   .ok { margin-inline-start: 0.4em; color: var(--up); font-weight: 700; }
   .rule.state .ok { margin-inline-start: 0; }
-  .sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   /* The optional block is a text disclosure under the password field; opened, the field follows. */
   .optional summary { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; min-block-size: var(--target-min); margin-inline-start: calc(-1 * var(--space-2)); padding: 0 var(--space-2); border-radius: var(--radius-control); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
   .optional summary:hover { background: var(--hover-row); }
@@ -559,19 +595,20 @@
   .optional[open] .plus::before { content: '－'; }
   .optional[open] summary .optional-label { color: var(--ink); }
   .optional summary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .optional { margin-block-end: calc(-1 * var(--space-3)); }
   .optional .cm-field { padding-block: var(--space-2) var(--space-1); }
 
   /* Signing out ends the session: its own small heading and explanation, then the quiet red button. */
   .switch { display: grid; gap: var(--space-1); justify-items: start; margin-block-start: var(--space-4); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
   .switch-title { color: var(--ink-2); font-size: var(--t-base); font-weight: 650; }
   .switch p:not(.switch-title) { color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
-  .switch .cm-btn { margin-block-start: var(--space-1); }
+  .switch .cm-btn { margin-block-start: var(--space-1); border-color: var(--down); }
 
   @media (max-width: 40rem) {
     .auth { min-block-size: 0; padding-block: 0; }
     /* On phones the card is the page: no frame, but the same mark and heading as the desktop card. */
     .card { padding: 0; border: 0; background: transparent; }
-    .recover summary { min-block-size: var(--target-min); }
     .cm-form:has(.optional) { gap: var(--space-2); }
+    .optional { margin-block-end: calc(-1 * var(--space-2)); }
   }
 </style>
