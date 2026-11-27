@@ -153,9 +153,9 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(page.getByRole('heading', { name: '測試同學' })).toBeVisible();
   const activity = page.getByRole('group', { name: '活動統計' });
   await expect(activity).toContainText('課程評價');
-  await expect(activity).toContainText('平均給分');
-  // One rating is not an average: the tile waits for three and says so.
-  await expect(activity).toContainText('需 3 則評價');
+  // One rating is not an average: no average tile, one footnote line with the progress towards three.
+  await expect(activity).not.toContainText('平均給分');
+  await expect(page.getByRole('region', { name: '活動摘要' })).toContainText('平均給分：樣本不足（1／3 則）');
   // The count tiles double as jump links to their sections.
   await expect(activity.getByRole('link', { name: /課程評價 1 則/ })).toHaveAttribute('href', '#ratings');
   // The number is the accessible score and the adjacent stars are decorative.
