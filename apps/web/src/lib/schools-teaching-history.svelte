@@ -14,7 +14,7 @@
   let compact = $derived(previewYears.length <= 2);
   let columns = $derived(yearColumns(previewYears, compact));
   let fullColumns = $derived(yearColumns(orderedYears, true));
-  let width = $derived(compact ? '0' : `calc(var(--teaching-course-width, 9rem) + ${previewYears.length} * var(--teaching-year-width, 3.5rem))`);
+  let width = $derived(compact ? '0' : `calc(var(--teaching-course-width, 15rem) + ${previewYears.length} * var(--teaching-year-width, 4.25rem))`);
   let hasPartial = $derived(preview.some((row) => Object.values(row.points).some((point) => point?.partial)));
   let hasUnpublished = $derived(preview.some((row) => Object.values(row.points).some((point) => point?.enrolled === null)));
   const bins = [{ index: 0, label: '0–24' }, { index: 1, label: '25–49' }, { index: 2, label: '50–74' }, { index: 3, label: '75–99' }, { index: 4, label: '100+' }];
@@ -35,8 +35,8 @@
   }
 
   function yearColumns(years: string[], exact: boolean): TableColumn<MatrixRow>[] {
-    return [{ id: 'course', label: '課程', width: 'var(--teaching-course-width, 9rem)' },
-      ...years.map((year) => ({ id: year, label: year, align: 'center' as const, width: exact ? '5rem' : 'var(--teaching-year-width, 3.5rem)' }))];
+    return [{ id: 'course', label: '課程', width: 'var(--teaching-course-width, 15rem)' },
+      ...years.map((year) => ({ id: year, label: year, align: 'center' as const, width: exact ? undefined : 'var(--teaching-year-width, 4.25rem)' }))];
   }
 </script>
 
@@ -60,33 +60,34 @@
 {/snippet}
 
 {#if rows.length && periods.length}
-  <div class="teaching-matrix" class:compact style:--matrix-years={previewYears.length}>
+  <div class="teaching-matrix" class:compact>
     {#if !compact}
       <ul class="matrix-legend" aria-label="修課人數圖例" role="list">
         {#each bins as { index, label } (index)}<li><span class="dot" data-bin={index} aria-hidden="true"></span>{label} 人</li>{/each}
         <li><span aria-hidden="true">—</span>未開課</li>
-        {#if hasUnpublished}<li><span class="dot" data-bin="unknown" aria-hidden="true"></span>人數未公布</li>{/if}
+          {#if hasUnpublished}<li><span class="dot" data-bin="unknown" aria-hidden="true"></span>有開課、人數未公布</li>{/if}
         {#if hasPartial}<li><span class="dot partial" aria-hidden="true"></span>{partialTermLabel}</li>{/if}
       </ul>
       {#if rows.length > preview.length}<p class="browse-note matrix-range">先列最近開課的 {preview.length} 門</p>{/if}
     {/if}
-    <div class="matrix-frame" class:overflow={previewYears.length > 6}>
+    <div class="matrix-frame" class:overflow={previewYears.length > 4}>
       <DataTable caption={compact ? '課程與學年授課紀錄' : '課程與學年修課人次'} {columns} rows={preview} rowKey={(row) => row.id} minWidth={width} maxHeight="none" scrollHint={false}>
         {#snippet cell(row, column)}{@render historyCell(row, column, compact)}{/snippet}
       </DataTable>
     </div>
-    {#if previewYears.length > 6}<p class="matrix-scroll browse-note">向右滑看更早學年 →</p>{/if}
+    {#if previewYears.length > 4}<p class="matrix-scroll browse-note">向右滑看更早學年 →</p>{/if}
   </div>
 {:else}<EmptyState title="尚無歷年授課紀錄" />{/if}
 
+{#if rows.length > preview.length}
+{@const remaining = rows.slice(preview.length)}
 <details class="history-values">
-  <summary>{rows.length ? `查看全部 ${displayValue(rows.length)} 門課的逐年數值` : '查看各學期授課數值'}</summary>
-  {#if rows.length && (!compact || rows.length > preview.length)}
-    <div class="desktop-years"><DataTable caption="各課程的學年數值" columns={fullColumns} {rows} rowKey={(row) => row.id} minWidth={orderedYears.length <= 2 ? '0' : `${9 + 6 * periods.length}rem`} maxHeight="none" scrollHint={orderedYears.length > 2}>
+  <summary>顯示其餘 {displayValue(rows.length - preview.length)} 門課的學年數值</summary>
+    <div class="desktop-years"><DataTable caption="其餘課程的學年數值" columns={fullColumns} rows={remaining} rowKey={(row) => row.id} minWidth={orderedYears.length <= 2 ? '0' : `${9 + 6 * periods.length}rem`} maxHeight="none" scrollHint={orderedYears.length > 2}>
       {#snippet cell(row, column)}{@render historyCell(row, column, true)}{/snippet}
     </DataTable></div>
     <ul class="phone-years year-lists" aria-label="各課程的學年數值">
-      {#each rows as row (row.id)}
+      {#each remaining as row (row.id)}
         <li><details><summary>{row.label} <small class="browse-code">{row.id}</small></summary>
           <ul>{#each orderedYears as year (year)}
             {@const point = row.points[year]}
@@ -95,15 +96,16 @@
         </details></li>
       {/each}
     </ul>
-  {/if}
-  {#if trends?.length}
-    <DataTable caption="各學期授課數值（所有開課班次）" columns={trendColumns} rows={trends} rowKey={(row) => row.term} minWidth="0" maxHeight="none" scrollHint={false} />
-  {:else}<p class="browse-note">{trends === null ? '目前無法取得各學期的完整數值。' : '尚無各學期統計。'}</p>{/if}
 </details>
+{/if}
+{#if trends?.length}
+  <details class="history-values">
+    <summary>查看各學期授課總數</summary>
+    <DataTable caption="各學期授課數值（所有開課班次）" columns={trendColumns} rows={trends} rowKey={(row) => row.term} minWidth="0" maxHeight="none" scrollHint={false} />
+  </details>
+{/if}
 
 <style>
-  .teaching-matrix.compact { max-inline-size: 34rem; }
-  .teaching-matrix { max-inline-size: calc(15rem + var(--matrix-years, 12) * 3.5rem); }
   .matrix-course { display: block; overflow-wrap: anywhere; }
   .teaching-matrix:not(.compact) .matrix-frame { --table-pad-block: 0; }
   .teaching-matrix:not(.compact) .matrix-frame :global(td) { padding-inline: .125rem; }
@@ -115,14 +117,14 @@
   .matrix-range { margin-block-end: var(--space-2); }
   .matrix-legend li, .year-cell { display: flex; align-items: center; gap: .3rem; }
   .year-cell { position: relative; min-block-size: var(--target-min); min-inline-size: 2rem; justify-content: center; border-radius: var(--radius-control); padding-inline: .15rem; color: var(--ink); }
-  .teaching-matrix:not(.compact) .year-cell { min-block-size: 1.75rem; gap: .2rem; color: var(--ink); }
+  .teaching-matrix:not(.compact) .year-cell { gap: .4rem; }
   .teaching-matrix:not(.compact) small.browse-code { font-size: var(--t-xs); }
-  .year-cell[href] { text-underline-offset: .17em; }
+  .year-cell[href] { color: var(--brand-ink); text-decoration: underline; text-decoration-color: var(--control-line); text-underline-offset: .17em; }
   .year-cell[href]:hover { box-shadow: inset 0 0 0 1px var(--brand); text-decoration: underline; }
   .count { font-size: var(--t-sm); }
   .dot { display: inline-block; flex: none; inline-size: var(--dot-size, .65rem); block-size: var(--dot-size, .65rem); border-radius: 50%; }
-  [data-bin='0'] { --dot-size: .45rem; background: color-mix(in srgb, var(--seq-0), var(--brand) 35%); }
-  [data-bin='1'] { --dot-size: .45rem; background: color-mix(in srgb, var(--seq-1), var(--brand) 32%); }
+  [data-bin='0'] { --dot-size: .4rem; background: var(--brand); opacity: .7; }
+  [data-bin='1'] { --dot-size: .5rem; background: var(--brand); opacity: .85; }
   [data-bin='2'] { --dot-size: .6rem; background: var(--seq-2); }
   [data-bin='3'] { --dot-size: .6rem; background: var(--seq-3); }
   [data-bin='4'] { --dot-size: .8rem; background: var(--seq-4); }
@@ -133,9 +135,9 @@
   .history-values[open] { display: grid; gap: var(--space-2); }
   summary { min-block-size: var(--target-min); cursor: pointer; align-content: center; width: fit-content; color: var(--brand); font-weight: 650; font-size: var(--t-base); }
   @media (max-width: 40rem) {
-    .teaching-matrix { --teaching-course-width: min(7rem, 29vw); --teaching-year-width: min(2.45rem, 9.9vw); }
+    .teaching-matrix { --teaching-course-width: min(8.5rem, 34vw); --teaching-year-width: 3.2rem; }
     .teaching-matrix:not(.compact) .matrix-frame :global(table) { table-layout: fixed; }
-    .teaching-matrix:not(.compact) .year-cell { min-block-size: var(--target-min); }
+    .teaching-matrix:not(.compact) .year-cell { flex-direction: column; gap: .12rem; line-height: 1.1; }
     .year-cell:has([data-bin='unknown']) { flex-direction: column; gap: 0; line-height: 1.2; }
     .desktop-years { display: none; }
     .phone-years, .matrix-scroll { display: revert; }

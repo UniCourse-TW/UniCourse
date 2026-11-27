@@ -40,8 +40,9 @@
   let ranked = $derived((data.rankings ?? []).filter((row) => row.enrolledTotal != null));
   let capacities = $derived((data.rankings ?? []).filter((row) => row.enrolledTotal == null && row.capacityTotal != null));
   let hasDemoRankings = $derived(data.rankings?.some(({ isDemo }) => isDemo) ?? false);
-  let trendTerms = $derived(terms.slice(-10));
+  let trendTerms = $derived(terms.slice(-6));
   let trendCaption = $derived(rankingTrendCaption(trendTerms, ranked));
+  let busiest = $derived((data.trends ?? []).reduce<(typeof enrollmentTerms)[number] | undefined>((peak, row) => !peak || row.offerings > peak.offerings ? row : peak, undefined));
   let clearUnits = $derived(changeQuery(new URL('#departments', page.url), (params) => { params.delete('unit'); params.delete('page'); }));
   let maxEnrolled = $derived(Math.max(1, ...ranked.map((row) => row.enrolledTotal ?? 0)));
   let maxTrend = $derived(Math.max(1, ...ranked.flatMap((row) => row.trend.filter(({ term }) => trendTerms.includes(term)).map(({ enrolled }) => enrolled ?? 0))));
@@ -49,15 +50,16 @@
 
   const unitColumns: TableColumn<(typeof units.rows)[number]>[] = [
     { id: 'unit', label: '開課單位', value: (row) => row.name },
-    { id: 'offerings', label: '班次', numeric: true, value: (row) => row.offerings, width: '19rem' },
-    { id: 'courses', label: '課程（依課號去重）', numeric: true, value: (row) => row.courses, width: '10rem' }
+    { id: 'offerings', label: '班次', numeric: true, value: (row) => row.offerings, width: 'var(--unit-offerings-width, 14rem)' },
+    { id: 'share', label: '全校占比', numeric: true, width: 'var(--unit-share-width, 7rem)' },
+    { id: 'courses', label: '課程', numeric: true, value: (row) => row.courses, width: 'var(--unit-count-width, 7rem)' }
   ];
-  const rankColumns: TableColumn<CourseRanking>[] = [
+  let rankColumns = $derived<TableColumn<CourseRanking>[]>([
     { id: 'course', label: '課程', value: (row) => row.title, width: 'min(20rem, 38%)' },
     { id: 'terms', label: '學期', numeric: true, value: (row) => row.terms, width: '5rem' },
     { id: 'enrolled', label: '累計人次', numeric: true, width: '13rem' },
-    { id: 'trend', label: '近期走勢' }
-  ];
+    { id: 'trend', label: '近期走勢（人）', headerNote: coveragePeriod(trendTerms) ?? undefined }
+  ]);
   const courseHref = (row: CourseRanking) => `/courses/${row.latestActiveOfferingId ?? row.latestOfferingId}`;
 </script>
 
@@ -112,8 +114,16 @@
       {#if current}
         <p class="browse-note">最新一期：<a class="latest-term" href={overviewSearchHref({ school: school.slug, term: current.term })}>{current.term} 學期 · {displayValue(current.offerings)} 班{partial.has(current.term) ? '（部分班次）' : ''} →</a>{#if previous && !partial.has(current.term) && !partial.has(previous.term)}<span> · 較 {previous.term} {current.offerings === previous.offerings ? '持平' : `${current.offerings > previous.offerings ? '多' : '少'} ${displayValue(Math.abs(current.offerings - previous.offerings))} 班`}</span>{/if}</p>
       {/if}
+      <div class="term-tools">
+        {#if busiest && busiest.term !== current?.term}<p class="browse-note">最多班次：<strong>{busiest.term} · {displayValue(busiest.offerings)} 班</strong></p>{/if}
+        <form action="/" method="GET" aria-label="依學期查本校課程">
+          <input type="hidden" name="school" value={school.slug} />
+          <FilterSelect name="term" label="學期" allLabel={null} value={current?.term} options={[...(data.trends ?? [])].sort((left, right) => right.term.localeCompare(left.term)).map(({ term }) => ({ value: term, label: term }))} />
+          <button class="browse-button">查該期</button>
+        </form>
+      </div>
       <SchoolsTermHistory label={`每學期開課班次${period ? ` · ${period}` : ''}`} points={terms.map((term) => ({ term, value: trendsByTerm.get(term)?.offerings ?? null, partial: partial.has(term) }))}
-        termHref={(term) => overviewSearchHref({ school: school.slug, term })} />
+        termHref={(term) => overviewSearchHref({ school: school.slug, term })} termPairs />
     {:else}
       <EmptyState title="目前沒有班次走勢" description="待有開課班次後，這裡會顯示各學期的變化。" />
     {/if}
@@ -124,16 +134,20 @@
   {@render history()}
   <div class="school-details">
     <section class="browse-stack unit-section" aria-labelledby="departments">
-      <SectionHeader title="開課單位（{displayValue(units.total)}）" id="departments" description="條長相對於班次最多的單位；百分比為全校班次占比。" />
+      <SectionHeader title="開課單位（{displayValue(units.total)}）" id="departments" description="班次條以最多班次的單位為滿格；課程依課號去重。" />
       {#if units.total}<div class="unit-filter">{@render unitFilter()}</div>{/if}
       {#if units.rows.length}
-        <p class="browse-note">共 {displayValue(units.matched)} 個單位 · 顯示 {displayValue(units.start)}–{displayValue(units.start + units.rows.length - 1)} 個</p>
+        <div class="term-tools"><p class="browse-note">共 {displayValue(units.matched)} 個單位 · 顯示 {displayValue(units.start)}–{displayValue(units.start + units.rows.length - 1)} 個</p>
+          <Pagination url={new URL('#departments', page.url)} page={units.page} totalPages={units.totalPages} label="開課單位上方分頁" />
+        </div>
         <DataTable caption="開課單位與班次" columns={unitColumns} rows={units.rows} rowKey={(row) => row.name} rowHref={(row) => departmentHref(school.slug, row.name)} minWidth="100%" maxHeight="none" scrollHint={false}>
           {#snippet cell(row, column)}
-            {#if column.id === 'offerings'}<div class="unit-total"><BarCell value={row.offerings} max={units.max} /><small>{percent.format(row.offerings / Math.max(1, school.offerings))}</small></div>{:else}{displayValue(column.value?.(row))}{/if}
+            {#if column.id === 'offerings'}<div class="unit-total"><BarCell value={row.offerings} max={units.max} /></div>
+            {:else if column.id === 'share'}{percent.format(row.offerings / Math.max(1, school.offerings))}
+            {:else}{displayValue(column.value?.(row))}{/if}
           {/snippet}
         </DataTable>
-        <Pagination url={page.url} page={units.page} totalPages={units.totalPages} label="開課單位分頁" />
+        <Pagination url={new URL('#departments', page.url)} page={units.page} totalPages={units.totalPages} label="開課單位分頁" />
       {:else}
         <EmptyState title={units.query ? '沒有符合條件的開課單位' : '目前沒有開課單位'} description={units.query ? '換個關鍵字試試。' : '待資料匯入後，這裡會顯示各單位。'} />
       {/if}
@@ -197,8 +211,10 @@
   .school-page { gap: var(--space-3); }
   .school-page .browse-crumbs + .browse-head { margin-block-start: calc(-1 * var(--space-2)); }
   .unit-section { --bar-cell-track-size: clamp(2.5rem, 11vw, 8rem); }
-  .unit-total { display: flex; justify-content: end; align-items: center; gap: var(--space-3); }
-  .unit-total small { min-inline-size: 5ch; color: var(--muted); }
+  .unit-total :global(.bar-cell) { display: grid; grid-template-columns: minmax(0, 1fr) 6ch; }
+  .term-tools, .term-tools form { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+  .term-tools { justify-content: space-between; }
+  .school-page .browse-compact-stats :global(.tile > p) { font-size: .8125rem; }
   .latest-term { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
   .jump-links { gap: var(--space-2); }
   .edition { white-space: nowrap; }
@@ -209,10 +225,11 @@
   .browse-button { justify-self: start; }
   @media (max-width: 40rem) {
     .desktop-rank { display: none; }
-    .unit-section :global(th[data-align]), .unit-section :global(td) { overflow-wrap: anywhere; }
-    .unit-section :global(thead th:nth-child(2)), .unit-section :global(thead th:nth-child(3)) { inline-size: auto !important; white-space: normal; }
-    .unit-total { gap: var(--space-1); }
-    .unit-filter :global(form) { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; }
+    .unit-section { --unit-offerings-width: 6rem; --unit-share-width: 4.25rem; --unit-count-width: 3.5rem; --table-pad-inline: .35rem; }
+    .unit-section :global(thead th) { white-space: normal; }
+    .unit-total :global(.bar-cell) { gap: var(--space-1); grid-template-columns: minmax(0, 1fr) 5ch; }
+    .unit-filter :global(form) { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+    .unit-filter .browse-field { grid-column: 1 / -1; }
     .unit-filter :global(.actions) { display: contents; }
     .unit-filter :global(.actions button) { padding-inline: var(--space-2); }
     .unit-filter :global(.actions a) { grid-column: 1 / -1; justify-self: start; }
@@ -222,7 +239,7 @@
     .mobile-rank li + li { border-block-start: 1px solid var(--line); }
     .mobile-rank li a { display: flex; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
     .mobile-rank .browse-code { display: inline; }
-    .rank-measures { display: grid; grid-template-columns: minmax(0, 1fr) minmax(7.25rem, 43%); align-items: center; gap: var(--space-2); }
+    .rank-measures { display: grid; grid-template-columns: minmax(0, 1fr) minmax(7.25rem, 55%); align-items: center; gap: var(--space-2); }
     .rank-measures :global(.bar-cell) { width: min(100%, 9rem); --bar-cell-track-size: clamp(1.5rem, 8vw, 2.75rem); white-space: nowrap; font-size: var(--t-sm); }
     p.rank-caption { margin-block-end: var(--space-2); }
   }

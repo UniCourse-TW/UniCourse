@@ -12,11 +12,12 @@
     kind?: 'column' | 'line';
     termHref?: (term: string) => string;
     yearTicks?: boolean;
+    termPairs?: boolean;
     linkedBars?: boolean;
     condensed?: boolean;
   }
 
-  let { label, points, unit, kind = 'column', termHref, yearTicks = false, linkedBars = false, condensed = false }: Props = $props();
+  let { label, points, unit, kind = 'column', termHref, yearTicks = false, termPairs = false, linkedBars = false, condensed = false }: Props = $props();
   let rows = $derived(points.map((point) => ({ ...point, value: finiteValue(point.value) })));
   let values = $derived(rows.flatMap(({ value }) => value === null ? [] : [value]));
   let compact = $derived(values.length <= 3);
@@ -31,6 +32,7 @@
   let phoneTicks = $derived(yearTicks ? yearlyTicks(rows, condensed ? 2 : 5, 3) : spreadIndexes(rows.length, 3));
   let hasMissing = $derived(rows.some(({ value }) => value === null));
   let hasPartial = $derived(rows.some((point) => point.partial));
+  let yearBoundaries = $derived(rows.flatMap(({ term }, index) => index > 0 && term.split('-')[0] !== rows[index - 1].term.split('-')[0] ? [index] : []));
   let columns: TableColumn<TrendPoint>[] = $derived([
     { id: 'term', label: '學期', value: (point) => point.term },
     { id: 'value', label: unit ? `數值（${unit}）` : '數值', numeric: true, value: (point) => point.value },
@@ -83,6 +85,7 @@
             {@const y = ordinate(tick)}
             <line class="gridline" class:baseline={tick === 0} x1="0" x2={chartWidth} y1={y} y2={y} vector-effect="non-scaling-stroke" />
           {/each}
+          {#if termPairs}{#each yearBoundaries as index (index)}<line class="year-divider" x1={slot * index} x2={slot * index} y1="0" y2={chartHeight} vector-effect="non-scaling-stroke" />{/each}{/if}
           {#if kind === 'column'}
             {@const zero = ordinate(0)}
             {#each bars as { x, y }, index}
@@ -119,6 +122,9 @@
           </div>
         {/if}
         </div>
+        {#if termPairs}<div class="semester-ticks ui-tabular" style:grid-template-columns={`repeat(${rows.length}, minmax(0, 1fr))`} aria-hidden="true">
+          {#each rows as { term }, index (term)}<span class:year-start={yearBoundaries.includes(index)}>{term.split('-')[1]}</span>{/each}
+        </div>{/if}
         <div class="terms ui-tabular" aria-hidden="true">
           {#each rows as row, index (row.term)}
             {#if desktopTicks.has(index) || phoneTicks.has(index)}
@@ -132,7 +138,7 @@
     {#if (!condensed && (unit || yearTicks)) || hasMissing || hasPartial}
       <p class="chart-legend">
         {#if unit && !condensed}<span>單位：{unit}</span>{/if}
-        {#if yearTicks && !condensed}<span>橫軸為學年，每柱一學期。</span>{/if}
+        {#if yearTicks && !condensed}<span>{termPairs ? '直線分隔學年；1 為上學期，2 為下學期。' : '橫軸為學年，每柱一學期。'}</span>{/if}
         {#if hasMissing}<span>空白表示沒有資料。</span>{/if}
         {#if hasPartial}<span><i aria-hidden="true"></i>{partialTermLabel}</span>{/if}
       </p>
@@ -155,6 +161,9 @@
   .bar-links a:is(:hover, :focus-visible) span { display: block; }
   .axis { display: flex; flex-direction: column; align-items: end; justify-content: space-between; margin-block: calc(-0.5 * var(--t-sm)); }
   .axis, .terms { color: var(--muted); font-size: var(--t-sm); line-height: 1; }
+  .semester-ticks { grid-column: 2; display: grid; color: var(--ink-2); font: var(--t-xs) / 1.35 var(--font-mono); text-align: center; }
+  .year-start { border-inline-start: 1px solid var(--control-line); }
+  .year-divider { stroke: var(--control-line); stroke-dasharray: 2 3; }
   svg { display: block; inline-size: 100%; block-size: 12rem; overflow: visible; }
   .gridline { stroke: var(--line); }
   .baseline { stroke: var(--control-line); }

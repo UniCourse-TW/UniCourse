@@ -3,13 +3,14 @@
   import type { School } from '@unicourse/api-client';
   import { searchSorts, type OverviewSearchFilters } from './overview-paths';
 
-  let { schools, terms, filters, departments = null, externalSort = false, empty = false }: {
+  let { schools, terms, filters, departments = null, externalSort = false, empty = false, compact = false }: {
     schools: School[];
     terms: string[];
     filters?: OverviewSearchFilters;
     departments?: string[] | null;
     externalSort?: boolean;
     empty?: boolean;
+    compact?: boolean;
   } = $props();
 
   const departmentOptions = $props.id();
@@ -65,9 +66,9 @@
   </label>
 {/snippet}
 
-  <form id="course-search" action="/" method="GET" role="search" aria-label="課程搜尋" class:result-filters={filters && !empty} class:has-department={filters && selectedSchool && !empty} class:empty>
+  <form id="course-search" action="/" method="GET" role="search" aria-label="課程搜尋" class:result-filters={filters && !empty} class:has-department={filters && selectedSchool && !empty} class:empty class:compact>
     <label class="keyword">
-      <span>關鍵字</span>
+      <span class="keyword-label">關鍵字</span>
       <span class="search-input">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.75" /><path d="m15 15 4 4" /></svg>
         {#key filters?.query ?? ''}
@@ -79,13 +80,8 @@
     <button type="submit" aria-busy={loading}>{loading ? '搜尋中…' : empty ? '重新搜尋' : '搜尋'}</button>
     {#if filters && empty}
       <input type="hidden" name="sort" value={filters.sort} />
-      <details class="advanced">
-        <summary>{filters.school || filters.department || filters.term !== 'all' ? '調整學校、學期等條件' : '選擇特定學校或學期'}</summary>
-        <div class="advanced-fields">
-          {@render schoolField()}{@render termField()}{@render departmentField(filters.department)}
-          <button type="submit" class="advanced-apply">套用篩選</button>
-        </div>
-      </details>
+      <div class="empty-scope">{@render schoolField()}{@render termField()}</div>
+      {#if filters.department}{@render departmentField(filters.department)}{/if}
     {:else if filters}
       {#if selectedSchool}{@render departmentField(filters.department)}{/if}
       {#if !externalSort || !selectedSchool}
@@ -127,11 +123,21 @@
   .advanced-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 12rem); gap: var(--space-2); max-width: 35rem; padding-block-end: var(--space-2); }
   .advanced-apply { grid-column: 1 / -1; width: fit-content; border: 1px solid var(--control-line); background: var(--panel-raised); color: var(--brand-ink); }
   .empty { grid-template-columns: minmax(0, 1fr) auto; }
+  .empty-scope { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
   @media (min-width: 54rem) {
     .result-filters:not(.has-department):has(> .advanced:not([open])) { grid-template-columns: minmax(0, 1fr) minmax(0, 12rem) minmax(0, 8.5rem) auto auto; }
     .result-filters:not(.has-department) > .advanced:not([open]) { grid-column: auto; }
   }
   @media (max-width: 37rem) {
+    .compact { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: stretch; }
+    .compact > .keyword { grid-column: 1 / 3; }
+    .compact > button { grid-area: 1 / 3; padding-inline: var(--space-2); }
+    .compact > label:nth-of-type(2) { grid-column: 1; }
+    .compact > label:nth-of-type(3) { grid-column: 2 / 4; }
+    .compact .keyword-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+    .compact > label:not(.keyword) { display: flex; align-items: center; gap: .3rem; padding-inline-start: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); }
+    .compact > label:not(.keyword) span { flex: none; }
+    .compact select { min-inline-size: 0; border: 0; background: transparent; }
     form, .result-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .keyword, form > button { grid-column: 1 / -1; }
     .empty > :is(.keyword, button) { grid-column: auto; }

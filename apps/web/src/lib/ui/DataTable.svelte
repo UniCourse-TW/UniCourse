@@ -89,6 +89,7 @@
               {:else}
                 {column.label}{#if direction} <span aria-hidden="true">{direction === 'ascending' ? '↑' : '↓'}</span>{/if}
               {/if}
+              {#if column.headerNote}<small class="column-note">{column.headerNote}</small>{/if}
             </th>
           {/each}
         </tr>
@@ -121,6 +122,7 @@
 </div>
 
 <style>
+  .column-note { display: block; color: var(--muted); font-size: var(--t-sm); font-weight: 450; }
   .frame {
     min-inline-size: 0;
     max-inline-size: 100%;
