@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import {
     categoryLabels, isOfficial, kindLabels, loginLabel, operatorLabels, sourceLabels, statusLabels, type Site
   } from '$lib/landscape-data';
@@ -16,6 +17,9 @@
   }
 
   let { label, sites, showOperator = false, collapseAfter, header = false }: Props = $props();
+  let hydrated = $state(false);
+  onMount(() => { hydrated = true; });
+  let openBatches = $state<Record<string, boolean>>({});
   let head = $derived(collapseAfter && sites.length > collapseAfter ? sites.slice(0, collapseAfter) : sites);
   const batchSize = 10;
   let batches = $derived.by(() => {
@@ -23,6 +27,8 @@
     for (let index = head.length; index < sites.length; index += batchSize) sections.push(sites.slice(index, index + batchSize));
     return sections;
   });
+
+  let shown = $derived(head.length + batches.reduce((count, batch) => count + (openBatches[batch[0].url] ? batch.length : 0), 0));
 
   /** A click anywhere on a row with notes (not on a link or the disclosure itself) opens them. */
   function toggleRow(event: MouseEvent) {
@@ -58,13 +64,15 @@
     <span class="cats">
       {#each site.category as category (category)}<span class="cat">{categoryLabels[category]}</span>{/each}
     </span>
-    <span class="login">{loginLabel(site.loginRequired)}</span>
-    <span class="status st {site.status}"><i aria-hidden="true"></i>{statusLabels[site.status]}</span>
+    <span class="site-state">
+      <span class="login">{loginLabel(site.loginRequired)}</span>
+      <span class="status st {site.status}"><i aria-hidden="true"></i>{statusLabels[site.status]}</span>
+    </span>
     <span class="features">
       {#if shortDescription}<span class="text">{site.features}</span>{/if}
       {#if detail}
         <details class="more" class:phone-only={shortDescription}>
-          <summary><span class="text">{site.features ?? '說明與原始碼'}</span><span class="chev" aria-hidden="true"></span><span class="sr-only">（說明與原始碼）</span></summary>
+          <summary><span class="text">{site.features ?? '說明與原始碼'}</span><span class="chev" aria-hidden="true"></span><span class="notes-label">查看網站說明</span></summary>
           {#if site.notes || site.repo || (site.operatorName && official && !showOperator)}<dl>
             {#if site.notes}<dt>說明</dt><dd>{site.notes}</dd>{/if}
             {#if site.operatorName && official && !showOperator}<dt>營運者</dt><dd>{operatorLabels[site.operator]}（{site.operatorName}）</dd>{/if}
@@ -88,13 +96,14 @@
   </ul>
   {#each batches as batch, index (batch[0].url)}
     {@const start = head.length + index * batchSize + 1}
-    <details class="rest">
-      <summary><span class="closed">顯示第 {start}–{start + batch.length - 1} 個</span><span class="opened">收合第 {start}–{start + batch.length - 1} 個</span></summary>
+    <details class="rest" ontoggle={(event) => (openBatches[batch[0].url] = event.currentTarget.open)}>
+      <summary><span class="closed">再顯示 {batch.length} 個</span><span class="opened">收合第 {start}–{start + batch.length - 1} 個</span></summary>
       <ul class="sites" aria-label="{label}（第 {start}–{start + batch.length - 1} 個）">
         {#each batch as site (site.url)}{@render row(site)}{/each}
       </ul>
     </details>
   {/each}
+  {#if batches.length && hydrated}<p class="shown-count" aria-live="polite">已列出 {shown}／{sites.length} 個</p>{/if}
 </div>
 
 <style>
@@ -169,6 +178,7 @@
   }
   .login { color: var(--ink-2); white-space: nowrap; font-size: var(--t-sm); line-height: 1.5; }
   /* Status as a small dot and the word (same as the third-party table above), not a pill per row. */
+  .site-state { display: contents; }
   .status { white-space: nowrap; }
   .st { display: inline-flex; gap: 0.4em; align-items: center; color: var(--ink-2); font-size: var(--t-sm); line-height: 1.5; }
   .st i { inline-size: 8px; block-size: 8px; border-radius: 50%; }
@@ -178,7 +188,8 @@
   .st.unknown i { border: 1.5px solid var(--muted); }
   .features { color: var(--ink-2); min-inline-size: 0; font-size: var(--t-sm); line-height: 1.5; overflow-wrap: anywhere; }
   .form { margin-inline-start: var(--space-1); padding: 0 5px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink-2); font-size: var(--t-xs); white-space: nowrap; }
-  .sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .notes-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .shown-count { margin: 0; padding: var(--space-2) var(--space-3); border-block-start: 1px solid var(--line); color: var(--muted); font-size: var(--t-sm); }
   li.expandable { cursor: pointer; }
   .more { display: block; }
   .more.phone-only { display: none; }
@@ -212,7 +223,17 @@
     .features { grid-area: features; }
   }
   @media (max-width: 40rem) {
-    li { grid-template-columns: 4.75rem minmax(0, 1fr) max-content; grid-template-areas: 'kind name status' 'login cats features'; align-items: baseline; }
+    li {
+      grid-template-columns: minmax(0, 1fr) max-content;
+      grid-template-areas: 'name state' 'cats features';
+      gap: 0 var(--space-2);
+      align-items: center;
+      padding-block: var(--space-1);
+    }
+    .site-state { grid-area: state; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-1); justify-content: end; }
+    .kind { grid-area: cats; align-self: center; }
+    .cats { margin-inline-start: 2.3rem; align-items: center; }
+    .status { order: -1; }
     .name a { min-block-size: var(--target-min); align-content: center; }
     .host { display: none; }
     .login { text-align: start; }
@@ -220,8 +241,11 @@
     .features > .text { display: none; }
     .more.phone-only { display: block; }
     .more:not([open]) .text { display: none; }
-    .more > summary { min-block-size: var(--target-min); align-items: center; }
-    li:has(.more[open]) { grid-template-areas: 'kind name status' 'login cats cats' 'features features features'; }
+    .more > summary { min-block-size: var(--target-min); align-items: center; color: var(--brand-ink); }
+    .notes-label { position: static; inline-size: auto; block-size: auto; clip-path: none; order: -1; }
+    .more[open] > summary { flex-wrap: wrap; }
+    .more[open] > summary .text { flex-basis: 100%; order: 1; }
+    li:has(.more[open]) { grid-template-areas: 'name state' 'cats cats' 'features features'; }
   }
   @media (prefers-reduced-motion: no-preference) {
     li { transition: background-color 120ms; }

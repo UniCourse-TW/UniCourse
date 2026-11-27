@@ -3,46 +3,44 @@
   import { displayValue } from '$lib/ui/format';
   import { partialTermLabel, partialTerms } from '$lib/ui/partial-terms';
 
-  let { course, terms }: { course: CourseRanking; terms: string[] } = $props();
-  let enrollment = $derived(new Map(course.trend.map(({ term, enrolled }) => [term, enrolled])));
-  let partial = $derived(partialTerms(Object.entries(course.sectionsByTerm)));
-  let samples = $derived(terms.map((term) => ({ term, value: enrollment.get(term) ?? null, partial: partial.has(term) })));
-  let measured = $derived(samples.filter(({ value }) => value !== null));
-  let latest = $derived(measured.at(-1));
-  let maximum = $derived(Math.max(1, ...measured.map(({ value }) => value ?? 0)));
-  let description = $derived(samples.map(({ term, value, partial }) =>
-    `${term}：${value === null ? '未公布' : `${displayValue(value)} 人${partial ? `（${partialTermLabel}）` : ''}`}`
-  ).join('；'));
+  let { courses }: { courses: CourseRanking[] } = $props();
+  let rows = $derived(courses.flatMap((course) => {
+    const published = course.trend.filter(({ enrolled }) => enrolled != null).slice(0, 6);
+    return published.length ? [{ course, published, partial: partialTerms(Object.entries(course.sectionsByTerm)) }] : [];
+  }));
+  let hasPartial = $derived(rows.some(({ published, partial }) => published.some(({ term }) => partial.has(term))));
 </script>
 
-<span class="trend ui-tabular">
-  {#if measured.length > 1}
-    <span class="plot" role="img" aria-label={description} title={description}>
-      {#each samples as { term, value, partial } (term)}
-        <span class="slot" aria-hidden="true">
-          {#if value !== null}<span class="bar" class:partial class:zero={value === 0} style:block-size={`${value / maximum * 100}%`}></span>{/if}
-        </span>
+{#if rows.length}
+  <details>
+    <summary>查看各課最近公布的人數</summary>
+    <p>每門最多列出 6 個學期，依該課的公布期別排列。{#if hasPartial}<span>＊{partialTermLabel}</span>{/if}</p>
+    <dl>
+      {#each rows as { course, published, partial } (course.courseCode)}
+        <dt>{course.title} <small>{course.courseCode}</small></dt>
+        <dd>
+          <ul>
+            {#each published as point (point.term)}
+              <li>
+                <span class="term">{point.term}</span> <span>{displayValue(point.enrolled)} 人{#if partial.has(point.term)}<span role="img" title={partialTermLabel} aria-label={partialTermLabel}>＊</span>{/if}</span>
+              </li>
+            {/each}
+          </ul>
+        </dd>
       {/each}
-    </span>
-  {/if}
-  <span class="reading">
-    {#if latest}
-      <strong>{displayValue(latest.value)} 人</strong>
-      <small>{latest.term}{#if latest.partial} <abbr title={partialTermLabel}>＊</abbr>{/if}</small>
-    {:else}
-      <span class="unknown" aria-label="近期修課人數未公布">—</span>
-    {/if}
-  </span>
-</span>
+    </dl>
+  </details>
+{/if}
 
 <style>
-  .trend { display: grid; grid-template-columns: minmax(0, 1fr) max-content; gap: .35rem; align-items: center; }
-  .plot { display: flex; gap: 2px; min-inline-size: 0; block-size: 1.5rem; border-block-end: 1px solid var(--control-line); }
-  .slot { flex: 1; display: flex; align-items: end; min-inline-size: 0; }
-  .bar { inline-size: 100%; background: var(--brand); border-radius: 2px 2px 0 0; }
-  .bar.partial { border: 1px dashed var(--brand); background: transparent; }
-  .bar.zero { border-block-start: 1px solid var(--brand); }
-  .reading { grid-column: 2; display: grid; justify-items: end; white-space: nowrap; line-height: 1.25; }
-  small, .unknown { color: var(--muted); }
-  abbr { color: var(--warn); text-decoration: none; }
+  summary { min-block-size: var(--target-min); align-content: center; cursor: pointer; color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; }
+  p, dt small { color: var(--muted); font-size: var(--t-sm); text-wrap: pretty; }
+  p span { display: inline-block; margin-inline-start: var(--space-1); }
+  dl { margin: var(--space-2) 0; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
+  dt { padding: var(--space-2) var(--space-3) 0; font-size: var(--t-base); font-weight: 650; }
+  dd { margin: 0; padding: var(--space-1) var(--space-3) var(--space-2); }
+  dd + dt { border-block-start: 1px solid var(--line); }
+  ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: var(--space-1) var(--space-2); margin: 0; padding: 0; list-style: none; }
+  li { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-1); border-radius: var(--radius-control); background: var(--chip); padding: .2rem .4rem; font-size: var(--t-sm); font-variant-numeric: tabular-nums; }
+  .term { color: var(--ink-2); font-family: var(--font-mono); }
 </style>

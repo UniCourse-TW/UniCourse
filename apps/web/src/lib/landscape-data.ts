@@ -179,7 +179,7 @@ function siteMatches(site: Site, filters: LandscapeFilters, schoolNames: string[
   if (filters.category && !site.category.includes(filters.category)) return false;
   if (!filters.q) return true;
   const needle = normalize(filters.q);
-  return [site.name, site.url, site.features, site.notes, site.operatorName, ...schoolNames].some(
+  return site.schools.includes(needle) || [site.name, site.url, site.features, site.notes, site.operatorName, ...schoolNames].some(
     (field) => !!field && normalize(field).includes(needle)
   );
 }
