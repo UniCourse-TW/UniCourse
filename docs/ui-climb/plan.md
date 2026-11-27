@@ -56,9 +56,10 @@
 
 ### Judges and thresholds
 
-- Judges: Claude Opus 5.5, GPT-6.2 Sol, Claude Fable 5.1, GPT-6.2 Astra.
-- A page is judged by **Sol + Opus** until their mean reaches **8.5**; from then on **all four** judge it.
-- **Done** when every page's four-judge mean is **≥ 9.0**.
+- Judges (from round 9, at the user's request to reduce Fable usage): Claude Opus 5.5, GPT-6.2 Sol and
+  GPT-6.2 Astra. Fable judged rounds 4–8.
+- A page is judged by **Sol + Opus** until their mean reaches **8.5**; from then on **all three** judge it.
+- **Done** when every page's three-judge mean is **≥ 9.0**.
 - Judges score from screenshots (`docs/ui-climb/shots/<round>/<page>-<phone|desktop>-<light|dark>.png`)
   plus the live preview, and return the JSON in `docs/ui-climb/judge-schema.json`. Scores and feedback are
   stored in `docs/ui-climb/scores/<round>/<judge>.json`; `scripts/ui-scoreboard.mjs` aggregates them into
