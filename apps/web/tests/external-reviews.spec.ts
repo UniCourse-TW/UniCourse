@@ -11,8 +11,9 @@ test('course page lists external reviews from the demo index and outbound search
 
   await page.goto(`/courses/${course.id}`);
 
-  // The summary tiles link down to the indexed posts (the fourth tile, or its link under the ratings).
-  await expect(page.getByRole('group', { name: '課程重點' }).locator('a[href="#external-reviews"]')).toBeVisible();
+  // External reviews have a section shortcut alongside ratings and site discussions.
+  const sections = page.getByRole('navigation', { name: '本頁段落' });
+  await expect(sections.getByRole('link', { name: /外站討論/ })).toHaveAttribute('href', '#external-reviews');
 
   const section = page.locator('#external-reviews');
   await expect(section.getByRole('heading', { name: /外站討論（PTT）/ })).toContainText('1 篇');

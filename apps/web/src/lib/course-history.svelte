@@ -44,7 +44,7 @@
     const first = slots[0]?.term;
     const last = slots.at(-1)?.term;
     const peak = rows.reduce<HistoryRow | undefined>((best, row) => (row.enrolled ?? -1) > (best?.enrolled ?? -1) ? row : best, undefined);
-    const parts = [`${courseCode} 各學期修課人數長條圖，${first} 至 ${last}，共 ${rows.length} 期有開課`];
+    const parts = [`${courseCode} 各學期${capacityOnly ? '名額' : '修課人數'}長條圖，${first} 至 ${last}，共 ${rows.length} 期有開課`];
     if (peak?.enrolled != null) parts.push(`最多為 ${peak.term} 的 ${displayValue(peak.enrolled)} 人`);
     parts.push('數值見下方各期表格');
     return parts.join('；') + '。';
@@ -80,23 +80,36 @@
   });
   let multiSection = $derived(rows.some((row) => row.offeringCount > 1));
   let hasCurrent = $derived(rows.some((row) => row.current));
+  let hiddenRows = $derived(rows.slice(initialRows).filter((row) => !row.current).length);
 
-  // Phones give every term a fixed column width, so a long history scrolls sideways inside the chart;
-  // it opens scrolled to this offering's term, and a hint says there is more to the left.
   let area: HTMLDivElement | undefined = $state();
   let scrolls = $state(false);
-  onMount(() => {
-    if (!area || area.scrollWidth <= area.clientWidth + 1) return;
-    scrolls = true;
+  function moveChart(target: 'current' | 'latest') {
+    if (!area) return;
     const current = area.querySelector<HTMLElement>('.slot.current');
-    area.scrollLeft = current ? current.offsetLeft - area.clientWidth / 2 : area.scrollWidth;
+    area.scrollLeft = target === 'current' && current
+      ? current.offsetLeft - (area.clientWidth - current.offsetWidth) / 2
+      : area.scrollWidth;
+  }
+  onMount(() => {
+    if (!area) return;
+    const measure = () => {
+      const wasScrollable = scrolls;
+      scrolls = !!area && area.scrollWidth > area.clientWidth + 1;
+      if (scrolls && !wasScrollable) moveChart('current');
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(area);
+    return () => observer.disconnect();
   });
 </script>
 
-<div class="history" style:--max-rows={initialRows}>
+<div class="history">
   {#if showChart}
     <figure class="chart">
       <figcaption>
+        <strong class="chart-title">{capacityOnly ? '名額（人數未公布）' : '修課人數與名額'}</strong>
         <span class="readout" aria-hidden="true">
           {#if focus}
             <strong class="ui-mono">{focus.term}</strong>
@@ -108,17 +121,22 @@
         </span>
         <span class="legend" aria-hidden="true">
           {#if hasEnrolled}<span><i class="key fill"></i>修課人數</span>{/if}
+          {#if rows.some((row) => (fill(row) ?? 0) > 1)}<span><i class="key over-key"></i>超額</span>{/if}
           {#if hasBoth}<span><i class="key cap"></i>名額</span>{/if}
-          {#if hasCapacityOnly}<span><i class="key caponly"></i>{capacityOnly ? '名額（未公布修課人數）' : '只公布名額'}</span>{/if}
+          {#if hasCapacityOnly}<span><i class="key caponly"></i>{capacityOnly ? '名額' : '只公布名額'}</span>{/if}
           {#if partials.length}<span><i class="key partial"></i>只收錄部分班次 ※</span>{/if}
         </span>
       </figcaption>
-      <div class="plot" role="img" aria-label={chartLabel}>
+      {#if scrolls}
+        <p class="swipe"><span>↔ 左右滑動看各學期</span><button type="button" onclick={() => { moveChart('latest'); active = rows[0]?.term; }}>最近學期 →</button></p>
+      {/if}
+      <div class="plot">
         <div class="y ui-tabular" class:band={hasCurrent} aria-hidden="true">
           {#each scale.ticks as tick (tick)}<span style:bottom={`${percent(tick)}%`}>{displayValue(tick)}</span>{/each}
         </div>
-        <div class="area" class:band={hasCurrent} aria-hidden="true" bind:this={area}>
-          <div class="bars" style:--slots={slots.length}>
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex (the scroll region needs a keyboard target) -->
+        <div class="area" class:band={hasCurrent} role="region" aria-label={chartLabel} tabindex={scrolls ? 0 : undefined} bind:this={area}>
+          <div class="bars" style:--slots={slots.length} aria-hidden="true">
             {#each scale.ticks as tick (tick)}<span class="grid" class:base={tick === 0} style:bottom={`${percent(tick)}%`}></span>{/each}
             {#each slots as slot, slotIndex (slot.term)}
               {@const row = slot.row}
@@ -129,11 +147,12 @@
                 class:current={row?.current}
                 class:withdrawn={row?.withdrawn}
                 class:partial={row?.partial}
+                class:overbooked={row?.enrolled != null && row.capacity != null && row.enrolled > row.capacity}
                 onpointerenter={() => { if (row) active = row.term; }}
                 onpointerleave={() => (active = undefined)}
               >
                 {#if row && row.capacity != null && row.enrolled == null}
-                  <span class="cap dashed" style:height={`${percent(row.capacity)}%`}></span>
+                  <span class="cap capacity" style:height={`${percent(row.capacity)}%`}></span>
                 {/if}
                 {#if row && row.enrolled != null}
                   <span class="fill" style:height={`${percent(row.enrolled)}%`}></span>
@@ -145,7 +164,7 @@
                 {#if row && row.enrolled == null && row.capacity == null}<span class="none">·</span>{/if}
                 {#if row?.partial}
                   <!-- A partial term's ※ sits on its bar; the note under the chart says what it means. -->
-                  <span class="flag" style:bottom={`calc(${percent(Math.max(row.enrolled ?? 0, row.capacity ?? 0))}% + 3px)`}><span class="flag-mark">※</span></span>
+                  <span class="flag" class:end={slotIndex === slots.length - 1} style:bottom={`calc(${percent(Math.max(row.enrolled ?? 0, row.capacity ?? 0))}% + 3px)`}>※{#if slotIndex === slots.length - 1} {displayValue(row.offeringCount)} 班{/if}</span>
                 {/if}
                 {#if row?.current}
                   <!-- 「本班」 sits in a band above the plot, with a dashed leader down to the bar, so even a
@@ -157,32 +176,31 @@
             {/each}
           </div>
           <!-- Semester digits under each slot; the offering's own term is a filled marker, not an outline. -->
-          <div class="sem ui-tabular" style:--slots={slots.length}>
+          <div class="sem ui-tabular" style:--slots={slots.length} aria-hidden="true">
             {#each slots as slot (slot.term)}
-              <span class:current={slot.row?.current} class:gap={!slot.row} class:minor={slots.length > 12 && !slot.row?.current}>{#if slot.row?.current}<span class="sr-only">本班所在學期 </span>{/if}{slot.term.split('-')[1] ?? ''}</span>
+              <span class:current={slot.row?.current} class:gap={!slot.row}>{#if slot.row?.current}<span class="sr-only">本班所在學期 </span>{/if}{slot.term.split('-')[1] ?? ''}</span>
             {/each}
           </div>
-          <div class="x ui-tabular" style:--slots={slots.length}>
-            {#each yearGroups as group, index (index)}
-              <!-- Phones label every other year on long histories (always the first, last and this offering's year). -->
-              <span class="year" class:minor={yearGroups.length > 6 && index % 2 === 1 && index !== yearGroups.length - 1 && group.year !== currentTerm?.split('-')[0]} class:cur={group.year === currentTerm?.split('-')[0]} style:grid-column={`span ${group.span}`}>{group.year}</span>
+          <div class="x ui-tabular" style:--slots={slots.length} aria-hidden="true">
+            {#each yearGroups as group (group.year)}
+              <span class="year" class:cur={group.year === currentTerm?.split('-')[0]} style:grid-column={`span ${group.span}`}>{group.year}</span>
             {/each}
           </div>
         </div>
       </div>
       <!-- The partial-term warning is the one prominent caption; how to read the axes stays short. -->
-      <p class="note">{#each partialNotes as group (group.terms.join())}<b class="partial-note">※ {group.terms.join('、')} 只收錄 {displayValue(group.count)} 班（其他學期通常約 {displayValue(group.usual)} 班），長條偏低是班次少，不代表{capacityOnly ? '名額' : '修課人數'}驟減。</b>{/each}{#if !hasEnrolled}校方沒有公布修課人數，長條是各學期的名額。{/if}1、2 是上、下學期{#if gaps}；空格是沒有開課紀錄{/if}{#if hasUnpublished}；「·」是有開課但未公布人數{/if}。{#if scrolls}<span class="swipe">左右滑動看其他學期</span>{/if}</p>
+      <p class="note">{#each partialNotes as group (group.terms.join())}<b class="partial-note">※ {group.terms.join('、')} 只收錄 {displayValue(group.count)} 班（其他學期通常約 {displayValue(group.usual)} 班），長條偏低是班次少，不代表{capacityOnly ? '名額' : '修課人數'}驟減。</b>{/each}1、2 是上、下學期{#if gaps}；空格是沒有開課紀錄{/if}{#if hasUnpublished}；「·」是有開課但未公布人數{/if}。</p>
     </figure>
   {/if}
 
   {#if !showChart && rows.length > 1}
-    <p class="note">{published === 0 ? '各學期都沒有公布修課人數與名額，因此只列出開課紀錄。' : `只有 ${published} 個學期公布人數，數值直接列在表格中。`}</p>
+    <p class="note">{published === 0 ? '各學期都沒有公布修課人數與名額，因此只列出開課紀錄。' : `只有 ${published} 個學期公布人數或名額，數值直接列在表格中。`}</p>
   {/if}
-  <div class="frame" class:collapsible={rows.length > initialRows}>
+  <div class="frame" class:collapsible={hiddenRows > 0}>
     <!-- The bar key sits on the table itself (phones too), not in a long column header. -->
     <!-- Two short lines: what the rows are, then how to read the fill-rate bars (each term's own rate). -->
     <div class="table-key">
-      <p class="key-scope">{multiSection ? '各學期全班次合計，新到舊' : '各學期，新到舊'}{#if capacityOnly}；校方未公布修課人數，只列名額{/if}</p>
+      <p class="key-scope">{multiSection ? '各學期已收錄班次合計，新到舊' : '各學期，新到舊'}{#if capacityOnly}；校方未公布修課人數，只列名額{/if}</p>
       {#if hasBoth && !capacityOnly}
         <p class="key-bars">
           <span><i class="tk fill" aria-hidden="true"></i>滿額率＝該期修課÷名額</span>
@@ -191,6 +209,11 @@
         </p>
       {/if}
     </div>
+    {#if hiddenRows}
+      <details class="toggle">
+        <summary><span class="closed">展開其餘 {hiddenRows} 期 ▾</span><span class="opened">收合為最近 {initialRows} 期{#if hasCurrent}與本班{/if} ▴</span></summary>
+      </details>
+    {/if}
     <div class="scroll">
       <table>
         <caption class="sr-only">{courseCode} 各學期開課與修課人數，新到舊</caption>
@@ -205,10 +228,6 @@
         <tbody>
           {#each rows as row, index (row.term)}
             {@const ratio = fill(row)}
-            {#if row.current && index > initialRows}
-              <!-- Collapsed, the list jumps from the newest terms to this page's term; say what is skipped. -->
-              <tr class="skip"><td colspan="4">⋯ 中間 {displayValue(index - initialRows)} 期未列出，按下方「展開全部」查看</td></tr>
-            {/if}
             <tr
               class:extra={index >= initialRows && !row.current}
               class:active={row.term === active}
@@ -256,11 +275,7 @@
         </tbody>
       </table>
     </div>
-    {#if rows.length > initialRows}
-      <details class="toggle">
-        <summary><span class="closed">展開全部 {rows.length} 個學期 ▾</span><span class="opened">收合為最近 {initialRows} 期 ▴</span></summary>
-      </details>
-    {/if}
+
   </div>
 </div>
 
@@ -280,8 +295,10 @@
   .legend span { display: inline-flex; gap: 0.35rem; align-items: center; }
   .key { display: inline-block; inline-size: 10px; block-size: 10px; border-radius: 2px; }
   .key.fill { background: var(--brand); }
+  .chart-title { flex-basis: 100%; font-size: var(--t-base); color: var(--ink); }
+  .key.over-key { background: var(--warn); }
   .key.cap { block-size: 0; inline-size: 12px; border-block-start: 2px solid var(--ink); border-radius: 0; }
-  .key.caponly { background: color-mix(in srgb, var(--muted) 34%, var(--panel-raised)); }
+  .key.caponly { background: color-mix(in srgb, var(--brand) 48%, var(--panel-raised)); }
   .key.partial { background: color-mix(in srgb, var(--brand) 28%, var(--panel-raised)); box-shadow: inset 0 0 0 1px var(--brand); }
 
   .plot { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--space-2); }
@@ -296,13 +313,13 @@
   .grid.base { border-color: var(--control-line); }
   .slot { position: relative; display: flex; justify-content: center; align-items: end; block-size: 100%; }
   .slot > span { position: absolute; inset-block-end: 0; inline-size: min(70%, 2.25rem); border-radius: 2px 2px 0 0; }
-  /* 名額 only (no enrolment published): a quiet solid grey column, never a dashed or hatched box. */
-  .slot .cap.dashed { background: color-mix(in srgb, var(--muted) 34%, var(--panel-raised)); }
-  .slot .tick { z-index: 1; inline-size: min(90%, 2.75rem); block-size: 0; border-radius: 0; border-block-start: 2px solid var(--ink); box-shadow: 0 0 0 1px color-mix(in srgb, var(--panel-raised) 70%, transparent); translate: 0 1px; }
-  .slot.current .cap.dashed { background: color-mix(in srgb, var(--brand) 45%, var(--panel-raised)); }
+  .slot .cap.capacity { background: color-mix(in srgb, var(--brand) 48%, var(--panel-raised)); }
+  .slot .tick { z-index: 1; inline-size: min(90%, 2.75rem); block-size: 0; border-radius: 0; border-block-start: 2px solid var(--ink); box-shadow: 0 0 0 1px var(--panel-raised); translate: 0 1px; }
+  .slot.current .cap.capacity { background: color-mix(in srgb, var(--brand) 70%, var(--panel-raised)); }
   /* Terms with far fewer sections than usual: a pale fill with a thin outline (no hatching), plus ※. */
-  .slot.partial .fill, .slot.partial .cap.dashed { background: color-mix(in srgb, var(--brand) 28%, var(--panel-raised)); box-shadow: inset 0 0 0 1px var(--brand); min-block-size: 3px; }
+  .slot.partial .fill, .slot.partial .cap.capacity { background: color-mix(in srgb, var(--brand) 28%, var(--panel-raised)); box-shadow: inset 0 0 0 1px var(--brand); min-block-size: 3px; }
   .slot > .flag { inset-block-end: auto; z-index: 2; inline-size: max-content; border-radius: 0; color: var(--ink-2); font-size: var(--t-xs); font-weight: 650; line-height: 1.2; text-align: center; white-space: nowrap; pointer-events: none; }
+  .slot > .flag.end { inset-inline-end: 0; }
   .slot > .here-flag { inset-block: -1.5rem auto; z-index: 2; inline-size: max-content; padding: 0 5px; border-radius: 3px; background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); font-weight: 650; line-height: 1.35rem; white-space: nowrap; pointer-events: none; }
   .slot > .here-flag.end { inset-inline-end: 0; }
   .slot > .here-flag.start { inset-inline-start: 0; }
@@ -312,6 +329,9 @@
   .slot.withdrawn .fill { background: color-mix(in srgb, var(--muted) 60%, var(--panel-raised)); }
   .slot.active::after { content: ''; position: absolute; inset-block: 0 -0.375rem; inset-inline: 50%; border-inline-start: 1px dashed var(--control-line); }
   .slot.active .fill { background: var(--brand-ink); }
+  .slot.overbooked:not(.partial) .fill { background: var(--warn); }
+  .slot.overbooked.partial .fill { background: color-mix(in srgb, var(--warn) 30%, var(--panel-raised)); box-shadow: inset 0 0 0 1px var(--warn); }
+  .slot.current .tick { border-block-start-width: 3px; }
   .slot .none { inset-block-end: 2px; inline-size: auto; color: var(--muted); font-size: var(--t-sm); line-height: 1; }
   .sem { display: grid; grid-template-columns: repeat(var(--slots), minmax(0.75rem, 1fr)); min-inline-size: calc(var(--slots) * 0.75rem); margin-block-start: 7px; color: var(--ink-2); font-size: var(--t-xs); line-height: 1.4; text-align: center; }
   .sem span { justify-self: center; min-inline-size: 1.1em; border-radius: 3px; }
@@ -322,9 +342,9 @@
   .x span { display: flex; justify-content: center; white-space: nowrap; overflow: visible; border-inline-start: 1px solid var(--line); }
   .x span:last-child { justify-content: flex-end; }
   .x span:first-child { border-inline-start: 0; }
-  .note { margin: var(--space-2) 0 0; color: var(--muted); font-size: var(--t-xs); line-height: 1.5; }
-  .swipe { margin-inline-start: var(--space-2); color: var(--ink-2); font-weight: 600; }
-  .swipe::before { content: '⇠ '; }
+  .note { margin: var(--space-2) 0 0; color: var(--ink-2); font-size: var(--t-sm); line-height: 1.5; }
+  .swipe { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin: 0 0 var(--space-2); color: var(--ink-2); font-size: var(--t-sm); }
+  .swipe button { min-block-size: var(--target-min); padding: 0 var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font: inherit; font-weight: 600; cursor: pointer; }
 
   .frame { position: relative; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); overflow: hidden; }
   .table-key { display: grid; gap: 2px; padding: var(--space-2) 0.625rem; border-block-end: 1px solid var(--line); background: var(--table-head); color: var(--ink-2); font-size: var(--t-sm); }
@@ -368,13 +388,11 @@
   .sections { white-space: nowrap; }
   .sections a { display: inline-flex; align-items: center; min-block-size: 2rem; font-weight: 600; }
   .here { margin-inline-start: var(--space-2); padding: 0 6px; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-family: var(--font-sans); font-size: var(--t-xs); font-weight: 650; }
-  .skip td { padding-block: var(--space-1); color: var(--muted); font-size: var(--t-sm); text-align: center; background: var(--table-head); }
-  .collapsible:has(details[open]) tr.skip { display: none; }
   .withdrawn { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; }
   .more { color: var(--ink-2); font-size: var(--t-sm); }
 
   .collapsible:not(:has(details[open])) tr.extra { display: none; }
-  .toggle { border-block-start: 1px solid var(--line); }
+  .toggle { border-block-end: 1px solid var(--line); }
   .toggle summary { display: flex; align-items: center; justify-content: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
   .toggle summary::-webkit-details-marker { display: none; }
   .toggle summary:hover { background: var(--hover-row); }
@@ -382,11 +400,8 @@
 
   @media (max-width: 40rem) {
     .chart { padding-inline: var(--space-3); }
-    /* Long histories: every other year label and only this offering's semester digit, so nothing collides. */
-    .x span.minor { color: transparent; }
-    .sem span.minor { visibility: hidden; }
     /* Fixed term columns: a long history scrolls inside the chart instead of squeezing every bar. */
-    .bars, .sem, .x { grid-template-columns: repeat(var(--slots), minmax(1.375rem, 1fr)); min-inline-size: calc(var(--slots) * 1.375rem); }
+    .bars, .sem, .x { grid-template-columns: repeat(var(--slots), minmax(1.5rem, 1fr)); min-inline-size: calc(var(--slots) * 1.5rem); }
     .table-key { padding-inline: var(--space-3); }
     /* Phones keep 本頁 and「全部 N 班」; single section links live behind「全部 N 班」. */
     /* Each term becomes a two-line row (term + numbers, then teachers + sections), so nothing is
@@ -411,7 +426,5 @@
     .sections { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; white-space: normal; }
     .sections .more { margin-inline-start: auto; padding-inline: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); min-block-size: 2.25rem; display: inline-flex; align-items: center; }
     .sections a { min-block-size: var(--target-min); }
-    tbody tr.skip { display: block; padding: 0; }
-    tbody tr.skip td { display: block; padding: var(--space-1) var(--space-3); }
   }
 </style>

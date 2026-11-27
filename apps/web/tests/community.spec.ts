@@ -144,8 +144,11 @@ test('registers, rates a course, posts a linked question, replies, votes and log
     await expect(page).toHaveURL(/\/u\//, { timeout: 2000 });
   }).toPass({ timeout: 20_000 });
   await expect(page.getByRole('heading', { name: '測試同學' })).toBeVisible();
-  await expect(page.getByRole('group', { name: '活動統計' })).toContainText('課程評價');
-  await expect(page.getByRole('img', { name: '4 分（滿分 5 分）' })).toBeVisible();
+  const activity = page.getByRole('group', { name: '活動統計' });
+  await expect(activity).toContainText('課程評價');
+  await expect(activity).toContainText('此帳號的平均給分');
+  // The number is the accessible score and the adjacent stars are decorative.
+  await expect(page.getByRole('table', { name: /的課程評價/ }).getByText('4 / 5', { exact: true })).toBeVisible();
   // Exact: the post rows also name the course (「國立清華大學 線性代數 DEMO201」) in their forum link.
   await expect(page.getByRole('link', { name: '線性代數', exact: true })).toHaveAttribute('href', `/courses/${course.id}`);
   await expect(page.getByText(`作業偏多 ${username}`)).toBeVisible();

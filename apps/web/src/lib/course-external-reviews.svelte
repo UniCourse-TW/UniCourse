@@ -33,7 +33,7 @@
   /** Posts listed before「再顯示」. */
   const initialPosts = 5;
   /** Posts each「再顯示」adds. */
-  const stepPosts = 10;
+  const stepPosts = 5;
   /** Teachers listed in the summary before「其他 N 位」. */
   const initialTeachers = 8;
 
@@ -93,7 +93,6 @@
       .map(([name, count]) => ({ name, count, mine: own.has(name) }))
       .sort((a, b) => Number(b.mine) - Number(a.mine) || b.count - a.count || a.name.localeCompare(b.name, 'zh-Hant'));
   });
-  let teacherMax = $derived(Math.max(1, ...teacherCounts.map((teacher) => teacher.count)));
   let untagged = $derived(rows.filter((row) => row.teachers.length === 0).length);
 
   /** Terms named in the titles, newest first. */
@@ -144,7 +143,7 @@
     })
   );
   let filtering = $derived(Boolean(teacher || term || kind || scope));
-  let activeFilters = $derived([teacher, term, kind, scope].filter(Boolean).length);
+  let activeFilters = $derived([teacher, term, kind, scope, sort !== 'relevant'].filter(Boolean).length);
   /**
    * The default view lists this offering's teacher in a group of its own, so a lone question by that
    * teacher is not mistaken for the top review; everyone else follows, reviews first.
@@ -154,9 +153,9 @@
   let otherRows = $derived(ordered.filter((row) => !row.mine));
   let mineLine = $derived.by(() => {
     const names = instructors.join('、');
-    if (mineReviews === mineRows.length) return `本班教師 ${names}・${mineRows.length} 篇心得評價`;
+    if (mineReviews === mineRows.length) return `本班教師 ${names} 的心得評價`;
     if (mineReviews === 0) return `本班教師 ${names}・還沒有心得評價`;
-    return `本班教師 ${names}・${mineRows.length} 篇（心得評價 ${mineReviews} 篇在前）`;
+    return `本班教師 ${names} 的文章`;
   });
 
   function pickTeacher(name: string) {
@@ -165,6 +164,7 @@
 
   function clearFilters() {
     scope = '';
+    sort = 'relevant';
     teacher = '';
     term = '';
     kind = '';
@@ -184,15 +184,16 @@
   <span class="site">在 <b>{link.label}</b> 搜尋</span>{#if link.query}<span class="query">「{link.query}」</span>{/if}<span class="out" aria-hidden="true">↗</span><span class="sr-only">（開啟外部網站）</span>
 {/snippet}
 
-{#snippet postList(items: Row[], labelledby: string | undefined, listId: string, scope = '')}
-  {@const limit = limits[listId] ?? initialPosts}
+{#snippet postList(items: Row[], labelledby: string | undefined, listId: string)}
+  {@const preview = listId === 'others' ? Math.max(1, initialPosts - mineRows.length) : initialPosts}
+  {@const limit = limits[listId] ?? preview}
   <!-- Without JavaScript every post is rendered and CSS folds the rest behind「顯示全部」; with it, the
-       list grows in steps of ten so a long list does not jump from 6 to 43 at once. -->
-  <ol class="list" class:collapsible={!ready && items.length > initialPosts} aria-label={labelledby ? undefined : '外部文章'} aria-labelledby={labelledby}>
+       list grows in small batches. -->
+  <ol class="list" class:collapsible={!ready && items.length > preview} aria-label={labelledby ? undefined : '外部文章'} aria-labelledby={labelledby}>
     {#each ready ? items.slice(0, limit) : items as row, index (row.key)}
-      <li class:extra={index >= initialPosts} class:mine={row.mine}>
+      <li class:extra={index >= preview} class:mine={row.mine}>
         <article>
-          <h3 class="title">
+          <h3 class="title" title={row.post.title}>
             <a href={row.post.url} target="_blank" rel="noopener noreferrer nofollow">{row.post.title}<span class="out" aria-hidden="true">↗</span><span class="sr-only">（開啟 {row.post.sourceLabel} 原文）</span></a>
           </h3>
           <p class="meta">
@@ -200,8 +201,8 @@
             {#if row.post.isDemo}<Badge label="示範資料" tone="demo" />{/if}
             {#if row.post.postedAt}<time class="num" datetime={row.post.postedAt}>{slashDate(row.post.postedAt)}</time>{/if}
             {#if row.post.term}<span class="mono">{row.post.term}</span>{/if}
-            {#if row.teachers.length}<span>{row.teachers.join('、')}</span>{/if}
-            {#if boards.length > 1}<span>{row.post.board}</span>{/if}
+            {#if row.teachers.length && !row.mine}<span class="post-teacher">{row.teachers.join('、')}</span>{/if}
+            {#if boards.length > 1}<span class="board">{row.post.board}</span>{/if}
             {#if row.author}<span class="author">{row.author}</span>{/if}
             {#if row.post.pushScore}<span class="push num" class:down={row.post.pushScore < 0}>推 {pushLabel(row.post.pushScore)}</span>{/if}
             {#if !row.parts.length}
@@ -220,15 +221,15 @@
   </ol>
   {#if ready && items.length > limit}
     <p class="grow">
-      <span class="num">{scope}已列 {limit} / {items.length} 篇</span>
+      <span class="num">已列 {limit} / {items.length} 篇</span>
       <button type="button" class="grow-btn" onclick={() => (limits[listId] = limit + stepPosts)}>再顯示 {Math.min(stepPosts, items.length - limit)} 篇 ▾</button>
       {#if items.length - limit > stepPosts}<button type="button" class="clear" onclick={() => (limits[listId] = items.length)}>全部顯示</button>{/if}
     </p>
-  {:else if ready && limit > initialPosts}
-    <p class="grow"><button type="button" class="clear" onclick={() => (limits[listId] = initialPosts)}>收合為前 {initialPosts} 篇 ▴</button></p>
-  {:else if !ready && items.length > initialPosts}
+  {:else if ready && limit > preview}
+    <p class="grow"><button type="button" class="clear" onclick={() => (limits[listId] = preview)}>收合為前 {preview} 篇 ▴</button></p>
+  {:else if !ready && items.length > preview}
     <details class="more">
-      <summary><span class="closed">顯示全部 {items.length} 篇 ▾</span><span class="opened">收合為前 {initialPosts} 篇 ▴</span></summary>
+      <summary><span class="closed">顯示全部 {items.length} 篇 ▾</span><span class="opened">收合為前 {preview} 篇 ▴</span></summary>
     </details>
   {/if}
 {/snippet}
@@ -240,7 +241,6 @@
       <div class="strip-text">
         <h2 id="external-title">外站討論</h2>
         <p class="strip-lead" role={reviews ? undefined : 'alert'}><b>{reviews ? '還沒有收錄到這門課的外站文章' : '外站討論暫時無法載入，請稍後再試'}</b></p>
-        {#if reviews}<p class="strip-sub">UniCourse 只索引 PTT 課程看板的標題與開頭摘要；其他網站可以直接搜尋這門課。</p>{/if}
       </div>
       {#if links.length}
         <ul class="links" aria-label="到其他網站搜尋">
@@ -253,10 +253,10 @@
   {:else}
     <header class="head">
       <div class="head-text">
-        <h2 id="external-title">外站討論（{sourceName}）<span class="head-count num">{displayValue(total)} 篇</span></h2>
+        <h2 id="external-title">外站討論（{sourceName}）<span class="head-count num">{displayValue(total)} 篇{#if instructors.length && total === rows.length && mineCount < total}中，本班教師 {displayValue(mineCount)} 篇{/if}</span></h2>
         <!-- One line of provenance; how posts are sorted and what is stored sits behind ⓘ, so the first post comes up. -->
         <div class="dek">
-          <p><span class="kind-counts">{#each kinds as value (value)}{#if kindCounts[value]}<span>{postKindLabels[value]} <b class="num">{displayValue(kindCounts[value])}</b></span>{/if}{/each}</span>・{sourceLabels.join('、')}{#if boards.length}・{boards.join('、')} 板{/if}{#if firstYear !== undefined}・發文 {firstYear}{#if lastYear !== firstYear}–{lastYear}{/if} 年{/if}</p>
+          <p>{#if boards.length}{boards.join('、')} 板{:else}{sourceLabels.join('、')}{/if}{#if firstYear !== undefined}・發文 {firstYear}{#if lastYear !== firstYear}–{lastYear}{/if} 年{/if}</p>
           <details class="how">
             <summary><span aria-hidden="true">ⓘ</span> 收錄方式</summary>
             <ul>
@@ -295,7 +295,7 @@
           </button>
         </div>
         <div class="kinds" role="group" aria-label="文章類型">
-          <button type="button" class="chip" aria-pressed={kind === ''} disabled={!ready} onclick={() => (kind = '')}>全部 <span class="num">{rows.length}</span></button>
+          <button type="button" class="chip" aria-pressed={kind === ''} disabled={!ready} onclick={() => (kind = '')}>全部類型</button>
           {#each kinds as value (value)}
             {#if kindCounts[value]}
               <button type="button" class="chip" aria-pressed={kind === value} disabled={!ready} onclick={() => (kind = kind === value ? '' : value)}>{postKindLabels[value]} <span class="num">{kindCounts[value]}</span></button>
@@ -307,6 +307,7 @@
           <h3 id="external-teachers">依教師篩選 <span class="hint">點一下只看該教師</span></h3>
           <ul class="teachers" class:collapsible={teacherCounts.length > initialTeachers} aria-labelledby="external-teachers">
             {#each teacherCounts as entry, index (entry.name)}
+              {@const percentage = rows.length ? (entry.count / rows.length) * 100 : 0}
               <li class:extra={index >= initialTeachers}>
                 <button
                   type="button"
@@ -317,8 +318,8 @@
                   onclick={() => pickTeacher(entry.name)}
                 >
                   <span class="name">{entry.name}{#if entry.mine}<span class="here">本班</span>{/if}</span>
-                  <span class="bar" aria-hidden="true"><span style:width={`${(entry.count / teacherMax) * 100}%`}></span></span>
-                  <span class="num n">{entry.count}</span>
+                  <span class="bar" aria-hidden="true"><span style:width={`${percentage}%`}></span></span>
+                  <span class="num n">{entry.count} 篇・{Math.round(percentage)}%</span>
                 </button>
               </li>
             {/each}
@@ -339,7 +340,7 @@
                 <!-- A year without posts is left blank above its axis label (no zero-height bar, no 0). -->
                 <span class="column" title={`${entry.year} 年 ${entry.count} 篇`}>
                   {#if entry.count}
-                    <span class="value num">{entry.count}</span>
+                    <span class="value num" style:inset-block-end={`${(entry.count / yearMax) * 100}%`}>{entry.count}</span>
                     <span class="fill" style:height={`${(entry.count / yearMax) * 100}%`}></span>
                   {/if}
                 </span>
@@ -353,13 +354,15 @@
       <div class="posts">
         <div class="list-bar">
           <p class="status" role="status" aria-live="polite">
-            {#if filtering}
-              符合條件 <b class="num">{ordered.length}</b> 篇{#if scope === 'mine'}・本班教師{:else if scope === 'others'}・其他教師與未標教師{/if}{#if teacher}・教師 {teacherLabel(teacher)}{/if}{#if term}・{term === noTerm ? '標題沒寫學期' : term}{/if}{#if kind}・{postKindLabels[kind]}{/if}
+            {#if activeFilters}
+              符合條件 <b class="num">{ordered.length}</b> 篇{#if scope === 'mine'}・本班教師{:else if scope === 'others'}・其他教師與未標教師{/if}{#if teacher}・教師 {teacherLabel(teacher)}{/if}{#if term}・{term === noTerm ? '標題沒寫學期' : term}{/if}{#if kind}・{postKindLabels[kind]}{/if}{#if sort !== 'relevant'}・{sortLabels[sort]}{/if}
               <button type="button" class="clear" onclick={clearFilters}>清除篩選</button>
             {:else if instructors.length && mineCount === 0}
               沒有找到本班教師 {instructors.join('、')} 的文章；下面是其他教師開這門課的文章，心得評價在前。
+            {:else if total > rows.length}
+              此處列出最近 {displayValue(rows.length)} 篇
             {:else}
-              共 <b class="num">{displayValue(rows.length)}</b> 篇{#if total > rows.length}（另有 {displayValue(total - rows.length)} 篇較舊的未列出）{/if}
+              本班教師優先・同組心得在前
             {/if}
           </p>
           <button
@@ -407,8 +410,8 @@
             {#if mineReviews === 0}<p class="mine-empty">只找到 {mineRows.length} 篇提問或討論（如下）。再往下是其他教師開同一門課的文章，內容不一定適用本班。</p>{/if}
             {@render postList(mineRows, 'external-mine', 'mine')}
           </div>
-          <h3 class="group-head others" id="external-others">其他教師與標題沒寫教師・<span class="num">{otherRows.length}</span> 篇・心得評價在前</h3>
-          {@render postList(otherRows, 'external-others', 'others', '其他教師與未標教師：')}
+          <h3 class="group-head others" id="external-others">其他教師與標題沒寫教師・心得評價在前</h3>
+          {@render postList(otherRows, 'external-others', 'others')}
         {:else if ordered.length}
           {@render postList(ordered, undefined, `all-${teacher}-${term}-${kind}-${scope}-${sort}`)}
         {:else}
@@ -435,16 +438,16 @@
   /* Compact state: heading, one sentence and the search links on one wrapped line. */
   .compact { padding-block: var(--space-3); }
   /* Empty state (states.md): heading, one bold sentence, a line of explanation, then the search buttons. */
-  .strip { display: grid; gap: var(--space-3); }
+  .strip { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2) var(--space-4); }
   .strip h2 { font-size: var(--t-lg); }
-  .strip-text { display: grid; gap: var(--space-1); }
+  .strip-text { display: grid; gap: var(--space-1); flex: 1 1 20rem; }
   .strip-lead { color: var(--ink); font-size: var(--t-md); }
   .strip-lead b { font-weight: 650; }
-  .strip-sub { color: var(--ink-2); font-size: var(--t-sm); }
   .links { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0; list-style: none; }
   /* Labels may wrap inside their own box (the site name never breaks), so a long one cannot spill out. */
   .links a { display: inline-flex; flex-wrap: wrap; gap: 0 0.25em; align-items: center; min-block-size: var(--target-min); padding: var(--space-1) var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-sm); font-weight: 500; line-height: 1.35; text-decoration: none; overflow-wrap: anywhere; }
-  .links .site { white-space: nowrap; }
+  .links li { min-inline-size: 0; }
+  .links .site { min-inline-size: 0; }
   .links .site b { font-weight: 650; }
   .links .out { color: var(--muted); }
   .links a:hover { background: var(--hover-row); }
@@ -475,30 +478,28 @@
   .figures { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-2); }
   .figure { display: grid; align-content: start; justify-items: start; gap: 0.125rem; min-inline-size: 0; padding: var(--space-2) var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--brand) 5%, var(--panel-raised)); color: var(--muted); font-size: var(--t-sm); text-align: start; }
   .fig-value { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; }
-  .kind-counts { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--ink-2); }
-  .kind-counts b { color: var(--ink); font-weight: 650; }
   .figure:not(:disabled):hover { border-color: var(--brand); background: var(--hover-row); }
   .figure[aria-pressed='true'] { border-color: var(--brand); background: var(--brand-wash); box-shadow: inset 3px 0 0 var(--brand); }
   .figure:disabled { border-color: var(--line); }
-  .fig-label { color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+  .fig-label { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
   .figure b { color: var(--ink); font-size: var(--t-xl); font-weight: 650; }
   .fig-unit { margin-inline-start: 0.25em; }
   .block { display: grid; gap: var(--space-2); }
   .teachers { display: grid; gap: 3px; padding: 0; list-style: none; }
   .teachers.collapsible:not(:has(+ .more-teachers[open])) li.extra { display: none; }
   /* Each teacher is a visible button row: outlined, hover tint, and a brand bar on the left when chosen. */
-  .teacher { display: grid; grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr) 2rem; gap: var(--space-2); align-items: center; inline-size: 100%; min-block-size: 2.25rem; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font-size: var(--t-sm); text-align: start; }
+  .teacher { display: grid; grid-template-columns: minmax(0, 7rem) minmax(0, 1fr) max-content; gap: var(--space-2); align-items: center; inline-size: 100%; min-block-size: 2.25rem; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font-size: 0.8125rem; text-align: start; }
   .teacher:not(:disabled):hover { border-color: var(--control-line); background: var(--hover-row); }
   .teacher[aria-pressed='true'] { border-color: var(--brand); background: var(--brand-wash); box-shadow: inset 3px 0 0 var(--brand); }
   .teacher:disabled { background: transparent; }
-  .by-teacher .hint { color: var(--muted); font-size: var(--t-xs); font-weight: 500; }
+  .by-teacher .hint { color: var(--muted); font-size: 0.8125rem; font-weight: 500; }
   .teacher:disabled { color: var(--ink-2); }
   .teacher .name { display: inline-flex; gap: var(--space-1); align-items: center; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .here, .badge-mine { flex: none; padding: 0 6px; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-size: var(--t-xs); font-weight: 650; line-height: 1.6; }
   .teacher .bar { display: block; block-size: 8px; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .teacher .bar span { display: block; block-size: 100%; border-radius: inherit; background: color-mix(in srgb, var(--brand) 60%, var(--panel)); }
   .teacher.mine .bar span, .teacher[aria-pressed='true'] .bar span { background: var(--brand); }
-  .teacher .n { color: var(--ink-2); text-align: end; }
+  .teacher .n { color: var(--ink-2); text-align: end; white-space: nowrap; }
   .more-teachers summary, .more summary { display: flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; list-style: none; cursor: pointer; }
   .more-teachers summary::-webkit-details-marker, .more summary::-webkit-details-marker { display: none; }
   :is(.more-teachers, .more)[open] .closed, :is(.more-teachers, .more):not([open]) .opened { display: none; }
@@ -508,7 +509,7 @@
   .columns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; align-items: end; block-size: 4.5rem; padding-block-start: 1rem; border-block-end: 1px solid var(--control-line); }
   .column { position: relative; display: flex; flex-direction: column; justify-content: end; align-items: stretch; block-size: 100%; }
   .column .fill { display: block; min-block-size: 2px; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--brand) 70%, var(--panel)); }
-  .column .value { position: absolute; inset-block-start: -1.1rem; inset-inline: 0; color: var(--ink-2); font-size: var(--t-sm); line-height: 1rem; text-align: center; }
+  .column .value { position: absolute; inset-inline: 0; color: var(--ink-2); font-size: 0.8125rem; line-height: 1rem; text-align: center; }
   .axis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin-block-start: 2px; color: var(--ink-2); font-size: var(--t-sm); text-align: center; }
   .cap-range { margin-inline-start: var(--space-1); color: var(--muted); font-weight: 500; }
 
@@ -577,8 +578,11 @@
     .summary { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
     .figures { grid-column: 1 / -1; }
   }
+  @media (max-width: 39rem) {
+    .list-bar { --external-header-height: calc(2 * var(--target-min) + var(--space-1) + 1px); }
+  }
   @media (max-width: 40rem) {
-    .external { padding: var(--space-4); }
+    .external { padding: var(--space-3); gap: var(--space-3); }
     .summary { grid-template-columns: minmax(0, 1fr); }
     /* Phones keep the teacher toggle, the type chips and the per-year chart; the teacher list is the
        select under 「教師、學期與排序」. */
@@ -587,6 +591,14 @@
     .figure b { font-size: var(--t-lg); }
     .columns { block-size: 3.5rem; }
     .posts > .toolbar { order: 0; }
+    .list-bar { position: sticky; inset-block-start: var(--external-header-height, calc(3.75rem + 1px)); z-index: 3; padding-block: var(--space-1); background: var(--panel); }
+    .list-bar .status { flex: 1 1 8rem; }
+    .list-bar:has(.filter-toggle[aria-expanded='true']) { position: static; }
+    .meta :is(.author, .board, .title-only) { display: none; }
+    .meta { gap: 0 var(--space-2); }
+    .meta .post-teacher { max-inline-size: 8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    article { padding-block: var(--space-2); }
+    .excerpt { -webkit-line-clamp: 1; line-clamp: 1; }
     .toolbar:not(.open) { display: none; }
     .toolbar { padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); }
     .filter-toggle { display: inline-flex; }
@@ -599,10 +611,8 @@
     select { inline-size: 100%; max-inline-size: none; min-block-size: var(--target-min); }
     .chip { min-block-size: var(--target-min); }
     .teacher { min-block-size: var(--target-min); }
-    /* Outbound searches: one full-width button per site, stacked; long names and queries wrap inside. */
-    .links { display: grid; grid-template-columns: minmax(0, 1fr); inline-size: 100%; }
-    .links a { inline-size: 100%; padding-inline: var(--space-3); }
-    .links .out { margin-inline-start: auto; }
+    .links a { max-inline-size: 100%; padding-inline: var(--space-2); }
+    .links .query { display: none; }
     /* The post list comes before the per-year chart; the type chips and the two scope toggles stay on top. */
     .summary { display: contents; }
     .summary > .years { order: 2; }

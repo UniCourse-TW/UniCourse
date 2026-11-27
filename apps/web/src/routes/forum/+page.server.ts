@@ -1,4 +1,5 @@
 import { error, fail, redirect } from '@sveltejs/kit';
+import type { PostPage } from '@unicourse/api-client';
 import { parseTags } from '$lib/community-format';
 import { UNAVAILABLE, apiMessage } from '$lib/community-messages';
 import { postHref, type ForumFilters } from '$lib/community-paths';
@@ -10,6 +11,24 @@ import type { Actions, PageServerLoad } from './$types';
 
 type ListType = Exclude<PostType, 'reply'>;
 const listTypes: ListType[] = ['announcement', 'article', 'question'];
+const MAX_PAGE = 10_000;
+
+/** The API pages newest-first. One oldest-first page maps to at most two adjacent API pages. */
+async function oldestPage(
+  current: PostPage,
+  fetchPage: (page: number) => Promise<PostPage | undefined>
+): Promise<PostPage> {
+  const end = Math.max(0, current.total - (current.page - 1) * current.pageSize);
+  if (end === 0) return { ...current, posts: [] };
+  const start = Math.max(0, end - current.pageSize);
+  const firstPage = Math.floor(start / current.pageSize) + 1;
+  const lastPage = Math.ceil(end / current.pageSize);
+  const getPage = (page: number) => page === current.page ? current : fetchPage(page);
+  const pages = await Promise.all(firstPage === lastPage ? [getPage(firstPage)] : [getPage(firstPage), getPage(lastPage)]);
+  if (pages.some((page) => !page)) error(503, UNAVAILABLE);
+  const offset = (firstPage - 1) * current.pageSize;
+  return { ...current, posts: pages.flatMap((page) => page?.posts ?? []).slice(start - offset, end - offset).reverse() };
+}
 
 function listType(raw: string | null): ListType | '' {
   return listTypes.find((type) => type === raw) ?? '';
@@ -23,7 +42,7 @@ export const load: PageServerLoad = async ({ fetch, url, locals }) => {
     courseCode: url.searchParams.get('courseCode')?.trim() ?? '',
     q: url.searchParams.get('q')?.trim() ?? '',
     tag: url.searchParams.get('tag')?.trim() ?? '',
-    page: Number.isInteger(page) && page >= 1 && page <= 10_000 ? page : 1
+    page: Number.isInteger(page) && page >= 1 && page <= MAX_PAGE ? page : 1
   } satisfies ForumFilters;
   if (!filters.school) filters.courseCode = '';
 
@@ -45,18 +64,30 @@ export const load: PageServerLoad = async ({ fetch, url, locals }) => {
           .catch(() => undefined)
       )
     );
+  const list = (page: number) =>
+    client.GET('/api/posts', { params: { query: { ...query, type: filters.type || undefined, page } } });
   const [posts, schools, counts] = await Promise.all([
-    client.GET('/api/posts', { params: { query: { ...query, type: filters.type || undefined, page: filters.page } } }),
+    list(filters.page),
     client.GET('/api/schools'),
     totals()
   ]).catch(() => error(503, UNAVAILABLE));
   if (posts.response.status === 400) error(400, apiMessage(posts.error));
   if (!posts.data || !schools.data) error(503, UNAVAILABLE);
+  const sortable = posts.data.total <= MAX_PAGE * posts.data.pageSize;
+  const oldest = sortable && url.searchParams.get('sort') === 'oldest';
+  const result = oldest
+    ? await oldestPage(posts.data, (page) => list(page).then((response) => response.data)).catch(() => error(503, UNAVAILABLE))
+    : posts.data;
   const [all, ...byType] = counts;
   // A young forum suggests a few well-attended courses to write about: the signed-in reader's own
   // school first (someone at 臺大 has no use for 逢甲's general course), otherwise one per school so
   // the list is not three sections of the same general course.
-  const young = (all?.total ?? 0) <= 5 && !filters.type && !query.school && !query.q && !query.tag;
+  const unfiltered = !filters.type && !query.school && !query.q && !query.tag;
+  const young = unfiltered && posts.data.total <= 5;
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const recentCount = young && all && all.posts.length === all.total
+    ? all.posts.filter((post) => Date.parse(post.createdAt) >= weekAgo).length
+    : null;
   const rank = (school?: string) =>
     client
       .GET('/api/rankings/courses', { params: { query: { limit: school ? 3 : 30, academic: true, school } } })
@@ -65,7 +96,7 @@ export const load: PageServerLoad = async ({ fetch, url, locals }) => {
   const ownSchool = young ? (locals.user?.school ?? undefined) : undefined;
   const mine = ownSchool ? await rank(ownSchool) : [];
   const ranked = !young ? [] : mine.length ? mine : await rank();
-  const titles = await courseTitles(fetch, posts.data.posts);
+  const titles = await courseTitles(fetch, result.posts);
   const seen = new Set<string>();
   const suggestions = (mine.length ? ranked : ranked.filter((entry) => !seen.has(entry.school) && seen.add(entry.school)))
     .slice(0, 3)
@@ -74,9 +105,7 @@ export const load: PageServerLoad = async ({ fetch, url, locals }) => {
       schoolName: entry.schoolName,
       courseCode: entry.courseCode,
       title: entry.title,
-      offeringId: entry.latestActiveOfferingId ?? entry.latestOfferingId ?? null,
-      enrolledTotal: entry.enrolledTotal ?? null,
-      terms: entry.terms
+      enrolledTotal: entry.enrolledTotal ?? null
     }));
   return {
     courseTitles: titles,
@@ -85,13 +114,16 @@ export const load: PageServerLoad = async ({ fetch, url, locals }) => {
     suggestionsSchool: mine.length ? (mine[0].schoolName ?? null) : null,
     filters,
     compose: url.searchParams.get('compose') === '1',
-    posts: posts.data,
+    posts: result,
+    oldest,
+    sortable,
     schools: schools.data,
     // `null` when a count request failed: the chip then shows no number rather than 0.
     counts: {
       all: all?.total ?? null,
       ...Object.fromEntries(listTypes.map((type, index) => [type, byType[index]?.total ?? null]))
     } as Record<'all' | ListType, number | null>,
+    recentCount,
     latest: all?.posts[0]?.createdAt ?? null
   };
 };

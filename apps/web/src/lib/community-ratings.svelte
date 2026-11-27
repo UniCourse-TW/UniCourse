@@ -19,12 +19,14 @@
     ratings,
     user,
     form,
-    courseCode
+    courseCode,
+    firstDiscussionHref
   }: {
     ratings: { stats: RatingStats; list: Rating[]; mine: MyRating | null } | undefined;
     user: CommunityUser | null;
     form: RatingForm | null | undefined;
     courseCode: string;
+    firstDiscussionHref?: string;
   } = $props();
 
   /** Reviews shown before「查看全部」. */
@@ -50,46 +52,54 @@
   };
 </script>
 
-<section class="ratings" id="ratings" aria-labelledby="ratings-title">
+<section class="ratings" class:combined={firstDiscussionHref} id="ratings" aria-labelledby="ratings-title">
   <header class="head">
     <h2 id="ratings-title">課程評價</h2>
-    <p class="scope">以課號 <span class="mono">{courseCode}</span> 跨學期累計，不分班次。</p>
+    {#if !firstDiscussionHref}<p class="scope">以課號 <span class="mono">{courseCode}</span> 跨學期累計，不分班次。</p>{/if}
   </header>
 
   {#if !ratings}
     <p class="error" role="alert">評價暫時無法載入，請稍後再試。課程資料不受影響。</p>
   {:else}
-    <!-- One or two ratings get the average and the count in one line, not a five-row histogram of zeros. -->
-    <div class="summary" class:empty={count === 0} class:few={count > 0 && count < sparseBelow}>
-      {#if count > 0}
-        <p class="average">
-          <strong class="num">{averageScore(ratings.stats.average)}</strong>
-          <Stars score={rounded} decorative size="md" />
-          <span class="count" class:sparse={count < sparseBelow}>{count < sparseBelow ? `僅 ${count} 則評價` : `${count} 則評價`}</span>
-        </p>
-      {/if}
-      {#if count >= sparseBelow}
-        <!-- Histogram from 5 stars down to 1 star, on one shared scale. -->
-        <dl class="histogram" aria-label="評分分布">
-          {#each [5, 4, 3, 2, 1] as score (score)}
-            {@const n = ratings.stats.histogram[score - 1] ?? 0}
-            <div class="bar-row">
-              <dt>{score} 星</dt>
-              <dd>
-                <span class="bar" aria-hidden="true"><span style:width="{(n / largest) * 100}%"></span></span>
-                <span class="num bar-count">{n}</span>
-              </dd>
-            </div>
-          {/each}
-        </dl>
-      {:else if count === 0}
-        <div class="first">
-          <p class="lead">尚無評價</p>
-          <p>還沒有人評價這門課。修過的話，給個 1–5 分、寫兩句上課方式或作業量，就能幫到下一位同學。</p>
-          {#if !user}<p><a class="cta" href={loginHref(`${page.url.pathname}#ratings`)}>登入後成為第一個評分 →</a></p>{/if}
-        </div>
-      {/if}
-    </div>
+    {#if firstDiscussionHref}
+      <div class="first-actions" id="forum-title">
+        <p>還沒有站內評價或討論<span class="counts">・0 則評價，0 篇討論</span></p>
+        {#if !user}<a class="cta" href={loginHref(`${page.url.pathname}#ratings`)}>登入後成為第一個評分</a>{/if}
+        <a class="cta" href={firstDiscussionHref}>發表第一篇文章</a>
+      </div>
+    {:else}
+      <!-- One or two ratings get the average and the count in one line, not a five-row histogram of zeros. -->
+      <div class="summary" class:empty={count === 0} class:few={count > 0 && count < sparseBelow}>
+        {#if count > 0}
+          <p class="average">
+            <strong class="num">{averageScore(ratings.stats.average)}</strong>
+            <Stars score={rounded} decorative size="md" />
+            <span class="count" class:sparse={count < sparseBelow}>{count < sparseBelow ? `僅 ${count} 則評價` : `${count} 則評價`}</span>
+          </p>
+        {/if}
+        {#if count >= sparseBelow}
+          <!-- Histogram from 5 stars down to 1 star, on one shared scale. -->
+          <dl class="histogram" aria-label="評分分布">
+            {#each [5, 4, 3, 2, 1] as score (score)}
+              {@const n = ratings.stats.histogram[score - 1] ?? 0}
+              <div class="bar-row">
+                <dt>{score} 星</dt>
+                <dd>
+                  <span class="bar" aria-hidden="true"><span style:width="{(n / largest) * 100}%"></span></span>
+                  <span class="num bar-count">{n}</span>
+                </dd>
+              </div>
+            {/each}
+          </dl>
+        {:else if count === 0}
+          <div class="first">
+            <p class="lead">尚無評價</p>
+            <p>還沒有人評價這門課。修過的話，給個 1–5 分、寫兩句上課方式或作業量，就能幫到下一位同學。</p>
+            {#if !user}<p><a class="cta" href={loginHref(`${page.url.pathname}#ratings`)}>登入後成為第一個評分 →</a></p>{/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
     {#if count > 0 && count < sparseBelow}
       <p class="sparse-note">評價還很少，平均分容易被單一意見左右，僅供參考。{#if user && !ratings.mine}修過這門課？<a href="#rate-form">加上你的評分 ↓</a>{:else if !user}修過這門課？<a href={loginHref(`${page.url.pathname}#ratings`)}>登入後加上你的評分</a>{/if}</p>
     {/if}
@@ -167,6 +177,10 @@
 
 <style>
   .ratings { display: grid; align-content: start; gap: var(--space-4); min-inline-size: 0; padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
+  .ratings.combined { gap: var(--space-2); padding-block: var(--space-3); }
+  .first-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-4); scroll-margin-block-start: 7.5rem; }
+  .first-actions .counts { color: var(--ink-2); font-size: var(--t-base); }
+  .first-actions a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
   .ratings :is(h2, p) { margin: 0; }
   .ratings a { color: var(--brand-ink); text-underline-offset: 0.15em; }
   .ratings :is(a, button, input, textarea, summary):focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
