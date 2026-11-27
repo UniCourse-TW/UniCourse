@@ -4,19 +4,15 @@
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import { displayValue } from '$lib/ui/format';
   import { partialTermLabel, partialTerms } from '$lib/ui/partial-terms';
-  import type { MatrixPoint, MatrixRow, TableColumn } from '$lib/ui/types';
+  import type { MatrixRow, TableColumn } from '$lib/ui/types';
 
   let { periods, rows, trends }: { periods: string[]; rows: MatrixRow[]; trends: TermTrend[] | null } = $props();
-  let orderedYears = $derived([...periods].reverse());
-  let preview = $derived(rows.slice(0, 8));
-  let previewYears = $derived(orderedYears);
-  let compact = $derived(previewYears.length <= 2);
-  let columns = $derived(yearColumns(previewYears, compact));
-  let fullColumns = $derived(yearColumns(orderedYears, true));
-  let width = $derived(compact ? '0' : `calc(var(--teaching-course-width, 13rem) + ${previewYears.length} * var(--teaching-year-width, 4.5rem))`);
-  let hasPartial = $derived(preview.some((row) => Object.values(row.points).some((point) => point?.partial)));
-  let hasUnpublished = $derived(preview.some((row) => Object.values(row.points).some((point) => point?.enrolled === null)));
+  const id = $props.id();
+  const previewSize = 8;
   const bins = [{ index: 0, label: '0–49' }, { index: 1, label: '50–99' }, { index: 2, label: '100 以上' }];
+  let years = $derived([...periods].reverse());
+  let compact = $derived(years.length <= 2);
+  let points = $derived(rows.flatMap((row) => Object.values(row.points)));
   let partial = $derived(partialTerms((trends ?? []).map(({ term, offerings }) => [term, offerings])));
   let trendColumns = $derived<TableColumn<TermTrend>[]>([
     { id: 'term', label: '學期', value: (row) => row.term },
@@ -24,80 +20,92 @@
     { id: 'enrolled', label: '已公布人次', value: (row) => row.enrolled, numeric: true },
     ...(partial.size ? [{ id: 'coverage', label: '收錄備註', value: (row: TermTrend) => partial.has(row.term) ? partialTermLabel : null }] : [])
   ]);
+  let scroll = $state<HTMLDivElement>();
+  let frameWidth = $state(0);
+  let tableWidth = $state(0);
+  let position = $state(0);
+  let overflows = $derived(tableWidth > frameWidth + 1);
+  let caption = $derived(compact ? '課程與學年授課紀錄' : '課程與學年修課人次');
 
-  function totals(point: MatrixPoint) {
-    return `${displayValue(point.offerings)} 班 · ${point.enrolled === null ? '人數未公布' : `${displayValue(point.enrolled)} 人`}`;
-  }
-
-  function bin(enrolled: number | null) {
-    return enrolled === null ? 'unknown' : Math.min(2, Math.floor(enrolled / 50));
-  }
-
-  function yearColumns(years: string[], exact: boolean): TableColumn<MatrixRow>[] {
-    return [{ id: 'course', label: '課程', width: 'var(--teaching-course-width, 13rem)' },
-      ...years.map((year) => ({ id: year, label: year, align: 'center' as const, width: exact ? undefined : 'var(--teaching-year-width, 4.5rem)' }))];
+  function scrollYear(direction: number) {
+    const column = scroll?.querySelector('thead th:nth-child(2)');
+    if (column) scroll?.scrollBy({ left: direction * column.getBoundingClientRect().width });
   }
 </script>
 
-{#snippet historyCell(row: MatrixRow, column: TableColumn<MatrixRow>, exact: boolean)}
-  {@const point = row.points[column.id]}
-  {#if column.id === 'course'}
-    <details class="course-name"><summary title={row.label}><span class="matrix-course">{row.label}</span></summary></details>
-    <small class="browse-code">{row.id}</small>
-  {:else if point}
-    {@const hint = `${column.id} 學年：${totals(point)}${point.partial ? ` · ${partialTermLabel}` : ''}${point.href ? `；查看最新班次${point.destination ? `（${point.destination}）` : ''}` : ''}`}
-    {#snippet value()}
-      {#if exact}<span>{totals(point)}</span>{:else}<span class="dot" data-bin={bin(point.enrolled)} aria-hidden="true"></span><span class="ui-tabular count">{point.enrolled === null ? '未公布' : displayValue(point.enrolled)}</span>{/if}
-    {/snippet}
-    {#if point.href}
-      <a href={point.href} class="year-cell" class:partial={point.partial} aria-label={`${row.label}，${hint}`} title={hint}>{@render value()}{#if point.destinationTerm}<small class="target-term">{point.destinationTerm} ↗</small>{/if}</a>
-    {:else}
-      <span class="year-cell" aria-label={hint}>{@render value()}</span>
-    {/if}
-  {:else}
-    <span class="no-record" aria-label="無開課紀錄">—</span>
-  {/if}
+{#snippet matrixRow(row: MatrixRow, extra = false)}
+  <tr class:extra>
+    <th scope="row" class="course"><span>{row.label}</span><small class="browse-code">{row.id}</small></th>
+    {#each years as year (year)}
+      {@const point = row.points[year]}
+      <td>
+        {#if point}
+          {@const hint = `${row.label}，${year} 學年：${displayValue(point.offerings)} 班 · ${point.enrolled === null ? '人數未公布' : `${displayValue(point.enrolled)} 人`}${point.partial ? ` · ${partialTermLabel}` : ''}`}
+          {#snippet value()}
+            <span class="measurement">
+              {#if !compact && point.enrolled !== null}<i class="dot" class:partial={point.partial} data-bin={Math.min(2, Math.floor(point.enrolled / 50))} aria-hidden="true"></i>{/if}
+              <span class="ui-tabular" class:unknown={point.enrolled === null}>{point.enrolled === null ? '人數未公布' : displayValue(point.enrolled)}{#if compact && point.enrolled !== null} <small>人次</small>{/if}</span>
+            </span>
+          {/snippet}
+          {#if point.href}
+            <a class="year-cell" class:partial-text={Boolean(point.partial) && (compact || point.enrolled === null)} href={point.href}
+              title={`${hint}；查看最新班次（${point.destination ?? point.destinationTerm}）`}
+              aria-label={`${hint}；查看最新班次（${point.destination ?? point.destinationTerm}）`}>
+              {@render value()}
+              <span class="target-term">{point.destinationTerm} <span aria-hidden="true">→</span></span>
+            </a>
+          {:else}<span class="year-cell">{@render value()}</span>{/if}
+        {:else}
+          <span class="no-record"><span aria-hidden="true">—</span><span class="visually-hidden">未開課</span></span>
+        {/if}
+      </td>
+    {/each}
+  </tr>
 {/snippet}
 
-{#if rows.length && periods.length}
-  <div class="teaching-matrix" class:compact>
-    {#if !compact}
-      <ul class="matrix-legend" aria-label="修課人數圖例" role="list">
-        {#each bins as { index, label } (index)}<li><span class="dot" data-bin={index} aria-hidden="true"></span>{label} 人</li>{/each}
-        <li><span aria-hidden="true">—</span>未開課</li>
-          {#if hasUnpublished}<li><span class="dot" data-bin="unknown" aria-hidden="true"></span>有開課、人數未公布</li>{/if}
-        {#if hasPartial}<li><span class="dot partial" aria-hidden="true"></span>{partialTermLabel}</li>{/if}
-      </ul>
-      {#if rows.length > preview.length}<p class="browse-note matrix-range">先列最近開課的 {preview.length} 門</p>{/if}
-    {/if}
-    {#if previewYears.length > 4}<p class="matrix-scroll browse-note">向右滑看更早學年 →</p>{/if}
-    <div class="matrix-frame" class:overflow={previewYears.length > 4} style:--matrix-width={width}>
-      <DataTable caption={compact ? '課程與學年授課紀錄' : '課程與學年修課人次'} {columns} rows={preview} rowKey={(row) => row.id} minWidth={width} maxHeight="none" scrollHint={false}>
-        {#snippet cell(row, column)}{@render historyCell(row, column, compact)}{/snippet}
-      </DataTable>
+{#if rows.length && years.length}
+  <div class="matrix" class:compact class:three={years.length === 3} style:--year-count={years.length}>
+    <div class="matrix-toolbar" class:overflows class:measured={frameWidth > 0}>
+      {#if !compact || points.some((point) => point?.enrolled === null || point?.partial)}
+        <ul class="matrix-legend" aria-label="修課人次圖例" role="list">
+          {#if !compact}
+            {#each bins as { index, label } (index)}<li><i class="dot" data-bin={index} aria-hidden="true"></i>{label} 人次</li>{/each}
+          {/if}
+          <li><span aria-hidden="true">—</span> 未開課</li>
+          {#if points.some((point) => point?.enrolled === null)}<li>人數未公布</li>{/if}
+          {#if points.some((point) => point?.partial)}<li><i class="dot partial" aria-hidden="true"></i>{partialTermLabel}</li>{/if}
+        </ul>
+      {/if}
+      <div class="matrix-navigation">
+        <p class="scroll-hint" id={`${id}-hint`}>左右捲動 · {years.at(-1)}–{years[0]} 學年</p>
+        {#if overflows}
+          <div class="matrix-arrows">
+            <button type="button" aria-label="查看較新學年" aria-controls={id} disabled={position <= 1} onclick={() => scrollYear(-1)}>←</button>
+            <button type="button" aria-label="查看較早學年" aria-controls={id} disabled={position >= tableWidth - frameWidth - 1} onclick={() => scrollYear(1)}>→</button>
+          </div>
+        {/if}
+      </div>
+    </div>
+    <div class="matrix-frame">
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex (The region supports native keyboard scrolling.) -->
+      <div class="matrix-scroll" role="region" aria-label="歷年授課矩陣" aria-describedby={`${id}-hint`} tabindex="0" {id}
+        bind:this={scroll} bind:clientWidth={frameWidth} onscroll={(event) => position = event.currentTarget.scrollLeft}>
+        <table bind:clientWidth={tableWidth}>
+          <caption class="visually-hidden">{caption}</caption>
+          <thead><tr><th scope="col" class="course">課程</th>{#each years as year (year)}<th scope="col" class="ui-tabular">{year}<span class="visually-hidden"> 學年</span></th>{/each}</tr></thead>
+          <tbody>
+            {#each rows.slice(0, previewSize) as row (row.id)}{@render matrixRow(row)}{/each}
+            {#if rows.length > previewSize}
+              <tr class="more"><td colspan={years.length + 1}><details><summary>其餘 {displayValue(rows.length - previewSize)} 門課</summary></details></td></tr>
+              {#each rows.slice(previewSize) as row (row.id)}{@render matrixRow(row, true)}{/each}
+            {/if}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 {:else}<EmptyState title="尚無歷年授課紀錄" />{/if}
 
-{#if rows.length > preview.length}
-{@const remaining = rows.slice(preview.length)}
-<details class="history-values">
-  <summary>顯示其餘 {displayValue(rows.length - preview.length)} 門課的學年數值</summary>
-    <div class="desktop-years"><DataTable caption="其餘課程的學年數值" columns={fullColumns} rows={remaining} rowKey={(row) => row.id} minWidth={orderedYears.length <= 2 ? '0' : `${9 + 6 * periods.length}rem`} maxHeight="none" scrollHint={orderedYears.length > 2}>
-      {#snippet cell(row, column)}{@render historyCell(row, column, true)}{/snippet}
-    </DataTable></div>
-    <ul class="phone-years year-lists" aria-label="各課程的學年數值">
-      {#each remaining as row (row.id)}
-        <li><details><summary>{row.label} <small class="browse-code">{row.id}</small></summary>
-          <ul>{#each orderedYears as year (year)}
-            {@const point = row.points[year]}
-            {#if point}<li><span class="ui-tabular">{year} 學年 · {totals(point)}{#if point.partial} · {partialTermLabel}{/if}</span>{#if point.href}<a href={point.href}>查看 {point.destinationTerm} 班次 <span aria-hidden="true">→</span></a>{/if}</li>{/if}
-          {/each}</ul>
-        </details></li>
-      {/each}
-    </ul>
-</details>
-{/if}
 {#if trends?.length}
   <details class="history-values">
     <summary>查看各學期授課總數</summary>
@@ -106,57 +114,68 @@
 {/if}
 
 <style>
-  .course-name summary { max-inline-size: 100%; display: flex; align-items: center; gap: .2rem; min-block-size: 1.5rem; }
-  .course-name summary::before { content: '›'; flex: none; }
-  .course-name[open] summary::before { rotate: 90deg; }
-  .matrix-course { display: block; min-inline-size: 0; overflow-wrap: anywhere; }
-  .target-term { flex-basis: 100%; color: var(--ink-2); font: var(--t-xs) / 1.15 var(--font-mono); }
-  .teaching-matrix:not(.compact) .matrix-frame { inline-size: min(100%, var(--matrix-width)); }
-  .teaching-matrix:not(.compact) .matrix-frame :global(table) { table-layout: fixed; }
-  .teaching-matrix:not(.compact) .matrix-frame { --table-pad-block: 0; }
-  .teaching-matrix:not(.compact) .matrix-frame :global(td) { padding-inline: .125rem; }
-  .teaching-matrix:not(.compact) .matrix-frame :global(caption) { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
-  .teaching-matrix:not(.compact) .matrix-frame :global(thead th) { padding-block: .35rem; }
-  .teaching-matrix:not(.compact) .matrix-frame :global(tbody th) { padding-block: .18rem; }
-  .phone-years, .matrix-scroll { display: none; }
-  .matrix-legend { display: flex; flex-wrap: wrap; gap: .25rem .85rem; margin: 0 0 var(--space-2); padding: 0; list-style: none; color: var(--muted); font-size: var(--t-sm); }
-  .matrix-range { margin-block-end: var(--space-2); }
-  .matrix-legend li, .year-cell { display: flex; align-items: center; gap: .3rem; }
-  .year-cell { flex-wrap: wrap; align-content: center; position: relative; min-block-size: var(--target-min); min-inline-size: 2rem; justify-content: center; border-radius: var(--radius-control); padding-inline: .15rem; color: var(--ink); }
-  .teaching-matrix:not(.compact) .year-cell { gap: .04rem .25rem; }
-  .teaching-matrix:not(.compact) small.browse-code { font-size: var(--t-sm); }
-  .year-cell[href] { color: var(--brand-ink); text-decoration: underline; text-decoration-color: var(--control-line); text-underline-offset: .17em; }
-  .year-cell[href]:hover { box-shadow: inset 0 0 0 1px var(--brand); text-decoration: underline; }
-  .count { font-size: var(--t-base); font-weight: 650; }
-  .dot { display: inline-block; flex: none; inline-size: var(--dot-size, .65rem); block-size: var(--dot-size, .65rem); border-radius: 50%; }
-  [data-bin='0'] { --dot-size: .32rem; background: var(--seq-2); }
-  [data-bin='1'] { --dot-size: .58rem; background: var(--seq-3); }
-  [data-bin='2'] { --dot-size: .86rem; background: var(--seq-4); }
-  [data-bin='unknown'], .dot.partial { --dot-size: .5rem; border: 1px dashed var(--control-line); }
-  .year-cell.partial { outline: 1px dashed var(--control-line); outline-offset: -2px; }
-  .year-cell.partial:focus-visible { outline: var(--focus-ring); }
+  .matrix { min-inline-size: 0; }
+  .matrix-toolbar, .matrix-navigation, .matrix-legend, .matrix-legend li { display: flex; align-items: center; gap: .4rem .8rem; }
+  .matrix-toolbar { justify-content: space-between; flex-wrap: wrap; margin-block-end: var(--space-1); }
+  .matrix-legend { flex-wrap: wrap; margin: 0; padding: 0; list-style: none; color: var(--ink-2); font-size: var(--t-sm); }
+  .matrix-legend li { gap: .28rem; }
+  .matrix-navigation { justify-content: space-between; color: var(--ink-2); font-size: var(--t-sm); }
+  .matrix-toolbar:not(.overflows) .matrix-navigation { display: none; }
+  .matrix-arrows { display: flex; gap: var(--space-1); }
+  .matrix-arrows button { min-inline-size: var(--target-min); min-block-size: var(--target-min); padding: 0; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font: inherit; font-size: 1rem; cursor: pointer; }
+  .matrix-arrows button:disabled { background: var(--panel); color: var(--muted); cursor: default; }
+  .matrix-frame { container-type: inline-size; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
+  .matrix-scroll { --course-width: clamp(13rem, 34cqi, 32rem); --year-width: 5.75rem; position: relative; overflow-x: auto; border-radius: inherit; scrollbar-width: thin; scroll-padding-inline-start: var(--course-width); }
+  .matrix-scroll:focus-visible { outline-offset: -2px; }
+  table { width: 100%; min-width: calc(var(--course-width) + var(--year-count) * var(--year-width)); border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: var(--t-base); }
+  .compact .matrix-frame { max-inline-size: 44rem; }
+  .compact .matrix-scroll { --course-width: 13rem; }
+  .compact table { min-width: 0; }
+  th, td { border-block-end: 1px solid var(--line); border-inline-end: 1px solid var(--line); text-align: center; }
+  :is(th, td):last-child { border-inline-end: 0; }
+  tbody tr:last-child > * { border-block-end: 0; }
+  thead th { padding: .45rem; background: var(--table-head); color: var(--ink-2); font-weight: 700; }
+  .course { width: var(--course-width); padding: .4rem .65rem; text-align: start; line-height: 1.38; overflow-wrap: anywhere; }
+  tbody th { font-weight: 650; }
+  .course small { margin-block-start: .12rem; color: var(--ink-2); }
+  td { padding: .13rem; }
+  tbody tr:hover, tbody tr:focus-within { background: var(--hover-row); }
+  .year-cell { display: grid; place-content: center; min-block-size: var(--target-min); padding: .15rem; border-radius: var(--radius-control); color: var(--brand-ink); text-decoration: none; }
+  .year-cell:hover { background: var(--brand-wash); }
+  .year-cell:focus-visible { outline-offset: -2px; }
+  .target-term { color: var(--ink-2); font: var(--t-sm) / 1.2 var(--font-mono); white-space: nowrap; text-decoration: underline; text-decoration-color: var(--control-line); text-underline-offset: .18em; }
+  .measurement { display: flex; align-items: center; justify-content: center; gap: .25rem; color: var(--ink); font-size: var(--t-md); font-weight: 700; line-height: 1.3; }
+  .measurement > span { min-inline-size: 0; overflow-wrap: anywhere; }
+  .measurement small, .measurement .unknown { font-size: var(--t-sm); font-weight: 500; }
+  .dot { display: inline-block; flex: none; inline-size: var(--dot-size, .6rem); block-size: var(--dot-size, .6rem); border-radius: 50%; }
+  [data-bin='0'] { --dot-size: .32rem; background: color-mix(in srgb, var(--seq-2) 55%, var(--brand)); }
+  [data-bin='1'] { --dot-size: .6rem; background: var(--seq-3); }
+  [data-bin='2'] { --dot-size: .88rem; background: var(--seq-4); }
+  .dot.partial { background: transparent; outline: 1px dashed var(--brand-ink); }
+  .partial-text .measurement { text-decoration: underline dashed var(--brand-ink); text-underline-offset: .2em; }
   .no-record { color: var(--muted); }
+  .more td { text-align: start; padding: 0 .65rem; }
+  .more summary { position: sticky; inset-inline-start: .65rem; }
+  .extra { display: none; }
+  tbody:has(.more details[open]) .extra { display: table-row; }
+  tbody:not(:has(.more details[open])) .more td { border-block-end: 0; }
+  summary { min-block-size: var(--target-min); cursor: pointer; align-content: center; width: fit-content; color: var(--brand-ink); font-weight: 650; font-size: var(--t-base); }
   .history-values[open] { display: grid; gap: var(--space-2); }
-  summary { min-block-size: var(--target-min); cursor: pointer; align-content: center; width: fit-content; color: var(--brand); font-weight: 650; font-size: var(--t-base); }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   @media (max-width: 40rem) {
-    .teaching-matrix { --teaching-course-width: min(8.5rem, 34vw); --teaching-year-width: 3.2rem; }
-    .course-name summary { min-block-size: 1.875rem; }
-    .course-name:not([open]) .matrix-course { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .teaching-matrix:not(.compact) .year-cell { gap: .08rem .2rem; line-height: 1.1; }
-    .year-cell { min-inline-size: var(--target-min); }
-    .target-term { white-space: nowrap; }
-    .year-cell:has([data-bin='unknown']) { flex-direction: column; gap: 0; line-height: 1.2; }
-    .desktop-years { display: none; }
-    .phone-years, .matrix-scroll { display: revert; }
-    .matrix-frame.overflow { position: relative; }
-    .matrix-frame.overflow::after { content: ''; pointer-events: none; position: absolute; inset: 1px 1px 1px auto; inline-size: .75rem; background: linear-gradient(to right, transparent, var(--panel-raised)); border-radius: 0 var(--radius-card) var(--radius-card) 0; }
-    .matrix-frame :global(td), .matrix-frame :global(th:not(:first-child)) { padding-inline: .125rem; }
-    .matrix-scroll { text-align: end; margin-block-end: var(--space-1); }
-    .matrix-frame :global(.sticky) { box-shadow: 5px 0 6px -5px var(--control-line); }
-    .year-lists, .year-lists ul { padding: 0; margin: 0; list-style: none; }
-    .year-lists > li { border-block-start: 1px solid var(--line); }
-    .year-lists small { display: inline; }
-    .year-lists ul li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); font-size: var(--t-sm); }
-    .year-lists a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
+    .matrix-toolbar:not(.measured) .matrix-navigation { display: flex; }
+    .compact .matrix-toolbar:not(.measured) .matrix-navigation { display: none; }
+    .matrix-navigation { inline-size: 100%; min-block-size: var(--target-min); }
+    .matrix-scroll { --course-width: clamp(7.5rem, 40cqi, 11rem); --year-width: calc((100cqi - var(--course-width)) / 3); }
+    .compact .matrix-scroll { --course-width: clamp(7.5rem, 45cqi, 11rem); }
+    .course { position: sticky; inset-inline-start: 0; z-index: 1; padding-inline: .5rem; box-shadow: var(--sticky-shadow); }
+    tbody .course { background: var(--panel-raised); }
+    tbody tr:focus-within .course { background: var(--hover-row); }
+  }
+  @media (min-width: 22.5625rem) and (max-width: 40rem) {
+    .three .matrix-toolbar:not(.measured) .matrix-navigation { display: none; }
+  }
+  @media (max-width: 22.5rem) {
+    .matrix-scroll { --year-width: calc((100cqi - var(--course-width)) / 2); }
   }
 </style>
