@@ -1,4 +1,4 @@
-# Resume point (paused 2026-11-27 for a planned reboot)
+# Resume point (paused 2026-11-27 for a planned reboot — RESUMED, kept for history)
 
 State at pause:
 - `main` is green and deployed to production (round-7 UI). Last commit before this note: a31c0a1.
