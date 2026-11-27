@@ -1,13 +1,21 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
 
-  let { id, sections, children }: {
+  let { id, label, sections, children }: {
     id?: string;
+    label?: string;
     sections: { id: string; label: string; count?: string }[];
     children?: Snippet;
   } = $props();
 
   let nav: HTMLElement;
+  let links: HTMLDivElement;
+  let cutStart = $state(false);
+  let cutEnd = $state(false);
+  function updateEdges() {
+    cutStart = links.scrollLeft > 1;
+    cutEnd = links.scrollWidth - links.clientWidth - links.scrollLeft > 1;
+  }
   let active = $state<string>();
   let refresh: (() => void) | undefined;
 
@@ -16,6 +24,7 @@
     function update() {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
+        updateEdges();
         const edge = nav.getBoundingClientRect().bottom + 24;
         const headings = sections.flatMap(({ id }) => {
           const heading = document.getElementById(id);
@@ -50,22 +59,25 @@
 
   $effect(() => {
     if (!active) return;
-    const link = nav.querySelector<HTMLElement>('[aria-current="location"]');
+    const link = links.querySelector<HTMLElement>('[aria-current="location"]');
     if (!link) return;
-    const bounds = nav.getBoundingClientRect();
+    const bounds = links.getBoundingClientRect();
     const target = link.getBoundingClientRect();
-    if (target.right > bounds.right) nav.scrollLeft += target.right - bounds.right + 4;
-    if (target.left < bounds.left) nav.scrollLeft -= bounds.left - target.left + 4;
+    if (target.right > bounds.right - 12) links.scrollLeft += target.right - bounds.right + 12;
+    if (target.left < bounds.left + 12) links.scrollLeft -= bounds.left - target.left + 12;
   });
 </script>
 
 <nav class="section-jumps" {id} bind:this={nav} aria-label="跳至本頁章節">
-  {#each sections as section (section.id)}
-    <a href={'#' + section.id} aria-current={active === section.id ? 'location' : undefined}>
-      {section.label}{#if section.count}<span>{section.count}</span>{/if}
-    </a>
-  {/each}
-  {@render children?.()}
+  {#if label}<span class="jump-label" aria-hidden="true">{label}</span>{/if}
+  <div class="jump-links" bind:this={links} class:cutStart class:cutEnd onscroll={updateEdges}>
+    {#each sections as section (section.id)}
+      <a href={'#' + section.id} aria-current={active === section.id ? 'location' : undefined}>
+        {section.label}{#if section.count}<span>{section.count}</span>{/if}
+      </a>
+    {/each}
+    {@render children?.()}
+  </div>
 </nav>
 
 <style>
@@ -75,13 +87,23 @@
     z-index: 5;
     display: flex;
     align-items: center;
-    gap: var(--space-1);
-    overflow-x: auto;
-    padding: var(--space-1);
+    min-inline-size: 0;
     background: var(--bg);
     border-block-end: 1px solid var(--line);
-    scrollbar-width: thin;
   }
+  .jump-label { flex: none; padding-inline-start: var(--space-1); color: var(--muted); font-size: var(--t-sm); }
+  .jump-links {
+    display: flex;
+    gap: var(--space-1);
+    min-inline-size: 0;
+    overflow-x: auto;
+    padding: var(--space-1);
+    scroll-padding-inline: .75rem;
+    scrollbar-width: thin;
+    mask-image: linear-gradient(to right, var(--jump-start, #000) 0, #000 12px, #000 calc(100% - 12px), var(--jump-end, #000) 100%);
+  }
+  .cutStart { --jump-start: transparent; }
+  .cutEnd { --jump-end: transparent; }
   a {
     display: inline-flex;
     flex: none;

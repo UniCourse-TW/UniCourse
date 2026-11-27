@@ -82,7 +82,7 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(page).toHaveURL('/schools');
 
   const school = page.getByRole('table').getByRole('row').filter({ hasText: '國立清華大學' });
-  await school.getByLabel('國立清華大學的收錄明細').click();
+  await expect(school.getByLabel('國立清華大學的收錄明細')).toBeHidden();
   await expect(school.locator('time').filter({ visible: true })).toHaveAttribute('datetime', /T/);
   await school.getByRole('link', { name: '國立清華大學', exact: true }).click();
   await expect(page).toHaveURL('/schools/nthu');
@@ -203,7 +203,7 @@ test('derives directory coverage from crawler status and imported offerings', as
   await expect(nthu.getByRole('img', { name: /國立清華大學.*114 學年：1 學期/ })).toBeVisible();
 
   if (institutions.length > 20) {
-    await expect(page.getByRole('navigation', { name: '學校名錄上方分頁' }).getByRole('link', { name: '下一頁' })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: '學校名錄上方分頁' })).toBeHidden();
     await page.getByRole('navigation', { name: '學校名錄分頁' }).getByRole('link', { name: '下一頁' }).click();
     await expect(page).toHaveURL(/\?page=2/);
     await expect(rows).toHaveCount(Math.min(20, institutions.length - 20));
