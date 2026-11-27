@@ -9,7 +9,8 @@
     showAuthor = true,
     label = '文章列表',
     dense = false,
-    courseTitles = {}
+    courseTitles = {},
+    showCourse = true
   }: {
     posts: PostSummary[];
     schoolNames?: Record<string, string>;
@@ -19,6 +20,8 @@
     label?: string;
     /** Compact rows: category, course and title on one line, then a one-line summary, then author and tags. */
     dense?: boolean;
+    /** False on a course's own page, where every row is about that course: the kicker keeps only the type. */
+    showCourse?: boolean;
   } = $props();
   const id = $props.id();
 </script>
@@ -40,7 +43,7 @@
           <div class="main">
             <p class="kicker">
               <span class="cm-type" data-type={post.type}>{postTypeLabels[post.type]}</span>
-              {#if post.school}
+              {#if post.school && showCourse}
                 <a class="over" href={forumHref({ school: post.school, courseCode: post.courseCode ?? undefined })}>
                   {schoolNames[post.school] ?? post.school}{#if courseTitle}&nbsp;<span class="course">{courseTitle}</span>{/if}{#if post.courseCode}&nbsp;<span class="mono">{post.courseCode}</span>{/if}
                 </a>

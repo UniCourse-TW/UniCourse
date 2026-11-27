@@ -294,7 +294,7 @@
       {#if !data.posts}
         <EmptyState title="站內討論暫時無法取得" description="課程資料不受影響，請稍後再試。" tone="error" />
       {:else if data.posts.posts.length}
-        <div class="cm"><CommunityPostList posts={data.posts.posts} schoolNames={{ [course.school]: course.schoolName }} courseTitles={{ [courseKey(course.school, course.courseCode)]: course.title }} label="這門課的站內討論" /></div>
+        <div class="cm"><CommunityPostList posts={data.posts.posts} schoolNames={{ [course.school]: course.schoolName }} courseTitles={{ [courseKey(course.school, course.courseCode)]: course.title }} showCourse={false} dense label="這門課的站內討論" /></div>
         {#if data.posts.total > data.posts.posts.length}
           <p class="small"><a href={forumList}>查看全部 {displayValue(data.posts.total)} 篇 →</a></p>
         {/if}
@@ -430,6 +430,10 @@
   /* Two equal-height columns, so the ratings card and the discussion column end on one line. */
   .community { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); align-items: stretch; }
   .community > :global(.ratings) { block-size: 100%; }
+  /* The thread list (or its empty state) takes the column's remaining height, so both cards end level. */
+  .community > .forum { grid-template-rows: auto 1fr; grid-auto-rows: auto; align-content: stretch; }
+  .community > .forum > .cm { display: grid; }
+  .community > .forum > .cm > :global(.post-list) { block-size: 100%; }
 
 
   .about { display: grid; gap: var(--space-2); }
