@@ -109,6 +109,7 @@ function examplePages(f) {
     { id: 'profile', url: `/u/${ACCOUNT.username}` },
     { id: 'landscape', url: '/landscape', maxHeight: 9000 },
     { id: 'legal', url: '/terms' },
+    { id: 'legal-privacy', url: '/privacy' },
     // Extra state shots (not page ids): empty search, 404, auth register tab and the auth states
     // (wrong password, locked username, already signed in, register with a taken name).
     { id: 'search-empty', url: `/?q=${encodeURIComponent('zzzz-no-such-course')}&term=all` },
