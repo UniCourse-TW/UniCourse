@@ -111,7 +111,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(card.getByRole('link', { name: '線性代數', exact: true }).first()).toHaveAttribute('href', `/courses/${course.id}`);
 
   // The first-reply link jumps to the box, which names the signed-in identity.
-  await thread.getByRole('link', { name: /^前往回覆/ }).click();
+  await thread.getByRole('link', { name: '寫第一則回覆' }).click();
   await expect(page.getByLabel('寫第一則回覆')).toBeFocused();
   await expect(page.locator('#reply-form')).toContainText('以 測試同學 的身分');
   const send = page.getByRole('button', { name: '送出回覆' });
@@ -119,7 +119,8 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(send).toHaveAccessibleDescription('輸入內容後才能送出');
   // A thread with no replies asks for the first one; afterwards the box is the plain 寫回覆.
   await page.getByLabel('寫第一則回覆').fill(`同問 ${username}`);
-  await page.getByRole('button', { name: '送出回覆' }).click();
+  await expect(send).toBeEnabled();
+  await send.click();
   await expect(page.getByRole('heading', { name: '回覆（1）' })).toBeVisible();
   await expect(page.getByRole('article', { name: '測試同學 的回覆' }).locator('.content')).toHaveText(`同問 ${username}`);
   await expect(page.getByLabel('寫回覆', { exact: true })).toHaveValue('');
@@ -147,7 +148,9 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   const guest = await browser.newPage();
   try {
     await guest.goto(new URL(threadPath, page.url()).href);
-    await guest.getByRole('link', { name: '建立帳號並返回本文' }).click();
+    const entry = guest.getByRole('group', { name: '參與討論' });
+    await expect(entry).toHaveAccessibleDescription('登入後可推噓與回覆，完成後返回本文。');
+    await entry.getByRole('link', { name: '建立帳號' }).click();
     await expect(guest.getByRole('heading', { name: '建立 UniCourse 帳號' })).toBeVisible();
     await expect(guest.locator('input[name="next"]')).toHaveValue(`${threadPath}#reply-form`);
   } finally {
@@ -169,7 +172,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   const activity = page.getByRole('group', { name: '活動統計' });
   // The rating tile links to the list and explains the sample threshold.
   const ratingTile = activity.getByRole('link', { name: /查看評價，共 1 則/ });
-  const sampleNote = '滿 3 則顯示平均與分布';
+  const sampleNote = '未滿 3 則，暫無平均與分布';
   await expect(ratingTile).toHaveAttribute('href', '#ratings');
   await expect(ratingTile).toContainText(sampleNote);
   await expect(page.getByText(sampleNote, { exact: true })).toHaveCount(1);

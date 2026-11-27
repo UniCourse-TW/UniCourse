@@ -3,7 +3,7 @@
   import { page } from '$app/state';
   import { onMount, tick } from 'svelte';
   import '$lib/community-ui.css';
-  import { authorName, dateTime, postTypeLabels, scoreSign, signed } from '$lib/community-format';
+  import { authorName, dateTime, postTypeLabels, scoreSign, shortDateTime, signed } from '$lib/community-format';
   import { courseSearchHref, forumHref, loginHref, postHref, profileHref } from '$lib/community-paths';
   import type { Author } from '$lib/community-types';
   import Badge from '$lib/ui/Badge.svelte';
@@ -114,7 +114,7 @@
       <span class="label">分</span>
     </span>
   {/snippet}
-  <div class="controls">
+  <div class="controls" class:guest-entry={!user && !isReply}>
     {#if user}
       <form method="POST" action="?/vote" class="vote" aria-label={isReply ? `投票：${authorName(item.author)} 的回覆` : '本文投票'} use:enhance={voting(item.id)} aria-busy={pending}>
         <input type="hidden" name="target" value={item.id} />
@@ -127,14 +127,15 @@
         </button>
       </form>
       {#if !isReply}
-        <a class="action reply-link" href="#reply-content">{post.replies.length ? '寫回覆' : '前往回覆'} <span aria-hidden="true">↓</span></a>
+        <a class="action reply-link" href="#reply-content">{replyLabel} <span aria-hidden="true">↓</span></a>
       {/if}
     {:else}
       {@render tally()}
       {#if !isReply}
-        <div class="login-actions" role="group" aria-label="登入或建立帳號後即可推噓與回覆">
-          <a class="cm-btn" href={replyLoginHref}>登入並返回本文</a>
-          <a class="cm-btn secondary" href={registerHref}>建立帳號並返回本文</a>
+        <p class="login-note" id="guest-note">登入後可推噓與回覆，完成後返回本文。</p>
+        <div class="login-actions" role="group" aria-describedby="guest-note" aria-label="參與討論">
+          <a class="cm-btn" href={replyLoginHref}>登入回覆</a>
+          <a class="action guest-register" href={registerHref}>建立帳號</a>
         </div>
       {/if}
     {/if}
@@ -145,14 +146,14 @@
 {#snippet manage(item: Item, kind: '文章' | '回覆')}
   {@const isAuthor = user?.username === item.author.username}
   {#if isAuthor || user?.isAdmin}
+    {@const label = isAuthor ? `管理${kind}` : `管理員選項（${kind}）`}
     <!-- Author tools expand beside the author or inline when a form is open. -->
     <details class="more" open={form?.action === 'edit' && form.target === item.id && 'message' in form}>
-      <summary class="more-btn" aria-label={isAuthor ? `管理${kind}` : '管理員選項'}>
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="currentColor"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
-        <span class="more-label">{isAuthor ? `管理${kind}` : '管理員'}</span><span class="more-caret" aria-hidden="true">▾</span>
+      <summary class="more-btn" aria-label={label} title={label}>
+        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
       </summary>
-      <div class="manage" role="group" aria-label="這則{kind}的管理選項">
-      <p class="manage-note">{isAuthor ? '只有你看得到這些選項。作者可編輯，作者與管理員可刪除。' : '僅管理員可使用此選項。'}</p>
+      <div class="manage" role="group" aria-label={label}>
+      <p class="manage-note">{label}</p>
       <!-- Re-created after each save so the panels close again. -->
       {#key `${item.updatedAt}|${item.title}|${item.content}`}
         {#if isAuthor}
@@ -190,15 +191,20 @@
 {/snippet}
 
 {#snippet byline(item: Item, kind: '文章' | '回覆')}
+  {@const fullTime = dateTime(item.createdAt)}
+  {@const compactTime = kind === '回覆' ? shortDateTime(item.createdAt, new Date(post.createdAt)) : fullTime}
   <div class="meta">
-    <div class="byline">
+    <div class="byline" class:reply-byline={kind === '回覆'}>
       <span class="person">
         <a class="author" href={profileHref(item.author.username)}>{authorName(item.author)}</a>
         {#if kind === '回覆' && item.author.username === post.author.username}<span class="op">原 PO</span>{/if}
-        {#if item.author.displayName}<span class="handle">@{item.author.username}</span>{/if}
       </span>
       <span class="timestamp">
-        <time class="num" datetime={item.createdAt}>{dateTime(item.createdAt)}</time>
+        {#if item.author.displayName}<span class="handle">@{item.author.username}</span>{/if}
+        <time class="num" datetime={item.createdAt} title={compactTime !== fullTime ? fullTime : undefined}>
+          <span class:full-time={compactTime !== fullTime}>{fullTime}</span>
+          {#if compactTime !== fullTime}<span class="short-time">{compactTime}</span>{/if}
+        </time>
         {#if edited(item)}<span title="最後編輯 {dateTime(item.updatedAt)}">已編輯</span>{/if}
       </span>
     </div>
@@ -235,6 +241,7 @@
       {@render controls(post, '文章')}
     </article>
 
+    {#snippet courseAside()}
     {#if course}
       <aside class="course" aria-label="這門課">
         {#if summary}
@@ -246,7 +253,7 @@
           </p>
         {/if}
         <details class="course-details">
-          <summary>{summary ? '收錄與討論' : '相關課程與討論'}</summary>
+          <summary>課程資料與其他討論</summary>
           {#if summary}
             <p class="sub">{[summary.schoolName, summary.department].filter(Boolean).join('　')}</p>
             {#if summary.instructors.length}
@@ -296,7 +303,7 @@
                   {/each}
                 </ul>
                 {#if course.otherCount > course.others.length}
-                  <a class="all" href={forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}>看全部 {course.otherCount} 篇 →</a>
+                  <a class="all" href={forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}>看全部 <span class="nowrap">{course.otherCount} 篇 →</span></a>
                 {/if}
               {/if}
             </div>
@@ -304,6 +311,9 @@
         </details>
       </aside>
     {/if}
+    {/snippet}
+
+    {#if post.replies.length}{@render courseAside()}{/if}
 
     <section class="replies" aria-labelledby="replies-title">
       <div class="replies-head">
@@ -330,32 +340,44 @@
             </li>
           {/each}
         </ol>
+        {#if !user && post.replies.length >= SORT_TOGGLE_AT}
+          <a class="action guest-followup" href={replyLoginHref}>登入回覆</a>
+        {/if}
       {/if}
       {#if user}
+        {@const replyAuthor = user.displayName || `@${user.username}`}
         <form method="POST" action="?/reply" class="reply-form cm-form" id="reply-form" use:enhance={submitReply}>
+          {#snippet identity(name: string)}
+            <span class="cm-hint" id="reply-identity">以 {name} 的身分</span>
+          {/snippet}
           <div class="cm-field">
-            <div class="cm-label"><label for="reply-content">{replyLabel}</label><span class="cm-hint">以 {user.displayName || `@${user.username}`} 的身分</span></div>
+            {#if post.replies.length}
+              <div class="cm-label"><label for="reply-content">{replyLabel}</label>{@render identity(replyAuthor)}</div>
+            {:else}
+              <label for="reply-content" class="cm-sr">{replyLabel}</label>
+            {/if}
             {#if firstReplyGuide}<p class="reply-guide" id="reply-guide">{firstReplyGuide}</p>{/if}
             <textarea id="reply-content" class="cm-input" name="content" required rows="2" maxlength="20000" defaultValue={replyDraft}
               placeholder={post.replies.length ? replyPrompt : undefined}
-              aria-describedby={firstReplyGuide ? 'reply-guide reply-status' : 'reply-status'}
+              aria-describedby={firstReplyGuide ? 'reply-guide reply-identity reply-status' : 'reply-identity reply-status'}
               oninput={(event) => { replyText = event.currentTarget.value; autogrow(event.currentTarget); }}></textarea>
+            {#if !post.replies.length}{@render identity(replyAuthor)}{/if}
           </div>
           {#if form?.action === 'reply' && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
-          <!-- Under the box: the condition / status on the left, the count on the right, then the button. -->
           <div class="row submit-row">
             <p class="status" id="reply-status" role="status">
               {#if announcement}<span class="ok"><span aria-hidden="true">✓</span> {announcement}</span>
               {:else if replying}<span class="hint">送出中，請稍候…</span>
               {:else}<span class="hint">{hydrated && replyEmpty ? '輸入內容後才能送出' : '純文字，保留換行'}</span>{/if}
             </p>
-            <span class="cm-count" aria-live="polite">{fmt.format(replyLength)} / 20,000 字</span>
             <!-- Without JavaScript the button is always live; with it, an empty box cannot be sent. -->
             <button class="cm-btn send" aria-busy={replying} aria-describedby="reply-status" disabled={replying || (hydrated && replyEmpty)}>{replying ? '送出中…' : '送出回覆'}</button>
+            <span class="cm-count" aria-live="polite">{fmt.format(replyLength)} / 20,000 字</span>
           </div>
         </form>
       {/if}
     </section>
+    {#if !post.replies.length}{@render courseAside()}{/if}
   </div>
 </div>
 
@@ -378,11 +400,14 @@
   h1 { margin-block-start: var(--space-2) !important; font-size: clamp(1.375rem, 3.5vw, 1.625rem) !important; }
   .meta { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-3); align-items: start; margin-block-start: var(--space-2); color: var(--muted); font-size: var(--t-sm); line-height: 1.5; }
   .meta:has(.more) { margin-block-start: var(--space-1); }
+  .post .meta:not(:has(.more)) { margin-block-start: var(--space-3); }
   .byline, .person, .timestamp { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; min-inline-size: 0; }
   .byline { align-self: center; gap: 0 var(--space-3); overflow-wrap: anywhere; }
   .meta .author { color: var(--ink); font-size: var(--t-md); font-weight: 650; text-decoration: underline; text-decoration-color: var(--control-line); }
   .meta .author:hover { color: var(--brand-ink); text-decoration-color: currentColor; }
   .timestamp { color: var(--ink-2); }
+  .timestamp time { white-space: nowrap; }
+  .short-time { display: none; }
   .op { padding: 0 6px; border-radius: var(--radius-pill); color: var(--brand-ink); background: var(--brand-wash); font-weight: 600; }
   .thread-page :is(.mono, .kicker, .kicker .cm-type, .manage-note, .eyebrow, .facts dt, .facts small, .others .n, .cm-hint, .cm-count, .sort) {
     font-size: max(0.8125rem, var(--t-sm));
@@ -403,27 +428,22 @@
   .more > summary::-webkit-details-marker { display: none; }
   .more-btn {
     display: inline-flex;
-    gap: 0.3em;
     align-items: center;
     justify-content: center;
     min-inline-size: var(--target-min);
     min-block-size: var(--target-min);
-    padding: 0 var(--space-2);
-    border: 1px solid var(--line);
+    padding: 0;
+    border: 1px solid transparent;
     border-radius: var(--radius-control);
     color: var(--ink-2);
-    background: var(--panel-raised);
-    font-size: var(--t-base);
-    font-weight: 600;
+    background: transparent;
     cursor: pointer;
   }
-  .more-caret { color: var(--muted); }
-  .more[open] .more-caret { rotate: 180deg; }
   .more-btn:hover, .more[open] > .more-btn { color: var(--brand-ink); border-color: var(--brand); background: var(--brand-wash); }
   /* No content-visibility here: its paint containment would clip the dropdown to a zero-size box. */
   .more:not([open])::details-content { display: none; }
   .manage { position: absolute; inset-block-start: calc(100% + 4px); inset-inline-end: 0; z-index: 5; display: grid; gap: 0; min-inline-size: 14rem; max-inline-size: min(20rem, 88vw); padding: var(--space-1); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 18%, transparent); }
-  .manage-note { padding: var(--space-2) var(--space-3); color: var(--muted); font-size: var(--t-sm); }
+  .manage-note { padding: var(--space-2) var(--space-3); color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .manage .action { min-block-size: var(--target-min); padding-inline: var(--space-3); color: var(--ink) !important; }
   .more:has(.panel[open]) .manage { max-inline-size: none; position: static; inline-size: 100%; border: 0; padding: 0; background: transparent; box-shadow: none; }
   .more:has(.panel[open]) > .more-btn { display: none; }
@@ -488,19 +508,22 @@
   .confirm p { flex: 1 1 16rem; color: var(--ink-2); font-size: var(--t-base); }
   .row { display: flex; gap: var(--space-2); }
   .submit-row { flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
-  .submit-row .status { flex: 1 1 auto; margin: 0 !important; font-size: var(--t-base); }
+  .submit-row .status { margin: 0 !important; font-size: var(--t-base); }
   .submit-row .ok { color: var(--up); font-weight: 600; }
-  .submit-row .hint, .submit-row .cm-count, .reply-guide { color: var(--ink-2); font-size: 0.8125rem; }
+  .submit-row .hint, .reply-guide { color: var(--ink-2); font-size: 0.8125rem; }
   .reply-form textarea::placeholder { color: var(--muted); opacity: 1; }
   .reply-form textarea {
     scroll-margin-block-start: 8.5rem;
-    border-color: color-mix(in srgb, var(--ink-2) 65%, var(--control-line));
+    border-color: var(--ink-2);
   }
   .send:disabled:not([aria-busy='true']) {
     color: var(--ink-2) !important;
     opacity: 1;
   }
-  .login-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+  .login-actions { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
+  .login-note { color: var(--ink-2); font-size: var(--t-sm); }
+  .action.guest-register, .action.guest-followup { color: var(--brand-ink) !important; text-decoration: underline; }
+  .guest-followup { margin-block-start: var(--space-2); }
 
   .course {
     position: relative;
@@ -555,7 +578,7 @@
   .others a { display: block; font-weight: 600; line-height: 1.45; text-decoration: none; }
   .others a:hover { text-decoration: underline; }
   .others .n { color: var(--muted); font-size: var(--t-sm); }
-  .all { display: inline-flex; align-items: center; min-block-size: var(--target-min); font-weight: 600; }
+  .all { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); font-weight: 600; }
 
   .replies { min-inline-size: 0; }
   .replies-head { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: baseline; justify-content: space-between; }
@@ -573,7 +596,8 @@
   .reply .controls { margin-block-start: var(--space-2); }
   .reply-form { scroll-margin-block-start: 7rem; margin-block-start: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .reply-form .cm-label { justify-content: flex-start; gap: 0 var(--space-3); }
-  .reply-form .cm-hint { color: var(--ink-2); }
+  .reply-form :is(.cm-hint, .cm-count) { color: var(--ink-2); }
+  .submit-row .cm-count { margin-inline-start: auto; white-space: nowrap; }
 
   @media (max-width: 56rem) {
     .layout.with-aside { grid-template-columns: minmax(0, 1fr); }
@@ -581,7 +605,7 @@
     .with-aside .course { position: relative; inset-block-start: auto; }
     .course-heading, .course-title .code { display: none !important; }
     .course { padding-block: 0; }
-    .course-title { margin-block-start: 0 !important; padding-inline-end: 7rem; }
+    .course-title { margin-block-start: 0 !important; padding-inline-end: 11rem; }
     .course-title a { display: inline-flex; align-items: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); font-size: var(--t-base); overflow-wrap: anywhere; }
     .course-title + .course-details > summary { position: absolute; inset-block-start: 0; inset-inline-end: var(--space-4); }
     .course-details[open] { padding-block-end: var(--space-3); }
@@ -597,18 +621,18 @@
     .kicker a:hover { background: var(--chip); }
     h1 { margin-block-start: 0 !important; }
     .meta { gap: 0 var(--space-2); }
-    .more-label, .more-caret { display: none; }
-    .more-btn { padding: 0; background: transparent; }
-    .more-btn svg { inline-size: 1.25rem; block-size: 1.25rem; }
+    .reply-byline .person { flex-basis: 100%; }
+    .full-time { display: none; }
+    .short-time { display: inline; }
     .manage { max-inline-size: calc(100vw - 3rem); }
     .content { margin-block-start: var(--space-2); }
     .content p + p { margin-block-start: 0.5em; }
     .controls, .reply .controls { margin-block-start: var(--space-1); }
     .reply { padding-inline-start: var(--space-3); }
     .submit-row { gap: var(--space-1) var(--space-2); }
-    .submit-row .status:empty { display: none; }
-    .submit-row .send { flex-basis: 100%; }
     .reply-form { padding: var(--space-3); }
+    .guest-entry { row-gap: 0; }
+    .guest-entry .login-actions { flex-basis: 100%; }
     .login-actions .cm-btn { padding-inline: var(--space-2); }
   }
 </style>

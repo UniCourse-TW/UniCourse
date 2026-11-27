@@ -105,7 +105,7 @@
         {data.sortable ? '篩選與排序' : '更多篩選'}
         <span class="chev" aria-hidden="true"></span>
         {#if !filters.school}<span class="scope-note">全部學校</span>{/if}
-        {#if data.oldest}<span class="scope-note">最早發文</span>{/if}
+        {#if data.sortable}<span class="scope-note">{data.oldest ? '最早發文' : '最新發文'}</span>{/if}
       </summary>
       <div class="scope-fields" role="group" aria-label={data.sortable ? '篩選與排序' : '進階篩選'}>
         <FilterSelect name="school" label="學校" options={schoolOptions} value={filters.school} allLabel="全部學校" />
@@ -131,24 +131,8 @@
     </details>
     {#if filters.type}<input type="hidden" name="type" value={filters.type} />{/if}
     {#if filtered || filters.courseCode}<a class="clear" href="/forum">清除</a>{/if}
-  </form>
-
-  <div class="chip-bar">
-    <nav class="cm-chips types" aria-label="文章分類">
-      {#each typeChips as chip (chip.key)}
-        {@const n = data.counts[chip.key]}
-        {#if n === 0 && chip.type && filters.type !== chip.type}
-          <span class="cm-chip chip-empty" aria-disabled="true" aria-label="目前沒有{chip.label}">{chip.label}<span class="n">0</span></span>
-        {:else}
-          <a class="cm-chip" href={filterHref({ ...filters, type: chip.type, page: 1 })}
-            aria-current={filters.type === chip.type ? 'true' : undefined}>
-            {chip.label}{#if n !== null}<span class="n">{count(n)}</span>{/if}
-          </a>
-        {/if}
-      {/each}
-    </nav>
     {#if narrowed || filters.courseCode}
-      <div class="cm-chips" role="group" aria-label="已套用的篩選">
+      <div class="cm-chips applied" role="group" aria-label="已套用的篩選">
         {#if filters.school}
           <a class="cm-chip remove" href={filterHref({ ...filters, school: '', courseCode: '', page: 1 })} aria-label="移除篩選：學校 {schoolNames[filters.school] ?? filters.school}{filters.courseCode ? '與課號' : ''}">
             {schoolNames[filters.school] ?? filters.school} <span aria-hidden="true">×</span>
@@ -167,7 +151,21 @@
         {/if}
       </div>
     {/if}
-  </div>
+  </form>
+
+  <nav class="cm-chips types" aria-label="文章分類">
+    {#each typeChips as chip (chip.key)}
+      {@const n = data.counts[chip.key]}
+      {#if n === 0 && chip.type && filters.type !== chip.type}
+        <span class="cm-chip chip-empty" aria-disabled="true">{chip.label}<span class="n">0</span></span>
+      {:else}
+        <a class="cm-chip" href={filterHref({ ...filters, type: chip.type, page: 1 })}
+          aria-current={filters.type === chip.type ? 'true' : undefined}>
+          {chip.label}{#if n !== null}<span class="n">{count(n)}</span>{/if}
+        </a>
+      {/if}
+    {/each}
+  </nav>
 
   <!-- A young forum (fewer than 10 posts) puts the course suggestions beside the list on wide screens, and
        right under it on phones, with a jump link after the list. -->
@@ -210,7 +208,7 @@
         <h2 id="results">{filtered ? '符合的文章' : data.oldest ? '文章' : '最新文章'}<span class="count num">{fmt.format(total)} 篇</span></h2>
       </div>
       <CommunityPostList posts={data.posts.posts} {schoolNames} courseTitles={data.courseTitles} dense label={filtered ? '符合的文章' : '文章'} />
-      {#if invite}<a class="young-note" href="#sparse-title">論壇剛開張，從熱門課程寫心得 <span aria-hidden="true">↓</span></a>{/if}
+      {#if invite}<a class="young-note" href="#sparse-title">從熱門課程<span class="nowrap">寫心得 <span aria-hidden="true">↓</span></span></a>{/if}
       {#if pages > 1}
         <footer class="pager">
           <p class="num">第 {fmt.format(first)}–{fmt.format(last)} 篇<span class="sep">·</span>共 {fmt.format(total)} 篇</p>
@@ -225,7 +223,7 @@
       <div class="sparse-head">
         <div class="sparse-title">
           <h2 id="sparse-title">{data.suggestionsSchool ? `${data.suggestionsSchool}熱門課程` : '熱門課程'} <span>依修課人次</span></h2>
-          <a href="/">查其他課程 →</a>
+          <a class="nowrap" href="/">查其他課程 →</a>
         </div>
         <p class="sparse-dek" id="suggest-scale">
           <span>各課收錄期間累計</span>
@@ -305,8 +303,9 @@
   .scope[open] { flex-basis: 100%; }
   .scope summary {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: var(--space-2);
+    gap: 0 var(--space-2);
     min-block-size: var(--target-min);
     padding: 0 var(--space-2);
     border-radius: var(--radius-control);
@@ -345,14 +344,8 @@
     font-size: var(--t-base);
     font-weight: 600;
   }
-  .chip-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
-    align-items: center;
-    justify-content: space-between;
-    margin-block: var(--space-3) var(--space-4);
-  }
+  .types { margin-block: var(--space-3) var(--space-4); }
+  .applied { order: 3; flex-basis: 100%; }
   .results { min-inline-size: 0; }
   .pager {
     display: flex;
@@ -396,7 +389,7 @@
   .suggest-count .bar > span { display: block; block-size: 100%; border-radius: 2px; background: var(--brand); }
   .suggest-count .value { color: var(--ink); font-weight: 600; text-align: end; white-space: nowrap; }
   .suggest-count small { margin-inline-start: 0.25em; color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
-  .suggest-count .range { grid-column: 1 / -1; color: var(--muted); font-size: var(--t-sm); }
+  .suggest-count .range { grid-column: 1 / -1; color: var(--muted); font-size: var(--t-sm); text-align: end; }
   .suggest-act { inline-size: 1%; text-align: end !important; }
   .write { position: relative; z-index: 1; display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
   .sparse-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--space-2); }
@@ -418,11 +411,12 @@
     .suggest-count { grid-column: 1 / -1; grid-row: 2; display: grid !important; }
     .suggest-act { grid-column: 2; grid-row: 1; inline-size: auto; }
   }
-  .types .chip-empty { color: var(--muted); background: transparent; border: 1px solid var(--line); cursor: default; }
+  .types .chip-empty:hover { background: var(--chip); }
+  .nowrap { white-space: nowrap; }
   .list-head { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); justify-content: space-between; align-items: center; margin-block-end: var(--space-1); }
   .list-head h2 { display: flex; gap: var(--space-2); align-items: baseline; margin: 0; font-size: var(--t-lg); }
   .list-head .count { color: var(--ink-2); font-size: var(--t-base); font-weight: 600; letter-spacing: 0; white-space: nowrap; }
-  .young-note { display: inline-flex; align-items: center; gap: 0.25em; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; }
+  .young-note { display: inline-block; align-content: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; }
   .sort-field {
     display: inline-flex;
     align-items: center;
@@ -446,6 +440,7 @@
   .rules:hover { border-color: var(--control-line); background: var(--hover-row); color: var(--ink); }
 
   @media (max-width: 40rem) {
+    .types { margin-block-end: var(--space-6); }
     .search { flex: 1 1 10rem; }
     .toolbar > .submit { flex: 0 0 auto; padding-inline: var(--space-4); }
     .scope { flex: 1 1 100%; }
@@ -457,7 +452,6 @@
     .code-field input { flex: 1; inline-size: auto; min-inline-size: 0; }
     /* The removable chips below already clear each filter; the text link only adds a wrapped row here. */
     .toolbar > .clear { display: none; }
-    .chip-bar { margin-block-end: var(--space-2); }
     .board { gap: var(--space-3); }
     .cm-head { margin-block-end: var(--space-4); }
     .rules { padding-inline: var(--space-2); }
