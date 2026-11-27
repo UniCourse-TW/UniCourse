@@ -48,13 +48,19 @@
     // The nav's「登入」 is this page: mark it current for assistive tech (its look is set below).
     const navLogin = document.querySelector<HTMLAnchorElement>('.site-header a.login');
     navLogin?.setAttribute('aria-current', 'page');
+    // 「忘記密碼？」 followed before hydration (or a shared #reset-help link) still opens the folded help.
+    const openFromHash = () => { if (location.hash === '#reset-help') resetOpen = true; };
+    openFromHash();
+    window.addEventListener('hashchange', openFromHash);
     return () => {
+      window.removeEventListener('hashchange', openFromHash);
       navLogin?.removeAttribute('aria-current');
       stopWaiting();
     };
   });
-  // The reset steps are shown open on the sign-in form (explained in place, item 19); the reader can fold them.
-  let resetOpen = $state(true);
+  // The reset steps are folded under the form (one entry point: the「忘記密碼？」link opens them), so the
+  // card stays short; they are explained in full once opened.
+  let resetOpen = $state(false);
   /** 「忘記密碼？」 beside the field (or in the lockout notice) opens the explainer under the form. */
   async function showReset(event: MouseEvent) {
     event.preventDefault();
@@ -162,10 +168,12 @@
   // Only the refused name is held back; typing another account's name frees the button at once.
   let locked = $derived(hydrated && tooMany && remaining > 0 && typedUsername.trim().toLowerCase() === lockedName.toLowerCase());
   let unlocked = $derived(hydrated && tooMany && lockedClientAt !== null && remaining === 0);
+  /** Screen readers hear the wait every 10 seconds, not every tick. */
+  let spokenWait = $derived(locked && remaining % 10 === 0 ? `還要等 ${remaining} 秒。` : '');
 
   // Register: a taken name gets two other names to try (one tap fills the box) and the way to sign in with it.
   let takenName = $derived(mode === 'register' && errorAt === 'username' && form?.message?.includes('已有人') ? (form?.username ?? '') : '');
-  let suggestions = $derived(takenName ? [`${takenName}2`, `${takenName}_${new Date().getFullYear() - 1911}`].filter((name) => name.length <= 32) : []);
+  let suggestions = $derived(takenName && form && 'suggestions' in form && Array.isArray(form.suggestions) ? form.suggestions : []);
   function useSuggestion(name: string) {
     const input = document.getElementById('username') as HTMLInputElement | null;
     if (!input) return;
@@ -278,7 +286,7 @@
 {#snippet exitLine(label: string)}
   <div class="after">
     {#if submitting}
-      <a href={browseHref} onclick={stopWaiting}>取消{mode === 'login' ? '登入' : '建立'}並回到查課 <span aria-hidden="true">→</span></a>
+      <a href={browseHref} onclick={stopWaiting}>取消{mode === 'login' ? '登入' : '建立'}，{browseHref === '/' ? '回首頁查課' : '回到搜尋結果'} <span aria-hidden="true">→</span></a>
     {:else}
       <a href={browseHref}>{label} <span aria-hidden="true">→</span></a>
     {/if}
@@ -290,14 +298,13 @@
      home page needs no line of its own (the exit link under the button already says 繼續查課). -->
 {#snippet returnLine(verb: string)}
   {#if hasDestination}
-    <!-- What the visitor was doing, as a small chip above the title, so it is not lost under the dek. -->
-    <p class="return"><span class="return-icon" aria-hidden="true">{returnTo === '論壇發文' ? '✎' : '↩'}</span>{#if returnTo === '論壇發文'}你正要發文・{verb}後會回到發文頁{:else}{verb}後回到{returnTo}{/if}</p>
+    <!-- Where the button leads, said right above it (not above the title, where it competed with the logo). -->
+    <p class="return"><span class="return-icon" aria-hidden="true">{returnTo === '論壇發文' ? '✎' : '↩'}</span>{#if returnTo === '論壇發文'}{verb}後回到你正要寫的文章{:else}{verb}後回到{returnTo}{/if}</p>
   {/if}
 {/snippet}
 
 <div class="cm auth">
   <div class="card">
-    {#if !data.signedIn}{@render returnLine(mode === 'register' ? '建立帳號' : '登入')}{/if}
     <div class="auth-heading">
       <img class="logo" src="/unicourse.png" alt="" width="36" height="36" />
       <h1>{data.signedIn ? '你已登入' : mode === 'register' ? '建立 UniCourse 帳號' : '登入 UniCourse'}</h1>
@@ -308,12 +315,13 @@
       <!-- Already signed in and here by hand: no form, just who you are and where to go. One solid button,
            the rest text links; signing out sits last under its own heading. -->
       <p class="identity">{#if data.signedIn.displayName}<strong>{data.signedIn.displayName}</strong>{/if}<span class="mono handle">@{data.signedIn.username}</span></p>
-      <p class="why">現在可以評分、<a href="/forum">發文</a>與回覆。</p>
+      <p class="why">現在可以評分、發文與回覆。</p>
       <a class="cm-btn block go-on" href={data.next}>{hasDestination ? `回到${returnTo}` : '回首頁查課'} <span aria-hidden="true">→</span></a>
-      <!-- Two account actions, one full-width row each; the activity counts are the profile row's sub-line. -->
+      <!-- The next steps, one full-width row each; the activity counts are the profile row's sub-line. -->
       <nav class="signed-in" aria-label="帳號快捷操作">
         <a href={profile}><span class="row-title">查看公開個人頁</span><span class="row-sub">{#if data.activity}<span class="num">{data.activity.ratings}</span> 則評價・<span class="num">{data.activity.posts}</span> 篇文章{:else}別人看到的評價與文章{/if}</span><span class="row-go" aria-hidden="true">→</span></a>
-        <a href="/settings"><span class="row-title">編輯個人資料</span><span class="row-sub">顯示名稱與自我介紹</span><span class="row-go" aria-hidden="true">→</span></a>
+        <a href="/settings"><span class="row-title">編輯個人資料</span><span class="row-sub">顯示名稱、所屬學校與自我介紹</span><span class="row-go" aria-hidden="true">→</span></a>
+        <a href="/forum?compose=1"><span class="row-title">到論壇發文</span><span class="row-sub">問修課問題，或分享上課心得</span><span class="row-go" aria-hidden="true">→</span></a>
       </nav>
       <form method="POST" action="?/logout" class="switch">
         <!-- Back to this form afterwards, so the other account can sign in right away. -->
@@ -340,30 +348,32 @@
               <p class="alert-title" role={tooMany ? 'alert' : undefined}>
                 {@render alertIcon(tooMany || unavailable ? 'wait' : 'error')}
                 <span>{tooMany ? '登入失敗太多次，暫停登入' : asTitle(form?.message ?? '')}</span>
-                {#if tooMany}<span class="cm-sr">約一分鐘後可再試。</span>{/if}
+                {#if tooMany}
+                  <!-- The wait is in the title, so the reason and the time are read together. -->
+                  {#if locked}<span class="wait-left" aria-hidden="true">剩 <b class="num">{remaining}</b> 秒</span>
+                  {:else if !hydrated}<span class="wait-left">約 1 分鐘</span>{/if}
+                  <span class="cm-sr">約一分鐘後可再試。</span>
+                {/if}
               </p>
               {#if credentialError}
-                <p class="alert-note">帳號已保留，請重新輸入密碼。</p>
+                <p class="alert-note">先確認帳號的大小寫，再重新輸入密碼。</p>
                 {#if hydrated && attemptsLeft <= WARN_FROM}<p class="alert-note count">還可再試 <b class="num">{attemptsLeft}</b> 次，之後會暫停登入一分鐘。</p>{/if}
               {:else if tooMany}
-                <!-- The live seconds are on the button only; this says why, until when, and what still works. -->
+                <!-- The seconds are in the title and on the button; this says what happens then and what still works. -->
                 <p class="alert-wait">
                   {#if unlocked}現在可以再按「登入」了。
                   {:else if locked || !hydrated}
-                    這個帳號暫停登入約一分鐘，時間到按鈕會自動恢復；可先輸入密碼。其他帳號不受影響。
+                    時間到按鈕自動恢復；其他帳號不受影響。
                   {:else}可改用其他帳號登入。{/if}
+                  <a href="#reset-help" onclick={showReset}>忘記密碼？</a>
                 </p>
-                <ul class="alert-ways">
-                  {#if hydrated && locked}<li><button type="button" class="alert-link" onclick={switchAccount}>改用其他帳號（清空帳號欄）</button></li>{/if}
-                  <li><a href="#reset-help" onclick={showReset}>忘記密碼？看重設密碼的方式</a></li>
-                </ul>
               {:else if unavailable}<p class="alert-note">不是帳號或密碼的問題，稍後再按一次「登入」即可；查課不受影響。</p>{/if}
             </div>
-            <p class="cm-sr" role="status">{unlocked ? '現在可以再按「登入」了。' : ''}</p>
+            <p class="cm-sr" role="status">{unlocked ? '現在可以再按「登入」了。' : spokenWait}</p>
           {/if}
           <div class="cm-field">
             <!-- The kept name is an ordinary editable field; the hint beside it says what usually goes wrong. -->
-            <div class="cm-label"><label for="username">帳號</label>{#if credentialError}<span class="cm-hint">帳號有大小寫之分</span>{:else if locked}<span class="cm-hint">換別的帳號可直接登入</span>{/if}</div>
+            <div class="cm-label"><label for="username">帳號</label>{#if credentialError}<span class="cm-hint kept"><span aria-hidden="true">✓</span> 已保留</span>{:else if hydrated && locked}<button type="button" class="field-action" onclick={switchAccount}>改用其他帳號</button>{/if}</div>
             <!-- The server cannot tell which half of a wrong pair is wrong, so neither field is marked invalid;
                  the alert above carries the message and the password (cleared) takes the focus. -->
             <input id="username" class="cm-input" name="username" autocomplete="username" required maxlength="32"
@@ -373,7 +383,7 @@
               aria-describedby={describedBy((credentialError || tooMany) && 'auth-error')} />
           </div>
           <div class="cm-field">
-            <div class="cm-label"><label for="password">密碼</label>{#if !tooMany}<a class="field-action" href="#reset-help" onclick={showReset}>忘記密碼？</a>{/if}</div>
+            <div class="cm-label"><label for="password">密碼</label>{#if !tooMany}<a class="field-action" class:idle={submitting} href="#reset-help" onclick={showReset} aria-hidden={submitting || undefined} tabindex={submitting ? -1 : undefined}>忘記密碼？</a>{/if}</div>
             <div class="password">
               <input id="password" class="cm-input" name="password" type={showPassword ? 'text' : 'password'} autocomplete="current-password"
                 required maxlength="128" placeholder="輸入密碼"
@@ -384,6 +394,7 @@
             </div>
             {@render capsNote()}
           </div>
+          {@render returnLine('登入')}
           <button class="cm-btn block" class:counting={locked} aria-busy={submitting} disabled={submitting || locked}>
             {#if submitting}{slow ? '連線較慢，仍在嘗試…' : '登入中…'}{:else if locked}<span>等待重試（<span class="num">{remaining}</span> 秒）</span>{:else if credentialError}重新登入{:else}登入{/if}
             <!-- The wait as a draining bar along the button's foot, next to the seconds. -->
@@ -391,9 +402,8 @@
           </button>
           {#if submitting && slow}<button type="button" class="cm-btn quiet block" onclick={stopWaiting}>取消，回到表單重試</button>{/if}
           {@render exitLine('不登入，繼續查課')}
-          <!-- Password help under the exit, explained in place (what to send, how long, no GitHub), so a filled-in
-               form still goes straight to the button. -->
-          <div class="recover"><ResetHelp summary="忘記密碼怎麼辦" bind:open={resetOpen} quiet={submitting} /></div>
+          <!-- Password help under the exit, folded: the「忘記密碼？」link (or the summary itself) opens it. -->
+          <div class="recover"><ResetHelp summary="忘記密碼？重設方式" bind:open={resetOpen} quiet={submitting} /></div>
         </form>
       {:else}
         <form method="POST" action="?/register" class="cm-form" use:enhance={submit} novalidate={hydrated || undefined} aria-busy={submitting}>
@@ -402,7 +412,7 @@
             <p id="registration-errors" class="cm-alert form-alert" role="alert" tabindex="-1">有多個欄位需要修正。依欄位提示調整後，再建立帳號。</p>
           {/if}
           {#if fieldSummary}
-            <p id="registration-errors" class="cm-alert form-alert summary" role="alert" tabindex="-1">{@render alertIcon('error')}<span>還沒建立帳號：<a href={`#${summaryTarget}`}>{summaryTarget === 'password' ? '密碼' : summaryTarget === 'displayName' ? '顯示名稱' : '帳號'}欄需要修正</a></span></p>
+            <p id="registration-errors" class="cm-alert form-alert summary" role="alert" tabindex="-1">{@render alertIcon('error')}<span>還沒建立帳號：<a href={`#${summaryTarget}`}>{takenName ? '帳號名稱已有人使用' : `${summaryTarget === 'password' ? '密碼' : summaryTarget === 'displayName' ? '顯示名稱' : '帳號'}欄需要修正`}</a></span></p>
           {/if}
           {#if errorAt === 'form'}
             <div id="auth-error" class="cm-alert form-alert" class:wait={unavailable} role="alert">
@@ -417,7 +427,7 @@
               <span class="fixed-badge">公開・建立後無法更改</span>
             </div>
             <input id="username" class="cm-input" name="username" autocomplete="username" required minlength="3" maxlength="32"
-              pattern="[A-Za-z0-9_]+" defaultValue={form?.username ?? ''} autocapitalize="none" spellcheck="false" placeholder="例如 ntu_cs_115"
+              pattern="[A-Za-z0-9_]+" defaultValue={form?.username ?? ''} autocapitalize="none" spellcheck="false" placeholder="例如 study_owl"
               readonly={submitting}
               onblur={(event) => checkUsername(event.currentTarget.value)}
               oninput={(event) => { typedUsername = event.currentTarget.value; chosenName = ''; checkUsername(typedUsername); }}
@@ -426,23 +436,23 @@
             <!-- The format rule stays under the box in every state (also after a taken-name error), each part
                  ticked live as the name is typed. -->
             <p id="username-rule" class="rule checklist">
-              <span class:met={nameLengthOk}><span class="mark" aria-hidden="true">{nameLengthOk ? '✓' : '・'}</span>3–32 個字元</span>
-              <span class:met={nameCharsOk}><span class="mark" aria-hidden="true">{nameCharsOk ? '✓' : '・'}</span>只用英文字母、數字、底線</span>
+              <span class:met={nameLengthOk} class:miss={hydrated && nameLength > 0 && !nameLengthOk}><span class="mark" aria-hidden="true">{nameLengthOk ? '✓' : hydrated && nameLength > 0 ? '✗' : '・'}</span>3–32 個字元</span>
+              <span class:met={nameCharsOk} class:miss={hydrated && nameLength > 0 && !nameCharsOk}><span class="mark" aria-hidden="true">{nameCharsOk ? '✓' : hydrated && nameLength > 0 ? '✗' : '・'}</span>只用英文字母、數字、底線</span>
             </p>
             {#if usernameError && form?.message}
               <!-- The error, then the fixes in order: pick another name (fills the box), or sign in with this one. -->
               <p id="username-error" class="field-error" role={fieldSummary ? undefined : 'alert'}>{@render alertIcon('error')}{form.message}</p>
               {#if takenName && hydrated && suggestions.length}
                 <div class="taken-ways">
-                  <span class="suggest-label" id="suggest-label">候選名稱（還沒確認能否使用），點一下填入：</span>
-                  <span class="suggest-row">{#each suggestions as name (name)}<button type="button" class="suggest-chip" aria-label={`以 ${name} 填入帳號欄`} onclick={() => useSuggestion(name)}>{name}</button>{/each}</span>
+                  <span class="suggest-label" id="suggest-label">目前沒人用的名稱，點一下填入：</span>
+                  <span class="suggest-row">{#each suggestions as name (name)}<button type="button" class="suggest-chip" aria-label={`以 ${name} 填入帳號欄（目前沒人使用）`} onclick={() => useSuggestion(name)}><span class="free" aria-hidden="true">✓</span>{name}</button>{/each}</span>
                 </div>
               {/if}
               {#if takenName}
                 <a class="use-login" href={tabHref('login', takenName)}>這是你的帳號？改用它登入 <span aria-hidden="true">→</span></a>
               {/if}
             {:else if checked.username}<p id="username-error" class="field-error" role="alert">{@render alertIcon('error')}{checked.username}</p>{/if}
-            {#if chosenName}<p class="rule" role="status">已填入 <b>{chosenName}</b>，按「建立帳號」時才會確認能否使用。</p>{/if}
+            {#if chosenName}<p class="rule" role="status">已填入 <b>{chosenName}</b>，按「建立帳號」即可。</p>{/if}
           </div>
           <div class="cm-field">
             <div class="cm-label near">
@@ -464,22 +474,21 @@
                 aria-describedby={describedBy('password-rule', 'password-state', passwordInvalid && 'password-error')} />
               {@render passwordToggle()}
             </div>
-            <p id="password-rule" class="rule">8–128 個字元，可用空格，區分大小寫。</p>
-            <!-- Live feedback under the box (never beside the rule, where it wrapped onto the next line on phones). -->
+            <!-- Two rules on two lines: the length (ticked live, with what is missing) and what is allowed. -->
+            <p id="password-rule" class="rule checklist stacked">
+              <span class:met={passwordLength >= 8}><span class="mark" aria-hidden="true">{passwordLength >= 8 ? '✓' : '・'}</span>8–128 個字元{#if hydrated && passwordLength > 0 && passwordLength < 8}<span class="short">（目前 <b class="num">{passwordLength}</b>，還差 {8 - passwordLength}）</span>{/if}</span>
+              <span><span class="mark" aria-hidden="true">・</span>可用空格，區分大小寫</span>
+            </p>
             <div class="under">
               {@render capsNote()}
-              <p id="password-state" class="rule state" aria-live="polite">
-                {#if hydrated && passwordLength > 0 && passwordLength < 8}目前 <b class="num">{passwordLength}</b> 字，還差 {8 - passwordLength} 字
-                {:else if passwordLength >= 8 && weakPassword}<span class="weak"><span aria-hidden="true">!</span> 長度夠，但這是常見密碼（或與帳號相同），很容易被猜到</span>
-                {:else if passwordLength >= 8}<span class="ok"><span aria-hidden="true">✓</span> 符合長度要求</span>{/if}
-              </p>
+              <p id="password-state" class="rule state" aria-live="polite">{#if passwordLength >= 8 && weakPassword}<span class="weak"><span aria-hidden="true">!</span> 長度夠，但這是常見密碼（或與帳號相同），很容易被猜到</span>{/if}</p>
             </div>
             {#if serverPasswordError}{@render fieldError('password-error', 'password')}
             {:else if checked.password}<p id="password-error" class="field-error" role="alert">{checked.password}</p>{/if}
           </div>
           <!-- The optional field is a text disclosure (no frame: a frame reads as a drop zone or an empty chip). -->
           <details class="optional" open={Boolean(form && 'displayName' in form && form.displayName) || errorAt === 'displayName'}>
-            <summary><span class="optional-label">顯示名稱（選填）</span><span class="chev" aria-hidden="true"></span></summary>
+            <summary><span class="chev" aria-hidden="true"></span><span class="optional-label">顯示名稱（選填）</span><span class="optional-why">署名用，可與帳號不同</span></summary>
             <div class="cm-field">
               <div class="cm-label near"><label for="displayName">顯示名稱</label><span class="cm-hint">未填則以帳號署名；最多 50 字，之後可在設定改</span></div>
               <input id="displayName" class="cm-input" name="displayName" maxlength="50" autocomplete="nickname" placeholder="例如 小蔡"
@@ -489,9 +498,11 @@
               {@render fieldError('display-error', 'displayName')}
             </div>
           </details>
-          <p class="terms">按下「建立帳號」即表示你同意<a href="/terms">使用條款</a>及<a href="/privacy">隱私權政策</a></p>
-          <!-- While the refused name is still in the box, the button steps down to the outline kind until it changes. -->
-          <button class="cm-btn block" class:secondary={usernameError && Boolean(takenName)} aria-busy={submitting} disabled={submitting}>{submitting ? (slow ? '連線較慢，仍在嘗試…' : '建立中…') : '建立帳號'}</button>
+          <p class="terms">按下「建立帳號」即表示你同意 <a href="/terms">使用條款</a> 及 <a href="/privacy">隱私權政策</a></p>
+          <!-- The button stays the solid main action; while the refused name is still in the box, one line says what to change. -->
+          {#if usernameError && takenName}<p class="retry-hint" id="retry-hint">換一個帳號名稱後，再按「建立帳號」</p>{/if}
+          {@render returnLine('建立帳號')}
+          <button class="cm-btn block" aria-busy={submitting} disabled={submitting} aria-describedby={describedBy(usernameError && takenName && 'retry-hint')}>{submitting ? (slow ? '連線較慢，仍在嘗試…' : '建立中…') : '建立帳號'}</button>
           {@render exitLine('不建立帳號，繼續查課')}
         </form>
       {/if}
@@ -506,9 +517,6 @@
   /* Desktop: the card sits in the upper middle of the column, not against the top with 250 px of floor below. */
   /* Desktop: the card hangs a short way under the nav (not centred in a tall empty band). */
   .auth { display: grid; place-items: start center; padding-block: var(--space-2) var(--space-6); }
-  /* The site nav's「登入」 duplicates this page's own form: on /auth it reads as the current place
-     (brand text, no button frame) instead of a second call to action. */
-  :global(body:has(.cm.auth) .site-header a.login[aria-label='登入／註冊']) { border-color: transparent; background: transparent; color: var(--ink-2); text-decoration: none; box-shadow: inset 0 -2px 0 var(--brand); border-radius: 0; cursor: default; pointer-events: none; }
   .card {
     inline-size: min(100%, 27rem);
     padding: var(--space-6) var(--space-6) var(--space-5);
@@ -521,8 +529,8 @@
   /* One heading size on every viewport: a touch above h2, below the data pages' 24 px h1. */
   h1 { font-size: 1.375rem !important; }
   .why { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
-  /* Where the visitor was going: a small chip above the title. */
-  .return { display: inline-flex; gap: var(--space-1); align-items: center; margin-block-end: var(--space-3) !important; padding: 2px var(--space-2); border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-size: 0.8125rem; font-weight: 600; line-height: 1.5; }
+  /* Where the button leads: a small chip right above it. */
+  .return { display: inline-flex; gap: var(--space-1); align-items: center; justify-self: start; padding: 2px var(--space-2); border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-size: 0.8125rem; font-weight: 600; line-height: 1.5; }
   .return-icon { font-weight: 700; }
   /* Display name first, handle after, the same order as the profile page. */
   .identity { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); margin-block-start: var(--space-2) !important; font-size: var(--t-md); overflow-wrap: anywhere; }
@@ -538,7 +546,6 @@
   .row-title { grid-column: 1; color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; }
   .row-sub { grid-column: 1; color: var(--ink-2); font-size: 0.8125rem; }
   .row-go { grid-column: 2; grid-row: 1 / span 2; color: var(--brand-ink); font-size: var(--t-lg); font-weight: 650; }
-  .why a { color: var(--brand-ink); font-weight: 600; }
 
   /* Two tabs under a hairline; the current one carries the brand underline, the same mark as the site nav. */
   .tabs {
@@ -599,6 +606,8 @@
   .field-action { display: inline-flex; align-items: center; min-block-size: 2rem; padding: 0 var(--space-1); border: 0; background: none; color: var(--brand-ink); font: 600 0.8125rem / 1 var(--font-sans); text-decoration: underline; text-underline-offset: 0.15em; cursor: pointer; }
   .cm-form[aria-busy='true'] .field-action { color: var(--ink-2); }
   .field-action:focus-visible { outline: var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
+  /* In flight the shortcut steps out of sight but keeps its place, so nothing moves. */
+  .field-action.idle { visibility: hidden; }
 
   /* Register hints sit right after their label, not at the far edge; they wrap under it when tight. */
   .cm-label.near { justify-content: flex-start; gap: 0 var(--space-3); }
@@ -608,6 +617,10 @@
   .checklist .mark { display: inline-block; inline-size: 1.1em; color: var(--muted); font-weight: 700; }
   .checklist .met { color: var(--ink); }
   .checklist .met .mark { color: var(--up); }
+  .checklist .miss { color: var(--ink); }
+  .checklist .miss .mark { color: var(--down); }
+  .checklist.stacked { flex-direction: column; gap: 0; }
+  .checklist .short { color: var(--ink-2); }
   /* The one thing to decide before typing a name: a warn-tinted badge beside the label. */
   .fixed-badge { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent); font-size: 0.8125rem; font-weight: 600; }
   .weak { color: var(--ink); font-weight: 600; }
@@ -651,6 +664,8 @@
     touch-action: manipulation;
   }
   .suggest-chip:hover { background: var(--brand-wash); border-color: var(--brand); }
+  .suggest-chip .free { margin-inline-end: 0.3em; color: var(--up); font-weight: 700; }
+  .retry-hint { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; text-align: center; }
   .suggest-chip:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .use-login { display: inline-flex; gap: 0.3em; align-items: center; justify-self: start; min-block-size: var(--target-min); font-size: var(--t-base); font-weight: 600; }
   .form-alert { display: grid; gap: 2px; background: color-mix(in srgb, var(--down) 12%, var(--panel-raised)); }
@@ -659,11 +674,11 @@
   .alert-title { display: flex; gap: var(--space-2); align-items: flex-start; font-size: var(--t-md); font-weight: 650; line-height: 1.45; }
   .alert-icon { flex: none; margin-block-start: 0.2em; color: var(--down); }
   .wait .alert-title, .wait .alert-icon { color: var(--warn); }
-  /* The ways out of a lockout sit inside the warning, one full-height row each: another account, or password help. */
-  .alert-ways { display: grid; margin: var(--space-1) 0 0 !important; padding: 0; list-style: none; border-block-start: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); }
-  .alert-ways li + li { border-block-start: 1px solid color-mix(in srgb, var(--warn) 30%, transparent); }
-  .alert-ways a, .alert-link { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); padding: 0; border: 0; background: none; color: var(--ink) !important; font: 650 var(--t-base) / 1.3 var(--font-sans); text-decoration: underline; text-underline-offset: 0.15em; cursor: pointer; }
-  .alert-link:focus-visible { outline: var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
+  /* The seconds left sit at the end of the lockout title, so reason and wait are read together. */
+  .wait-left { margin-inline-start: auto; color: var(--ink); font-size: var(--t-base); font-weight: 600; white-space: nowrap; }
+  .wait-left b { font-size: var(--t-md); }
+  /* The one way out inside the lockout notice (password help); another account is beside the name field. */
+  .alert-wait a { display: inline-flex; align-items: center; min-block-size: 2rem; margin-inline-start: 0.25em; font-weight: 650; }
   .alert-note, .alert-wait { margin-block-start: 2px !important; color: var(--ink-2); font-size: var(--t-base); line-height: 1.55; text-wrap: pretty; }
   .form-alert.summary { display: flex; gap: var(--space-2); align-items: flex-start; font-weight: 600; }
   .form-alert.summary .alert-icon { color: var(--down); }
@@ -674,7 +689,7 @@
   .cm-form { margin-block-start: var(--space-1); }
   .cm-form .cm-btn { margin-block-start: var(--space-1); }
   .terms { color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; }
-  .terms a { display: inline-flex; align-items: center; min-block-size: var(--target-min); padding-inline: var(--space-1); font-weight: 600; }
+  .terms a { display: inline-flex; align-items: center; min-block-size: var(--target-min); padding-inline: var(--space-2); font-weight: 600; }
   .after { display: flex; justify-content: center; margin-block-start: calc(-1 * var(--space-1)); text-align: center; color: var(--ink-2); font-size: 0.8125rem; }
   .after a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-weight: 600; }
   .after a:hover { color: var(--brand-ink); }
@@ -686,16 +701,18 @@
   .lock-bar { position: absolute; inset-block-end: 0; inset-inline-start: 0; block-size: 3px; background: var(--warn); transition: inline-size 1s linear; }
   @media (prefers-reduced-motion: reduce) { .lock-bar { transition: none; } }
   /* Busy keeps the solid brand fill (it is still the main action, not disabled): spinner + label in on-brand. */
-  .auth .cm-btn[aria-busy='true'] { color: var(--on-brand) !important; background: var(--brand); border-color: var(--brand); }
+  .auth .cm-btn[aria-busy='true'] { color: var(--on-brand) !important; background: color-mix(in srgb, var(--brand) 82%, var(--panel)); border-color: transparent; }
+  /* A thicker ring with a stronger track, so it reads on the softened fill in both themes. */
+  .auth .cm-btn[aria-busy='true']::before { border-width: 3px; border-color: color-mix(in srgb, currentColor 40%, transparent); border-block-start-color: currentColor; }
   .auth .cm-btn.quiet { margin-block-start: calc(-1 * var(--space-2)); color: var(--brand-ink) !important; }
-  .ok { margin-inline-start: 0.4em; color: var(--up); font-weight: 700; }
-  .rule.state .ok { margin-inline-start: 0; }
   /* The optional block is a text disclosure under the password field; opened, the field follows. */
   /* The whole row is the control, with a chevron at its end (not a bare 「＋」 before the text). */
-  .optional summary { display: flex; gap: var(--space-2); align-items: center; justify-content: space-between; min-block-size: var(--target-min); padding: 0 var(--space-2); border-block: 1px solid var(--line); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
+  .optional summary { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; justify-content: flex-start; min-block-size: var(--target-min); padding: 0 var(--space-2); border-block: 1px solid var(--line); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
   .optional summary:hover { background: var(--hover-row); }
-  .optional .chev::before { content: '▾'; color: var(--muted); }
-  .optional[open] .chev::before { content: '▴'; }
+  /* The marker leads the label, like the site's other disclosures. */
+  .optional .chev::before { content: '▸'; color: var(--brand-ink); }
+  .optional[open] .chev::before { content: '▾'; }
+  .optional-why { color: var(--ink-2); font-size: 0.8125rem; font-weight: 500; }
   .optional summary:hover .optional-label { text-decoration: underline; text-underline-offset: 0.15em; }
   .optional summary::-webkit-details-marker { display: none; }
   .optional[open] summary .optional-label { color: var(--ink); }
@@ -705,7 +722,7 @@
 
   /* Signing out: a neutral secondary button with its one-line scope right beside it. */
   .switch { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; margin-block-start: var(--space-4); }
-  .switch p { flex: 1 1 12rem; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; }
+  .switch p { flex: 1 1 12rem; color: var(--ink-2); font-size: var(--t-base); line-height: 1.6; }
   .cm-btn.leave-quiet { color: var(--ink) !important; background: var(--panel-raised); border-color: var(--control-line); }
   .cm-btn.leave-quiet:hover { background: var(--hover-row); filter: none; }
 

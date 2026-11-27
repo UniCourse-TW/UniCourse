@@ -191,8 +191,12 @@ test('rejects a wrong password inline and keeps next on the same origin', async 
   await page.getByRole('button', { name: '登入' }).click();
   await expect(page.getByRole('alert')).toContainText('帳號或密碼錯誤');
   await expect(page.locator('input[name="next"]')).toHaveValue('/');
-  // Password help is explained in place (no e-mail reset, what to send, no GitHub alternative).
+  // Password help is folded under the form; 「忘記密碼？」 beside the field opens it in place (no e-mail
+  // reset, what to send, no GitHub alternative).
   const reset = page.locator('#reset-help');
+  await expect(reset).not.toHaveAttribute('open', '');
+  await page.getByRole('link', { name: '忘記密碼？', exact: true }).click();
+  await expect(reset).toHaveAttribute('open', '');
   await expect(reset).toContainText('不要寫密碼');
   await expect(reset.getByRole('link', { name: /開啟私密回報表單/ })).toHaveAttribute('href', /github\.com/);
 });
@@ -224,13 +228,14 @@ test('saves a profile while the phone preview is open', async ({ page }) => {
   await expect(save).toBeDisabled();
   const bio = page.getByLabel('自我介紹', { exact: true });
   await bio.fill('這是草稿。');
-  const preview = page.getByText('預覽公開個人頁').filter({ visible: true });
+  const preview = page.locator('.preview-fold summary');
+  await expect(preview).toContainText('預覽變更後的個人頁');
   await preview.click();
   await expect(page.locator('.preview-fold .bio')).toHaveText('這是草稿。');
   await save.click();
 
   await expect(page.getByRole('status')).toContainText('已儲存，個人頁已更新');
-  await expect(preview).toContainText('已更新為剛儲存的內容');
+  await expect(preview).toContainText('已儲存的版本');
   await bio.fill('這次還沒儲存。');
   await expect(page.getByRole('status')).toContainText('有 1 項變更尚未儲存');
 });

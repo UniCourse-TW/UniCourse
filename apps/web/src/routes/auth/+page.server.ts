@@ -21,6 +21,21 @@ export const load: PageServerLoad = async ({ fetch, locals, url }) => {
   return { mode, next, prefill, signedIn, activity } as const;
 };
 
+/** Up to two names close to `taken` that no account uses yet (a profile lookup answers 404). */
+async function freeNames(fetch: typeof globalThis.fetch, taken: string) {
+  const year = new Date().getFullYear() - 1911;
+  const candidates = [`${taken}2`, `${taken}_${year}`, `${taken}3`, `${taken}_tw`].filter((name) => name.length <= 32);
+  const checks = await Promise.all(
+    candidates.map(async (name) => {
+      const result = await catalog(fetch)
+        .GET('/api/users/{username}', { params: { path: { username: name } } })
+        .catch(() => undefined);
+      return result?.response.status === 404 ? name : undefined;
+    })
+  );
+  return checks.filter((name): name is string => Boolean(name)).slice(0, 2);
+}
+
 async function activityOf(fetch: typeof globalThis.fetch, username: string) {
   const profile = await catalog(fetch)
     .GET('/api/users/{username}', { params: { path: { username } } })
@@ -63,7 +78,13 @@ export const actions: Actions = {
       .POST('/api/auth/register', { body: { username, password, displayName: displayName || null } })
       .catch(() => undefined);
     if (!result) return fail(503, { ...values, message: apiMessage(undefined) });
-    if (!result.data) return fail(result.response.status, { ...values, message: apiMessage(result.error) });
+    if (!result.data) {
+      const message = apiMessage(result.error);
+      // A taken name comes back with two nearby names that are free right now (checked here, so the chips
+      // never offer a name that fails the same way).
+      const suggestions = message.includes('已有人') ? await freeNames(fetch, username) : [];
+      return fail(result.response.status, { ...values, message, suggestions });
+    }
     redirect(303, next);
   },
 

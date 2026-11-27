@@ -26,7 +26,7 @@
       return {
         title: '找不到這個開課班次',
         description: '這個連結可能已失效。用課名、課號或教師搜尋其他學期的開課。',
-        hint: '課號在舊課表或校方課程頁上',
+        hint: '課號可在舊課表或校方課程頁上找到。',
         context: offeringId ? pathname : undefined,
         // Only course-finding routes here: coverage first, then home (the forum is not a way to a course).
         secondary: SCHOOLS,

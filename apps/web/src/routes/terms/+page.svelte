@@ -23,7 +23,7 @@
     { lead: '課程資料', href: '#data', text: '來自各校公開系統，可能比校方晚更新，以校方為準。' },
     { lead: '帳號', href: '#account', text: '查課不用登入；評分與發文需要帳號，內容會公開。' },
     { lead: '外部評價', href: '#reviews', text: '只索引 PTT 四個課程板的標題與短摘要，不轉載全文。' },
-    { lead: '移除', href: '#removal', text: '想移除與你有關的內容，私密聯絡維護者即可，不必公開。' }
+    { lead: '移除', href: '#removal', text: '與你有關的內容，私密聯絡維護者即可，不必公開：', link: { href: PRIVATE_REPORT_URL, label: '私密申請移除', external: true } }
   ];
 </script>
 
@@ -32,7 +32,7 @@
   <meta name="description" content="UniCourse 的使用條款：課程資料的來源與限制、帳號與社群規範、PTT 課程板外部評論索引的收錄範圍、儲存欄位與移除方式。" />
 </svelte:head>
 
-<LegalDoc title="使用條款" updated={UPDATED} {sections} {summary} sibling={{ href: '/privacy', label: '隱私權政策' }}>
+<LegalDoc title="使用條款" updated={UPDATED} {sections} {summary} contactLabel="申請移除" sibling={{ href: '/privacy', label: '隱私權政策' }}>
   <section aria-labelledby="data">
     <div class="h2-row"><h2 id="data">課程資料</h2></div>
     <p>UniCourse 彙整各校公開系統的課程資料，方便跨校查詢與比較歷年修課人數。資料可能晚於校方更新，實際選課、上課時間、名額與成績規定請以校方系統為準。</p>
@@ -72,7 +72,7 @@
   <section aria-labelledby="reviews">
     <div class="h2-row"><h2 id="reviews">外部評論索引</h2></div>
     <!-- One paragraph answers the two questions readers come with; the lists below hold the detail. -->
-    <p class="lead"><strong>收什麼：</strong>PTT 四個課程板 2016 年起的公開文章。本站只做搜尋索引、不轉載全文，課程頁顯示標題、日期與開頭摘要，點標題回到原網站。<strong>怎麼移除：</strong>到<a href="#removal">聯絡與移除</a>私密告訴維護者即可，不必公開提出。</p>
+    <p class="lead"><strong>收什麼：</strong>PTT 四個課程板 2016 年起的公開文章，只存標題、日期與 120 字內的開頭摘要，點標題回到原網站，不轉載全文。<strong>怎麼移除：</strong>原文已刪或不想被索引，到<a href="#removal">聯絡與移除</a>私密告訴維護者，該筆索引就會移除。</p>
     <!-- The facts readers check (which boards, what is kept, how fresh) are open; only the long rules fold. -->
     <h3 id="reviews-boards">收錄的 4 個看板</h3>
     <p>只收錄 PTT（批踢踢實業坊）上專門討論課程的四個看板，從 2016 年起的文章。</p>

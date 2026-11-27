@@ -212,12 +212,13 @@
             {#if row.teachers.length && !row.mine}<span class="post-teacher">{row.teachers.join('、')}</span>{/if}
             {#if boards.length > 1}<span class="board">{row.post.board}</span>{/if}
             {#if row.author}<span class="author">{row.author}</span>{/if}
-            {#if row.post.pushScore}<span class="push meta-push num" class:down={row.post.pushScore < 0}>推 {pushLabel(row.post.pushScore)}</span>{/if}
             {#if !row.parts.length}
               <!-- No excerpt: a small tag on the meta line instead of a line of its own. -->
               <span class="title-only" title="這篇的開頭沒有可摘錄的心得文字，請點標題看原文">只收錄標題</span>
             {/if}
           </p>
+          <!-- Wide screens: the push count is a fixed column at the right edge, so every row scans the same way. -->
+          <span class="push side-push num" class:down={(row.post.pushScore ?? 0) < 0}>{#if row.post.pushScore}推 {pushLabel(row.post.pushScore)}{/if}</span>
           {#if row.parts.length}
             <p class="excerpt">
               {#each row.parts as part, i (i)}{#if part.label}<span class="label">{part.label}</span>{/if}{part.text}{#if i < row.parts.length - 1}<span class="sep" aria-hidden="true"> ・ </span>{/if}{/each}{#if !endsSentence(row.parts)}…{/if}
@@ -348,12 +349,12 @@
             <figcaption>每年發文數（篇）{#if peakYear}<span class="cap-range num">最多 {peakYear.count} 篇（{peakYear.year}）</span>{/if}</figcaption>
             <div class="columns" role="img" aria-label={`每年發文數：${perYear.map((entry) => `${entry.year} 年 ${entry.count} 篇`).join('、')}`}>
               {#each perYear as entry (entry.year)}
-                <!-- A year without posts is left blank above its axis label (no zero-height bar, no 0). -->
-                <span class="column" title={`${entry.year} 年 ${entry.count} 篇`}>
+                <!-- A year without indexed posts says 0 on the baseline, so it is not read as missing data. -->
+                <span class="column" class:zero={!entry.count} title={`${entry.year} 年 ${entry.count} 篇`}>
                   {#if entry.count}
                     <span class="value num" style:inset-block-end={`${(entry.count / yearMax) * 100}%`}>{entry.count}</span>
                     <span class="fill" style:height={`${(entry.count / yearMax) * 100}%`}></span>
-                  {/if}
+                  {:else}<span class="value num">0</span>{/if}
                 </span>
               {/each}
             </div>
@@ -374,7 +375,7 @@
             {:else if total > rows.length}
               此處列出最近 {displayValue(rows.length)} 篇
             {:else}
-              全部教師、全部學期・{sortLabels[sort]}
+              全部 <b class="num">{displayValue(rows.length)}</b> 篇・{sort === 'relevant' && mineCount ? '本班教師在前' : sortLabels[sort]}
             {/if}
           </p>
           <button
@@ -527,6 +528,7 @@
   .column { position: relative; display: flex; flex-direction: column; justify-content: end; align-items: stretch; block-size: 100%; }
   .column .fill { display: block; min-block-size: 2px; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--brand) 70%, var(--panel)); }
   .column .value { position: absolute; inset-inline: 0; color: var(--ink); font-size: 0.8125rem; font-weight: 600; line-height: 1rem; text-align: center; }
+  .column.zero .value { inset-block-end: 2px; color: var(--muted); font-weight: 500; }
   .axis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin-block-start: 2px; color: var(--muted); font-size: var(--t-sm); text-align: center; white-space: nowrap; }
   .axis span:first-child { text-align: start; }
   .axis span:last-child { text-align: end; }
@@ -562,7 +564,9 @@
   .grow-btn { min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; }
   .grow-btn:hover { background: var(--hover-row); }
   .grow .clear { min-block-size: var(--target-min); margin: 0; }
-  .meta .title-only { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-sm); line-height: 1.5; }
+  .meta .title-only { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: 0.8125rem; line-height: 1.5; }
+  /* Another teacher's post names that teacher in ink, so the list can be scanned by teacher. */
+  .meta .post-teacher { color: var(--ink); font-weight: 600; }
   .status b { color: var(--ink); }
   .clear { margin-inline-start: var(--space-2); padding: 0; border: 0; background: none; color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
   .none { padding: var(--space-4) 0; color: var(--ink-2); }
@@ -571,7 +575,9 @@
   .list.collapsible:not(:has(+ .more[open])) li.extra { display: none; }
   .list li { border-block-end: 1px solid var(--line); }
   .list li.mine { box-shadow: inset 3px 0 0 var(--brand); }
-  article { position: relative; display: grid; gap: 2px; padding: var(--space-2) var(--space-2) var(--space-3) var(--space-3); }
+  article { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 4rem; gap: 2px var(--space-3); padding: var(--space-2) var(--space-2) var(--space-3) var(--space-3); }
+  article > :not(.side-push) { grid-column: 1; }
+  .side-push { grid-column: 2; grid-row: 1 / span 3; align-self: start; padding-block-start: 0.2rem; font-size: var(--t-base); text-align: end; white-space: nowrap; }
   .list li:hover { background: var(--hover-row); }
   .title { color: inherit; font-size: var(--t-md); font-weight: 650; line-height: 1.45; overflow-wrap: anywhere; }
   .title a { text-decoration: none; }
@@ -584,7 +590,7 @@
   .meta .author { color: var(--muted); }
   .push { color: var(--up); font-weight: 650; }
   .push.down { color: var(--down); }
-  .excerpt { display: -webkit-box; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
+  .excerpt { display: -webkit-box; color: var(--ink-2); font-size: var(--t-base); line-height: 1.6; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
   .excerpt .label { margin-inline-end: 0.35em; padding: 0 4px; border-radius: 3px; background: var(--chip); color: var(--muted); font-size: var(--t-xs); font-weight: 650; }
   .excerpt .sep { color: var(--muted); }
   .more { border-block-start: 0; }
@@ -621,7 +627,8 @@
     .meta .post-teacher { max-inline-size: 8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     article { padding-block: var(--space-2); }
     .excerpt { -webkit-line-clamp: 2; line-clamp: 2; }
-    .meta-push { display: none; }
+    .side-push { display: none; }
+    article { grid-template-columns: minmax(0, 1fr); }
     .title-push { display: inline; }
     .col-head { display: none; }
     .toolbar:not(.open) { display: none; }
