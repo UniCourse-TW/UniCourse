@@ -3,7 +3,7 @@
   import { importedAt, shortImportedAt } from '$lib/format';
   import { departmentHref, instructorHref, schoolHref } from '$lib/overview-paths';
   import { meanRating, publishedEnrollment } from '$lib/schools-offerings';
-  import SchoolsOfferingTable from '$lib/SchoolsOfferingTable.svelte';
+  import SchoolsOfferingTable from '$lib/schools-offering-table.svelte';
   import SchoolsInstructorDiscussions from '$lib/schools-instructor-discussions.svelte';
   import SchoolsTeachingHistory from '$lib/schools-teaching-history.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -33,7 +33,6 @@
   let courseOptions = $derived(data.courseCode && !data.courses.some(({ value }) => value === data.courseCode)
     ? [...data.courses, { value: data.courseCode, label: data.courseCode }]
     : data.courses);
-
 </script>
 
 <svelte:head><title>{instructor.name} · {instructor.schoolName}｜UniCourse</title></svelte:head>
@@ -42,7 +41,7 @@
   <nav class="browse-crumbs" aria-label="所在位置">
     <a href="/">查課</a><span aria-hidden="true">/</span><a href="/schools">學校</a><span aria-hidden="true">/</span><a href={schoolHref(instructor.school)}>{instructor.schoolName}</a><span aria-hidden="true">/</span><span aria-current="page">{instructor.name}</span>
   </nav>
-  <header class="browse-head">
+  <header class="browse-head" id="instructor-top" tabindex="-1">
     <div class="browse-stack">
       <h1>{instructor.name}</h1>
       <p class="browse-dek"><span>{instructor.schoolName}課程資料</span>{#if span}<span>授課學期 {span}</span>{/if}
@@ -57,10 +56,11 @@
         {/if}
       </div>
     </div>
-    <div class="browse-actions">
-      <a class="browse-button" href="#offerings">看開課列表 ↓</a>
-      <a class="browse-button" href="#discussions">{data.externalReviews?.posts.length ? '看網路討論' : '到其他網站搜尋'} ↓</a>
-    </div>
+    <nav class="browse-actions section-links" aria-label="本頁段落">
+      <a href="#history">歷年授課 ↓</a>
+      <a href="#offerings">看開課列表 ↓</a>
+      <a href="#discussions">{data.externalReviews?.posts.length ? '看網路討論' : '到其他網站搜尋'} ↓</a>
+    </nav>
   </header>
 
   <div class="browse-compact-stats instructor-stats"><StatRow label="歷年授課統計">
@@ -84,20 +84,20 @@
     <p class="browse-note rating-summary">{checkedCourses ? `${ratingNote}，目前尚無課程評價。` : '暫時無法取得課程評價。'}</p>
   {/if}
 
-  <section class="browse-stack" aria-labelledby="history">
-    <SectionHeader title="歷年授課" id="history" description="每格為該學年已公布的修課人次，連往標示學期的最新班次。" />
+  <section class="browse-stack instructor-section" aria-labelledby="history">
+    <SectionHeader title="歷年授課" id="history" description="每格顯示該學年已公布的修課人次。點學期可查看班次。" />
     {#if truncated}<p class="browse-note">各課程的學年統計僅計入最近 {displayValue(data.listed)} 班；下方可查看完整的各學期總數。</p>{/if}
     <SchoolsTeachingHistory periods={data.matrix.periods} rows={data.matrix.rows} trends={data.trends} />
   </section>
 
-  <section class="browse-stack" aria-labelledby="offerings">
+  <section class="browse-stack instructor-section" aria-labelledby="offerings">
     <SectionHeader title={`開課列表（${displayValue(data.listed)} 班）`} id="offerings" />
     {@render offeringFilters()}
     {#if truncated}<p class="browse-note">這裡可篩選最近 {displayValue(data.listed)} 班（共 {displayValue(summary.offerings)} 班）。<a href={`/?${new URLSearchParams({ school: instructor.school, term: 'all', q: instructor.name })}`}>按教師姓名查找較早班次</a></p>{/if}
     {#if data.rows.length}
       {#if data.totalPages > 1 || filtered}<p class="browse-note">{displayValue(data.firstRow)}–{displayValue(data.firstRow + data.rows.length - 1)}／{displayValue(data.matched)} 班</p>{/if}
       <SchoolsOfferingTable offerings={data.rows} groupTerms={data.termsByCourse} ratings={data.summaryRatings} mode="instructor" caption="授課班次" showTerm />
-      <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="授課班次分頁" />
+      <Pagination url={new URL('#offerings', page.url)} page={data.page} totalPages={data.totalPages} label="授課班次分頁" />
     {:else}
       <EmptyState title="沒有符合條件的開課班次" description={truncated ? '這個條件在已列出的班次中沒有結果。' : '試試其他學期或課程。'}>
         {#snippet action()}<a href={base}>清除篩選</a>{/snippet}
@@ -105,7 +105,10 @@
     {/if}
   </section>
 
-  <SchoolsInstructorDiscussions reviews={data.externalReviews} courseReviews={data.courseReviews} retryHref={`${page.url.pathname}${page.url.search}#discussions`} />
+  <div class="instructor-section">
+    <SchoolsInstructorDiscussions reviews={data.externalReviews} courseReviews={data.courseReviews} searchQuery={`${instructor.name} ${instructor.schoolName}`} retryHref={`${page.url.pathname}${page.url.search}#discussions`} />
+  </div>
+  <a class="back-to-top" href="#instructor-top">↑ 回到頂端</a>
 </div>
 
 {#snippet offeringFilters()}
@@ -126,7 +129,14 @@
   .instructor-stats :global(.tile) { padding-block: var(--space-2); }
   .rating-summary { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-3); }
   .instructor-page .browse-crumbs + .browse-head { margin-block-start: calc(-1 * var(--space-2)); }
-  .instructor-page :global(:is(#history, #offerings)) { scroll-margin-block-start: 4.5rem; }
+  .instructor-page :global(:is(#instructor-top, #history, #offerings, #discussions)) { scroll-margin-block-start: 6.5rem; }
+  .section-links { gap: var(--space-1); }
+  .section-links a { display: inline-flex; align-items: center; min-block-size: var(--target-min); padding-inline: .65rem; border-radius: var(--radius-control); background: var(--chip); color: var(--brand-ink); text-decoration: none; font-weight: 650; }
+  .section-links a:hover { background: var(--brand-wash); text-decoration: underline; }
+  .instructor-section { margin-block-start: var(--space-3); padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); }
+  .instructor-page :global(.browse-note) { text-wrap: pretty; }
+  .instructor-page :global(.section-header p) { text-wrap: balance; }
+  .back-to-top { display: inline-grid; align-items: center; justify-self: start; min-block-size: var(--target-min); }
   .instructor-units summary { min-block-size: var(--target-min); cursor: pointer; align-content: center; width: fit-content; color: var(--brand-ink); font-size: var(--t-base); }
   .instructor-units a { display: inline-grid; align-items: center; min-block-size: var(--target-min); }
   .identity-note { color: var(--ink-2); }
@@ -138,6 +148,8 @@
   .instructor-filters :global(.field) { flex: 0 1 auto; }
   .instructor-filters :global(select[name='course']) { min-inline-size: 0; max-inline-size: min(50vw, 17rem); }
   @media (max-width: 40rem) {
+    .browse-head { gap: var(--space-1); }
+    .section-links a { padding-inline: .5rem; font-size: var(--t-sm); }
     .instructor-stats :global(.stat-row) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .instructor-filters :global(form) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
     .instructor-filters :global(.field) { min-inline-size: 0; }

@@ -2,14 +2,14 @@
   import { page } from '$app/state';
   import { importedAt, isHttpUrl, shortImportedAt } from '$lib/format';
   import { departmentHref, schoolHref } from '$lib/overview-paths';
-  import SchoolsOfferingTable from '$lib/SchoolsOfferingTable.svelte';
-  import SchoolsTermHistory from '$lib/schools-term-history.svelte';
+  import SchoolsOfferingTable from '$lib/schools-offering-table.svelte';
   import ChartValues from '$lib/ui/ChartValues.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import ErrorState from '$lib/ui/ErrorState.svelte';
   import FilterSelect from '$lib/ui/FilterSelect.svelte';
   import Pagination from '$lib/ui/Pagination.svelte';
   import SectionHeader from '$lib/ui/SectionHeader.svelte';
+  import TrendChart from '$lib/ui/TrendChart.svelte';
   import { changeQuery, displayValue } from '$lib/ui/format';
   import { partialTermLabel, partialTerms } from '$lib/ui/partial-terms';
   import type { TableColumn } from '$lib/ui/types';
@@ -28,12 +28,10 @@
     { label: '未分類', count: data.breakdown.unknown, color: 'var(--axis)' }
   ].filter(({ count }) => count > 0));
   let termOptions = $derived([...new Set([...data.terms, data.term].filter((term) => term !== 'all'))].sort().reverse());
-  let displayedTerms = $derived(
-    termOptions.indexOf(data.term) > 2
-      ? [data.term, ...termOptions.filter((term) => term !== data.term)]
-      : termOptions
+  let recentTerms = $derived(
+    data.term !== 'all' && termOptions.indexOf(data.term) > 1 ? [termOptions[0], data.term] : termOptions.slice(0, 2)
   );
-  let termLinks = $derived([...displayedTerms.slice(0, 2), 'all', ...displayedTerms.slice(2)]);
+  let olderTerms = $derived(termOptions.filter((term) => !recentTerms.includes(term)));
   let selectedTrend = $derived(data.trends?.find(({ term }) => term === data.term));
   let hasSearch = $derived(Boolean(data.query || page.url.searchParams.has('sort')));
   let orderOptions = $derived([
@@ -74,22 +72,33 @@
   <nav class="browse-crumbs" aria-label="所在位置">
     <a href="/">查課</a><span aria-hidden="true">/</span><a href="/schools">學校</a><span aria-hidden="true">/</span><a href={schoolHref(department.school)}>{department.schoolName}</a>
   </nav>
-  <header class="browse-head">
+  <header class="browse-head" id="department-top" tabindex="-1">
     <div class="browse-stack">
-      <div class="department-title">
-        <h1>{department.department}</h1>
-        <a class="history-jump" href="#department-history">歷年開課變化 ↓</a>
-      </div>
-      <p class="browse-dek">{department.schoolName}課程資料 · {displayValue(data.terms.length)} 學期{#if data.updatedAt} · 匯入 <time datetime={data.updatedAt} title={importedAt(data.updatedAt)}>{shortImportedAt(data.updatedAt)}</time>・臺北時間{/if}</p>
+      <h1>{department.department}</h1>
+      <p class="browse-dek"><span>{department.schoolName}課程資料 · {displayValue(data.terms.length)} 學期</span>{#if data.updatedAt}<span>匯入 <time datetime={data.updatedAt} title={importedAt(data.updatedAt)}>{shortImportedAt(data.updatedAt)}</time>・臺北時間</span>{/if}</p>
     </div>
+    <nav class="term-links section-links" aria-label="本頁段落">
+      <a href="#offerings">課表 ↓</a>
+      <a href="#department-history">歷年開課變化 ↓</a>
+    </nav>
   </header>
 
   <section class="browse-stack timetable" id="offerings" aria-labelledby="timetable-title">
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex (The navigation can be scrolled with the keyboard.) -->
-    <nav class="term-links semester-links" class:many={termLinks.length > 5} aria-label="切換學期" tabindex={termLinks.length > 5 ? 0 : undefined}>
-      {#each termLinks as term (term)}
-        <a href={termHref(term)} aria-current={term === data.term ? 'true' : undefined}>{term === 'all' ? '所有學期' : term}</a>
+    <nav class="term-links semester-links" aria-label="切換學期">
+      <div class="all-terms"><a href={termHref('all')} aria-current={data.term === 'all' ? 'true' : undefined}>所有學期</a></div>
+      {#each recentTerms as term (term)}
+        <a href={termHref(term)} aria-current={term === data.term ? 'true' : undefined}>{term}</a>
       {/each}
+      {#if olderTerms.length}
+        {#key data.term}
+          <details>
+            <summary>其他學期</summary>
+            <ul class="term-options" aria-label="其他學期" role="list">
+              {#each olderTerms as term (term)}<li><a href={termHref(term)}>{term}</a></li>{/each}
+            </ul>
+          </details>
+        {/key}
+      {/if}
     </nav>
     <div class="department-summary">
       <div>
@@ -146,20 +155,28 @@
     {#if data.resultsError}
       <ErrorState title="暫時無法載入課表" retryHref={page.url.pathname + page.url.search + '#offerings'} />
     {:else if data.offerings.length}
-      <p class="browse-note">
+      <div class="results-summary">
         {#if data.query || data.totalPages > 1 || data.classFilter}
-          {#if data.totalPages > 1 && !data.classInPage}{displayValue(data.firstRow)}–{displayValue(data.firstRow + data.offerings.length - 1)}／{/if}{displayValue(data.classInPage ? data.offerings.length : data.matches)} 班{#if data.classInPage}符合本頁類別{/if} ·
+          <p class="browse-note results-count">
+            {#if data.totalPages > 1 && !data.classInPage}{displayValue(data.firstRow)}–{displayValue(data.firstRow + data.offerings.length - 1)}／{/if}{displayValue(data.classInPage ? data.offerings.length : data.matches)} 班{#if data.classInPage}符合本頁類別{/if}
+          </p>
         {/if}
-        人數與名額為匯入時紀錄
-      </p>
+        {#if data.totalPages > 1}
+          <div class="phone-pagination"><Pagination url={new URL('#offerings', page.url)} page={data.page} totalPages={data.totalPages} label="課表上方分頁" /></div>
+        {/if}
+        <p class="browse-note import-note">人數、名額與餘額為匯入時紀錄</p>
+      </div>
       <SchoolsOfferingTable offerings={data.offerings} ratings={data.ratings} mode="department" caption={`${termLabel}開課班次`} showTerm={data.term === 'all'} />
     {:else}
       <EmptyState title={data.classInPage ? '本頁沒有此類別的班次' : data.query || data.classFilter ? '沒有符合條件的班次' : `${termLabel}沒有開課紀錄`} description={data.classInPage ? '可切換類別或查看其他頁。' : data.query ? '試試其他教師名、課名或課號。' : data.classFilter ? '可切換類別或學期。' : '可切換上方學期，查看這個開課單位的課表。'}>
         {#snippet action()}<a href={data.query || data.classFilter ? `${base}?term=${encodeURIComponent(data.term)}#offerings` : termHref('all')}>{data.query || data.classFilter ? '清除篩選' : '查看所有學期'}</a>{/snippet}
       </EmptyState>
     {/if}
-    {#if !data.resultsError}
-      <Pagination url={new URL('#offerings', page.url)} page={data.page} totalPages={data.totalPages} label="課表分頁" />
+    {#if !data.resultsError && data.totalPages > 1}
+      <div class="table-footer">
+        <Pagination url={new URL('#offerings', page.url)} page={data.page} totalPages={data.totalPages} label="課表分頁" />
+        <a class="back-link" href="#offerings">↑ 回到課表篩選</a>
+      </div>
     {/if}
   </section>
 
@@ -172,45 +189,67 @@
     {#if data.trends === null}
       <ErrorState title="暫時無法取得歷年開課統計" retryHref={page.url.pathname + page.url.search} />
     {:else}
-      <div class="history-charts">
-        <SchoolsTermHistory label="開課班次" compact yearsOnly highlight={data.term} points={historical.map(({ term, offerings }) => ({ term, value: offerings, partial: partial.has(term) }))} termHref={termHref}>
-          {#snippet header()}{#if selectedTrend && historical.length > 3}<p class="selected-value"><span>{data.term}</span><strong>{displayValue(selectedTrend.offerings)} 班</strong></p>{/if}{/snippet}
-        </SchoolsTermHistory>
-        <SchoolsTermHistory label="已公布修課人次" unit="人次" compact yearsOnly highlight={data.term} points={historical.map(({ term, enrolled }) => ({ term, value: enrolled, partial: partial.has(term) }))} termHref={termHref}>
-          {#snippet header()}{#if selectedTrend && historical.length > 3}<p class="selected-value"><span>{data.term}</span><strong>{selectedTrend.enrolled == null ? '未公布' : `${displayValue(selectedTrend.enrolled)} 人次`}</strong></p>{/if}{/snippet}
-        </SchoolsTermHistory>
-      </div>
       {#if historical.length > 3}
-        <p class="browse-note">直線分隔學年，每柱為一學期。可在數值表中查看上、下學期和各期課表。</p>
+        <p class="browse-note">細線分隔學年，柱下的 1、2 分別為上、下學期。</p>
+      {/if}
+      <div class="history-charts">
+        <TrendChart label="開課班次" unit="班" condensed termPairs yearTicks highlight={data.term} points={historical.map(({ term, offerings }) => ({ term, value: offerings, partial: partial.has(term) }))} termHref={termHref}>
+          {#snippet header()}{#if selectedTrend && historical.length > 3}<p class="selected-value"><span aria-label={`所選學期 ${data.term}`}>{data.term}</span><strong>{displayValue(selectedTrend.offerings)} 班</strong></p>{/if}{/snippet}
+        </TrendChart>
+        <TrendChart label="已公布修課人次" unit="人次" condensed termPairs yearTicks highlight={data.term} points={historical.map(({ term, enrolled }) => ({ term, value: enrolled, partial: partial.has(term) }))} termHref={termHref}>
+          {#snippet header()}{#if selectedTrend && historical.length > 3}<p class="selected-value"><span aria-label={`所選學期 ${data.term}`}>{data.term}</span><strong>{selectedTrend.enrolled == null ? '未公布' : `${displayValue(selectedTrend.enrolled)} 人次`}</strong></p>{/if}{/snippet}
+        </TrendChart>
+      </div>
+      {#if partial.size || historical.some(({ enrolled }) => enrolled === null)}
+        <div class="history-legend">
+          {#if partial.size}<p class="browse-note partial-legend"><span aria-hidden="true"></span>只收錄部分班次（推估）</p>{/if}
+          {#if historical.some(({ enrolled }) => enrolled === null)}<p class="browse-note">修課人次圖的空白表示校方未公布。</p>{/if}
+        </div>
+      {/if}
+      {#if historical.length > 3}
         <ChartValues label="歷年開課變化" summary="查看各學期數值與課表" columns={historicalColumns} rows={historical} rowKey={({ term }) => term} rowHref={({ term }) => termHref(term)} />
       {/if}
     {/if}
   </section>
 
-  <a class="back-to-timetable" href="#offerings">↑ 回到課表與篩選</a>
+  <a class="back-link" href="#department-top">↑ 回到頂端</a>
 </div>
 
 <style>
   .department-page, .department-page .browse-stack { gap: var(--space-2); }
   .department-page { margin-block-start: calc(-1 * var(--space-3)); }
   .department-page .browse-crumbs + .browse-head { margin-block-start: calc(-1 * var(--space-2)); }
-  .department-page .browse-dek { display: block; }
+  .department-page .browse-note { text-wrap: pretty; }
   .department-page .browse-head h1 { font-size: clamp(1.5rem, 4vw, 2rem); }
-  .history, .timetable { margin-block-start: var(--space-2); scroll-margin-block-start: 4.5rem; }
-  .history-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: var(--space-2); }
-  .history-charts :global(figure) { position: relative; height: 100%; }
-  .history-charts :global(.plot svg) { block-size: 9rem; }
-  .history-charts :global(.terms span) { font-size: var(--t-sm); }
-  .history-charts :global(.year-divider) { stroke: var(--muted); }
-  .history-charts :global(.highlight) { fill: color-mix(in srgb, var(--brand) 18%, var(--panel-raised)); }
-  .history-charts :global(.selection) { display: none; }
-  .selected-value { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-2); margin-block: 0 var(--space-3); color: var(--brand-ink); font-variant-numeric: tabular-nums; }
+  .department-page :global(:is(#department-top, #offerings, #department-history)) { scroll-margin-block-start: 6.5rem; }
+  .department-page .browse-head { gap: var(--space-2); }
+  .history { margin-block-start: var(--space-4); padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); }
+  .timetable { margin-block-start: var(--space-1); }
+  .department-summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(14rem, 17rem); align-items: end; gap: var(--space-3); }
+  .history-charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+  .history-charts :global(figure) { padding: var(--space-2) var(--space-3); }
+  .history-charts :global(figcaption) { margin-block-end: var(--space-2); }
+  .history-charts :global(.plot svg) { block-size: 8rem; }
+  .history-charts :global(.highlight) { fill: color-mix(in srgb, var(--brand) 18%, var(--brand-wash)); }
+  .history-charts :global(.gridline) { stroke: color-mix(in srgb, var(--control-line) 55%, var(--line)); }
+  .history-charts :global(.axis), .history-charts :global(.terms) { color: var(--ink-2); }
+  .history-charts :global(.partial-bar) { fill: color-mix(in srgb, var(--series-1) 45%, var(--panel-raised)); stroke: none; }
+  .history-charts :global(.partial-zero) { stroke: color-mix(in srgb, var(--series-1) 45%, var(--panel-raised)); }
+  .history-charts :global(.period-values .partial) { border-inline-start-style: solid; border-inline-start-color: color-mix(in srgb, var(--series-1) 45%, var(--panel-raised)); }
+  .history-charts :global(.period-values .partial > small) { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+  .history-charts :global(.chart-legend) { display: none; }
+  .history-legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); }
+  .partial-legend { display: flex; align-items: center; gap: var(--space-2); }
+  .partial-legend span { inline-size: .9rem; block-size: .55rem; background: color-mix(in srgb, var(--series-1) 45%, var(--panel-raised)); border-radius: 2px; }
+  .selected-value { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); margin-block-end: var(--space-3) !important; color: var(--brand-ink); font-variant-numeric: tabular-nums; }
+  .selected-value span { padding: .1rem .35rem; border-radius: var(--radius-control); background: var(--brand-wash); font: 650 var(--t-sm) / 1.5 var(--font-mono); }
   .selected-value strong { font-size: var(--t-lg); }
-  .department-summary { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 20rem); gap: var(--space-2); align-items: end; }
-  .timetable-toolbar, .department-title { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: var(--space-1) var(--space-2); }
-  .department-title { align-items: center; }
-  .department-title h1 { flex: 0 1 auto; }
-  .history-jump, .back-to-timetable { width: fit-content; min-height: var(--target-min); align-content: center; font-size: var(--t-base); }
+  .results-summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2); }
+  .import-note:not(:first-child) { padding-inline-start: var(--space-2); border-inline-start: 1px solid var(--line); }
+  .results-count { color: var(--ink-2); }
+  .phone-pagination { display: none; }
+  .table-footer, .timetable-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-1) var(--space-2); }
+  .back-link { display: inline-grid; align-items: center; justify-self: start; min-block-size: var(--target-min); font-size: var(--t-base); }
   .search-options { min-inline-size: 0; }
   .search-options[open] { flex: 1 0 100%; }
   .search-options summary { width: fit-content; min-height: var(--target-min); align-content: center; padding-inline: var(--space-2); cursor: pointer; color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; }
@@ -220,10 +259,16 @@
   .timetable-options { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
   .timetable-options a { display: inline-flex; align-items: center; min-height: var(--target-min); }
   .term-links { display: flex; align-items: center; gap: .25rem; }
-  .term-links a { flex: none; min-height: var(--target-min); align-content: center; border-radius: var(--radius-control); padding: 0 .625rem; background: var(--chip); color: var(--ink-2); font-size: var(--t-sm); text-decoration: none; }
+  .term-links a, .semester-links summary { flex: none; min-height: var(--target-min); align-content: center; border-radius: var(--radius-control); padding: 0 .625rem; background: var(--chip); color: var(--ink-2); font-size: var(--t-sm); text-decoration: none; }
   .term-links a[aria-current] { background: var(--brand-wash); color: var(--brand-ink); font-weight: 750; box-shadow: inset 0 -2px var(--brand); }
-  .semester-links { overflow-x: auto; scrollbar-width: thin; padding: 2px; }
-  .semester-links a { font-variant-numeric: tabular-nums; }
+  .section-links a { color: var(--brand-ink); font-weight: 650; }
+  .term-links a { display: inline-grid; align-items: center; font-variant-numeric: tabular-nums; }
+  .term-links a:hover, .semester-links summary:hover { background: var(--brand-wash); }
+  .semester-links { flex-wrap: wrap; }
+  .all-terms { margin-inline-end: var(--space-1); padding-inline-end: var(--space-2); border-inline-end: 1px solid var(--line); }
+  .semester-links details[open] { display: contents; }
+  .semester-links summary { width: fit-content; color: var(--brand-ink); font-weight: 650; cursor: pointer; }
+  .term-options { flex: 0 0 100%; display: flex; flex-wrap: wrap; gap: var(--space-1); margin: 0; padding: var(--space-2); list-style: none; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
   .timetable-search { display: grid; flex: 1 1 12rem; gap: .25rem; font-size: var(--t-sm); color: var(--ink-2); }
   .input-wrap { position: relative; }
   .search-icon { position: absolute; inset: 50% auto auto .8rem; translate: 0 -60%; inline-size: .7rem; block-size: .7rem; border: 1.5px solid var(--muted); border-radius: 50%; pointer-events: none; }
@@ -240,7 +285,11 @@
     .department-summary { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
     .distribution { max-inline-size: 24rem; }
     .history-charts { grid-template-columns: minmax(0, 1fr); }
-    .semester-links.many { mask-image: linear-gradient(90deg, black calc(100% - 1rem), transparent); padding-inline-end: 1rem; }
+    .phone-pagination { display: block; }
+    .results-summary { align-items: center; justify-content: space-between; gap: var(--space-1) var(--space-2); }
+    .results-summary .import-note { flex-basis: 100%; padding-inline-start: 0; border-inline-start: 0; }
+    .history-charts :global(.plot) { column-gap: var(--space-1); }
+    .term-links a, .semester-links summary { padding-inline: .5rem; }
     .class-links a { padding-inline: .45rem; }
     .search-options summary { padding-inline: .3rem; }
   }

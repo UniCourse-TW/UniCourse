@@ -35,7 +35,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const sort = searchSorts.find(({ value }) => value === url.searchParams.get('sort'))?.value ?? (query ? 'relevance' : 'enrolled');
   const classFilter = ['required', 'elective'].find((value) => value === url.searchParams.get('class_filter')) ?? '';
   const requestedPage = Number(url.searchParams.get('page'));
-  const pageSize = 20;
+  const pageSize = 12;
   const batchSize = 50;
   const filterLimit = 200;
   const safePage = Number.isSafeInteger(requestedPage) ? Math.max(1, requestedPage) : 1;
