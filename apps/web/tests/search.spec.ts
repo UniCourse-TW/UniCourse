@@ -81,6 +81,8 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
   // Cross-term history: 115-1 is this page, 114-2 links to its own offering.
   const history = page.getByRole('table', { name: /各學期開課與修課人數/ });
   await expect(history.getByRole('row', { name: /115-1/ })).toContainText('本頁');
+  // The bar key is visible on the table itself (phones too), not packed into the column header.
+  await expect(page.getByText('刻線＝名額（100%）')).toBeVisible();
   await expect(history.getByRole('row', { name: /114-2/ }).getByRole('link', { name: /114-2/ })).toHaveAttribute('href', /^\/courses\/\d+$/);
 
   // The course page breadcrumb leads to the department page.
