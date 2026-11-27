@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import '$lib/community-ui.css';
   import CommunityPostList from '$lib/community-post-list.svelte';
-  import { initial, joinedMonth, oneLine, shortDate } from '$lib/community-format';
+  import { initial, oneLine, shortDate, slashDate } from '$lib/community-format';
   import { courseSearchHref } from '$lib/community-paths';
   import BarList from '$lib/ui/BarList.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -83,7 +83,7 @@
       <p class="handle">
         <span class="mono">@{profile.username}</span>
         {#if schoolName}<span class="sep">·</span>{schoolName}{/if}
-        <span class="sep">·</span><time datetime={profile.createdAt}>{joinedMonth(profile.createdAt)}</time>加入
+        <span class="sep">·</span><time datetime={profile.createdAt}>{slashDate(profile.createdAt)}</time> 加入
       </p>
       {#if profile.bio}<p class="bio">{profile.bio}</p>
       {:else if isMe}<p class="bio empty">還沒有自我介紹・<a href="/settings">到設定新增</a>（只有你看得到這行）</p>{/if}

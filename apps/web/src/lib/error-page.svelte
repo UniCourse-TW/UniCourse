@@ -44,7 +44,7 @@
   // When the visitor came from a search on this site, offer that exact search back (with its filters)
   // and start the box with the same words, so nothing has to be typed twice.
   let back = $state<{ href: string; label: string } | null>(null);
-  let prefill = $state('');
+  let searchInput: HTMLInputElement | undefined = $state();
   onMount(() => {
     try {
       const from = document.referrer ? new URL(document.referrer) : null;
@@ -52,7 +52,8 @@
       if (from.pathname === '/' && from.searchParams.get('q')) {
         const q = from.searchParams.get('q') ?? '';
         back = { href: from.pathname + from.search, label: `回到「${q}」的搜尋結果` };
-        prefill = q;
+        // Only fill an untouched box: text typed before hydration must survive.
+        if (searchInput && !searchInput.value) searchInput.value = q;
       } else if (from.pathname.startsWith('/schools') || from.pathname.startsWith('/forum') || from.pathname.startsWith('/instructors')) {
         back = { href: from.pathname + from.search, label: '回上一頁' };
       }
@@ -89,7 +90,7 @@
         <span class="field-label">課名、課號或教師</span>
         <span class="input-wrap">
           <svg class="icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-          <input type="search" name="q" value={query || prefill} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" />
+          <input bind:this={searchInput} type="search" name="q" defaultValue={query} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" />
         </span>
       </label>
       <button type="submit">搜尋課程</button>
