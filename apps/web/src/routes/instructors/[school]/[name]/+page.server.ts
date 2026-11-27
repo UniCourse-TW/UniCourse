@@ -56,7 +56,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   ]);
   const ratedCourses = [...latestByCourse.values()].flatMap((row) => {
     const stats = summaryRatings.get(row.courseCode);
-    return stats?.average != null && stats.count > 0 ? [{ id: row.id, title: row.title, average: stats.average, count: stats.count }] : [];
+    return stats?.average != null && stats.count > 0 ? [{ id: row.id, courseCode: row.courseCode, title: row.title, average: stats.average, count: stats.count }] : [];
   }).sort((left, right) => right.count - left.count);
 
   const matrix = buildTeachingMatrix(offerings, offerings.length === instructor.summary.offerings);
