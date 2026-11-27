@@ -1,7 +1,8 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { page } from '$app/state';
-  import { authorName, averageScore, shortDate, stars } from '$lib/community-format';
+  import { authorName, averageScore, shortDate } from '$lib/community-format';
+  import Stars from '$lib/community-stars.svelte';
   import { loginHref, profileHref } from '$lib/community-paths';
   import type { CommunityUser, MyRating, Rating, RatingStats } from '$lib/community-types';
   import type { SubmitFunction } from '@sveltejs/kit';
@@ -58,15 +59,16 @@
   {#if !ratings}
     <p class="error" role="alert">評價暫時無法載入，請稍後再試。課程資料不受影響。</p>
   {:else}
-    <div class="summary" class:empty={count === 0}>
+    <!-- One or two ratings get the average and the count in one line, not a five-row histogram of zeros. -->
+    <div class="summary" class:empty={count === 0} class:few={count > 0 && count < sparseBelow}>
       {#if count > 0}
         <p class="average">
           <strong class="num">{averageScore(ratings.stats.average)}</strong>
-          <span class="stars big" aria-hidden="true">{stars(rounded)}</span>
-          <span class="count" class:sparse={count < sparseBelow}>{count < sparseBelow ? `目前僅 ${count} 則評價` : `${count} 則評價`}</span>
+          <Stars score={rounded} decorative size="md" />
+          <span class="count" class:sparse={count < sparseBelow}>{count < sparseBelow ? `僅 ${count} 則評價` : `${count} 則評價`}</span>
         </p>
       {/if}
-      {#if count > 0}
+      {#if count >= sparseBelow}
         <!-- Histogram from 5 stars down to 1 star, on one shared scale. -->
         <dl class="histogram" aria-label="評分分布">
           {#each [5, 4, 3, 2, 1] as score (score)}
@@ -80,7 +82,7 @@
             </div>
           {/each}
         </dl>
-      {:else}
+      {:else if count === 0}
         <div class="first">
           <p class="lead">尚無評價</p>
           <p>還沒有人評價這門課。修過的話，給個 1–5 分、寫兩句上課方式或作業量，就能幫到下一位同學。</p>
@@ -98,7 +100,7 @@
           <li class:extra={index >= initialReviews}>
             <p class="who">
               <a href={profileHref(rating.username)}>{authorName(rating)}</a>
-              <span class="stars" role="img" aria-label="{rating.score} 分">{stars(rating.score)}</span>
+              <Stars score={rating.score} />
               <time class="when num" datetime={rating.updatedAt}>{shortDate(rating.updatedAt)}</time>
             </p>
             {#if rating.review}<p class="text">{rating.review}</p>{/if}
@@ -116,9 +118,9 @@
       <details class="mine" id="rate-form" open={editorOpen}>
         <summary>
           {#if ratings.mine}
-            <span>我的評價：<span class="stars" aria-hidden="true">{stars(ratings.mine.score)}</span> {ratings.mine.score} 分</span><span class="edit">編輯</span>
+            <span>我的評價 <Stars score={ratings.mine.score} decorative /> {ratings.mine.score} 分</span><span class="edit">編輯評價<span class="caret" aria-hidden="true"></span></span>
           {:else}
-            <span>我要評分</span>
+            <span>我要評分</span><span class="edit"><span class="caret" aria-hidden="true"></span></span>
           {/if}
         </summary>
         <form method="POST" action="?/rate" class="rate" use:enhance={submit}>
@@ -177,8 +179,6 @@
   .average { display: grid; justify-items: start; gap: 0.125rem; }
   .average strong { font-size: 2.25rem; font-weight: 650; line-height: 1.05; }
   .average .count { color: var(--muted); font-size: var(--t-sm); }
-  .stars { color: var(--warn); letter-spacing: 0.04em; white-space: nowrap; }
-  .stars.big { font-size: var(--t-md); line-height: 1.2; }
   .histogram { display: grid; gap: 0.3rem; margin: 0; }
   .bar-row { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr); gap: var(--space-2); align-items: center; font-size: var(--t-sm); }
   .bar-row dt { color: var(--muted); }
@@ -188,6 +188,8 @@
   .bar-count { color: var(--ink-2); text-align: end; }
   .summary.empty { grid-template-columns: minmax(0, 1fr); }
   .average .count.sparse { color: var(--ink); font-weight: 600; }
+  .summary.few { grid-template-columns: minmax(0, 1fr); }
+  .summary.few .average { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); align-items: baseline; }
   .first { display: grid; gap: var(--space-1); color: var(--ink-2); font-size: var(--t-base); }
   .first .lead { color: var(--ink); font-size: var(--t-lg); font-weight: 650; }
   .first .cta { font-weight: 650; }
@@ -208,9 +210,11 @@
 
   .mine { border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); }
   .mine summary { display: flex; gap: var(--space-3); align-items: center; justify-content: space-between; min-block-size: var(--target-min); padding-inline: var(--space-3); font-size: var(--t-base); font-weight: 650; list-style: none; cursor: pointer; }
-  .mine summary::after { content: '▾'; color: var(--muted); }
-  .mine[open] summary::after { content: '▴'; }
-  .mine .edit { margin-inline-start: auto; color: var(--brand-ink); font-weight: 600; }
+  /* One control: 「編輯評價 ▾」 reads as a single button-like label on the right. */
+  .mine .edit { display: inline-flex; gap: 0.3em; align-items: center; margin-inline-start: auto; color: var(--brand-ink); font-weight: 600; white-space: nowrap; }
+  .mine .caret::before { content: '▾'; }
+  .mine[open] .caret::before { content: '▴'; }
+  .mine summary:hover .edit { text-decoration: underline; text-underline-offset: 0.15em; }
   .rate { display: grid; gap: var(--space-3); padding: var(--space-1) var(--space-3) var(--space-3); }
   fieldset { min-inline-size: 0; margin: 0; padding: 0; border: 0; }
   legend { padding: 0; color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; }

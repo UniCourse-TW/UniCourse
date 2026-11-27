@@ -79,6 +79,8 @@
   let firstYear = $derived(years.length ? Math.min(...years) : undefined);
   let lastYear = $derived(years.length ? Math.max(...years) : undefined);
   let mineCount = $derived(rows.filter((row) => row.mine).length);
+  /** 「PTT」 for one source (its 批踢踢 suffix dropped), otherwise 外站. */
+  let sourceName = $derived(sourceLabels.length === 1 ? sourceLabels[0].replace(/\s*批踢踢$/u, '') : '外站');
   let mineReviews = $derived(rows.filter((row) => row.mine && row.kind === 'review').length);
   let kindCounts = $derived(Object.fromEntries(kinds.map((kind) => [kind, rows.filter((row) => row.kind === kind).length])) as Record<PostKind, number>);
 
@@ -150,7 +152,8 @@
   let grouped = $derived(sort === 'relevant' && !filtering && mineCount > 0 && mineCount < rows.length);
   let mineRows = $derived(ordered.filter((row) => row.mine));
   let otherRows = $derived(ordered.filter((row) => !row.mine));
-  let shown = $derived(grouped ? Math.min(mineRows.length, initialPosts) + Math.min(otherRows.length, initialPosts) : Math.min(ordered.length, initialPosts));
+  /** What this offering's teacher's posts are, said next to the count (「1 篇・提問」). */
+  let mineKinds = $derived(kinds.filter((value) => rows.some((row) => row.mine && row.kind === value)).map((value) => postKindLabels[value]).join('、'));
   let mineLine = $derived.by(() => {
     const names = instructors.join('、');
     if (mineReviews === mineRows.length) return `本班教師 ${names}・${mineRows.length} 篇心得評價`;
@@ -203,12 +206,14 @@
             {#if boards.length > 1}<span>{row.post.board}</span>{/if}
             {#if row.author}<span class="author">{row.author}</span>{/if}
             {#if row.post.pushScore}<span class="push num" class:down={row.post.pushScore < 0}>推 {pushLabel(row.post.pushScore)}</span>{/if}
-            {#if !row.parts.length}<span class="title-only" title="這篇的開頭沒有可摘錄的心得文字，請點標題看原文">只收錄標題</span>{/if}
           </p>
           {#if row.parts.length}
             <p class="excerpt">
               {#each row.parts as part, i (i)}{#if part.label}<span class="label">{part.label}</span>{/if}{part.text}{#if i < row.parts.length - 1}<span class="sep" aria-hidden="true"> ・ </span>{/if}{/each}{#if !endsSentence(row.parts)}…{/if}
             </p>
+          {:else}
+            <!-- Same place as an excerpt, so a title-only post is told apart by position, not by a chip. -->
+            <p class="excerpt title-only" title="這篇的開頭沒有可摘錄的心得文字，請點標題看原文">只收錄標題，內容請看原文</p>
           {/if}
         </article>
       </li>
@@ -233,9 +238,9 @@
   {#if !reviews || total === 0}
     <!-- Nothing indexed (or the index is down): one line, so the sections below move up. -->
     <div class="strip">
-      <h2 id="external-title">外部評價</h2>
+      <h2 id="external-title">外站討論</h2>
       <p class="strip-text" role={reviews ? undefined : 'alert'}>
-        {reviews ? '還沒有收錄到這門課的外站文章。' : '外部評價暫時無法載入，請稍後再試。'}
+        {reviews ? '還沒有收錄到這門課的外站文章。' : '外站討論暫時無法載入，請稍後再試。'}
       </p>
       {#if links.length}
         <ul class="links" aria-label="到其他網站搜尋">
@@ -248,10 +253,10 @@
   {:else}
     <header class="head">
       <div class="head-text">
-        <h2 id="external-title">外部評價 <span class="head-count num">{displayValue(total)} 篇</span></h2>
+        <h2 id="external-title">外站討論（{sourceName}）<span class="head-count num">{displayValue(total)} 篇</span></h2>
         <!-- One line of provenance; how posts are sorted and what is stored sits behind ⓘ, so the first post comes up. -->
         <div class="dek">
-          <p>來源：{sourceLabels.join('、')}{#if boards.length}・{boards.join('、')} 板{/if}{#if firstYear !== undefined}・發文 {firstYear}{#if lastYear !== firstYear}–{lastYear}{/if} 年{/if}</p>
+          <p><span class="kind-counts">{#each kinds as value (value)}{#if kindCounts[value]}<span>{postKindLabels[value]} <b class="num">{displayValue(kindCounts[value])}</b></span>{/if}{/each}</span>・{sourceLabels.join('、')}{#if boards.length}・{boards.join('、')} 板{/if}{#if firstYear !== undefined}・發文 {firstYear}{#if lastYear !== firstYear}–{lastYear}{/if} 年{/if}</p>
           <details class="how">
             <summary><span aria-hidden="true">ⓘ</span> 收錄方式</summary>
             <ul>
@@ -275,17 +280,21 @@
 
     <div class="layout">
       <aside class="summary" aria-label="外部文章摘要">
-        <!-- The three counts double as filters (phones too, where the teacher list is hidden). -->
+        <!-- Two different filters, kept apart so nobody adds them up: this offering's teacher (a match on
+             the title), then the post types (which add up to the total). -->
         <div class="figures" role="group" aria-label="快速篩選">
-          <button type="button" class="figure" aria-pressed={mineOnly} disabled={!ready || mineCount === 0} onclick={() => (mineOnly = !mineOnly)}>
-            <span class="fig-label">本班教師</span><span><b class="num">{displayValue(mineCount)}</b><span class="fig-unit">篇</span></span>
+          <button type="button" class="figure mine-toggle" aria-pressed={mineOnly} disabled={!ready || mineCount === 0} onclick={() => (mineOnly = !mineOnly)}>
+            <span class="fig-label">本班教師{#if instructors.length} {instructors.join('、')}{/if}</span>
+            <span class="fig-value"><b class="num">{displayValue(mineCount)}</b><span class="fig-unit">篇</span>{#if mineKinds}<span class="fig-kind">{mineKinds}</span>{/if}</span>
           </button>
-          <button type="button" class="figure" aria-pressed={kind === 'review'} disabled={!ready || kindCounts.review === 0} onclick={() => (kind = kind === 'review' ? '' : 'review')}>
-            <span class="fig-label">心得評價</span><span><b class="num">{displayValue(kindCounts.review)}</b><span class="fig-unit">篇</span></span>
-          </button>
-          <button type="button" class="figure" aria-pressed={kind === 'question'} disabled={!ready || kindCounts.question === 0} onclick={() => (kind = kind === 'question' ? '' : 'question')}>
-            <span class="fig-label">提問</span><span><b class="num">{displayValue(kindCounts.question)}</b><span class="fig-unit">篇</span></span>
-          </button>
+        </div>
+        <div class="kinds" role="group" aria-label="文章類型">
+          <button type="button" class="chip" aria-pressed={kind === ''} disabled={!ready} onclick={() => (kind = '')}>全部 <span class="num">{rows.length}</span></button>
+          {#each kinds as value (value)}
+            {#if kindCounts[value]}
+              <button type="button" class="chip" aria-pressed={kind === value} disabled={!ready} onclick={() => (kind = kind === value ? '' : value)}>{postKindLabels[value]} <span class="num">{kindCounts[value]}</span></button>
+            {/if}
+          {/each}
         </div>
 
         <div class="block by-teacher">
@@ -321,9 +330,12 @@
             <figcaption>每年發文數 <span class="cap-range num">{perYear[0].year}–{perYear.at(-1)?.year}</span></figcaption>
             <div class="columns" role="img" aria-label={`每年發文數：${perYear.map((entry) => `${entry.year} 年 ${entry.count} 篇`).join('、')}`}>
               {#each perYear as entry (entry.year)}
+                <!-- A year without posts is left blank above its axis label (no zero-height bar, no 0). -->
                 <span class="column" title={`${entry.year} 年 ${entry.count} 篇`}>
-                  <span class="value num" class:zero={entry.count === 0}>{entry.count}</span>
-                  <span class="fill" class:zero={entry.count === 0} style:height={`${(entry.count / yearMax) * 100}%`}></span>
+                  {#if entry.count}
+                    <span class="value num">{entry.count}</span>
+                    <span class="fill" style:height={`${(entry.count / yearMax) * 100}%`}></span>
+                  {/if}
                 </span>
               {/each}
             </div>
@@ -341,7 +353,7 @@
             {:else if instructors.length && mineCount === 0}
               沒有找到本班教師 {instructors.join('、')} 的文章；下面是其他教師開這門課的文章，心得評價在前。
             {:else}
-              共 <b class="num">{displayValue(rows.length)}</b> 篇{#if grouped}：本班教師 {displayValue(mineRows.length)} 篇・其他 {displayValue(otherRows.length)} 篇{:else if shown < rows.length}・先列 {shown} 篇{/if}{#if total > rows.length}（另有 {displayValue(total - rows.length)} 篇較舊的未列出）{/if}<span class="sort-note">・{sortLabels[sort]}</span>
+              共 <b class="num">{displayValue(rows.length)}</b> 篇{#if total > rows.length}（另有 {displayValue(total - rows.length)} 篇較舊的未列出）{/if}
             {/if}
           </p>
           <button
@@ -351,18 +363,10 @@
             aria-controls="external-toolbar"
             disabled={!ready}
             onclick={() => (filtersOpen = !filtersOpen)}
-          >篩選與排序{#if activeFilters}<span class="active num">{activeFilters}</span>{/if}<span aria-hidden="true">{filtersOpen ? ' ▴' : ' ▾'}</span></button>
+          >教師、學期與排序{#if activeFilters}<span class="active num">{activeFilters}</span>{/if}<span aria-hidden="true">{filtersOpen ? ' ▴' : ' ▾'}</span></button>
         </div>
 
         <div class="toolbar" class:open={filtersOpen} id="external-toolbar" role="group" aria-label="篩選與排序外部文章">
-          <div class="kinds" role="group" aria-label="文章類型">
-            <button type="button" class="chip" aria-pressed={kind === ''} disabled={!ready} onclick={() => (kind = '')}>全部 <span class="num">{rows.length}</span></button>
-            {#each kinds as value (value)}
-              {#if kindCounts[value]}
-                <button type="button" class="chip" aria-pressed={kind === value} disabled={!ready} onclick={() => (kind = kind === value ? '' : value)}>{postKindLabels[value]} <span class="num">{kindCounts[value]}</span></button>
-              {/if}
-            {/each}
-          </div>
           <div class="selects">
             <label class="teacher-select">
               <span>教師</span>
@@ -452,12 +456,16 @@
 
   .layout { display: grid; grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
   .summary { display: grid; gap: var(--space-4); min-inline-size: 0; }
-  .figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
-  .figure { display: grid; align-content: start; justify-items: start; gap: 0.125rem; min-inline-size: 0; padding: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--muted); font-size: var(--t-sm); text-align: start; }
+  .figures { display: grid; gap: var(--space-2); }
+  .figure { display: grid; align-content: start; justify-items: start; gap: 0.125rem; min-inline-size: 0; padding: var(--space-2) var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--brand) 5%, var(--panel-raised)); color: var(--muted); font-size: var(--t-sm); text-align: start; }
+  .fig-value { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; }
+  .fig-kind { margin-inline-start: var(--space-1); padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 650; }
+  .kind-counts { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--ink-2); }
+  .kind-counts b { color: var(--ink); font-weight: 650; }
   .figure:not(:disabled):hover { border-color: var(--brand); background: var(--hover-row); }
   .figure[aria-pressed='true'] { border-color: var(--brand); background: var(--brand-wash); box-shadow: inset 3px 0 0 var(--brand); }
   .figure:disabled { border-color: var(--line); }
-  .fig-label { color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+  .fig-label { color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
   .figure b { color: var(--ink); font-size: var(--t-xl); font-weight: 650; }
   .fig-unit { margin-inline-start: 0.25em; }
   .block { display: grid; gap: var(--space-2); }
@@ -485,16 +493,15 @@
   .columns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; align-items: end; block-size: 4.5rem; padding-block-start: 1rem; border-block-end: 1px solid var(--control-line); }
   .column { position: relative; display: flex; flex-direction: column; justify-content: end; align-items: stretch; block-size: 100%; }
   .column .fill { display: block; min-block-size: 2px; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--brand) 70%, var(--panel)); }
-  .column .fill.zero { min-block-size: 0; block-size: 0; border-block-start: 2px dashed var(--control-line); border-radius: 0; background: none; }
-  .column .value { position: absolute; inset-block-start: -1rem; inset-inline: 0; color: var(--muted); font-size: 0.625rem; line-height: 1rem; text-align: center; }
-  .column .value.zero { color: var(--muted); opacity: 0.8; }
-  .axis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin-block-start: 2px; color: var(--muted); font-size: 0.625rem; text-align: center; }
+  .column .value { position: absolute; inset-block-start: -1.1rem; inset-inline: 0; color: var(--ink-2); font-size: var(--t-sm); line-height: 1rem; text-align: center; }
+  .axis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin-block-start: 2px; color: var(--ink-2); font-size: var(--t-sm); text-align: center; }
   .cap-range { margin-inline-start: var(--space-1); color: var(--muted); font-weight: 500; }
 
   .posts { display: grid; gap: var(--space-2); min-inline-size: 0; }
   .posts > .toolbar { order: -1; }
   .toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: end; justify-content: space-between; }
   .kinds { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+  .summary > .kinds { margin-block-start: calc(-1 * var(--space-2)); }
   .chip { display: inline-flex; gap: 0.35em; align-items: center; min-block-size: 2.25rem; padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; }
   .chip .num { color: var(--muted); font-weight: 500; }
   .chip:not(:disabled):hover { background: var(--hover-row); }
@@ -519,7 +526,7 @@
   .grow-btn { min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; }
   .grow-btn:hover { background: var(--hover-row); }
   .grow .clear { min-block-size: var(--target-min); margin: 0; }
-  .title-only { padding: 0 6px; border: 1px dashed var(--control-line); border-radius: var(--radius-pill); color: var(--muted); font-size: var(--t-xs); }
+  .excerpt.title-only { color: var(--muted); font-style: italic; }
   .status b { color: var(--ink); }
   .clear { margin-inline-start: var(--space-2); padding: 0; border: 0; background: none; color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
   .none { padding: var(--space-4) 0; color: var(--ink-2); }
@@ -537,7 +544,8 @@
   .title a:focus-visible { outline: none; }
   article:has(a:focus-visible) { outline: var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-control); }
   .out { margin-inline-start: 0.25em; color: var(--muted); font-size: 0.85em; font-weight: 500; }
-  .meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; color: var(--muted); font-size: var(--t-sm); }
+  .meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; color: var(--ink-2); font-size: var(--t-sm); }
+  .meta .author { color: var(--muted); }
   .meta .push { color: var(--up); font-weight: 650; }
   .meta .push.down { color: var(--down); }
   .excerpt { display: -webkit-box; color: var(--ink-2); font-size: var(--t-sm); line-height: 1.6; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
@@ -556,21 +564,16 @@
   @media (max-width: 40rem) {
     .external { padding: var(--space-4); }
     .summary { grid-template-columns: minmax(0, 1fr); }
-    .years, .by-teacher { display: none; }
-    /* Phones: the three figures become one line and the filters fold behind one button, so the first
-       posts follow the heading directly. */
-    /* Phones: the three counts are one row of filter chips right under the heading. */
-    .figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-1); }
-    /* One 44 px line each: label and count, no unit, nothing wraps. */
-    .figure { display: flex; flex-wrap: nowrap; gap: var(--space-1); align-items: center; justify-content: center; block-size: var(--target-min); padding: 0 var(--space-1); border-radius: var(--radius-pill); white-space: nowrap; }
-    .fig-label { font-size: var(--t-xs); }
-    .figure b { font-size: var(--t-base); }
-    .fig-unit { display: none; }
+    /* Phones keep the teacher toggle, the type chips and the per-year chart; the teacher list is the
+       select under 「教師、學期與排序」. */
+    .by-teacher { display: none; }
+    .figure { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; min-block-size: var(--target-min); }
+    .figure b { font-size: var(--t-lg); }
+    .columns { block-size: 3.5rem; }
     .posts > .toolbar { order: 0; }
     .toolbar:not(.open) { display: none; }
     .toolbar { padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); }
     .filter-toggle { display: inline-flex; }
-    .sort-note { display: none; }
     .selects label:last-child { grid-column: 1 / -1; }
     .teacher-select { display: grid !important; }
     .selects { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); }
@@ -580,9 +583,10 @@
     select { inline-size: 100%; max-inline-size: none; min-block-size: var(--target-min); }
     .chip { min-block-size: var(--target-min); }
     .teacher { min-block-size: var(--target-min); }
-    .links { inline-size: 100%; }
-    .links li { flex: 1 1 auto; }
-    .links a { inline-size: 100%; justify-content: center; white-space: normal; text-align: center; }
+    /* Outbound searches: one row of short buttons (the query stays in each link's accessible name). */
+    .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr)); inline-size: 100%; }
+    .links a { inline-size: 100%; justify-content: center; padding-inline: var(--space-2); }
+    .links .query { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     .title { font-size: var(--t-base); }
   }
 </style>

@@ -6,10 +6,12 @@
   import CourseExternalReviews from '$lib/course-external-reviews.svelte';
   import CourseHistory from '$lib/course-history.svelte';
   import { fillRatio, nearlyFull, publishedCapacity } from '$lib/course-history';
-  import { averageScore, stars } from '$lib/community-format';
+  import { averageScore, courseKey } from '$lib/community-format';
+  import Stars from '$lib/community-stars.svelte';
   import { labelledExtra } from '$lib/course-extra';
   import { postKind } from '$lib/course-external-text';
   import { englishTitle } from '$lib/course-title';
+  import { shortDateTime } from '$lib/community-format';
   import { importedAt, isHttpUrl, meeting, requirement } from '$lib/format';
   import { departmentHref, instructorHref, schoolHref } from '$lib/overview-paths';
   import Badge from '$lib/ui/Badge.svelte';
@@ -47,14 +49,12 @@
   let termTotal = $derived(termRow && termRow.offeringCount > 1 ? termRow : undefined);
   let ratingCount = $derived(stats?.count ?? 0);
   let span = $derived(history.rows.length > 1 ? `${history.rows.at(-1)?.term}–${history.rows[0]?.term}` : undefined);
-  let hasAbout = $derived(Boolean(course.description || course.notes || extra.length));
-  // When and where is what a student checks first, so the head repeats it in one line.
-  let when = $derived.by(() => {
-    const slots = course.schedule ?? [];
-    if (!slots.length) return course.scheduleText?.trim() || undefined;
-    const shown = slots.slice(0, 2).map((slot) => `${meeting(slot)}${slot.location ? `・${slot.location}` : ''}`);
-    return shown.join('；') + (slots.length > 2 ? `；另 ${slots.length - 2} 個時段` : '');
-  });
+  let hasAbout = $derived(Boolean(course.description || course.notes || extra.length || requirementDetail));
+  // When and where is what a student checks first: the head lists every slot, once, on the page.
+  let slots = $derived(course.schedule ?? []);
+  let scheduleText = $derived(slots.length ? undefined : course.scheduleText?.trim() || undefined);
+  // The newest imported term is still running: its numbers are a snapshot, older terms are final.
+  let latestTerm = $derived(history.rows[0]?.term === course.term);
   let titleEn = $derived(englishTitle(course.titleEn));
   let externalTotal = $derived(data.externalReviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0);
   // Indexed posts move above the site's own sections while those are both still empty, so the page's
@@ -65,6 +65,9 @@
   let externalReviews = $derived(
     (data.externalReviews?.posts ?? []).filter((post) => postKind(post.tag) === 'review').length
   );
+  let externalQuestions = $derived(
+    (data.externalReviews?.posts ?? []).filter((post) => postKind(post.tag) === 'question').length
+  );
   let externalMine = $derived.by(() => {
     const own = new Set(course.instructors);
     return (data.externalReviews?.posts ?? []).filter((post) =>
@@ -72,7 +75,8 @@
   });
   // A short list of site posts leaves the right column half empty; the one-line external strip fills it.
   let externalBeside = $derived(!externalFirst && externalTotal === 0 && (data.posts?.posts.length ?? 0) < 3);
-  let importDay = $derived(importedAt(course.importedAt).replace(/^\d{4}年/u, '').replace(/日.*$/u, '日'));
+  let updated = $derived(shortDateTime(course.importedAt));
+  let importDay = $derived(updated.split(' ')[0]);
   let externalLabel = $derived(
     data.externalReviews?.sources.length === 1 ? data.externalReviews.sources[0].sourceLabel.replace(/\s*批踢踢$/u, '') : '外站'
   );
@@ -117,20 +121,27 @@
     <div class="title">
       <h1>{course.title}</h1>
       {#if titleEn}<p class="en" lang="en">{titleEn}</p>{/if}
-      <p class="dek">
-        <span class="item mono">{course.term}</span>
-        <span class="item mono">{course.courseCode}{#if course.classCode}-{course.classCode}{/if}</span>
-        {#if course.instructors.length}
-          <span class="item">{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{/each}</span>
-        {/if}
-        {#if when}<span class="item when">{when}</span>{/if}
+      <!-- Every meeting slot, once on the page: day, periods and room lead the head. -->
+      <p class="when-line" aria-label="上課時間地點">
+        {#each slots as slot, index (index)}
+          <span class="slot"><b>{meeting(slot)}</b>{#if slot.location}<span class="room">{slot.location}</span>{/if}</span>
+        {:else}
+          {#if scheduleText}<span class="slot"><b>{scheduleText}</b></span>{:else}<span class="slot muted">校方未公布上課時間</span>{/if}
+        {/each}
       </p>
       <p class="meta">
         {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}
         {#if !course.active}<Badge label="已下架" tone="inactive" />{/if}
-        <span class="fact">{#if course.credits != null}<b class="num">{credits(course.credits)}</b> 學分{:else}學分未公布{/if}</span>
-        <span class="fact">{#if requirementLabel}<b>{requirementLabel}</b>{#if requirementDetail}<a class="detail" href="#requirement-detail">校方原文</a>{/if}{:else}必選修未公布{/if}</span>
-        <span>{course.schoolName} · 更新於 <time datetime={course.importedAt}>{importedAt(course.importedAt)}</time>（臺北時間）</span>
+        <span class="item mono">{course.term}</span>
+        <span class="item mono">{course.courseCode}{#if course.classCode}-{course.classCode}{/if}</span>
+        {#if course.instructors.length}
+          <span class="item">{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{/each}</span>
+        {:else}<span class="item muted">教師未公布</span>{/if}
+        <span class="item">{#if course.credits != null}<b class="num">{credits(course.credits)}</b> 學分{:else}學分未公布{/if}</span>
+        <span class="item">{#if requirementLabel}<b>{requirementLabel}</b>{#if requirementDetail}<a class="detail" href="#requirement-detail" title={`校方原文：「${requirementDetail}」`} aria-label="必選修的校方原文">ⓘ</a>{/if}{:else}必選修未公布{/if}</span>
+        {#if course.language}<span class="item">{course.language}授課</span>{/if}
+        {#if course.campus}<span class="item">{course.campus}</span>{/if}
+        {#if course.grade}<span class="item">{course.grade}</span>{/if}
       </p>
     </div>
     <div class="actions">
@@ -140,14 +151,8 @@
       {#if syllabus}
         <a class="button" href={syllabus} target="_blank" rel="noopener noreferrer">課綱<span aria-hidden="true"> ↗</span><span class="sr-only">（外部網站）</span></a>
       {/if}
-      {#if isHttpUrl(course.sourceUrl)}<p class="actions-note">即時名額與選課結果以校方為準</p>{/if}
+      <p class="actions-note">更新於 <time datetime={course.importedAt} title={importedAt(course.importedAt)}>{updated}</time>・臺北時間{#if isHttpUrl(course.sourceUrl)}；即時名額以校方為準{/if}</p>
     </div>
-    <nav class="jumps" aria-label="跳到本頁段落">
-      <a href="#history">歷年開課{#if history.rows.length > 1}<span class="n">{displayValue(history.rows.length)} 期</span>{/if}</a>
-      <a href="#ratings">同學評價<span class="n">{stats ? `${displayValue(ratingCount)} 則` : '—'}</span></a>
-      <a href="#forum-title">站內討論<span class="n">{data.posts ? `${displayValue(data.posts.total)} 篇` : '—'}</span></a>
-      <a href="#external-reviews" class:strong={externalTotal > 0}>外部評價<span class="n">{externalTotal > 0 ? `${externalLabel} ${displayValue(externalTotal)} 篇` : '尚未收錄'}</span></a>
-    </nav>
   </header>
 
   {#if course.isDemo || !course.active || (!isHttpUrl(course.sourceUrl) && course.sourceUrl) || (course.syllabusUrl && !syllabus)}
@@ -161,6 +166,7 @@
     </div>
   {/if}
 
+  <!-- Four numbers, each with the scope in its label (本班 / 該學期全部班次 / 歷年) and a link down. -->
   <div role="group" aria-label="課程重點"><dl class="tiles" class:three={!termTotal}>
     <div class="tile seats" class:full>
       {#if course.enrolled == null && capacity != null}
@@ -176,109 +182,88 @@
           <dd><span class="value">—</span></dd>
         {/if}
         {#if ratio != null}
+          {@const share = Math.round(ratio * 100)}
           <dd class="meter" aria-hidden="true"><span style:width={`${Math.min(100, ratio * 100)}%`}></span></dd>
-          <dd class="note" title="UniCourse 匯入校方資料當時的快照，即時名額以校方為準">{importDay}匯入時{ratio > 1 ? `超額：名額的 ${Math.round(ratio * 100)}%` : `已選 ${Math.round(ratio * 100)}%`}{#if full && ratio <= 1}，接近額滿{/if}</dd>
+          {#if latestTerm}
+            <dd class="note" title="UniCourse 匯入校方資料當時的快照，即時名額以校方為準">{importDay} 匯入時{ratio > 1 ? `超額：名額的 ${share}%` : `已選 ${share}%`}{#if full && ratio <= 1}，接近額滿{/if}</dd>
+          {:else}
+            <dd class="note">{course.term} 選課結果：{ratio > 1 ? `超額，名額的 ${share}%` : `名額的 ${share}%`}</dd>
+          {/if}
         {:else}
           <dd class="note">{capacity == null && course.enrolled != null ? '校方未公布名額' : '人數與名額未公布'}</dd>
         {/if}
       {/if}
     </div>
     {#if termTotal}
-      <!-- A partial term says so right at its number, so 107 is never read as the whole term. -->
-      {@const partialBadge = termTotal.partial ? `只收錄 ${displayValue(termTotal.offeringCount)} 班` : undefined}
       <div class="tile" class:partial={termTotal.partial}>
+        <dt>{termTotal.term} {termTotal.partial ? `已收錄的 ${displayValue(termTotal.offeringCount)} 班合計` : `全部 ${displayValue(termTotal.offeringCount)} 班合計`}</dt>
         {#if termTotal.enrolled == null && termTotal.capacity != null}
-          <dt>{termTotal.term} {termTotal.partial ? '已收錄班次名額' : '全班次名額'}</dt>
-          <dd><span class="value num">{displayValue(termTotal.capacity)}</span><small>人</small>{#if partialBadge}<span class="part-badge">{partialBadge}</span>{/if}</dd>
+          <dd><span class="value num">{displayValue(termTotal.capacity)}</span><small>名額</small></dd>
+        {:else if termTotal.enrolled != null}
+          <dd><span class="value num">{displayValue(termTotal.enrolled)}</span><small>/ {termTotal.capacity != null ? `${displayValue(termTotal.capacity)} 人` : '名額未公布'}</small></dd>
         {:else}
-          <dt>{termTotal.term} {termTotal.partial ? '已收錄班次合計' : '全班次合計'}</dt>
-          {#if termTotal.enrolled != null}
-            <dd><span class="value num">{displayValue(termTotal.enrolled)}</span><small>/ {termTotal.capacity != null ? `${displayValue(termTotal.capacity)} 人` : '名額未公布'}</small>{#if partialBadge}<span class="part-badge">{partialBadge}</span>{/if}</dd>
-          {:else}
-            <dd><span class="value">—</span><small>人數未公布</small>{#if partialBadge}<span class="part-badge">{partialBadge}</span>{/if}</dd>
-          {/if}
+          <dd><span class="value">—</span><small>人數未公布</small></dd>
         {/if}
-        <dd class="note"><a href="#history">{#if termTotal.partial}該學期通常約 {displayValue(termTotal.usualSections)} 班，其餘未收錄{:else}{displayValue(termTotal.offeringCount)} 個班次{/if}&nbsp;↓</a></dd>
+        <dd class="note"><a href="#history">{#if termTotal.partial}其他學期約 {displayValue(termTotal.usualSections)} 班，看歷年{:else}各班與歷年{/if}&nbsp;↓</a></dd>
       </div>
     {/if}
     <div class="tile">
-      <dt>歷年累計</dt>
       {#if totals?.enrolledTotal != null}
+        <dt>歷年累計修課</dt>
         <dd><span class="value num">{displayValue(totals.enrolledTotal)}</span><small>人次</small></dd>
-        <dd class="note"><a href="#history">{displayValue(totals.terms)} 個學期 · {displayValue(totals.offerings)} 班&nbsp;↓</a></dd>
+        <dd class="note"><a href="#history">{displayValue(totals.terms)} 期・{displayValue(totals.offerings)} 班&nbsp;↓</a></dd>
+      {:else if totals?.capacityTotal != null}
+        <!-- No published enrolment: the running total is of 名額, said in the label. -->
+        <dt>歷年累計名額</dt>
+        <dd><span class="value num">{displayValue(totals.capacityTotal)}</span><small>人次</small></dd>
+        <dd class="note"><a href="#history">{displayValue(totals.terms)} 期・{displayValue(totals.offerings)} 班・未公布修課人數&nbsp;↓</a></dd>
       {:else if totals}
-        <dd><span class="value num">{displayValue(totals.terms)}</span><small>個學期</small></dd>
-        <dd class="note"><a href="#history">未公布人數 · {displayValue(totals.offerings)} 班&nbsp;↓</a></dd>
+        <dt>歷年開課</dt>
+        <dd><span class="value num">{displayValue(totals.terms)}</span><small>期</small></dd>
+        <dd class="note"><a href="#history">{displayValue(totals.offerings)} 班・未公布人數&nbsp;↓</a></dd>
       {:else}
+        <dt>歷年累計</dt>
         <dd><span class="value">—</span></dd>
         <dd class="note">暫時無法取得</dd>
       {/if}
     </div>
     <div class="tile">
       {#if externalTile}
-        <dt>外部評價（{externalLabel}）</dt>
+        <dt>外站討論（{externalLabel}）</dt>
         <dd><span class="value num">{displayValue(externalTotal)}</span><small>篇</small></dd>
-        <dd class="note"><a href="#external-reviews">心得 {displayValue(externalReviews)} 篇・本班教師 {displayValue(externalMine)} 篇&nbsp;↓</a></dd>
+        <dd class="note"><a href="#external-reviews">心得 {displayValue(externalReviews)}・提問 {displayValue(externalQuestions)}・本班教師 {displayValue(externalMine)} 篇&nbsp;↓</a></dd>
       {:else}
         <dt>同學評價</dt>
         {#if stats && ratingCount > 0}
-          <!-- Fewer than 3 ratings: the average is shown muted so it does not weigh like the other tiles. -->
-          <dd class:thin={ratingCount < 3}><span class="value num">{averageScore(stats.average)}</span><small class="stars" aria-hidden="true">{stars(Math.round(stats.average ?? 0))}</small></dd>
-          <dd class="note" class:sparse={ratingCount < 3}><a href="#ratings">{ratingCount < 3 ? `${ratingCount} 則評價・樣本太少，僅供參考\u00a0↓` : `${displayValue(ratingCount)} 則評價\u00a0↓`}</a></dd>
+          <!-- The sample size sits with the average, so 4.0 from one person never reads like a consensus. -->
+          <dd class:thin={ratingCount < 3}><span class="value num">{averageScore(stats.average)}</span><Stars score={stats.average ?? 0} decorative /><small class="sample" class:sparse={ratingCount < 3}>{ratingCount < 3 ? `僅 ${ratingCount} 則` : `${displayValue(ratingCount)} 則`}</small></dd>
         {:else if stats}
           <dd><span class="value small-value">尚無評價</span></dd>
-          <dd class="note"><a href="#ratings">修過這門課？成為第一個評分&nbsp;↓</a></dd>
         {:else}
           <dd><span class="value">—</span></dd>
-          <dd class="note">暫時無法取得</dd>
         {/if}
+        <dd class="note links">
+          {#if stats}<a href="#ratings">{ratingCount > 0 ? '看評價' : '成為第一個評分'}&nbsp;↓</a>{:else}評價暫時無法取得{/if}
+          {#if data.posts}<a href="#forum-title">站內討論 {displayValue(data.posts.total)} 篇&nbsp;↓</a>{/if}
+          {#if externalTotal > 0}<a href="#external-reviews">外站 {displayValue(externalTotal)} 篇&nbsp;↓</a>{/if}
+        </dd>
       {/if}
     </div>
   </dl></div>
 
-  <div class="overview">
-    <section class="panel facts" aria-labelledby="schedule-title">
-      <div class="when-where">
-      <h2 id="schedule-title">時間地點</h2>
-      {#if course.schedule?.length}
-        <ul class="schedule">
-          {#each course.schedule as slot, index (index)}
-            <li><span class="when">{meeting(slot)}</span>{#if slot.location}<span class="where">{` · ${slot.location}`}</span>{/if}</li>
-          {/each}
-        </ul>
-      {:else if course.scheduleText}
-        <p class="schedule-text">{course.scheduleText}</p>
-      {:else}
-        <p class="muted">校方未公布上課時間。</p>
-      {/if}
-      </div>
-      <dl class="facts-list">
-        <div><dt>授課教師</dt><dd>{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{:else}<span class="muted">未公布</span>{/each}</dd></div>
-        {#if course.department}
-          <div><dt>開課單位</dt><dd><a href={departmentHref(course.school, course.department)}>{course.department}</a>{#if course.departmentCode}&nbsp;<span class="muted mono">{course.departmentCode}</span>{/if}</dd></div>
-        {/if}
-        <div><dt>課號</dt><dd class="mono">{course.courseCode}{#if course.classCode}{` · 班次 ${course.classCode}`}{/if}</dd></div>
-        {#if requirementDetail}<div class="wide" id="requirement-detail"><dt>必選修（校方原文）</dt><dd>「{requirementDetail}」{#if requirementLabel}<span class="muted small">・UniCourse 歸為「{requirementLabel}」；原文用詞的意思以校方說明為準</span>{/if}</dd></div>{/if}
-        {#if course.language}<div><dt>授課語言</dt><dd>{course.language}</dd></div>{/if}
-        {#if course.campus}<div><dt>校區</dt><dd>{course.campus}</dd></div>{/if}
-        {#if course.grade}<div><dt>年級</dt><dd>{course.grade}</dd></div>{/if}
-      </dl>
-    </section>
-
-    <section class="history" aria-labelledby="history">
-      <div class="section-head">
-        <h2 id="history">這門課的歷年開課</h2>
-        <p class="sub">同校同課號 <span class="mono">{course.courseCode}</span> 的每個學期{#if span}（{span}）{/if}；多班次的學期為各班加總。</p>
-      </div>
-      {#if !history.available}
-        <p class="notice">歷年開課暫時無法取得，先列出本學期。</p>
-      {/if}
-      <CourseHistory rows={history.rows} currentId={course.id} school={course.school} courseCode={course.courseCode} />
-      {#if history.available && history.rows.length === 1}
-        <p class="muted small">目前只收錄到這一期，之後匯入其他學期後會在這裡畫出歷年修課人數。</p>
-      {/if}
-    </section>
-  </div>
+  <section class="history" aria-labelledby="history">
+    <div class="section-head">
+      <h2 id="history">這門課的歷年開課</h2>
+      <p class="sub">同校同課號 <span class="mono">{course.courseCode}</span> 的每個學期{#if span}（{span}）{/if}；多班次的學期為各班加總。</p>
+    </div>
+    {#if !history.available}
+      <p class="notice">歷年開課暫時無法取得，先列出本學期。</p>
+    {/if}
+    <CourseHistory rows={history.rows} currentId={course.id} school={course.school} courseCode={course.courseCode} />
+    {#if history.available && history.rows.length === 1}
+      <p class="muted small">目前只收錄到這一期，之後匯入其他學期後會在這裡畫出歷年修課人數。</p>
+    {/if}
+  </section>
 
   {#if externalFirst}
     <CourseExternalReviews school={course.school} courseCode={course.courseCode} title={course.title} instructors={course.instructors} reviews={data.externalReviews} />
@@ -302,7 +287,7 @@
       {#if !data.posts}
         <EmptyState title="站內討論暫時無法取得" description="課程資料不受影響，請稍後再試。" tone="error" />
       {:else if data.posts.posts.length}
-        <div class="cm"><CommunityPostList posts={data.posts.posts} schoolNames={{ [course.school]: course.schoolName }} label="這門課的站內討論" /></div>
+        <div class="cm"><CommunityPostList posts={data.posts.posts} schoolNames={{ [course.school]: course.schoolName }} courseTitles={{ [courseKey(course.school, course.courseCode)]: course.title }} label="這門課的站內討論" /></div>
         {#if data.posts.total > data.posts.posts.length}
           <p class="small"><a href={forumList}>查看全部 {displayValue(data.posts.total)} 篇 →</a></p>
         {/if}
@@ -322,6 +307,11 @@
   {#if hasAbout}
     <section class="about" aria-labelledby="about-title">
       <h2 id="about-title">課程說明與校方欄位</h2>
+      {#if requirementDetail}
+        <dl class="extra lead-facts">
+          {#if requirementDetail}<div id="requirement-detail"><dt>必選修（校方原文）</dt><dd>「{requirementDetail}」{#if requirementLabel}<span class="muted small">・UniCourse 歸為「{requirementLabel}」</span>{/if}</dd></div>{/if}
+        </dl>
+      {/if}
       {#if course.description}
         <details open={aboutOpen}>
           <summary><h3 id="description">課程概述</h3></summary>
@@ -373,16 +363,21 @@
   .title { flex: 1 1 28rem; display: grid; gap: var(--space-1); min-inline-size: 0; }
   h1 { font-size: var(--t-2xl); overflow-wrap: anywhere; }
   .en { color: var(--ink-2); font-size: var(--t-md); overflow-wrap: anywhere; }
-  .dek { display: flex; flex-wrap: wrap; gap: 0.125rem var(--space-3); align-items: center; margin-block-start: var(--space-1) !important; color: var(--muted); font-size: var(--t-base); }
-  .meta { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); align-items: center; color: var(--muted); font-size: var(--t-sm); }
-  .meta .fact { display: inline-flex; gap: var(--space-1); align-items: baseline; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--panel); color: var(--ink-2); white-space: nowrap; }
-  .meta .fact b { color: var(--ink); font-weight: 650; }
-  .meta .detail { font-size: var(--t-xs); }
-  .dek .item:not(.when) { white-space: nowrap; }
-  .dek .item + .item::before { content: '·'; margin-inline-end: var(--space-3); color: var(--muted); }
+  /* The schedule leads: bold day and periods, the room beside them; several slots wrap as a list. */
+  .when-line { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-5); margin-block-start: var(--space-2) !important; font-size: var(--t-lg); }
+  .when-line .slot { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; }
+  .when-line b { font-weight: 650; }
+  .when-line .room { color: var(--ink-2); }
+  .when-line .slot { gap: 0; }
+  .when-line .room::before { content: '·'; margin-inline: var(--space-2); color: var(--muted); }
+  /* Everything else about the class on one wrapping line: term, code, teachers, credits, 必選修, language. */
+  .meta { display: flex; flex-wrap: wrap; gap: 0.125rem var(--space-3); align-items: center; color: var(--ink-2); font-size: var(--t-base); }
+  .meta .item { white-space: nowrap; }
+  .meta .item + .item::before { content: '·'; margin-inline-end: var(--space-3); color: var(--muted); }
+  .meta b { color: var(--ink); font-weight: 650; }
+  .meta .detail { margin-inline-start: 2px; color: var(--muted); font-size: var(--t-sm); text-decoration: none; }
   .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: end; }
   .actions-note { flex-basis: 100%; color: var(--muted); font-size: var(--t-xs); text-align: end; }
-  .forum :global(.external) { margin-block-start: var(--space-1); }
   .button { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-base); font-weight: 650; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
   .button:hover { background: var(--hover-row); }
   .button.primary { border-color: var(--brand); background: var(--brand); color: var(--on-brand) !important; }
@@ -401,54 +396,32 @@
   .tile dd { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; margin: 0; min-inline-size: 0; }
   .tile .value { font-size: var(--t-3xl); font-weight: 600; line-height: var(--leading-tight); overflow-wrap: anywhere; }
   .tile small { color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
-  .tile small.stars { color: var(--warn); font-size: var(--t-base); letter-spacing: 0.04em; }
   .tile .note { color: var(--muted); font-size: var(--t-sm); }
   .tile .note a { color: var(--ink-2); text-decoration: none; }
   .tile .value.small-value { font-size: var(--t-xl); }
-  .tile .note.sparse a { color: var(--ink-2); font-weight: 600; }
   .tile .thin .value { color: var(--muted); font-size: var(--t-xl); }
-  .tile .thin small.stars { color: var(--muted); }
-  .tile .part-badge { align-self: center; margin-inline-start: var(--space-1); padding: 0 6px; border-radius: var(--radius-pill); background: var(--warn-wash); color: var(--ink); font-size: var(--t-xs); font-weight: 650; white-space: nowrap; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent); }
   .tile.partial .value { color: var(--ink-2); }
   .tile .note a:hover { color: var(--brand-ink); text-decoration: underline; }
+  .tile .note.links { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); }
+  .tile .sample { align-self: center; padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-weight: 600; }
+  .tile .sample.sparse { background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 40%, transparent); }
+  .lead-facts { padding-block: var(--space-2) var(--space-4); }
   .meter { display: block !important; block-size: 10px; margin-block: var(--space-1) 0 !important; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .meter span { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); }
   .seats.full .meter span { background: var(--warn); }
   .seats.full .note { color: var(--warn); font-weight: 600; }
 
-  .overview { display: grid; gap: var(--space-6); }
-  .panel { padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
-  /* Time and place sit in one full-width strip, so the history below gets the whole column. */
-  .facts { display: grid; grid-template-columns: minmax(12rem, max-content) minmax(0, 1fr); gap: var(--space-3) var(--space-6); align-items: start; }
-  .when-where { display: grid; gap: var(--space-2); min-inline-size: 0; }
-  .facts h2, .section-head h2 { font-size: var(--t-xl); }
-  .schedule { display: grid; gap: var(--space-1); margin: 0; padding: 0; list-style: none; font-size: var(--t-md); }
-  .schedule .when { font-weight: 600; }
-  .schedule .where { color: var(--ink-2); }
-  .schedule-text { font-weight: 600; overflow-wrap: anywhere; }
-  /* One row of short facts beside the time; the school's own 必選修 wording takes a row of its own. */
-  .facts-list { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-6); margin: 0; padding-inline-start: var(--space-6); border-inline-start: 1px solid var(--line); font-size: var(--t-base); }
-  .facts-list div { flex: 1 1 7rem; min-inline-size: 0; }
-  .facts-list .wide { flex-basis: 100%; order: 1; }
-  .facts-list dt { color: var(--muted); font-size: var(--t-sm); }
-  .facts-list dd { margin: 0; overflow-wrap: anywhere; }
 
   .history, .forum { display: grid; gap: var(--space-3); align-content: start; min-inline-size: 0; }
   .section-head { display: grid; gap: var(--space-1); }
+  .section-head h2 { font-size: var(--t-xl); }
   .section-head.row { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); align-items: end; justify-content: space-between; }
   .sub { color: var(--muted); font-size: var(--t-base); overflow-wrap: anywhere; }
 
-  .community { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); align-items: start; }
+  /* Two equal-height columns, so the ratings card and the discussion column end on one line. */
+  .community { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); align-items: stretch; }
+  .community > :global(.ratings) { block-size: 100%; }
 
-  /* Section shortcuts under the title: what a student scrolls for, with its size. */
-  .jumps { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: var(--space-2); }
-  .jumps a { display: inline-flex; gap: var(--space-2); align-items: center; min-block-size: 2.25rem; padding: 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--panel); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; text-decoration: none; white-space: nowrap; }
-  .jumps a::after { content: '↓'; color: var(--muted); font-weight: 500; }
-  .jumps a:hover { border-color: var(--control-line); background: var(--hover-row); color: var(--ink); }
-  .jumps .n { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
-  .jumps a.strong { border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); color: var(--brand-ink); }
-  .jumps a.strong .n { color: var(--brand-ink); }
-  .dek .when { color: var(--ink); font-weight: 600; }
 
   .about { display: grid; gap: var(--space-2); }
   .about details > p { max-inline-size: 52rem; }
@@ -469,8 +442,6 @@
   @media (max-width: 64rem) {
     .tiles, .tiles.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .tiles.three .tile:last-child { grid-column: 1 / -1; }
-    .facts { grid-template-columns: minmax(0, 1fr); }
-    .facts-list { padding-inline-start: 0; padding-block-start: var(--space-3); border-inline-start: 0; border-block-start: 1px solid var(--line); }
     .actions { justify-content: start; }
     .community { grid-template-columns: minmax(0, 1fr); }
   }
@@ -478,20 +449,11 @@
     .course-page { gap: var(--space-5); }
     .crumbs { margin-block-end: calc(-1 * var(--space-4)); }
     .actions .button { flex: 1 1 auto; }
-    .dek .item:not(.when) { white-space: normal; }
-    .dek .item.when { flex-basis: 100%; }
-    .dek .item + .item.when::before { content: none; }
-    /* All four section shortcuts, two by two, like the desktop row. */
-    .jumps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1); order: 1; }
-    /* Teacher, unit, code and language as a 2×2 grid of labelled facts under the time. */
-    .facts-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2) var(--space-4); }
-    .facts-list .wide { grid-column: 1 / -1; }
     .actions-note { text-align: start; }
-    .jumps a { justify-content: space-between; min-block-size: var(--target-min); padding-inline: var(--space-3); border-radius: var(--radius-control); white-space: normal; }
-    .jumps a::after { content: none; }
+    .meta .item { white-space: normal; }
+    .when-line { font-size: var(--t-md); }
     .tiles { gap: var(--space-2); }
     .tile { padding: var(--space-3); }
     .tile .value { font-size: var(--t-2xl); }
-    .panel { padding: var(--space-4); }
   }
 </style>
