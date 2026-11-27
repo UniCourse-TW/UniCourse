@@ -19,9 +19,10 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   if (result.response.status === 404) error(404, '找不到這位教師。');
   if (!result.data) error(503, UNAVAILABLE);
   const { offerings, ...instructor } = result.data;
-  const courseOptions = [...new Map([...offerings].reverse().map(({ courseCode, title }) => [courseCode, title]))]
-    .sort((left, right) => left[1].localeCompare(right[1], 'zh-TW'))
-    .map(([value, title]) => ({ value, label: `${title} · ${value}` }));
+  const latestByCourse = new Map([...offerings].reverse().map((row) => [row.courseCode, row]));
+  const courseOptions = [...latestByCourse.values()]
+    .sort((left, right) => left.title.localeCompare(right.title, 'zh-TW'))
+    .map(({ courseCode, title }) => ({ value: courseCode, label: `${title} · ${courseCode}` }));
   const term = url.searchParams.get('term') ?? '';
   const courseCode = url.searchParams.get('course') ?? '';
   const oldestFirst = url.searchParams.get('sort') === 'oldest';
@@ -53,15 +54,18 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
       return { id: row.id, title: row.title, count: reviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0 };
     })) : []
   ]);
-  const ratedCourses = [...new Map(offerings.map((row) => [row.courseCode, row] as const).reverse()).values()].flatMap((row) => {
+  const ratedCourses = [...latestByCourse.values()].flatMap((row) => {
     const stats = summaryRatings.get(row.courseCode);
     return stats?.average != null && stats.count > 0 ? [{ id: row.id, title: row.title, average: stats.average, count: stats.count }] : [];
   }).sort((left, right) => right.count - left.count);
 
+  const matrix = buildTeachingMatrix(offerings, offerings.length === instructor.summary.offerings);
+  const matrixRows = matrix.rows.map((row) => ({ ...row, department: latestByCourse.get(row.id)?.department ?? null }));
+
   return {
     instructor, courses: courseOptions, term, courseCode, oldestFirst, rows, termsByCourse, matched: matches.length, page, totalPages,
     listedTerms: [...new Set(offerings.map(({ term }) => term))].sort().reverse(), firstRow: (page - 1) * pageSize + 1,
-    matrix: buildTeachingMatrix(offerings, offerings.length === instructor.summary.offerings), trends: trendResult?.data ?? null, summaryRatings, ratedCourses,
+    matrix: { periods: matrix.periods, rows: matrixRows }, trends: trendResult?.data ?? null, summaryRatings, ratedCourses,
     externalReviews: externalReviews?.data ?? null,
     courseReviews: courseReviews.filter(({ count }) => count > 0),
     listed: offerings.length,
