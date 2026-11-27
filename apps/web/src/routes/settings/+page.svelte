@@ -2,7 +2,7 @@
   import { enhance } from '$app/forms';
   import { onMount, tick } from 'svelte';
   import '$lib/community-ui.css';
-  import { initial, joinedMonth, slashDate } from '$lib/community-format';
+  import { initial, slashDate } from '$lib/community-format';
   import { profileHref } from '$lib/community-paths';
   import { PRIVATE_REPORT_URL } from '$lib/legal-contact';
   import type { SubmitFunction } from '@sveltejs/kit';
@@ -25,13 +25,15 @@
   let saving = $state(false);
   let current = $derived({ ...values });
   let savedVisible = $derived(Boolean(form && 'saved' in form));
-  let dirty = $derived(
-    current.displayName.trim() !== stored.displayName || current.bio.trim() !== stored.bio || current.school !== stored.school
+  let changes = $derived(
+    [current.displayName.trim() !== stored.displayName, current.bio.trim() !== stored.bio, current.school !== stored.school].filter(Boolean).length
   );
+  let dirty = $derived(changes > 0);
   onMount(() => (hydrated = true));
 
   let schoolNames = $derived(Object.fromEntries(data.schools.map((school) => [school.slug, school.name])));
   let previewName = $derived(current.displayName.trim() || data.profile.username);
+  let joined = $derived(slashDate(data.profile.createdAt));
 
   let fadeTimer: ReturnType<typeof setTimeout> | undefined;
   const save: SubmitFunction = () => {
@@ -88,6 +90,11 @@
     listOpen = false;
     activeIndex = -1;
   }
+  function toggleList() {
+    if (listOpen) closeList();
+    else openList();
+    combo?.focus();
+  }
   function choose(school: SchoolRow) {
     current = { ...current, school: school.slug };
     schoolQuery = school.slug ? school.name : '';
@@ -109,7 +116,7 @@
   }
   function onComboBlur(event: FocusEvent) {
     const next = event.relatedTarget as HTMLElement | null;
-    if (next?.closest('.school-list')) return;
+    if (next?.closest('.school-list, .combo-toggle')) return;
     closeList();
     // Leaving without picking: the box goes back to what is actually chosen (or stays empty).
     if (!schoolQuery.trim()) {
@@ -156,7 +163,7 @@
       <p class="handle">
         <span class="mono">@{data.profile.username}</span>
         {#if current.school && schoolNames[current.school]}<span class="sep">·</span>{schoolNames[current.school]}{/if}
-        <span class="sep">·</span>{joinedMonth(data.profile.createdAt)}加入
+        <span class="sep">·</span><span class="num">{joined}</span> 加入
       </p>
       {#if current.bio.trim()}<p class="bio">{current.bio.trim()}</p>{:else}<p class="bio empty">（沒有自我介紹）</p>{/if}
     </div>
@@ -171,27 +178,19 @@
   <header class="cm-head">
     <h1>設定</h1>
     <p class="cm-dek">
-      <span class="who-line"><span class="mono">@{data.profile.username}</span><span class="sep">·</span><time datetime={data.profile.createdAt}>{slashDate(data.profile.createdAt)}</time> 加入</span><span class="sep dek-sep">·</span><a class="dek-link" href={profileHref(data.profile.username)}>查看已公開的個人頁 <span aria-hidden="true">→</span></a>
+      <span class="who-line"><span class="mono">@{data.profile.username}</span><span class="sep">·</span><time class="num" datetime={data.profile.createdAt}>{joined}</time> 加入</span><span class="sep dek-sep">·</span><a class="dek-link" href={profileHref(data.profile.username)}>查看已公開的個人頁 <span aria-hidden="true">→</span></a>
     </p>
   </header>
 
-  <!-- Phones stack the two panels; these chips jump between them. Desktop shows both at once. -->
-  <nav class="sections" aria-label="設定項目">
-    <span class="jump">跳到：</span>
-    <a class="cm-chip" href="#public">公開資料</a>
-    <a class="cm-chip" href="#account">帳號</a>
-  </nav>
-
   <div class="layout">
     <section id="public" class="cm-panel" aria-labelledby="public-title" tabindex="-1">
-      <h2 id="public-title">公開資料</h2>
+      <div class="panel-head">
+        <h2 id="public-title">公開資料</h2>
+        <!-- Phones stack the two panels; this takes you straight to the second one. -->
+        <a class="jump-link" href="#account">帳號與登出 <span aria-hidden="true">↓</span></a>
+      </div>
       <p class="lead">這些資料會顯示在你的<a href={profileHref(data.profile.username)}>個人頁</a>，以及你的評價、文章與回覆旁。</p>
       <form method="POST" class="cm-form" use:enhance={save} oninput={onInput} onchange={onInput}>
-        <!-- Phones have no side column: the same preview folds open here, above the fields it reflects. -->
-        <details class="preview-fold">
-          <summary>{hydrated && dirty ? '預覽未儲存的變更' : '預覽個人頁'} <span class="chev" aria-hidden="true">▾</span></summary>
-          {@render previewCard()}
-        </details>
         <div class="cm-field">
           <div class="cm-label">
             <label for="displayName">顯示名稱</label>
@@ -210,11 +209,12 @@
             placeholder="例如：資工系大三，喜歡演算法與系統課。"></textarea>
         </div>
         <div class="cm-field">
-          <div class="cm-label"><label for="school">所屬學校</label><span class="cm-hint">選填</span></div>
+          <div class="cm-label"><label for="school">所屬學校</label><span class="cm-hint">選填 · 從清單選取</span></div>
           {#if hydrated}
+            <!-- A searchable list, not a free text box: the chevron opens it and only a picked row is saved. -->
             <div class="combo" class:chosen={showsChoice}>
               <input bind:this={combo} id="school" class="cm-input" type="text" role="combobox" autocomplete="off" spellcheck="false"
-                placeholder="輸入校名或簡稱，例如 清大" aria-expanded={listOpen} aria-controls="school-list" aria-autocomplete="list"
+                placeholder="搜尋並選取學校，例如 清大" aria-expanded={listOpen} aria-controls="school-list" aria-autocomplete="list"
                 aria-activedescendant={listOpen && activeIndex >= 0 ? `school-opt-${activeIndex}` : undefined}
                 aria-describedby="school-hint" bind:value={schoolQuery}
                 onfocus={openList} onclick={openList} oninput={onComboInput} onblur={onComboBlur} onkeydown={onComboKey} />
@@ -222,6 +222,7 @@
                 <span class="tick" aria-hidden="true">✓</span>
                 <button type="button" class="clear" aria-label="清除學校，改為不顯示" onclick={clearSchool}><span aria-hidden="true">×</span></button>
               {/if}
+              <button type="button" class="combo-toggle" aria-label={listOpen ? '收合學校清單' : '展開學校清單'} aria-expanded={listOpen} aria-controls="school-list" tabindex="-1" onmousedown={(event) => event.preventDefault()} onclick={toggleList}><span class="chev" aria-hidden="true">▾</span></button>
               <input type="hidden" name="school" value={current.school} />
               <ul id="school-list" class="school-list" role="listbox" aria-label="符合的學校" hidden={!listOpen}>
                 {#each options as school, index (school.slug)}
@@ -241,7 +242,7 @@
               </ul>
             </div>
             <p id="school-hint" class="cm-hint" aria-live="polite">
-              {#if showsChoice}已選 {selectedName}；按 × 可改為不顯示。{:else if current.school}目前仍是 {selectedName}；從清單選另一所才會更換，清空則不顯示。{:else}從清單選一所才會儲存；留空則不顯示學校。{/if}
+              {#if showsChoice}已選 {selectedName}；按 × 可改為不顯示。{:else if current.school}目前仍是 {selectedName}；從清單選另一所才會更換，清空則不顯示。{:else}輸入校名、簡稱或英文名後從清單選一所；留空則不顯示學校。{/if}
             </p>
           {:else}
             <!-- `selected` on options keeps a choice made before hydration; `value` on the select would reset it. -->
@@ -254,17 +255,21 @@
           {/if}
         </div>
         {#if form && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
-        <!-- One status line for every outcome, next to the button it describes. Without JavaScript the
+        <!-- Phones have no side column: the same preview folds open here, next to the button that publishes it. -->
+        <details class="preview-fold">
+          <summary>{hydrated && dirty ? '預覽未儲存的變更' : '預覽個人頁'} <span class="chev" aria-hidden="true">▾</span></summary>
+          {@render previewCard()}
+        </details>
+        <!-- One status line for every outcome, beside the button it describes. Without JavaScript the
              button is always the solid primary; with it, it only lights up once something changed. -->
         <div class="save-row">
+          <button class="cm-btn" aria-busy={saving} disabled={saving || (hydrated && !dirty)}>{saving ? '儲存中…' : '儲存'}</button>
           <p class="status" role="status">
             {#if saving}<span class="idle">儲存中…</span>
             {:else if savedVisible}<span class="ok"><span aria-hidden="true">✓</span> 已儲存，個人頁已更新</span>
-            {:else if hydrated && dirty}<span class="pending">有尚未儲存的變更</span>
+            {:else if hydrated && dirty}<span class="pending">有 {changes} 項變更尚未儲存</span>
             {:else if hydrated}<span class="idle">尚未變更，修改後才能儲存</span>{/if}
           </p>
-          <button class="cm-btn" class:secondary={hydrated && !dirty && !saving} aria-busy={saving}
-            disabled={saving || (hydrated && !dirty)}>{saving ? '儲存中…' : '儲存'}</button>
         </div>
       </form>
     </section>
@@ -281,11 +286,10 @@
         <p class="lead">只有你能開啟這個管理區；帳號名稱本身仍會公開顯示。</p>
         <dl class="facts">
           <div><dt>帳號</dt><dd><span class="mono">@{data.profile.username}</span> <span class="cm-hint">建立後無法更改</span></dd></div>
-          <div><dt>加入於</dt><dd class="num">{slashDate(data.profile.createdAt)}</dd></div>
+          <div><dt>加入於</dt><dd class="num">{joined}</dd></div>
           <div>
             <dt>密碼</dt>
-            <dd>目前還不能在這裡自行變更密碼。
-              <span class="cm-hint">需要重設時，用 GitHub 的<a href={PRIVATE_REPORT_URL} rel="noopener external">私密回報</a>告訴維護者你的帳號名稱；只有維護者看得到，請不要附上密碼。</span></dd>
+            <dd>尚未提供自行變更。<span class="cm-hint">需要重設時，<a href={PRIVATE_REPORT_URL} rel="noopener external">私密回報給維護者<span aria-hidden="true"> ↗</span></a>，只寫帳號名稱。</span></dd>
           </div>
           {#if data.profile.isAdmin}<div><dt>權限</dt><dd>管理員</dd></div>{/if}
         </dl>
@@ -302,11 +306,10 @@
   .settings .sep { margin-inline: 0.4em; color: var(--axis); }
   .cm-dek { display: flex; flex-wrap: wrap; align-items: center; }
   .dek-link { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: 2rem; }
-  .sections { display: none; }
-  .jump { color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .cm-panel:focus { outline: none; }
   .cm-panel:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .save-row .cm-btn:disabled:not([aria-busy='true']) { color: var(--ink-2) !important; background: transparent; border-color: var(--control-line); }
+  .panel-head { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: baseline; justify-content: space-between; }
+  .jump-link { display: none; gap: 0.3em; align-items: center; min-block-size: 2rem; font-size: var(--t-sm); font-weight: 600; }
   .preview-fold { display: none; }
   .preview-fold summary { display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
   .preview-fold summary::-webkit-details-marker { display: none; }
@@ -318,8 +321,7 @@
   h2 { font-size: var(--t-lg) !important; }
   .lead { margin-block: var(--space-1) var(--space-4) !important; color: var(--muted); font-size: 0.8125rem; }
   .save-row { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
-  .save-row .cm-btn { order: -1; }
-  .status { font-size: var(--t-base); }
+  .status { font-size: var(--t-sm); }
   .ok { color: var(--up); font-weight: 600; }
   .pending { color: var(--warn); font-weight: 600; }
   .idle { color: var(--muted); }
@@ -328,17 +330,23 @@
   dt { color: var(--muted); }
   dd { margin: 0; }
   dd .cm-hint { display: block; }
+  dd .cm-hint a { font-weight: 600; }
   .logout { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between; }
   .cm-btn.neutral { color: var(--ink-2) !important; background: var(--panel-raised); border-color: var(--control-line); }
   .cm-btn.neutral:hover { background: var(--hover-row); filter: none; }
 
-  /* School combobox: the text box is the control; the list below it is the only way to choose. */
+  /* School combobox: the text box searches, the chevron opens the list, and only a picked row is saved. */
   .combo { position: relative; }
-  .combo .cm-input { padding-inline-end: 5.25rem; }
-  .combo.chosen .cm-input { border-color: color-mix(in srgb, var(--up) 55%, var(--control-line)); }
-  .tick { position: absolute; inset-block-start: 50%; inset-inline-end: 2.9rem; translate: 0 -50%; color: var(--up); font-weight: 700; }
-  .clear { position: absolute; inset-block: 0; inset-inline-end: 0; display: grid; place-items: center; inline-size: var(--target-min); border: 0; border-inline-start: 1px solid var(--line); border-start-end-radius: var(--radius-control); border-end-end-radius: var(--radius-control); color: var(--ink-2); background: transparent; font-size: 1.25rem; cursor: pointer; touch-action: manipulation; }
+  .combo .cm-input { padding-inline-end: 3.25rem; }
+  .combo.chosen .cm-input { padding-inline-end: 7.25rem; border-color: color-mix(in srgb, var(--up) 55%, var(--control-line)); }
+  .tick { position: absolute; inset-block-start: 50%; inset-inline-end: 5.6rem; translate: 0 -50%; color: var(--up); font-weight: 700; }
+  .clear, .combo-toggle { position: absolute; inset-block: 0; display: grid; place-items: center; inline-size: var(--target-min); border: 0; color: var(--ink-2); background: transparent; cursor: pointer; touch-action: manipulation; }
+  .clear { inset-inline-end: var(--target-min); border-inline-start: 1px solid var(--line); font-size: 1.25rem; }
   .clear:hover { color: var(--down); background: var(--hover-row); }
+  .combo-toggle { inset-inline-end: 0; border-inline-start: 1px solid var(--line); border-start-end-radius: var(--radius-control); border-end-end-radius: var(--radius-control); }
+  .combo-toggle:hover { color: var(--brand-ink); background: var(--brand-wash); }
+  .combo-toggle[aria-expanded='true'] .chev { rotate: 180deg; }
+  .combo-toggle .chev { font-size: 1rem; }
   .school-list { position: absolute; inset-inline: 0; inset-block-start: calc(100% + 4px); z-index: 5; max-block-size: 20rem; margin: 0; padding: var(--space-1); overflow-y: auto; list-style: none; border: 1px solid var(--control-line); border-radius: var(--radius-panel); background: var(--panel-raised); box-shadow: 0 10px 24px color-mix(in srgb, var(--ink) 16%, transparent); }
   .school-list[hidden] { display: none; }
   .school-list [role='option'] { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; min-block-size: var(--target-min); padding: var(--space-1) var(--space-3); border-radius: var(--radius-control); color: var(--ink); font-size: var(--t-base); cursor: pointer; }
@@ -369,14 +377,13 @@
     .preview { display: none; }
     .preview-fold { display: block; }
     .preview-fold[open] { display: grid; }
-    .sections { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin-block-end: var(--space-4); }
+    .jump-link { display: inline-flex; }
     .cm-panel { scroll-margin-block-start: var(--space-4); }
   }
   @media (max-width: 40rem) {
     .cm-dek .dek-sep { display: none; }
     .who-line, .dek-link { flex-basis: 100%; }
-    .save-row .status { flex-basis: 100%; }
-    .save-row .cm-btn { order: 0; flex: 1 1 100%; }
+    .save-row .status { flex: 1 1 8rem; }
     .facts div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
     .logout .cm-btn { flex: 1 1 100%; }
   }

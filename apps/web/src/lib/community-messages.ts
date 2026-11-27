@@ -5,7 +5,7 @@ export const UNAVAILABLE = '暫時無法完成，請稍後再試。';
 const codeMessages: Partial<Record<ErrorCode, string>> = {
   unauthorized: '請先登入。',
   invalid_credentials: '帳號或密碼錯誤。',
-  rate_limited: '登入失敗次數過多，請一分鐘後再試。',
+  rate_limited: '登入失敗太多次，一分鐘後才能再試。',
   username_taken: '這個帳號名稱已有人使用。',
   invalid_body: '送出的內容有誤。',
   invalid_path: '網址格式有誤。',

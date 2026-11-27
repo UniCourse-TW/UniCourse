@@ -80,7 +80,7 @@
     <p class="meta">
       更新於 <time datetime={updated}>{updatedLabel}</time>
       {#if contact}<span class="sep" aria-hidden="true">·</span><a href={`#${contact.id}`}>{contact.title}</a>{/if}
-      <span class="sep" aria-hidden="true">·</span><a href={sibling.href}>{sibling.label}<span aria-hidden="true"> →</span></a>
+      <span class="sep" aria-hidden="true">·</span><a class="arrow-link" href={sibling.href}><span>{sibling.label}</span><span aria-hidden="true">→</span></a>
     </p>
   </header>
   <div class="doc-layout" class:has-gist={summary.length > 0}>
@@ -98,7 +98,7 @@
           {#each sections as section (section.id)}
             <li><a href={`#${section.id}`} aria-current={shownId === section.id ? 'true' : undefined}>{section.title}</a></li>
           {/each}
-          <li class="sibling"><a href={sibling.href}>{sibling.label} <span aria-hidden="true">→</span></a></li>
+          <li class="sibling"><a class="arrow-link" href={sibling.href}><span>{sibling.label}</span><span aria-hidden="true">→</span></a></li>
         </ol>
       </details>
     </nav>
@@ -114,7 +114,9 @@
 </article>
 
 <style>
-  .doc { display: grid; gap: var(--space-5); min-inline-size: 0; color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
+  /* The document is centred at its natural width (contents + 52 em measure) instead of hugging the left edge. */
+  .doc { display: grid; gap: var(--space-5); max-inline-size: 66rem; min-inline-size: 0; margin-inline: auto; color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
+  .arrow-link { display: inline-flex; gap: 0.3em; align-items: center; }
   .doc-head { display: grid; gap: var(--space-1); }
   /* The gist shares the prose column: same left edge as the first h2 and the same 52 em measure. */
   .gist { grid-column: 2; max-inline-size: 52em; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-panel); background: var(--panel); }
@@ -127,9 +129,10 @@
   .meta a, .doc-toc a, .next a, .prose :global(a) { color: var(--brand-ink); text-underline-offset: 0.15em; }
   :is(.meta, .doc-toc, .next, .prose) :global(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: 2px; }
 
-  .doc-layout { display: grid; grid-template-columns: 13rem minmax(0, 1fr); gap: var(--space-5) var(--space-7); align-items: start; }
-  .has-gist .prose :global(section:first-of-type h2) { margin-block-start: var(--space-3); }
-  .doc-toc { grid-column: 1; grid-row: 1; position: sticky; inset-block-start: 5rem; font-size: var(--t-base); }
+  .doc-layout { display: grid; grid-template-columns: 13.5rem minmax(0, 1fr); gap: var(--space-5) var(--space-8); align-items: start; }
+  /* The gist is its own block: the first section starts a full block gap below it, like every later h2. */
+  .has-gist .prose :global(section:first-of-type h2) { margin-block-start: var(--space-6); }
+  .doc-toc { grid-column: 1; grid-row: 1; position: sticky; inset-block-start: 5rem; font-size: var(--t-md); }
   .has-gist .doc-toc { grid-row: 1 / span 2; }
   .prose { grid-column: 2; }
   .doc-toc details { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
@@ -158,8 +161,8 @@
   .prose :global(th), .prose :global(td) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
   .prose :global(th) { background: var(--table-head); color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .prose :global(tr:last-child td) { border-block-end: 0; }
-  /* Code inside CJK sentences sits on a chip, and may break after the colon on narrow screens. */
-  .prose :global(code) { padding: 1px 5px; border-radius: 4px; background: var(--chip); color: var(--ink); font-family: var(--font-mono); font-size: 0.88em; line-break: anywhere; }
+  /* Code inside CJK sentences sits on a chip that moves to the next line whole; it never breaks mid-word. */
+  .prose :global(code) { padding: 1px 5px; border-radius: 4px; background: var(--chip); color: var(--ink); font-family: var(--font-mono); font-size: 0.88em; white-space: nowrap; }
   /* Identifier columns (board names) never break mid-word; the remarks column takes the wrapping. */
   .prose :global(table.boards td:first-child), .prose :global(table.boards th:first-child) { white-space: nowrap; font-family: var(--font-mono); font-size: 0.92em; }
   .prose :global(table.boards td:nth-child(2)) { white-space: nowrap; }
@@ -170,7 +173,17 @@
   .prose :global(details.phone-fold > summary .fold-count) { display: none; }
   .prose :global(.callout) { margin: 0 0 var(--space-3); padding: var(--space-3) var(--space-4); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); }
   .prose :global(.callout .note) { display: block; margin-block-start: var(--space-2); color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
-  .prose :global(.contact-routes) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-3); max-inline-size: 46em; margin: 0 0 var(--space-3); }
+  .prose :global(.contact-routes) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-3); margin: 0 0 var(--space-3); }
+  .prose :global(.contact-routes .route-row) { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
+  .prose :global(.contact-routes .route-tag) { display: inline-block; padding: 0 7px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; line-height: 1.7; }
+  .prose :global(.contact-routes .route-tag.private) { background: var(--brand-wash); color: var(--brand-ink); }
+  /* A subsection heading with a shortcut at its end (e.g. 更新與移除 · 私密聯絡 ↗). */
+  .prose :global(.h3-row) { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: baseline; justify-content: space-between; margin: var(--space-5) 0 var(--space-1); }
+  .prose :global(.h3-row h3) { margin: 0; }
+  .prose :global(.h3-row .shortcut) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: 2rem; font-size: var(--t-base); font-weight: 600; }
+  /* A section's one-paragraph answer before the detail: what, and what to do. */
+  .prose :global(p.lead) { padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); line-height: 1.7; }
+  .prose :global(p.lead strong) { color: var(--ink); }
   .prose :global(.contact-routes > div) { display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .prose :global(.contact-routes h3) { margin: 0; font-size: var(--t-md); }
   .prose :global(.contact-routes .route-kind) { margin: 0; color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
@@ -198,8 +211,11 @@
   }
   @media (max-width: 56rem) {
     .doc-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
-    /* Phones: gist, then the folded contents, then the text. */
+    /* Phones: the folded contents right under the date, then the gist, then the text. */
     .gist, .doc-toc, .has-gist .doc-toc, .prose { grid-column: 1; grid-row: auto; }
+    .doc-toc { order: 0; }
+    .gist { order: 1; }
+    .prose { order: 2; }
     .doc-toc { position: static; }
     .doc-toc details::details-content { content-visibility: auto; }
     .doc-toc details:not([open])::details-content { content-visibility: hidden; }

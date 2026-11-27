@@ -5,14 +5,20 @@ import { catalog, clearSession } from '$lib/server/catalog';
 import { field } from '$lib/server/community-forms';
 import type { Actions, PageServerLoad } from './$types';
 
+/** The API refuses a username after 10 failed attempts in a minute; it does not say how long is left. */
+const LOCKOUT_SECONDS = 60;
+
 export const load: PageServerLoad = ({ locals, url }) => {
   const next = safeNext(url.searchParams.get('next'));
   const mode = url.searchParams.get('mode') === 'register' ? 'register' : 'login';
+  // A name handed over from the register tab (the name was taken, so sign in with it instead).
+  const handed = url.searchParams.get('username') ?? '';
+  const prefill = /^[A-Za-z0-9_]{3,32}$/.test(handed) ? handed : '';
   // Signed in and sent here by an action (`next` given): straight on. Signed in and here by
   // hand: say who is signed in and offer the ways on, instead of a silent bounce to the home page.
   if (locals.user && url.searchParams.has('next')) redirect(303, next);
   const signedIn = locals.user ? { username: locals.user.username, displayName: locals.user.displayName } : null;
-  return { mode, next, signedIn } as const;
+  return { mode, next, prefill, signedIn } as const;
 };
 
 export const actions: Actions = {
@@ -27,7 +33,12 @@ export const actions: Actions = {
       .POST('/api/auth/login', { body: { username, password } })
       .catch(() => undefined);
     if (!result) return fail(503, { mode: 'login', username, message: apiMessage(undefined) });
-    if (!result.data) return fail(result.response.status, { mode: 'login', username, message: apiMessage(result.error) });
+    if (!result.data) {
+      const status = result.response.status;
+      // The lockout window starts at the refusal; the page counts down from here.
+      const locked = status === 429 ? { lockedAt: Date.now(), retryAfter: LOCKOUT_SECONDS } : {};
+      return fail(status, { mode: 'login', username, message: apiMessage(result.error), ...locked });
+    }
     // `relayApiFetch` has already copied the session cookie onto this response.
     redirect(303, next);
   },
@@ -52,6 +63,8 @@ export const actions: Actions = {
     // The API clears the cookie with its own Set-Cookie; clear it here too in case it is down.
     await catalog(event.fetch).POST('/api/auth/logout').catch(() => undefined);
     clearSession(event);
-    redirect(303, '/');
+    // 「登出，改用其他帳號」 comes back to the sign-in form; every other sign-out lands on the home page.
+    const next = safeNext(field(await event.request.formData().catch(() => new FormData()), 'next'));
+    redirect(303, next);
   }
 };

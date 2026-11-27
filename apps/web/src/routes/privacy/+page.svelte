@@ -55,6 +55,7 @@
 
   <section aria-labelledby="reviews">
     <h2 id="reviews">外部評論索引儲存的資料</h2>
+    <p class="lead"><strong>存什麼：</strong>只有連結、標題、日期、作者帳號、看板、推文數與 120 字內摘要，沒有全文、推文或圖片。<strong>要移除某一筆：</strong>到<a href="#contact">移除與聯絡</a>私密告訴維護者即可。</p>
     <p><span class="status live">已上線</span>為了在課程頁列出其他網站上的相關討論，本站為 PTT 的四個課程看板（NTUcourse、NTHU_Course、NCTU-Teacher、NCHU-Courses）2016 年起的公開文章建立了搜尋索引。每一筆只儲存下列欄位，不儲存全文、推文內容或圖片，也不儲存任何未公開的資料：</p>
     <table role="table">
       <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">欄位</th><th role="columnheader" scope="col">說明</th></tr></thead>
@@ -81,19 +82,19 @@
 
   <section aria-labelledby="contact">
     <h2 id="contact">移除與聯絡</h2>
-    <p>先選管道：<strong>刪除帳號、涉及個人資料或不想公開的請求，請走私密聯絡</strong>；一般的資料處理問題或移除外部索引中錯配的文章，可以公開回報。</p>
+    <p>先選管道：<strong>刪除帳號、涉及個資或不想公開的請求走私密聯絡</strong>，一般的資料處理問題可以公開回報。</p>
     <div class="contact-routes">
       <div>
         <p class="route-kind">公開回報</p>
         <h3>可公開的資料錯誤</h3>
-        <p>一般的資料處理問題、錯配的外部文章，結果大家都看得到。請不要附上學號、聯絡方式等個人資料。</p>
-        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 建立 issue <span aria-hidden="true">↗</span></a>
+        <p>一般的資料處理問題、錯配的外部文章。請不要附上學號、聯絡方式等個人資料。</p>
+        <p class="route-row"><a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 建立 issue <span aria-hidden="true">↗</span></a><span class="route-tag">結果公開</span></p>
       </div>
       <div>
         <p class="route-kind">私密聯絡</p>
         <h3>含個資或不想公開的請求</h3>
-        <p>刪除帳號、移除與你有關的索引，或任何不想公開提出的請求。用 GitHub 的私密回報表單送出，只有維護者看得到。</p>
-        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密回報給維護者 <span aria-hidden="true">↗</span></a>
+        <p>刪除帳號、移除與你有關的索引，或任何不想公開提出的請求；文章作者、被提及的教師或當事人都可以提出。用 GitHub 的私密回報表單送出。</p>
+        <p class="route-row"><a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密回報給維護者 <span aria-hidden="true">↗</span></a><span class="route-tag private">僅維護者可見</span></p>
       </div>
     </div>
     <p>請附上相關頁面的連結。請求通常在七天內處理，結果會回覆在同一則 issue 或私密回報中。</p>
