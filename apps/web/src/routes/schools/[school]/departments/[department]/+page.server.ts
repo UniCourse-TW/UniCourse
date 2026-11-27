@@ -35,32 +35,50 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const sort = searchSorts.find(({ value }) => value === url.searchParams.get('sort'))?.value ?? (query ? 'relevance' : 'enrolled');
   const classFilter = ['required', 'elective'].find((value) => value === url.searchParams.get('class_filter')) ?? '';
   const requestedPage = Number(url.searchParams.get('page'));
-  // Search returns up to 50 rows per request. Retain the full batch while a
-  // requirement is applied, so a small term is filtered in full.
-  const pageSize = classFilter ? 50 : 24;
+  const pageSize = 20;
+  const batchSize = 50;
+  const filterLimit = 200;
   const safePage = Number.isSafeInteger(requestedPage) ? Math.max(1, requestedPage) : 1;
-  let page = Math.min(safePage, Math.max(1, Math.ceil(total / pageSize)));
-  const results = (pageNumber: number) => client.GET('/api/courses/search', {
-    params: { query: { ...path, term: term === 'all' ? undefined : term, q: query || undefined, sort, offset: (pageNumber - 1) * pageSize } }
-  }).catch(() => null);
+  const pageFor = (count: number) => Math.min(safePage, Math.max(1, Math.ceil(count / pageSize)));
+  const searchAt = (offset: number) => client.GET('/api/courses/search', {
+    params: { query: { ...path, term: term === 'all' ? undefined : term, q: query || undefined, sort, offset } }
+  }).then((response) => response.data ?? null).catch(() => null);
+
+  let page = pageFor(total);
   let offerings = sample;
   let matches = total;
+  let classInPage = false;
   let resultsError = false;
   if (total || query) {
-    let search = await results(page);
-    const finalPage = Math.max(1, Math.ceil((search?.data?.total ?? total) / pageSize));
-    if (page > finalPage) {
-      page = finalPage;
-      search = await results(page);
+    // Apply the class filter across the full result when it fits in four API batches.
+    // For broader searches, keep each page bounded and state that the chip applies to this page.
+    const first = await searchAt(classFilter ? 0 : (page - 1) * pageSize);
+    resultsError = !first;
+    if (first) {
+      matches = first.total;
+      if (classFilter && matches <= filterLimit) {
+        const offsets = Array.from({ length: Math.max(0, Math.ceil(matches / batchSize) - 1) }, (_, index) => (index + 1) * batchSize);
+        const batches = await Promise.all(offsets.map(searchAt));
+        resultsError = batches.some((batch) => !batch || batch.total !== first.total);
+        const filtered = [first, ...batches].flatMap((batch) => batch?.courses ?? []).filter(({ requirement }) => requirement === classFilter);
+        matches = filtered.length;
+        page = pageFor(matches);
+        offerings = filtered.slice((page - 1) * pageSize, page * pageSize);
+      } else {
+        classInPage = Boolean(classFilter);
+        const resolvedPage = pageFor(matches);
+        const search = resolvedPage === (classFilter ? 1 : page) ? first : await searchAt((resolvedPage - 1) * pageSize);
+        page = resolvedPage;
+        resultsError = !search;
+        offerings = search?.courses.slice(0, pageSize) ?? [];
+        if (classInPage) offerings = offerings.filter(({ requirement }) => requirement === classFilter);
+      }
     }
-    offerings = search?.data?.courses.slice(0, pageSize) ?? [];
-    matches = search?.data?.total ?? 0;
-    resultsError = !search?.data;
   }
 
   const [institution, ratings] = await Promise.all([institutionRequest, browseRatings(client, department.school, offerings)]);
   return {
-    department, trends, terms, term, total, offerings, ratings, query, sort, classFilter, resultsError, matches, page,
+    department, trends, terms, term, total, offerings, ratings, query, sort, classFilter, classInPage, resultsError, matches, page,
     totalPages: Math.max(1, Math.ceil(matches / pageSize)), firstRow: (page - 1) * pageSize + 1,
     updatedAt: offeringEdition(sample),
     complete: sample.length === total,
