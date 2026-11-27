@@ -50,8 +50,7 @@
 {#snippet row(site: Site)}
   {@const official = isOfficial(site)}
   {@const hasNotes = Boolean(site.notes || site.repo || (site.operatorName && official && !showOperator))}
-  {@const shortDescription = !hasNotes && Boolean(site.features && site.features.length <= 48)}
-  {@const detail = hasNotes || Boolean(site.features)}
+  {@const detail = hasNotes || (site.features?.length ?? 0) > 48}
   <!-- The whole row is a pointer shortcut. The summary also works from the keyboard and without JavaScript. -->
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (the summary is the keyboard control) -->
   <li class:third={!official} class:expandable={detail} onclick={detail ? toggleRow : undefined}>
@@ -68,10 +67,9 @@
       <span class="status st {site.status}"><i aria-hidden="true"></i>{statusLabels[site.status]}</span>
     </span>
     <span class="features">
-      {#if shortDescription}<span class="text">{site.features}</span>{/if}
       {#if detail}
-        <details class="more" class:phone-only={shortDescription}>
-          <summary><span class="text">{site.features ?? '說明與原始碼'}</span><span class="chev" aria-hidden="true"></span><span class="notes-label">查看網站說明</span></summary>
+        <details class="more">
+          <summary><span class="text">{site.features ?? '說明與原始碼'}</span><span class="notes-label">詳細<span class="chev" aria-hidden="true"></span></span></summary>
           {#if site.notes || site.repo || (site.operatorName && official && !showOperator)}<dl>
             {#if site.notes}<dt>說明</dt><dd>{site.notes}</dd>{/if}
             {#if site.operatorName && official && !showOperator}<dt>營運者</dt><dd>{operatorLabels[site.operator]}（{site.operatorName}）</dd>{/if}
@@ -96,7 +94,7 @@
   {#each batches as batch, index (batch[0].url)}
     {@const start = head.length + index * batchSize + 1}
     <details class="rest" ontoggle={(event) => (openBatches[batch[0].url] = event.currentTarget.open)}>
-      <summary><span class="closed">再顯示 {batch.length} 個</span><span class="opened">收合第 {start}–{start + batch.length - 1} 個</span></summary>
+      <summary class="landscape-expand"><span class="closed">再顯示 {batch.length} 個</span><span class="opened">收合第 {start}–{start + batch.length - 1} 個</span></summary>
       <ul class="sites" aria-label="{label}（第 {start}–{start + batch.length - 1} 個）">
         {#each batch as site (site.url)}{@render row(site)}{/each}
       </ul>
@@ -129,8 +127,6 @@
   }
   .rest:not([open]) ~ .rest:not([open]), .rest[open] .closed, .rest:not([open]) .opened { display: none; }
   .rest > summary::-webkit-details-marker { display: none; }
-  .rest > summary::before { content: '＋'; color: var(--muted); }
-  .rest[open] > summary::before { content: '－'; }
   .rest[open] > summary { position: sticky; inset-block-start: 0; background: var(--panel-raised); }
   .rest .sites li:first-child { border-block-start: 1px solid var(--line); }
   li {
@@ -156,7 +152,7 @@
   }
   li:hover { background: var(--hover-row); }
   .kind { color: var(--muted); font-size: var(--t-sm); font-weight: 600; line-height: 1.5; }
-  .third .kind { color: var(--series-2); }
+  .third .kind { color: var(--ink-2); }
   /* Name and host share a line when they fit, so most rows stay one line tall. */
   .name { display: flex; flex-wrap: wrap; column-gap: var(--space-2); align-items: baseline; min-inline-size: 0; }
   .name a { color: var(--brand-ink); font-weight: 600; text-underline-offset: 0.15em; text-decoration: none; overflow-wrap: anywhere; }
@@ -187,11 +183,10 @@
   .st.unknown i { border: 1.5px solid var(--muted); }
   .features { color: var(--ink-2); min-inline-size: 0; font-size: var(--t-sm); line-height: 1.5; overflow-wrap: anywhere; }
   .form { margin-inline-start: var(--space-1); padding: 0 5px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink-2); font-size: var(--t-xs); white-space: nowrap; }
-  .notes-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .notes-label { display: inline-flex; gap: var(--space-1); color: var(--brand-ink); font-weight: 600; white-space: nowrap; }
   .shown-count { margin: 0; padding: var(--space-2) var(--space-3); border-block-start: 1px solid var(--line); color: var(--muted); font-size: var(--t-sm); }
   li.expandable { cursor: pointer; }
   .more { display: block; }
-  .more.phone-only { display: none; }
   .more > summary { display: flex; gap: var(--space-2); align-items: baseline; justify-content: space-between; border-radius: var(--radius-control); cursor: pointer; list-style: none; }
   .more > summary::-webkit-details-marker { display: none; }
   .text { min-inline-size: 0; color: var(--ink-2); }
@@ -223,7 +218,7 @@
   @media (max-width: 40rem) {
     li {
       grid-template-columns: minmax(0, 1fr) max-content;
-      grid-template-areas: 'name state' 'cats features';
+      grid-template-areas: 'name state' 'cats cats' 'features features';
       gap: 0 var(--space-2);
       align-items: center;
       padding-block: var(--space-1);
@@ -232,18 +227,14 @@
     .kind { grid-area: cats; align-self: center; }
     .cats { margin-inline-start: 2.3rem; align-items: center; }
     .status { order: -1; }
-    .name a { min-block-size: var(--target-min); align-content: center; }
+    .name a { min-block-size: var(--target-min); min-inline-size: var(--target-min); align-content: center; }
     .host { display: none; }
     .login { text-align: start; }
     .features { inline-size: 100%; }
-    .features > .text { display: none; }
-    .more.phone-only { display: block; }
-    .more:not([open]) .text { display: none; }
-    .more > summary { min-block-size: var(--target-min); align-items: center; color: var(--brand-ink); }
-    .notes-label { position: static; inline-size: auto; block-size: auto; clip-path: none; order: -1; }
-    .more[open] > summary { flex-wrap: wrap; }
-    .more[open] > summary .text { flex-basis: 100%; order: 1; }
-    li:has(.more[open]) { grid-template-areas: 'name state' 'cats cats' 'features features'; }
+    .features > .text { display: block; padding-block-end: var(--space-1); }
+    .more > summary { min-block-size: var(--target-min); align-items: center; }
+    .more:not([open]) .text { -webkit-line-clamp: 1; line-clamp: 1; }
+    dd a { display: inline-flex; min-block-size: var(--target-min); align-items: center; }
   }
   @media (prefers-reduced-motion: no-preference) {
     li { transition: background-color 120ms; }
