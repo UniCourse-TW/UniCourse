@@ -98,16 +98,34 @@
   </header>
 
   {#if sparse}
-    <!-- Little activity: two link tiles to the sections, the other facts as one line of text. -->
+    <!-- Little activity: four equal tiles; the first two jump to their sections with a visible label. -->
     <section class="summary-line" aria-label="活動摘要">
       <div role="group" aria-label="活動統計">
         <dl class="counts">
-          <div class="link-cell"><dt>課程評價</dt><dd class="num"><a href="#ratings">{ratingCount} 則{#if average !== null}<span class="sub">平均 {average.toFixed(1)}／5{#if ratingCount < 3}・僅 {ratingCount} 則{/if}</span>{/if}<span class="arrow" aria-hidden="true">↓</span></a></dd></div>
-          <div class="link-cell"><dt>發表文章</dt><dd class="num"><a href="#posts">{profile.posts.length} 篇<span class="arrow" aria-hidden="true">↓</span></a></dd></div>
-        </dl>
-        <dl class="facts">
-          <div><dt>文章收到的回覆</dt><dd><span class="num">{replies}</span> 則（含作者自己的回覆）</dd></div>
-          <div><dt>評價過的學校</dt><dd>{schoolSpread}</dd></div>
+          <div class="link-cell">
+            <dt>課程評價</dt>
+            <dd><span class="big num">{ratingCount}</span> 則{#if average !== null}<span class="sub">平均 <span class="num">{average.toFixed(1)}</span></span>{/if}</dd>
+            <dd class="go"><a href="#ratings">看評價 <span aria-hidden="true">↓</span></a></dd>
+          </div>
+          <div class="link-cell">
+            <dt>發表文章</dt>
+            <dd><span class="big num">{profile.posts.length}</span> 篇</dd>
+            <dd class="go"><a href="#posts">看文章 <span aria-hidden="true">↓</span></a></dd>
+          </div>
+          <div>
+            <dt>文章收到的回覆</dt>
+            <dd><span class="big num">{replies}</span> 則</dd>
+            <dd class="note">含作者自己的回覆</dd>
+          </div>
+          <div>
+            <dt>評價過的學校</dt>
+            {#if schoolCounts.length === 1}
+              <dd class="school-name">{schoolSpread}</dd>
+            {:else}
+              <dd><span class="big num">{schoolCounts.length}</span> 所</dd>
+              <dd class="note">{schoolCounts.length ? schoolSpread : '還沒有評價'}</dd>
+            {/if}
+          </div>
         </dl>
       </div>
     </section>
@@ -136,7 +154,7 @@
 
   <section class="block" aria-labelledby="ratings">
     <div class="block-head">
-      <h2 id="ratings">課程評價（{ratingCount}）</h2>
+      <h2 id="ratings">課程評價（{ratingCount}）{#if sparse && average !== null && ratingCount < 3}<span class="head-note">樣本太少，還看不出給分習慣</span>{/if}</h2>
       {#if hydrated && ratingCount > 1}
         <div class="sort" role="group" aria-label="評價排序">
           <button type="button" aria-pressed={sort === 'recent'} onclick={() => (sort = 'recent')}>最新</button>
@@ -152,13 +170,6 @@
         {/snippet}
       </EmptyState>
     {:else}
-      {#if sparse && average !== null}
-        <!-- A few ratings: the distribution sits with them, small and always visible, with counts. -->
-        <div class="dist compact-dist inline-dist">
-          <p class="eyebrow">給分分布<span class="sep">·</span>平均 <span class="num avg">{average.toFixed(1)}</span><span class="cm-hint">（滿分 5）<span class="sep">·</span>{ratingCount} 則{#if ratingCount < 3}，還看不出給分習慣{/if}</span></p>
-          <BarList label="給分分布" items={histogram} unit="則" showValues={false} />
-        </div>
-      {/if}
       <div class="table-frame">
         <table>
           <caption class="cm-sr">{name} 的課程評價</caption>
@@ -195,6 +206,14 @@
           </tbody>
         </table>
       </div>
+      {#if sparse && average !== null}
+        <!-- A few ratings: the ratings themselves come first; the distribution is a summary below,
+             folded while one or two ratings cannot show a habit. -->
+        <details class="dist compact-dist inline-dist" open={ratingCount >= 3 || undefined}>
+          <summary class="eyebrow">給分分布<span class="sep">·</span><span class="num">{ratingCount}</span>&nbsp;則</summary>
+          <BarList label="給分分布" items={histogram} unit="則" showValues={false} />
+        </details>
+      {/if}
     {/if}
   </section>
 
@@ -247,24 +266,31 @@
   .summary :global(.stat-row > :nth-child(4) dd) { font-size: var(--t-xl); line-height: 1.3; min-block-size: 2.1rem; display: flex; align-items: center; }
   .bio.empty { color: var(--muted); font-size: var(--t-sm); }
   .summary-line { display: grid; gap: var(--space-2); margin-block-start: var(--space-5); }
-  .counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: var(--space-2); margin: 0; }
+  .counts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); margin: 0; }
   .counts > div { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .counts .link-cell { position: relative; }
   .counts .link-cell:hover { border-color: var(--control-line); background: var(--hover-row); }
-  .counts .link-cell a { display: flex; flex-wrap: wrap; align-items: baseline; color: inherit; text-decoration: none; }
+  .counts .link-cell a { color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; text-decoration: none; }
   .counts .link-cell a::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+  .counts .link-cell:hover a { text-decoration: underline; }
   .counts .link-cell a:focus-visible { outline: none; }
   .counts .link-cell:has(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .counts .arrow { margin-inline-start: auto; color: var(--brand-ink); font-size: var(--t-base); }
-  .inline-dist { max-inline-size: 28rem; margin-block-end: var(--space-3); }
-  .facts { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-5); margin: var(--space-2) 0 0; color: var(--ink-2); font-size: var(--t-sm); }
-  .facts div { display: flex; gap: var(--space-2); }
-  .facts dt { color: var(--muted); }
-  .facts dd { margin: 0; }
-  .counts div { display: grid; gap: 2px; min-inline-size: 0; }
+  .inline-dist { max-inline-size: 28rem; margin-block-start: var(--space-3); padding-block: 0; }
+  .inline-dist summary { cursor: pointer; list-style: none; margin: 0 !important; min-block-size: var(--target-min); align-items: center; }
+  .inline-dist[open] { padding-block-end: var(--space-3); }
+  .inline-dist summary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: var(--radius-control); }
+  .inline-dist summary::-webkit-details-marker { display: none; }
+  .inline-dist summary::after { content: '▾'; margin-inline-start: auto; color: var(--muted); }
+  .inline-dist[open] summary::after { content: '▴'; }
+  .inline-dist[open] summary { margin-block-end: var(--space-2) !important; }
+  .head-note { margin-inline-start: var(--space-2); color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
+  .counts div { display: grid; align-content: start; gap: 2px; min-inline-size: 0; }
   .counts dt { color: var(--muted); font-size: var(--t-sm); }
-  .counts dd { margin: 0; font-size: var(--t-lg); font-weight: 650; }
-  .counts .sub { margin-inline-start: var(--space-2); color: var(--ink-2); font-size: var(--t-sm); font-weight: 500; }
+  .counts dd { margin: 0; color: var(--ink-2); font-size: var(--t-sm); }
+  .counts .big { color: var(--ink); font-size: var(--t-2xl); font-weight: 650; line-height: 1.2; }
+  .counts .sub { margin-inline-start: var(--space-2); color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
+  .counts .note { color: var(--muted); }
+  .counts .school-name { color: var(--ink); font-size: var(--t-lg); font-weight: 650; line-height: 1.5; overflow-wrap: anywhere; }
   .compact-dist :global(.bar-row) { min-block-size: 1.25rem !important; }
   .dist { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; margin-block-end: var(--space-2) !important; color: var(--ink-2) !important; font-size: var(--t-sm) !important; letter-spacing: 0 !important; }
