@@ -9,7 +9,7 @@
   let { data, children }: LayoutProps = $props();
   let pathname = $derived(page.url.pathname);
   let here = $derived(pathname + page.url.search);
-  let onSearch = $derived(page.status < 400 && pathname === '/' && page.data.content?.kind === 'search');
+  let onSearch = $derived(page.status < 400 && pathname === '/' && page.data.content?.kind === 'search' && (page.data.content.result?.total ?? 0) > 0);
   let hasPageSearch = $derived(['/', '/schools', '/forum', '/landscape'].includes(pathname) || pathname.startsWith('/schools/') || page.status === 404);
   let searchTarget = $derived(pathname === '/' ? '#course-keyword' : '/#course-keyword');
   let accountOpen = $state(false);

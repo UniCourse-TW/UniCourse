@@ -43,10 +43,10 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
 
   if (!isSearch) {
     const rankSchool = params.get('rank_school') || '';
-    const diverse = !rankSchool && params.get('rank_view') === 'schools';
+    const diverse = !rankSchool && params.get('rank_view') !== 'overall';
     const expanded = params.get('rank_limit') === '50';
     const includeNonAcademic = params.get('include_non_academic') === 'true';
-    const rankingQuery = { school: rankSchool || undefined, limit: expanded || diverse ? 50 : 10, academic: !includeNonAcademic };
+    const rankingQuery = { school: rankSchool || undefined, limit: diverse ? 100 : expanded ? 50 : 10, academic: !includeNonAcademic };
     const [[schools, terms], rankings, directory] = await Promise.all([
       base,
       client.GET('/api/rankings/courses', {

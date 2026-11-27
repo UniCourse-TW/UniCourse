@@ -39,7 +39,7 @@ export function rankingHref(school: string, expanded: boolean, includeNonAcademi
   if (school) params.set('rank_school', school);
   if (expanded) params.set('rank_limit', '50');
   if (includeNonAcademic) params.set('include_non_academic', 'true');
-  if (diverse) params.set('rank_view', 'schools');
+  if (!school && !diverse) params.set('rank_view', 'overall');
   return `/${params.size ? `?${params}` : ''}#ranking`;
 }
 

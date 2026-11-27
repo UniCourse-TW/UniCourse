@@ -22,39 +22,56 @@
   const courseHref = (row: Offering) => `/courses/${row.id}`;
   const termColumn: TableColumn<Offering> = { id: 'term', label: '學期', value: (row) => row.term, sortable: true };
   const gradeColumn: TableColumn<Offering> = { id: 'grade', label: '年級', value: (row) => row.grade, align: 'center', width: '3.5rem' };
-  let showRatings = $derived(offerings.some((row) => (ratings.get(row.courseCode)?.count ?? 0) > 0));
+  const groupKey = (row: Offering) => mode === 'instructor' ? row.courseCode : row.title;
+  let groups = $derived.by(() => {
+    const grouped = new Map<string, Offering[]>();
+    for (const row of offerings) {
+      const key = groupKey(row);
+      const group = grouped.get(key);
+      if (group) group.push(row);
+      else grouped.set(key, [row]);
+    }
+    return [...grouped.values()];
+  });
+  const previewSize = (group: Offering[]) => group.length > (mode === 'instructor' ? 5 : 3) ? 2 : group.length;
+  let desktopRows = $derived(groups.flatMap((group) => mode === 'instructor' ? group.slice(0, previewSize(group)) : group));
   let hasMeter = $derived(offerings.some((row) => row.enrolled != null && (reportedCapacity(row) ?? 0) > 0));
   let hasRemaining = $derived(offerings.some((row) => {
     const capacity = reportedCapacity(row);
     return row.enrolled != null && capacity != null && capacity > 0 && row.enrolled >= capacity * .9 && row.enrolled < capacity;
   }));
-  let groupStarts = $derived(new Set(offerings.filter((row, index) => row.courseCode !== offerings[index - 1]?.courseCode).map(({ id }) => id)));
+  let groupStarts = $derived(new Map(groups.map((group) => [group[0].id, group])));
   const category = (row: Offering) => [row.credits == null ? null : `${row.credits} 學分`, requirement({ ...row, requirementText: null }) ?? requirement(row)].filter(Boolean).join(' · ');
   let columns = $derived<TableColumn<Offering>[]>([
-    { id: 'course', label: '課程', value: (row) => row.title, sortable: true },
+    { id: 'course', label: '課程', width: mode === 'department' ? 'min(30%, 19rem)' : '32%', value: (row) => row.title, sortable: true },
     ...(showTerm ? [termColumn] : []),
-    mode === 'department' ? { id: 'teachers', label: '授課教師', width: '8rem' } : { id: 'unit', label: '開課單位' },
+    mode === 'department' ? { id: 'teachers', label: '授課教師', width: '11rem' } : { id: 'unit', label: '開課單位' },
     ...(mode === 'department' && offerings.some(({ grade }) => grade) ? [gradeColumn] : []),
     { id: 'category', label: '學分／類別', value: category, width: '6.5rem' },
     { id: 'enrollment', label: '人數／名額', sortable: true, sortValue: (row) => row.enrolled, numeric: true, width: '9rem' },
-    { id: 'schedule', label: '時間地點', width: 'clamp(9rem, 22vw, 16rem)' },
-    ...(showRatings ? [{ id: 'rating', label: '課程評價', align: 'center' as const, width: '7rem' }] : [])
+    { id: 'schedule', label: '時間地點' }
   ]);
 
   function groupLabel(row: Offering) {
-    const terms = groupStarts.has(row.id) ? groupTerms?.get(row.courseCode) : undefined;
-    if (!terms) return undefined;
+    const group = groupStarts.get(row.id);
+    if (!group) return undefined;
+    if (mode === 'department') return group.length > 1 ? `${row.title} · 本頁 ${displayValue(group.length)} 班` : undefined;
+    const terms = groupTerms?.get(row.courseCode);
+    if (!terms || group.length < 2) return undefined;
+    const sorted = group.map(({ term }) => term).sort();
     const total = terms.reduce((sum, [, count]) => sum + count, 0);
-    return `${row.title} · ${row.courseCode} · ${displayValue(total)} 班${terms.length > 1 ? `（${terms.map(([term, count]) => `${term} × ${count}`).join('、')}）` : ''}`;
+    const range = sorted[0] !== sorted.at(-1) ? `${sorted[0]} 至 ${sorted.at(-1)}` : sorted[0];
+    return `${row.title} · ${row.courseCode} · ${displayValue(group.length)} 班 · ${range}${group.length < total ? `（本頁／共 ${displayValue(total)} 班）` : ''}`;
   }
 </script>
 
 {#snippet code(row: Offering)}
-  <span class="browse-code offer-code" title={mode === 'instructor' && row.school === 'fcu' && row.sourceId ? `選課代碼 ${row.sourceId}` : undefined}>{row.courseCode}{row.classCode ? ` · ${row.classCode} 班` : ''}</span>
+  <span class="browse-code offer-code" title={row.school === 'fcu' && row.sourceId ? `選課代碼 ${row.sourceId}` : undefined}>{row.courseCode}{row.classCode ? ` · ${row.classCode} 班` : ''}{mode === 'department' && row.sourceId && row.sourceId !== row.courseCode && row.sourceId !== row.classCode ? ` · 選課 ${row.sourceId}` : ''}</span>
 {/snippet}
 
 {#snippet teachers(row: Offering)}
-  {#each row.instructors as name, index (index)}{#if index > 0}、{/if}<a href={instructorHref(row.school, name)}>{name}</a>{:else}<span class="publication-note" title="校方未列教師">教師未列</span>{/each}
+  {#each row.instructors.slice(0, 2) as name, index (index)}{#if index > 0}、{/if}<a href={instructorHref(row.school, name)}>{name}</a>{:else}<span class="publication-note" title="校方未列教師">教師未列</span>{/each}
+  {#if row.instructors.length > 2}<details class="teachers"><summary>另 {row.instructors.length - 2} 位</summary>{#each row.instructors.slice(2) as name, index (index)}{#if index > 0}、{/if}<a href={instructorHref(row.school, name)}>{name}</a>{/each}</details>{/if}
 {/snippet}
 
 {#snippet unit(row: Offering)}
@@ -87,11 +104,9 @@
   </span>
 {/snippet}
 
-{#snippet rating(row: Offering, mobile = false)}
+{#snippet rating(row: Offering)}
   {@const stats = ratings.get(row.courseCode)}
-  {#if stats?.average != null}<a class="rating-sample ui-tabular" href={`${courseHref(row)}#ratings`} aria-label={`${row.title}的課程評價：${stats.average.toFixed(1)} 分，${displayValue(stats.count)} 則`}>{stats.average.toFixed(1)} 分 · {displayValue(stats.count)} 則</a>
-  {:else if stats}{#if !mobile}<small class="rating-sample">尚無評價</small>{/if}
-  {:else}<small class="rating-sample">評價暫無法取得</small>{/if}
+  {#if stats?.average != null}<a class="rating-sample ui-tabular" href={`${courseHref(row)}#ratings`} aria-label={`${row.title}的課程評價：${stats.average.toFixed(1)} 分，${displayValue(stats.count)} 則`}>★ {stats.average.toFixed(1)} · {displayValue(stats.count)} 則</a>{/if}
 {/snippet}
 
 {#snippet schedule(row: Offering)}
@@ -100,7 +115,16 @@
 
 {#if hasMeter}<p class="browse-note offering-legend">條長為滿額比例。{#if hasRemaining}「餘」為匯入時剩餘名額。{/if}</p>{/if}
 <div class="table-view">
-  <DataTable {caption} rows={offerings} {columns} rowKey={(row) => row.id} rowHref={courseHref} {groupLabel} clientSort={!groupTerms} minWidth="47rem" maxHeight="none" scrollHint={false}>
+  {@render desktopTable(desktopRows, caption, true)}
+  {#if mode === 'instructor'}{#each groups.filter((group) => previewSize(group) < group.length) as group (group[0].id)}
+    <details class="more-offerings"><summary>{group[0].title} · 顯示其餘 {group.length - previewSize(group)} 班</summary>
+      {@render desktopTable(group.slice(previewSize(group)), `${group[0].title}其餘班次`, false)}
+    </details>
+  {/each}{/if}
+</div>
+
+{#snippet desktopTable(rows: Offering[], title: string, headings: boolean)}
+  <DataTable caption={title} {rows} {columns} rowKey={(row) => row.id} rowHref={courseHref} groupLabel={headings ? groupLabel : undefined} minWidth="47rem" maxHeight="none" scrollHint={false}>
     {#snippet cell(row, column)}
       {#if column.id === 'course'}
         <span class="browse-course-cell">
@@ -109,48 +133,58 @@
         </span>
       {:else if column.id === 'teachers'}{@render teachers(row)}
       {:else if column.id === 'unit'}{@render unit(row)}
-      {:else if column.id === 'enrollment'}{@render enrollment(row)}
-      {:else if column.id === 'rating'}{@render rating(row)}
+      {:else if column.id === 'enrollment'}{@render enrollment(row)}{@render rating(row)}
       {:else if column.id === 'schedule'}{@render schedule(row)}
-      {:else if column.id === 'category'}<span class="category" title={requirement(row)}>{displayValue(category(row) || null)}</span>
+      {:else if column.id === 'category'}<span class="category" title={row.credits === 0 ? '校方列為 0 學分' : requirement(row)}>{displayValue(category(row) || null)}</span>
       {:else}{displayValue(column.value?.(row))}{/if}
     {/snippet}
   </DataTable>
-</div>
+{/snippet}
 
 <ul class="card-view" aria-label={caption} role="list">
-  {#each offerings as row (row.id)}
+  {#each groups as group (group[0].id)}
+    {#each group.slice(0, previewSize(group)) as row (row.id)}{@render card(row, true)}{/each}
+    {#if previewSize(group) < group.length}<li class="extra-group"><details class="more-offerings"><summary>{group[0].title} · 顯示其餘 {group.length - previewSize(group)} 班</summary>
+      <ul aria-label={`${group[0].title}其餘班次`}>{#each group.slice(previewSize(group)) as row (row.id)}{@render card(row, false)}{/each}</ul>
+    </details></li>{/if}
+  {/each}
+</ul>
+
+{#snippet card(row: Offering, heading: boolean)}
     {@const time = scheduleLines(row)}
     <li>
-      {#if groupLabel(row)}<p class="card-term ui-tabular">{groupLabel(row)}</p>{/if}
+      {#if heading && groupLabel(row)}<p class="card-term ui-tabular">{groupLabel(row)}</p>{/if}
       <div class="card-title">
-        <a class="card-course" href={courseHref(row)} aria-label={groupTerms ? `${row.title} · ${row.term} 學期${row.classCode ? ` · ${row.classCode} 班` : ''}` : undefined}>{groupTerms ? `${row.term} 學期${row.classCode ? ` · ${row.classCode} 班` : ''}` : row.title}</a>
-        {#if showRatings && (ratings.get(row.courseCode)?.count ?? 0) > 0}<div class="card-rating" aria-label="課程評價">{@render rating(row, true)}</div>{/if}
+        <a class="card-course" href={courseHref(row)}>{row.title}</a>
         <div class="card-meta">
-          {#if showTerm && mode !== 'instructor'}<span class="browse-code">{row.term}</span>{/if}{@render code(row)}
-          {#if category(row)}<span title={requirement(row)}>{category(row)}</span>{/if}
+          {#if showTerm}<span class="browse-code">{row.term}</span>{/if}{@render code(row)}
+          {#if category(row)}<span title={row.credits === 0 ? '校方列為 0 學分' : requirement(row)}>{category(row)}</span>{/if}
           {#if mode === 'department' && row.grade}<span>{row.grade} 年級</span>{/if}
           {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}
         </div>
         {@render enrollment(row)}
       </div>
       <div class="card-meta secondary-meta">
-        {#if mode === 'department'}<span class="people">{@render teachers(row)}</span>
-        {:else}<span class="people">{@render unit(row)}</span>{/if}
-        <span aria-hidden="true">·</span><span class="meeting">{time.length ? time.join('；') : '時地未公布'}</span>
+        {#if mode === 'department'}<div class="people">{@render teachers(row)}</div>
+        {:else}<div class="people">{@render unit(row)}</div>{/if}
+        <span class="meeting">{time.length ? time.join('；') : '時地未公布'}</span>
+        {@render rating(row)}
       </div>
     </li>
-  {/each}
-</ul>
+{/snippet}
 
 <style>
   .table-view { --table-pad-block: .25rem; }
   .table-view :global(caption) { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
   .table-view .browse-course-cell { padding-block: .15rem; }
   .table-view .offer-code { line-height: var(--leading-table); }
-  .rating-sample { display: block; font-size: var(--t-sm); }
+  .rating-sample { display: inline-flex; align-items: center; font-size: var(--t-sm); font-weight: 650; }
+  .teachers, .more-offerings { color: var(--ink-2); }
+  .teachers { font-size: var(--t-sm); }
+  :is(.teachers, .more-offerings) > summary { width: fit-content; min-height: var(--target-min); align-content: center; cursor: pointer; color: var(--brand-ink); }
+  .table-view .teachers > summary { min-height: 1.5rem; }
   .offering-legend { margin-block-end: var(--space-1); }
-  .offer-code { white-space: nowrap; }
+  .offer-code { overflow-wrap: anywhere; }
   .category { display: block; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-view { display: none; }
   .enrollment { display: grid; min-inline-size: 3rem; gap: .25rem; }
@@ -169,15 +203,15 @@
     .card-view li { min-inline-size: 0; padding: 0 var(--space-3) var(--space-2); overflow-wrap: anywhere; }
     .card-view li + li { border-block-start: 1px solid var(--line); }
     .card-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-2); }
-    .card-course { grid-column: 1 / -1; display: flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
+    .card-course { grid-column: 1; display: flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
     .card-view .card-term { margin-inline: calc(-1 * var(--space-3)); padding: var(--space-1) var(--space-3); background: var(--table-head); color: var(--ink-2); font-size: var(--t-sm); font-weight: 650; }
-    .card-rating { grid-column: 1 / -1; }
-    .card-meta, .card-rating { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--muted); font-size: var(--t-sm); }
-    .secondary-meta { display: block; margin-block-start: var(--space-1); color: var(--ink-2); }
-    .secondary-meta > span + span { margin-inline-start: var(--space-1); }
+    .card-meta { grid-row: 2; grid-column: 1 / -1; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--muted); font-size: var(--t-sm); }
+    .secondary-meta { margin-block-start: var(--space-1); color: var(--ink-2); }
     .track { inline-size: min(100%, 5.5rem); }
     .people { color: var(--ink-2); }
-    .enrollment { text-align: end; font-size: var(--t-sm); gap: 0; }
-    .card-rating a { min-block-size: var(--target-min); align-content: center; }
+    .enrollment { grid-row: 1; grid-column: 2; max-width: 7.5rem; text-align: end; font-size: var(--t-sm); gap: 0; }
+    .enrollment .meter-line { min-block-size: .6rem; }
+    .rating-sample { min-block-size: var(--target-min); }
+    .extra-group ul { list-style: none; padding: 0; }
   }
 </style>

@@ -33,6 +33,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const { offerings: sample, terms, total, ...department } = result.data;
   const query = (url.searchParams.get('q') ?? '').trim().replace(/[\r\n\0]/g, ' ').slice(0, 100);
   const sort = searchSorts.find(({ value }) => value === url.searchParams.get('sort'))?.value ?? (query ? 'relevance' : 'enrolled');
+  const classFilter = ['required', 'elective'].find((value) => value === url.searchParams.get('class_filter')) ?? '';
   const requestedPage = Number(url.searchParams.get('page'));
   const pageSize = 50;
   const safePage = Number.isSafeInteger(requestedPage) ? Math.max(1, requestedPage) : 1;
@@ -57,7 +58,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
 
   const [institution, ratings] = await Promise.all([institutionRequest, browseRatings(client, department.school, offerings)]);
   return {
-    department, trends, terms, term, total, offerings, ratings, query, sort, resultsError, matches, page,
+    department, trends, terms, term, total, offerings, ratings, query, sort, classFilter, resultsError, matches, page,
     totalPages: Math.max(1, Math.ceil(matches / pageSize)), firstRow: (page - 1) * pageSize + 1,
     updatedAt: offeringEdition(sample),
     complete: sample.length === total,

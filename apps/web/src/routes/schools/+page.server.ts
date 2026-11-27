@@ -12,13 +12,18 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   if (!result.data) error(503, UNAVAILABLE);
 
   const { institutions, updatedAt } = result.data;
-  const filters = parseFilters(url.searchParams);
-  const shown = institutions.filter((institution) => matches(institution, filters));
+  const depth = ['longer', 'recent', 'empty'].find((value) => url.searchParams.get('depth') === value) ?? '';
+  const source = url.searchParams.get('source') === 'school' ? 'school' : '';
+  const campusSources = institutions.filter(({ note }) => note?.startsWith('每日更新'));
+  const filters = { ...parseFilters(url.searchParams), depth, source };
+  const shown = institutions.filter((institution) => matches(institution, filters) && (!source || campusSources.includes(institution)) && (!depth || depth === (
+    !hasImportedOfferings(institution) ? 'empty' : institution.terms.length > 3 ? 'longer' : 'recent'
+  )));
   const [requestedSort, requestedOrder] = url.searchParams.get('directory_order')?.split(':') ?? [];
   const sort = schoolSorts.find((value) => value === (url.searchParams.get('sort') ?? requestedSort)) ?? 'terms';
   const order = url.searchParams.get('order') ?? requestedOrder;
   const direction = order === 'asc' || order === 'desc' ? order : sort === 'status' || sort === 'name' ? 'asc' : 'desc';
-  const pageSize = 50;
+  const pageSize = url.searchParams.get('size') === '50' ? 50 : 20;
   const totalPages = Math.max(1, Math.ceil(shown.length / pageSize));
   const requestedPage = Number(url.searchParams.get('page'));
   const page = Number.isSafeInteger(requestedPage) ? Math.min(Math.max(1, requestedPage), totalPages) : 1;
@@ -29,12 +34,14 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     sort,
     direction,
     page,
+    pageSize,
     totalPages,
     start,
     end: Math.min(start + pageSize, shown.length),
     years: coverageYears(institutions),
     updatedAt: updatedAt ?? null,
     total: institutions.length,
+    campusSources: campusSources.length,
     notStarted: institutions.filter((school) => directoryStatus(school) === 'none').map(({ name }) => name),
     breadth: {
       longer: institutions.filter((school) => hasImportedOfferings(school) && school.terms.length > 3).length,

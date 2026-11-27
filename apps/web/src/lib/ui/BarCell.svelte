@@ -7,16 +7,18 @@
     max: number;
     unit?: string;
     emphasis?: boolean;
+    scale?: 'linear' | 'log';
   }
 
-  let { value, max, unit, emphasis = true }: Props = $props();
+  let { value, max, unit, emphasis = true, scale = 'linear' }: Props = $props();
   let valid = $derived(value !== null && Number.isFinite(value) && value >= 0 ? value : null);
   let hasScale = $derived(valid !== null && Number.isFinite(max) && max > 0);
+  let percent = $derived(valid === null ? 0 : scale === 'log' ? barPercent(Math.log1p(valid), Math.log1p(max)) : barPercent(valid, max));
 </script>
 
 <span class="bar-cell">
   {#if hasScale && valid !== null}
-    <span class="track" aria-hidden="true"><span class="fill" class:emphasis style:inline-size={`${barPercent(valid, max)}%`}></span></span>
+    <span class="track" aria-hidden="true"><span class="fill" class:emphasis style:inline-size={`${percent}%`}></span></span>
   {/if}
   <span class="ui-tabular" title={valid === null ? '未公布' : undefined}>{displayValue(valid)}{#if valid !== null && unit}{` ${unit}`}{/if}</span>
 </span>

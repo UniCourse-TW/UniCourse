@@ -57,13 +57,13 @@
 
 <style>
   .strip { display: flex; flex-wrap: wrap; gap: var(--heatstrip-gap, 2px); }
-  .cell { inline-size: var(--heatstrip-cell-size, 10px); block-size: var(--heatstrip-cell-size, 10px); border: 1px solid var(--control-line); border-radius: 2px; background: var(--panel); }
+  .cell { inline-size: var(--heatstrip-cell-size, 10px); block-size: var(--heatstrip-cell-size, 10px); border: 1px solid var(--heatstrip-empty-line, var(--control-line)); border-radius: 2px; background: var(--panel); }
   .partial { border-color: var(--brand-ring); background: var(--brand-wash); }
   .full { border-color: var(--brand); background: var(--brand); }
   .unknown { border-style: dashed; background: transparent; }
   .hatched, .ticks { flex-wrap: nowrap; }
   .hatched .partial { background-image: var(--partial-hatch); }
-  .ticks { margin-block-end: .2rem; color: var(--ink-2); font: var(--t-xs) / 1 var(--font-mono); }
+  .ticks { margin-block-end: .2rem; color: var(--ink-2); font: var(--heatstrip-tick-size, var(--t-xs)) / 1 var(--font-mono); }
   .ticks span { display: inline-grid; justify-content: center; inline-size: var(--heatstrip-cell-size, 10px); }
   .counts .cell { display: grid; place-items: center; font: var(--t-xs) / 1 var(--font-mono); color: var(--ink-2); }
   .counts .partial { color: var(--brand-ink); font-weight: 650; }

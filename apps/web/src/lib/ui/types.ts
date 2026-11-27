@@ -3,6 +3,7 @@ export type TableValue = string | number | null | undefined;
 export interface TableColumn<Row> {
   id: string;
   label: string;
+  headerNote?: string;
   value?: (row: Row) => TableValue;
   numeric?: boolean;
   sortable?: boolean;
