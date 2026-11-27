@@ -25,6 +25,15 @@ test('filters are plain query parameters and narrow the school sections', async 
   await expect(sections.first()).toContainText('國立臺灣大學');
   await expect(sections.first().locator('.kind')).toHaveText(Array((await sections.first().locator('.kind').count())).fill('第三方'));
 
+  // One search box: a typed school name also offers a jump to that school's section.
+  await page.goto('/landscape');
+  await expect(page.locator('.landscape input[type="search"]')).toHaveCount(1);
+  const box = page.getByRole('combobox', { name: '搜尋校名、網站或功能' });
+  await box.fill('清大');
+  await page.getByRole('option', { name: /國立清華大學/ }).click();
+  await expect(page).toHaveURL(/\/landscape#nthu$/);
+  await expect(box).toHaveValue('');
+
   await page.goto('/landscape?q=zzzz-no-such-site');
   await expect(page.getByText('沒有符合的網站')).toBeVisible();
   await expect(page.getByRole('link', { name: '清除篩選' })).toHaveAttribute('href', '/landscape');

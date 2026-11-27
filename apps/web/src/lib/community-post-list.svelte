@@ -139,12 +139,13 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  /* Dense rows: the kicker sits on the title's line; the summary and the author/tags line follow. */
-  .dense .main { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; }
-  .dense .kicker { flex: none; }
-  .dense h3 { flex: 1 1 12rem; min-inline-size: 0; margin: 0 !important; }
-  .dense .excerpt { flex-basis: 100%; min-inline-size: 0; }
-  .dense .by.line { flex-basis: 100%; min-inline-size: 0; gap: 0 var(--space-2); }
+  /* Dense rows: the title starts every row (desktop and phone alike); the summary follows, then one
+     muted line with category, course, author and tags. */
+  .dense .main { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; }
+  .dense h3 { order: 0; flex-basis: 100%; min-inline-size: 0; margin: 0 !important; }
+  .dense .excerpt { order: 1; flex-basis: 100%; min-inline-size: 0; }
+  .dense .kicker { order: 2; flex: none; margin-block-start: 0.125rem !important; }
+  .dense .by.line { order: 3; flex: 1 1 auto; min-inline-size: 0; gap: 0 var(--space-2); }
   .dense article { padding-block: var(--space-2); }
   .stats { display: contents; }
   .stats div { text-align: end; }

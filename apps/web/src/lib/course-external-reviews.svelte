@@ -11,6 +11,7 @@
     pushLabel,
     type PostKind
   } from '$lib/course-external-text';
+  import { searchLinks } from '$lib/course-external-links';
   import { compareTerms } from '$lib/course-history';
   import { isHttpUrl } from '$lib/format';
   import Badge from '$lib/ui/Badge.svelte';
@@ -21,11 +22,13 @@
     courseCode: string;
     /** Teachers of the offering this page shows; their posts come first. */
     instructors?: string[];
+    /** Course title, so outbound searches name this offering's teacher. */
+    title?: string;
     /** `/api/courses/{school}/{courseCode}/external-reviews`; `undefined` when it could not be loaded. */
     reviews: ExternalReviews | undefined;
   }
 
-  let { school, courseCode, instructors = [], reviews }: Props = $props();
+  let { school, courseCode, instructors = [], title, reviews }: Props = $props();
 
   /** Posts listed before「再顯示」. */
   const initialPosts = 6;
@@ -51,7 +54,7 @@
   }
 
   let total = $derived(reviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0);
-  let links = $derived(reviews?.linkOnly.filter((link) => isHttpUrl(link.url)) ?? []);
+  let links = $derived(searchLinks(reviews?.linkOnly.filter((link) => isHttpUrl(link.url)) ?? [], title, instructors));
   let own = $derived(new Set(instructors));
   let rows = $derived<Row[]>(
     (reviews?.posts ?? [])
@@ -176,7 +179,11 @@
   }
 </script>
 
-{#snippet postList(items: Row[], labelledby: string | undefined, listId: string)}
+{#snippet linkText(link: { label: string; query: string | undefined })}
+  在 {link.label} 搜尋{#if link.query}<span class="query">「{link.query}」</span>{/if}<span aria-hidden="true"> ↗</span><span class="sr-only">（開啟外部網站）</span>
+{/snippet}
+
+{#snippet postList(items: Row[], labelledby: string | undefined, listId: string, scope = '')}
   {@const limit = limits[listId] ?? initialPosts}
   <!-- Without JavaScript every post is rendered and CSS folds the rest behind「顯示全部」; with it, the
        list grows in steps of ten so a long list does not jump from 6 to 43 at once. -->
@@ -209,7 +216,7 @@
   </ol>
   {#if ready && items.length > limit}
     <p class="grow">
-      <span class="num">已列 {limit} / {items.length} 篇</span>
+      <span class="num">{scope}已列 {limit} / {items.length} 篇</span>
       <button type="button" class="grow-btn" onclick={() => (limits[listId] = limit + stepPosts)}>再顯示 {Math.min(stepPosts, items.length - limit)} 篇 ▾</button>
       {#if items.length - limit > stepPosts}<button type="button" class="clear" onclick={() => (limits[listId] = items.length)}>全部顯示</button>{/if}
     </p>
@@ -233,7 +240,7 @@
       {#if links.length}
         <ul class="links" aria-label="到其他網站搜尋">
           {#each links as link (link.source)}
-            <li><a href={link.url} target="_blank" rel="noopener noreferrer nofollow">在 {link.label} 搜尋<span aria-hidden="true"> ↗</span><span class="sr-only">（開啟外部網站）</span></a></li>
+            <li><a href={link.url} target="_blank" rel="noopener noreferrer nofollow">{@render linkText(link)}</a></li>
           {/each}
         </ul>
       {/if}
@@ -242,11 +249,17 @@
     <header class="head">
       <div class="head-text">
         <h2 id="external-title">外部評價 <span class="head-count num">{displayValue(total)} 篇</span></h2>
-        <ul class="dek">
-          <li>來源：{sourceLabels.join('、')}{#if boards.length}・{boards.join('、')} 板{/if}{#if firstYear !== undefined}・發文 {firstYear}{#if lastYear !== firstYear}–{lastYear}{/if} 年{/if}</li>
-          {#if kindCounts.question || kindCounts.other}<li>心得評價與提問混在一起，依標題的〔評價〕〔問題〕等分類</li>{/if}
-          <li>只存標題、日期、作者帳號與開頭摘要；全文請點標題到原站</li>
-        </ul>
+        <!-- One line of provenance; how posts are sorted and what is stored sits behind ⓘ, so the first post comes up. -->
+        <div class="dek">
+          <p>來源：{sourceLabels.join('、')}{#if boards.length}・{boards.join('、')} 板{/if}{#if firstYear !== undefined}・發文 {firstYear}{#if lastYear !== firstYear}–{lastYear}{/if} 年{/if}</p>
+          <details class="how">
+            <summary><span aria-hidden="true">ⓘ</span> 收錄方式</summary>
+            <ul>
+              {#if kindCounts.question || kindCounts.other}<li>心得評價與提問混在一起，依標題的〔評價〕〔問題〕等分類</li>{/if}
+              <li>只存標題、日期、作者帳號與開頭摘要；全文請點標題到原站</li>
+            </ul>
+          </details>
+        </div>
       </div>
     </header>
     {#if links.length}
@@ -254,7 +267,7 @@
         <p class="elsewhere-label">沒有收錄的網站，可以直接到站上搜尋這門課：</p>
         <ul class="links" aria-label="到其他網站搜尋">
           {#each links as link (link.source)}
-            <li><a href={link.url} target="_blank" rel="noopener noreferrer nofollow">在 {link.label} 搜尋<span aria-hidden="true"> ↗</span><span class="sr-only">（開啟外部網站）</span></a></li>
+            <li><a href={link.url} target="_blank" rel="noopener noreferrer nofollow">{@render linkText(link)}</a></li>
           {/each}
         </ul>
       </div>
@@ -265,13 +278,13 @@
         <!-- The three counts double as filters (phones too, where the teacher list is hidden). -->
         <div class="figures" role="group" aria-label="快速篩選">
           <button type="button" class="figure" aria-pressed={mineOnly} disabled={!ready || mineCount === 0} onclick={() => (mineOnly = !mineOnly)}>
-            <span class="fig-label">本班教師</span><span><b class="num">{displayValue(mineCount)}</b> 篇</span>
+            <span class="fig-label">本班教師</span><span><b class="num">{displayValue(mineCount)}</b><span class="fig-unit">篇</span></span>
           </button>
           <button type="button" class="figure" aria-pressed={kind === 'review'} disabled={!ready || kindCounts.review === 0} onclick={() => (kind = kind === 'review' ? '' : 'review')}>
-            <span class="fig-label">心得評價</span><span><b class="num">{displayValue(kindCounts.review)}</b> 篇</span>
+            <span class="fig-label">心得評價</span><span><b class="num">{displayValue(kindCounts.review)}</b><span class="fig-unit">篇</span></span>
           </button>
           <button type="button" class="figure" aria-pressed={kind === 'question'} disabled={!ready || kindCounts.question === 0} onclick={() => (kind = kind === 'question' ? '' : 'question')}>
-            <span class="fig-label">提問</span><span><b class="num">{displayValue(kindCounts.question)}</b> 篇</span>
+            <span class="fig-label">提問</span><span><b class="num">{displayValue(kindCounts.question)}</b><span class="fig-unit">篇</span></span>
           </button>
         </div>
 
@@ -328,7 +341,7 @@
             {:else if instructors.length && mineCount === 0}
               沒有找到本班教師 {instructors.join('、')} 的文章；下面是其他教師開這門課的文章，心得評價在前。
             {:else}
-              共 <b class="num">{displayValue(rows.length)}</b> 篇{#if shown < rows.length}・先列 {shown} 篇{/if}{#if total > rows.length}（另有 {displayValue(total - rows.length)} 篇較舊的未列出）{/if}<span class="sort-note">・{sortLabels[sort]}</span>
+              共 <b class="num">{displayValue(rows.length)}</b> 篇{#if grouped}：本班教師 {displayValue(mineRows.length)} 篇・其他 {displayValue(otherRows.length)} 篇{:else if shown < rows.length}・先列 {shown} 篇{/if}{#if total > rows.length}（另有 {displayValue(total - rows.length)} 篇較舊的未列出）{/if}<span class="sort-note">・{sortLabels[sort]}</span>
             {/if}
           </p>
           <button
@@ -385,7 +398,7 @@
             {@render postList(mineRows, 'external-mine', 'mine')}
           </div>
           <h3 class="group-head others" id="external-others">其他教師與標題沒寫教師・<span class="num">{otherRows.length}</span> 篇・心得評價在前</h3>
-          {@render postList(otherRows, 'external-others', 'others')}
+          {@render postList(otherRows, 'external-others', 'others', '其他教師與未標教師：')}
         {:else if ordered.length}
           {@render postList(ordered, undefined, `all-${teacher}-${term}-${kind}-${mineOnly}-${sort}`)}
         {:else}
@@ -428,8 +441,14 @@
   .layout { grid-area: layout; }
   .teacher-select { display: none !important; }
   .head-count { margin-inline-start: var(--space-2); color: var(--muted); font-size: var(--t-md); font-weight: 600; }
-  .dek { display: grid; gap: 1px; padding: 0; list-style: none; color: var(--muted); font-size: var(--t-sm); overflow-wrap: anywhere; }
-  .dek li::before { content: '・'; color: var(--axis); }
+  .dek { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: baseline; color: var(--muted); font-size: var(--t-sm); overflow-wrap: anywhere; }
+  .how summary { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: 1.75rem; color: var(--ink-2); font-weight: 600; list-style: none; cursor: pointer; }
+  .how summary::-webkit-details-marker { display: none; }
+  .how summary:hover { color: var(--brand-ink); }
+  .how ul { padding: 0; list-style: none; }
+  .how li::before { content: '・'; color: var(--axis); }
+  .how[open] { flex-basis: 100%; }
+  .query { font-weight: 500; }
 
   .layout { display: grid; grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
   .summary { display: grid; gap: var(--space-4); min-inline-size: 0; }
@@ -440,6 +459,7 @@
   .figure:disabled { border-color: var(--line); }
   .fig-label { color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
   .figure b { color: var(--ink); font-size: var(--t-xl); font-weight: 650; }
+  .fig-unit { margin-inline-start: 0.25em; }
   .block { display: grid; gap: var(--space-2); }
   .teachers { display: grid; gap: 3px; padding: 0; list-style: none; }
   .teachers.collapsible:not(:has(+ .more-teachers[open])) li.extra { display: none; }
@@ -541,9 +561,11 @@
        posts follow the heading directly. */
     /* Phones: the three counts are one row of filter chips right under the heading. */
     .figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-1); }
-    .figure { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; justify-content: center; min-block-size: var(--target-min); padding: var(--space-1) var(--space-2); border-radius: var(--radius-pill); }
-    .fig-label { font-size: var(--t-sm); }
-    .figure b { font-size: var(--t-md); }
+    /* One 44 px line each: label and count, no unit, nothing wraps. */
+    .figure { display: flex; flex-wrap: nowrap; gap: var(--space-1); align-items: center; justify-content: center; block-size: var(--target-min); padding: 0 var(--space-1); border-radius: var(--radius-pill); white-space: nowrap; }
+    .fig-label { font-size: var(--t-xs); }
+    .figure b { font-size: var(--t-base); }
+    .fig-unit { display: none; }
     .posts > .toolbar { order: 0; }
     .toolbar:not(.open) { display: none; }
     .toolbar { padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); }
@@ -560,7 +582,7 @@
     .teacher { min-block-size: var(--target-min); }
     .links { inline-size: 100%; }
     .links li { flex: 1 1 auto; }
-    .links a { inline-size: 100%; justify-content: center; }
+    .links a { inline-size: 100%; justify-content: center; white-space: normal; text-align: center; }
     .title { font-size: var(--t-base); }
   }
 </style>
