@@ -71,25 +71,33 @@
     <form class="search" method="GET" action="/" role="search" aria-label="搜尋課程">
       <input type="hidden" name="term" value="all" />
       <label class="search-field">
-        <span class="field-label">課名、課號或教師</span>
+        <span class="field-label">課名、課號或教師 <span class="scope">· 搜尋範圍：全部學期</span></span>
         <input type="search" name="q" defaultValue={query} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" />
       </label>
       <button type="submit">搜尋課程</button>
     </form>
-    <p class="examples">常見搜尋：{#each examples as example, index (example)}{index ? '・' : ''}<a href={`/?${new URLSearchParams({ q: example, term: 'all' })}`}>{example}</a>{/each}</p>
+    <nav class="examples" aria-label="常見搜尋">
+      <span class="examples-label">常見搜尋</span>
+      <ul>{#each examples as example (example)}<li><a class="chip" href={`/?${new URLSearchParams({ q: example, term: 'all' })}`}>{example}</a></li>{/each}</ul>
+    </nav>
   {/if}
-  <div class="actions">
-    <!-- The search form's submit button is the primary action when a search box is shown. -->
-    {#if !search}
-      <a class="primary" href={first.href} data-sveltekit-reload={!notFound && first.href === retryHref ? '' : undefined}>{first.label}</a>
-    {/if}
-    {#if back}<a class="secondary" href={back.href}>{back.label}</a>{/if}
-    <a class="secondary" href={second.href}>{second.label}</a>
-  </div>
-  {#if also.length}
+  <!-- With a search box the form's button is the one primary action; the other ways out are all text links below. -->
+  {#if !search || back}
+    <div class="actions">
+      {#if !search}
+        <a class="primary" href={first.href} data-sveltekit-reload={!notFound && first.href === retryHref ? '' : undefined}>{first.label}</a>
+      {/if}
+      {#if back}<a class="secondary" href={back.href}>{back.label}</a>{/if}
+      {#if !search}<a class="secondary" href={second.href}>{second.label}</a>{/if}
+    </div>
+  {/if}
+  {#if also.length || search}
     <nav class="also" aria-label="其他出路">
       <span class="also-label">你也可以</span>
-      <ul>{#each also as link (link.href)}<li><a href={link.href}>{link.label} <span aria-hidden="true">→</span></a></li>{/each}</ul>
+      <ul>
+        {#if search}<li><a href={second.href}><span>{second.label}</span><span aria-hidden="true">→</span></a></li>{/if}
+        {#each also as link (link.href)}<li><a href={link.href}><span>{link.label}</span><span aria-hidden="true">→</span></a></li>{/each}
+      </ul>
     </nav>
   {/if}
 </section>
@@ -117,6 +125,7 @@
   .search { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: end; inline-size: 100%; margin-block-start: var(--space-2); }
   .search-field { display: grid; flex: 1 1 14rem; gap: var(--space-1); }
   .field-label { color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; }
+  .scope { color: var(--muted); font-weight: 500; }
   .search input[type='search'] {
     inline-size: 100%;
     min-inline-size: 0;
@@ -153,12 +162,17 @@
   button, .primary { color: var(--on-brand); background: var(--brand); border-color: var(--brand); }
   .actions .secondary { border-color: var(--brand); color: var(--brand-ink); background: var(--panel-raised); }
   .actions .secondary:hover { background: var(--brand-wash); }
-  .examples { margin: 0; color: var(--muted); font-size: var(--t-sm); }
-  .examples a { display: inline-flex; align-items: center; min-block-size: 2rem; color: var(--brand-ink); text-underline-offset: 0.15em; }
-  .also { display: grid; gap: var(--space-1); inline-size: 100%; margin-block-start: var(--space-2); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
+  /* Example searches are chips (36 px, 44 px on phones) that wrap, not a run of small links. */
+  .examples { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: 0; }
+  .examples-label { color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
+  .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+  .chip { display: inline-flex; align-items: center; min-block-size: 2.25rem; padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: var(--t-sm); font-weight: 600; text-decoration: none; touch-action: manipulation; }
+  .chip:hover { color: var(--brand-ink); background: var(--brand-wash); }
+  .chip:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .also { display: grid; gap: var(--space-1); inline-size: 100%; margin-block-start: var(--space-4); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
   .also-label { color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .also ul { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; }
-  .also a { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; text-underline-offset: 0.15em; }
+  .also a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; text-underline-offset: 0.15em; }
 
   @media (max-width: 40rem) {
     .error-page { padding: var(--space-5) var(--space-4); margin-block-start: 0; }
@@ -168,7 +182,8 @@
     .actions { inline-size: 100%; }
     .actions .primary { flex: 1 1 100%; }
     .actions .secondary { flex: 1 1 10rem; }
-    .also ul { display: grid; gap: 0; }
-    .also li + li { border-block-start: 1px solid var(--line); }
+    .chip { min-block-size: var(--target-min); }
+    /* The ways out share one wrapping row of links instead of a stack of separated rows. */
+    .also ul { gap: 0 var(--space-4); }
   }
 </style>

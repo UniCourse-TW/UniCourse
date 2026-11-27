@@ -38,6 +38,8 @@ const MAX_HEIGHT = 4500;
 
 // Throwaway account for the community pages. Password lives only here and in the local database.
 const ACCOUNT = { username: 'ui_climb_demo', password: 'ui-climb-demo-pass', displayName: 'UI 示範帳號' };
+/** A username the script locks on purpose (more than 10 failed sign-ins), to show the too-many-attempts state. */
+const LOCKED = 'ui_climb_locked';
 
 const fixtures = await prepareFixtures();
 const pages = examplePages(fixtures);
@@ -60,6 +62,8 @@ for (const page of pages) {
         const response = await tab.goto(base + page.url, { waitUntil: 'networkidle', timeout: 60_000 });
         const status = response?.status();
         if (status !== (page.status ?? 200)) failures.push(`${page.id}: HTTP ${status} for ${page.url}`);
+        // State shots drive the page (fill a form, submit) before the capture.
+        if (page.act) await page.act(tab);
         // Let fonts and any late layout settle before the capture.
         await tab.evaluate(() => document.fonts?.ready);
         await tab.waitForTimeout(250);
@@ -100,11 +104,32 @@ function examplePages(f) {
     { id: 'profile', url: `/u/${ACCOUNT.username}` },
     { id: 'landscape', url: '/landscape', maxHeight: 3000 },
     { id: 'legal', url: '/terms' },
-    // Extra state shots (not page ids): empty search, 404, auth register tab.
+    // Extra state shots (not page ids): empty search, 404, auth register tab and the auth states
+    // (wrong password, locked username, already signed in, register with a taken name).
     { id: 'search-empty', url: `/?q=${encodeURIComponent('zzzz-no-such-course')}&term=all` },
     { id: 'notfound', url: '/courses/999999999', status: 404 },
-    { id: 'auth-register', url: '/auth?mode=register' }
+    { id: 'auth-register', url: '/auth?mode=register' },
+    { id: 'auth-error', url: `/auth?next=${encodeURIComponent('/forum?compose=1')}`, act: (tab) => failLogin(tab, `nobody_${Date.now().toString(36)}`) },
+    { id: 'auth-locked', url: '/auth', act: async (tab) => { await lockUsername(); await failLogin(tab, LOCKED); } },
+    { id: 'auth-signed-in', url: '/auth', loggedIn: true },
+    { id: 'auth-register-error', url: '/auth?mode=register', act: registerTaken }
   ];
+}
+
+/** Submits the sign-in form with a wrong password and waits for the alert. */
+async function failLogin(tab, username) {
+  await tab.getByLabel('帳號').fill(username);
+  await tab.getByLabel('密碼').fill('not-the-password');
+  await tab.getByRole('button', { name: '登入' }).click();
+  await tab.getByRole('alert').waitFor();
+}
+
+/** Submits the register form with the throwaway account's name, which is already taken. */
+async function registerTaken(tab) {
+  await tab.getByLabel('帳號').fill(ACCOUNT.username);
+  await tab.getByLabel('密碼').fill('correct horse battery');
+  await tab.getByRole('button', { name: '建立帳號' }).click();
+  await tab.getByRole('alert').waitFor();
 }
 
 /**
@@ -180,6 +205,17 @@ async function prepareFixtures() {
     body: JSON.stringify({ score: 4, review: '講解清楚，作業量適中。期末範圍很大，建議平時就跟上進度。' })
   });
   return fixtures;
+}
+
+/** Burns the per-username limit (10 failed attempts a minute) on LOCKED right before its shot, so the lock is fresh. */
+async function lockUsername() {
+  for (let i = 0; i < 11; i++) {
+    await fetch(`${api}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ username: LOCKED, password: `wrong-password-${i}` })
+    });
+  }
 }
 
 /** Registers the throwaway account (or signs in when it already exists) and returns the session token. */
