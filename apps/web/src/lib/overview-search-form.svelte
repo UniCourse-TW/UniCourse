@@ -24,7 +24,7 @@
     ...schools.map(({ slug, name }) => ({ value: slug, label: name }))
   ]);
   let termOptions = $derived([{ value: 'all', label: '全部學期' }, ...terms.map((term) => ({ value: term, label: term }))]);
-  let advancedCount = $derived(Number(Boolean(filters?.department && !selectedSchool)) + Number(Boolean(filters && filters.sort !== 'relevance')));
+  let advancedCount = $derived(Number(Boolean(filters?.department && !selectedSchool)) + Number(Boolean(!externalSort && filters && filters.sort !== 'relevance')));
   let loading = $derived(navigating.to?.url.pathname === '/' && navigating.to.url.searchParams.has('term'));
 
   let keyword = $state<HTMLInputElement>();
@@ -72,7 +72,7 @@
         {/key}
         {#if empty && ready && filters?.query}
           <button type="button" class="clear-keyword" onclick={clearKeyword} aria-label="清除關鍵字" title="清除關鍵字">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17" /></svg>
+            清除
           </button>
         {/if}
       </div>
@@ -118,8 +118,8 @@
   .search-input { position: relative; display: flex; }
   .school-field, .term-field { display: grid; min-width: 0; }
   .empty input::-webkit-search-cancel-button { display: none; }
-  .search-input .clear-keyword { position: absolute; inset: 0 1px 0 auto; display: grid; place-items: center; width: var(--target-min); padding: 0; background: transparent; color: var(--brand-ink); }
-  .clear-keyword:hover { background: var(--brand-wash); }
+  .search-input .clear-keyword { position: absolute; inset: 0 1px 0 auto; display: grid; place-items: center; width: var(--target-min); padding: 0; border-color: transparent; background: transparent; color: var(--brand-ink); font-size: var(--t-sm); }
+  .clear-keyword:hover { text-decoration: underline; }
   .search-icon { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
   .search-input input { padding-inline: 2.35rem var(--space-2); font-size: 1rem; }
   .search-input:has(.clear-keyword) input { padding-inline-end: var(--target-min); }
@@ -147,11 +147,8 @@
     .compact .keyword-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
     form, .result-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .keyword, form > button { grid-column: 1 / -1; }
-    .empty > .keyword { grid-column: 1 / -1; }
-    .empty > button { grid-column: 1 / -1; }
-    .empty .keyword-hint { grid-row: 2; }
     .result-filters .keyword-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
-    .result-filters :is(.school-field, .term-field) :global(select) { padding-inline: 0 .125rem; font-size: .8125rem; }
+    .result-filters :is(.school-field, .term-field) :global(select) { padding-inline: 0 .125rem; font-size: var(--t-sm); }
     .result-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .result-filters > :is(.school-field, .term-field, .department-field) { grid-column: span 2; }
     .result-filters .keyword { grid-column: 1 / 4; }
@@ -160,10 +157,16 @@
     .result-filters:not(.has-department) > :is(.school-field, .term-field) { grid-column: span 1; }
     .result-filters:not(.has-department) > .keyword { grid-column: 1 / 3; }
     .result-filters:not(.has-department) > button { grid-area: 1 / 3; padding-inline: var(--space-2); }
-    .result-filters:not(.has-department) .advanced:not([open]) { grid-column: 3; }
-    .result-filters:not(.has-department) .advanced:not([open]) summary { padding-inline: var(--space-1); white-space: nowrap; }
-    .result-filters:not(.has-department) .advanced:not([open]) summary span { display: none; }
+    .result-filters:not(.has-department) .advanced:not([open]):not(:has(summary span)) { grid-column: 3; }
+    .result-filters:not(.has-department) .advanced:not([open]) summary { padding-inline: var(--space-1); }
     .advanced-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     select { text-overflow: ellipsis; }
+  }
+  @media (min-width: 23rem) and (max-width: 37rem) {
+    .empty { grid-template-columns: minmax(0, 1fr) minmax(0, .35fr) auto; }
+    .empty > .keyword { grid-column: 1 / 3; }
+    .empty > button { grid-area: 1 / 3; padding-inline: var(--space-2); }
+    .empty > .term-field { grid-column: 2 / 4; }
+    .empty .keyword-hint { grid-row: 2; }
   }
 </style>

@@ -3,6 +3,7 @@
 
   interface Props {
     name: string;
+    form?: string;
     label: string;
     options: readonly FilterOption[];
     value?: string | null;
@@ -11,14 +12,14 @@
     onchange?: (event: Event & { currentTarget: HTMLSelectElement }) => void;
   }
 
-  let { name, label, options, value, allLabel = '全部', disabled = false, onchange }: Props = $props();
+  let { name, form, label, options, value, allLabel = '全部', disabled = false, onchange }: Props = $props();
   const id = $props.id();
   let match = $derived(options.some((option) => option.value === value));
 </script>
 
 <div class="field">
   <label for={id}>{label}</label>
-  <select {id} {name} {disabled} {onchange}>
+  <select {id} {name} {form} {disabled} {onchange}>
     {#if allLabel !== null}<option value="" selected={!match}>{allLabel}</option>{/if}
     {#each options as option, index (option.value)}
       <option value={option.value} disabled={option.disabled}
