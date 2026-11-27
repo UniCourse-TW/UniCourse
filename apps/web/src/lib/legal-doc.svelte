@@ -102,7 +102,7 @@
         <h2 id="gist-title">白話重點</h2>
         <ul>
           {#each summary as point, index (index)}
-            <li>{#if point.href}<a class="lead-link" href={point.href}><strong>{point.lead}</strong></a>{:else}<strong>{point.lead}</strong>{/if}{point.text}{#if point.link}<a href={point.link.href} rel={point.link.external ? 'noopener external' : undefined}>{point.link.label}{#if point.link.external}<span aria-hidden="true"> ↗</span>{/if}</a>。{/if}</li>
+            <li><strong>{#if point.href}<a class="lead-link" href={point.href}>{point.lead}</a>{:else}{point.lead}{/if}</strong>{point.text}{#if point.link}<a href={point.link.href} rel={point.link.external ? 'noopener external' : undefined}>{point.link.label}{#if point.link.external}<span aria-hidden="true"> ↗</span>{/if}</a>。{/if}</li>
           {/each}
         </ul>
       </section>
@@ -151,9 +151,6 @@
   .gist a { font-weight: 600; }
   .gist .lead-link { color: var(--ink); text-decoration-color: color-mix(in srgb, var(--brand) 60%, transparent); text-underline-offset: 0.2em; }
   .gist .lead-link:hover { color: var(--brand-ink); }
-  .gist .lead-link strong::after { content: ''; }
-  .gist .lead-link::after { content: '：'; margin-inline-end: 0.35em; color: var(--ink); }
-  .gist .lead-link strong { margin-inline-end: 0; }
   .toc-hint { display: none; font-weight: 500; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .meta { margin: 0; color: var(--muted); font-size: var(--t-base); }
