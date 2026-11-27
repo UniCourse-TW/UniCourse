@@ -133,9 +133,8 @@
     .site-header:not([data-shell-theme]) .set-dark { display: none; }
     .site-header:not([data-shell-theme]) .set-light { display: inline-grid; }
   }
-  .login { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target-min); min-width: var(--target-min); padding-inline: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); font-size: var(--t-base); font-weight: 650; white-space: nowrap; text-decoration: none; }
-  /* On /auth the card is the call to action; the header link steps back instead of repeating it. */
-  .login[aria-current='page'] { border-color: transparent; color: var(--muted); background: transparent; }
+  .login { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target-min); min-width: var(--target-min); padding-inline: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; white-space: nowrap; text-decoration: none; }
+  .login:hover, .login[aria-current='page'] { border-color: var(--brand-ring); background: var(--brand-wash); }
   .account { position: relative; }
   .account summary { display: flex; gap: var(--space-1); padding-inline: var(--space-2); list-style: none; font-weight: 650; }
   .account summary::-webkit-details-marker { display: none; }

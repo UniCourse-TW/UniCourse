@@ -43,7 +43,7 @@ mod text;
         history::course_history, history::school_trends, history::department_trends,
         history::instructor_trends,
         auth::register, auth::login, auth::logout, auth::me, auth::update_me, auth::profile,
-        ratings::list, ratings::stats, ratings::mine, ratings::put_mine, ratings::delete_mine,
+        ratings::list, ratings::stats, ratings::batch_stats, ratings::mine, ratings::put_mine, ratings::delete_mine,
         forum::list, forum::create, forum::detail, forum::reply, forum::update, forum::delete,
         forum::vote, external_reviews::course, external_reviews::instructor,
     ),
@@ -367,6 +367,7 @@ pub fn router_with(pool: PgPool, config: Config) -> Router {
         .route("/api/auth/logout", post(auth::logout))
         .route("/api/auth/me", get(auth::me).patch(auth::update_me))
         .route("/api/users/{username}", get(auth::profile))
+        .route("/api/ratings/stats", get(ratings::batch_stats))
         .route(
             "/api/courses/{school}/{course_code}/ratings",
             get(ratings::list),

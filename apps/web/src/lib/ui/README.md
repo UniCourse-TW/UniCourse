@@ -22,4 +22,4 @@ Load `tokens.css` once at the root layout. The primitives inherit the zinc and U
 
 `TableColumn` IDs, row keys, and chart periods must be unique within their lists. A table row link wraps only the row-header cell; do not nest interactive controls in that cell's snippet. Opt into client-only sorting with `clientSort` and a column's `sortable` flag plus a `value` or `sortValue` accessor. The server order is preserved without JavaScript. For charts, preserve gaps with `null` and pass `0` only for a known, measured zero.
 
-Keep the chart's value disclosure available unless the same data is already exposed in its surrounding table. Controls supplied through snippets should have a visible focus state and a minimum 44 px touch target.
+Keep the chart's value disclosure available unless the same data is already exposed in its surrounding table. For term series, use `partialTerms` with section counts rather than enrollment to flag partial imports; pass the flags to `TrendChart` points or the `Sparkline` `partial` prop and explain the hatch in the chart or table legend. Controls supplied through snippets should have a visible focus state and a minimum 44 px touch target.

@@ -1,4 +1,5 @@
 import type { CourseHistory, CourseTerm, Offering } from '@unicourse/api-client';
+import { usualSectionsForPartial } from './ui/partial-terms';
 
 /** A class section linked from the per-term table. */
 export interface HistoryOffering {
@@ -108,17 +109,6 @@ export function historyRows(history: CourseHistory | null | undefined, current: 
     .map((row, _, all) => markPartial(row, all));
 }
 
-function median(values: number[]) {
-  const sorted = [...values].sort((a, b) => a - b);
-  const middle = Math.floor(sorted.length / 2);
-  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
-}
-
-/** A term is marked when it has at most this share of the course's usual sections a term. */
-export const partialShare = 1 / 3;
-/** Courses with fewer usual sections than this are never marked: 1 vs 3 sections is ordinary noise. */
-const partialMinUsual = 6;
-
 /**
  * One rule for every course: a term whose total covers far fewer sections than the course usually has
  * (at most a third of the median of the other terms, which must be at least 6) is marked, so its low
@@ -126,11 +116,9 @@ const partialMinUsual = 6;
  * 108-2) alike; the wording (「只收錄 N 班」) states what was imported without guessing why.
  */
 function markPartial(row: HistoryRow, all: HistoryRow[]): HistoryRow {
-  const others = all.filter((other) => other !== row && other.offeringCount > 0).map((other) => other.offeringCount);
-  if (others.length < 2) return row;
-  const usual = median(others);
-  if (usual < partialMinUsual || row.offeringCount > usual * partialShare) return row;
-  return { ...row, partial: true, usualSections: Math.round(usual) };
+  const others = all.filter((other) => other !== row).map((other) => other.offeringCount);
+  const usualSections = usualSectionsForPartial(row.offeringCount, others);
+  return usualSections === null ? row : { ...row, partial: true, usualSections };
 }
 
 /** Partial terms grouped by section count and usual count, for one sentence per group (「105-2、106-2 只收錄 2 班」). */

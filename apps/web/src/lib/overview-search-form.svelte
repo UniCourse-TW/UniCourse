@@ -3,11 +3,12 @@
   import type { School } from '@unicourse/api-client';
   import { searchSorts, type OverviewSearchFilters } from './overview-paths';
 
-  let { schools, terms, filters, departments = null }: {
+  let { schools, terms, filters, departments = null, externalSort = false }: {
     schools: School[];
     terms: string[];
     filters?: OverviewSearchFilters;
     departments?: string[] | null;
+    externalSort?: boolean;
   } = $props();
 
   const departmentOptions = $props.id();
@@ -71,21 +72,23 @@
     <button type="submit" aria-busy={loading}>{loading ? '搜尋中…' : '搜尋'}</button>
     {#if filters}
       {#if selectedSchool}{@render departmentField(filters.department)}{/if}
+      {#if !externalSort || !selectedSchool}
       <details class="advanced">
         <summary>{selectedSchool ? '排序選項' : '更多篩選'}{#if advancedCount} <span>（已套用 {advancedCount} 項）</span>{/if}</summary>
         <div class="advanced-fields">
           {#if !selectedSchool}{@render departmentField(filters.department)}{/if}
-          <label>
+          {#if !externalSort}<label>
             <span>排序</span>
             <select name="sort" onchange={changeFilter}>
               {#each searchSorts as option (option.value)}
                 <option value={option.value} selected={option.value === filters.sort}>{option.label}</option>
               {/each}
             </select>
-          </label>
+          </label>{/if}
           <button type="submit" class="advanced-apply">套用進階條件</button>
         </div>
       </details>
+      {/if}
     {/if}
   </form>
 {/key}

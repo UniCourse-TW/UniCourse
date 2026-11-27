@@ -21,16 +21,17 @@
   const courseHref = (row: Offering) => `/courses/${row.id}`;
   const termColumn: TableColumn<Offering> = { id: 'term', label: '學期', value: (row) => row.term, sortable: true };
   const gradeColumn: TableColumn<Offering> = { id: 'grade', label: '年級', value: (row) => row.grade, align: 'center', width: '3.5rem' };
+  let showRatings = $derived(mode === 'department' || offerings.some((row) => ratings.get(row.courseCode)?.count !== 0));
   const category = (row: Offering) => [row.credits == null ? null : `${row.credits} 學分`, requirement({ ...row, requirementText: null }) ?? requirement(row)].filter(Boolean).join(' · ');
   let columns = $derived<TableColumn<Offering>[]>([
     { id: 'course', label: '課程', value: (row) => row.title, sortable: true, width: '14rem' },
     ...(showTerm ? [termColumn] : []),
-    mode === 'department' ? { id: 'teachers', label: '授課教師' } : { id: 'unit', label: '開課單位' },
+    mode === 'department' ? { id: 'teachers', label: '授課教師', width: '8rem' } : { id: 'unit', label: '開課單位' },
     ...(mode === 'department' && offerings.some(({ grade }) => grade) ? [gradeColumn] : []),
     { id: 'category', label: '學分／類別', value: category, width: '7rem' },
-    { id: 'enrollment', label: '人數／名額', sortable: true, sortValue: (row) => row.enrolled, numeric: true, width: '6.5rem' },
-    { id: 'schedule', label: '時間地點', width: '15rem' },
-    { id: 'rating', label: '課程評價', align: 'center' }
+    { id: 'enrollment', label: '人數／名額', sortable: true, sortValue: (row) => row.enrolled, numeric: true, width: '7.5rem' },
+    { id: 'schedule', label: '時間地點' },
+    ...(showRatings ? [{ id: 'rating', label: '課程評價', align: 'center' as const, width: '7rem' }] : [])
   ]);
 </script>
 
@@ -59,29 +60,31 @@
       <span title="人數與名額未公布">—</span>
     {/if}
     {#if row.enrolled != null && capacity != null && capacity > 0}
-      <span class="track" aria-hidden="true"><span class="fill" class:exceeded={row.enrolled > capacity} style:inline-size={`${Math.min(100, 100 * row.enrolled / capacity)}%`}></span></span>
-      {#if row.enrolled >= capacity * .9}
-        <small class="capacity-note" title={`資料更新於 ${new Date(row.importedAt).toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' })}`}>
-          {row.enrolled > capacity ? '已超過公布名額' : row.enrolled === capacity ? '人數達名額' : `匯入時餘 ${displayValue(capacity - row.enrolled)} 名`}
-        </small>
-      {/if}
+      <span class="meter-line">
+        <span class="track" aria-hidden="true"><span class="fill" class:exceeded={row.enrolled > capacity} style:inline-size={`${Math.min(100, 100 * row.enrolled / capacity)}%`}></span></span>
+        {#if row.enrolled >= capacity * .9}
+          <small class="capacity-note" title={row.enrolled >= capacity ? '已達校方公布名額' : `匯入時餘 ${displayValue(capacity - row.enrolled)} 名`}>
+            {row.enrolled > capacity ? '超額' : row.enrolled === capacity ? '額滿' : `餘 ${displayValue(capacity - row.enrolled)}`}
+          </small>
+        {/if}
+      </span>
     {/if}
   </span>
 {/snippet}
 
-{#snippet rating(row: Offering)}
+{#snippet rating(row: Offering, mobile = false)}
   {@const stats = ratings.get(row.courseCode)}
   {#if stats?.average != null}<a class="rating-sample ui-tabular" href={`${courseHref(row)}#ratings`} aria-label={`${row.title}的課程評價：${stats.average.toFixed(1)} 分，${displayValue(stats.count)} 則`}>{stats.average.toFixed(1)} 分 · {displayValue(stats.count)} 則</a>
-  {:else if stats}<small class="rating-sample">尚無評價</small>
-  {:else}<small class="rating-sample">{stats === null ? '評價暫無法取得' : '本頁未查詢'}</small>{/if}
+  {:else if stats}{#if !mobile}<small class="rating-sample">尚無評價</small>{/if}
+  {:else}<small class="rating-sample">評價暫無法取得</small>{/if}
 {/snippet}
 
 {#snippet schedule(row: Offering)}
   {#each scheduleLines(row) as line, index (index)}<span class="slot">{line}</span>{:else}—{/each}
 {/snippet}
 
+<p class="browse-note offering-legend">條長＝滿額比例；「餘」為匯入時剩餘名額；—＝未公布。{#if !showRatings}本頁課程尚無評價。{/if}</p>
 <div class="table-view">
-  <p class="browse-note offering-legend">條長＝各班滿額比例；— 表示未公布。</p>
   <DataTable {caption} rows={offerings} {columns} rowKey={(row) => row.id} rowHref={courseHref} clientSort minWidth="47rem" maxHeight="none">
     {#snippet cell(row, column)}
       {#if column.id === 'course'}
@@ -106,7 +109,7 @@
     <li>
       <div class="card-title">
         <a class="card-course" href={courseHref(row)}>{row.title}</a>
-        <div class="card-rating" aria-label="課程評價">{@render rating(row)}</div>
+        {#if ratings.get(row.courseCode)?.count !== 0}<div class="card-rating" aria-label="課程評價">{@render rating(row, true)}</div>{:else}<span class="sr-only">尚無評價</span>{/if}
         <div class="card-meta">
           {#if showTerm}<span class="browse-code">{row.term}</span>{/if}{@render code(row)}
           {#if category(row)}<span title={requirement(row)}>{category(row)}</span>{/if}
@@ -123,31 +126,31 @@
     </li>
   {/each}
 </ul>
-<p class="phone-legend browse-note">條長＝各班滿額比例；— 表示未公布。</p>
 
 <style>
   .rating-sample { display: block; font-size: var(--t-sm); }
+  .sr-only { position: absolute; clip-path: inset(50%); inline-size: 1px; block-size: 1px; overflow: hidden; }
   .offering-legend { margin-block-end: var(--space-1); }
-  .phone-legend { display: none; }
   .offer-code { white-space: nowrap; }
   .category { display: block; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-view { display: none; }
   .enrollment { display: grid; min-inline-size: 3rem; gap: .25rem; }
-  .track { inline-size: 100%; max-inline-size: 5rem; block-size: .375rem; margin-inline-start: auto; background: var(--line); border-radius: var(--radius-pill); }
+  .meter-line { display: flex; align-items: center; justify-content: end; gap: var(--space-1); min-block-size: 1rem; }
+  .track { inline-size: min(100%, 4rem); min-inline-size: 1.5rem; block-size: .375rem; background: var(--line); border-radius: var(--radius-pill); }
   .fill { display: block; block-size: 100%; background: var(--brand); border-radius: inherit; }
   .fill.exceeded { background: var(--warn); }
   small { color: var(--muted); }
-  .capacity-note { color: var(--warn); font-size: var(--t-sm); }
+  .capacity-note { padding-inline: var(--space-1); border-radius: var(--radius-control); background: var(--warn-wash); color: var(--warn); font-size: var(--t-xs); white-space: nowrap; }
   .publication-note { color: var(--muted); font-size: var(--t-sm); }
   .slot { display: block; overflow-wrap: anywhere; }
   @media (max-width: 40rem) {
     .table-view { display: none; }
-    .phone-legend { display: block; }
     .card-view { display: grid; list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel-raised); }
     .card-view li { min-inline-size: 0; padding: 0 var(--space-3) var(--space-2); overflow-wrap: anywhere; }
     .card-view li + li { border-block-start: 1px solid var(--line); }
     .card-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-2); }
-    .card-course { display: flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
+    .card-course { grid-column: 1 / -1; display: flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
+    .card-rating { grid-column: 1 / -1; }
     .card-meta, .card-rating { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--muted); font-size: var(--t-sm); }
     .secondary-meta { margin-block-start: var(--space-1); }
     .people { color: var(--ink-2); }

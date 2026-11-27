@@ -3,6 +3,7 @@
   import DataTable from '$lib/ui/DataTable.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import { displayValue } from '$lib/ui/format';
+  import { partialTermLabel, partialTerms } from '$lib/ui/partial-terms';
   import type { MatrixPoint, MatrixRow, TableColumn } from '$lib/ui/types';
 
   let { periods, rows, trends }: { periods: string[]; rows: MatrixRow[]; trends: TermTrend[] | null } = $props();
@@ -12,13 +13,15 @@
     { id: 'course', label: '課程', width: 'var(--teaching-course-width, 9rem)' },
     ...orderedYears.map((period) => ({ id: period, label: period, align: 'center' as const, width: compact ? '5rem' : '3.25rem' }))
   ]);
-  let width = $derived(compact ? '0' : `calc(var(--teaching-course-width, 9rem) + ${4.25 * periods.length}rem)`);
-  let mobileColumns = $derived(columns.slice(0, 3));
-  const trendColumns: TableColumn<TermTrend>[] = [
+  let width = $derived(compact ? '0' : `calc(var(--teaching-course-width, 9rem) + ${3.75 * periods.length}rem)`);
+  let hasPartial = $derived(rows.some((row) => Object.values(row.points).some((point) => point?.partial)));
+  let partial = $derived(partialTerms((trends ?? []).map(({ term, offerings }) => [term, offerings])));
+  let trendColumns = $derived<TableColumn<TermTrend>[]>([
     { id: 'term', label: '學期', value: (row) => row.term },
     { id: 'offerings', label: '班次', value: (row) => row.offerings, numeric: true },
-    { id: 'enrolled', label: '已公布人次', value: (row) => row.enrolled, numeric: true }
-  ];
+    { id: 'enrolled', label: '已公布人次', value: (row) => row.enrolled, numeric: true },
+    ...(partial.size ? [{ id: 'coverage', label: '收錄備註', value: (row: TermTrend) => partial.has(row.term) ? partialTermLabel : null }] : [])
+  ]);
 
   function totals(point: MatrixPoint) {
     return `${displayValue(point.offerings)} 班 · ${point.enrolled === null ? '人數未公布' : `${displayValue(point.enrolled)} 人`}`;
@@ -34,13 +37,12 @@
   {#if column.id === 'course'}
     <span class="matrix-course" title={row.label}>{row.label}</span><small class="browse-code">{row.id}</small>
   {:else if point}
-    {@const hint = `${column.id} 學年：${totals(point)}`}
+    {@const hint = `${column.id} 學年：${totals(point)}${point.partial ? ` · ${partialTermLabel}` : ''}`}
     {#snippet value()}
-      {#if exact}<span>{totals(point)}</span>{:else}<span class="dot" data-bin={bin(point.enrolled)}></span><span class="ui-tabular count">{displayValue(point.enrolled)}</span>{/if}
-      {#if point.href}<span class="arrow" aria-hidden="true">↗</span>{/if}
+      {#if exact}<span>{totals(point)}</span>{:else}<span class="ui-tabular count">{point.enrolled === null ? '未公布' : displayValue(point.enrolled)}</span>{/if}
     {/snippet}
     {#if point.href}
-      <a href={point.href} class="year-cell" aria-label={`${row.label}，${hint}，查看最新班次`} title={hint}>{@render value()}</a>
+      <a href={point.href} class="year-cell" class:partial={point.partial} data-bin={!exact ? bin(point.enrolled) : undefined} aria-label={`${row.label}，${hint}，查看最新班次`} title={hint}>{@render value()}</a>
     {:else}
       <span class="year-cell" aria-label={hint}>{@render value()}</span>
     {/if}
@@ -56,21 +58,16 @@
         <li><span class="dot" data-bin="small" aria-hidden="true"></span>未滿 50 人</li>
         <li><span class="dot" data-bin="medium" aria-hidden="true"></span>50–99 人</li>
         <li><span class="dot" data-bin="large" aria-hidden="true"></span>100 人以上</li>
-        <li><span class="dot" data-bin="unknown" aria-hidden="true"></span>未公布</li>
         <li><span aria-hidden="true">—</span>未開課</li>
+        {#if hasPartial}<li><span class="dot partial" aria-hidden="true"></span>{partialTermLabel}</li>{/if}
       </ul>
-      <p class="browse-note matrix-range">最近開課的 {Math.min(5, rows.length)} 門 · <span class="desktop-years">{periods[0]}–{periods.at(-1)} 學年</span><span class="phone-years">最近 2 個學年</span></p>
+      <p class="browse-note matrix-range">最近開課的 {Math.min(5, rows.length)} 門 · {periods[0]}–{periods.at(-1)} 學年<span class="matrix-scroll"> · 向右滑看更早學年</span></p>
     {/if}
-    <div class:desktop-years={!compact}>
-      <DataTable caption={compact ? '課程與學年授課紀錄' : '課程與學年點陣'} {columns} rows={rows.slice(0, 5)} rowKey={(row) => row.id} minWidth={width} maxHeight="none" scrollHint={!compact && periods.length > 8}>
+    <div>
+      <DataTable caption={compact ? '課程與學年授課紀錄' : '課程與學年修課人次'} {columns} rows={rows.slice(0, 5)} rowKey={(row) => row.id} minWidth={width} maxHeight="none" scrollHint={false}>
         {#snippet cell(row, column)}{@render historyCell(row, column, compact)}{/snippet}
       </DataTable>
     </div>
-    {#if !compact}<div class="phone-years">
-      <DataTable caption="課程與最近兩學年" columns={mobileColumns} rows={rows.slice(0, 5)} rowKey={(row) => row.id} minWidth="0" maxHeight="none" scrollHint={false}>
-        {#snippet cell(row, column)}{@render historyCell(row, column, false)}{/snippet}
-      </DataTable>
-    </div>{/if}
   </div>
 {:else}<EmptyState title="尚無歷年授課紀錄" />{/if}
 
@@ -85,7 +82,7 @@
         <li><details><summary>{row.label} <small class="browse-code">{row.id}</small></summary>
           <ul>{#each orderedYears as year (year)}
             {@const point = row.points[year]}
-            {#if point}<li><span class="ui-tabular">{year} 學年 · {totals(point)}</span>{#if point.href}<a href={point.href}>查看班次 <span aria-hidden="true">↗</span></a>{/if}</li>{/if}
+            {#if point}<li><span class="ui-tabular">{year} 學年 · {totals(point)}{#if point.partial} · {partialTermLabel}{/if}</span>{#if point.href}<a href={point.href}>查看班次 <span aria-hidden="true">→</span></a>{/if}</li>{/if}
           {/each}</ul>
         </details></li>
       {/each}
@@ -99,26 +96,27 @@
 <style>
   .teaching-matrix.compact { max-inline-size: 34rem; }
   .matrix-course { display: block; overflow-wrap: anywhere; }
-  .phone-years { display: none; }
+  .phone-years, .matrix-scroll { display: none; }
   .matrix-legend { display: flex; flex-wrap: wrap; gap: .25rem .85rem; margin: 0 0 var(--space-2); padding: 0; list-style: none; color: var(--muted); font-size: var(--t-sm); }
   .matrix-range { margin-block-end: var(--space-2); }
   .matrix-legend li, .year-cell { display: flex; align-items: center; gap: .3rem; }
   .year-cell { min-block-size: var(--target-min); min-inline-size: 2rem; justify-content: center; border-radius: var(--radius-control); padding-inline: .15rem; }
-  .year-cell[href] { text-decoration: none; background: var(--brand-wash); }
+  .year-cell[href] { text-underline-offset: .17em; }
   .year-cell[href]:hover { box-shadow: inset 0 0 0 1px var(--brand); text-decoration: underline; }
-  .arrow { font-size: var(--t-xs); }
   .count { font-size: var(--t-sm); }
-  .dot { display: inline-block; flex: none; inline-size: 6px; block-size: 6px; border-radius: 50%; background: var(--brand-ink); }
-  .dot[data-bin='medium'] { inline-size: 10px; block-size: 10px; }
-  .dot[data-bin='large'] { inline-size: 14px; block-size: 14px; }
-  .dot[data-bin='unknown'] { inline-size: 8px; block-size: 8px; background: transparent; border: 1px solid var(--brand-ink); }
+  .dot { display: inline-block; flex: none; inline-size: .85rem; block-size: .65rem; border-radius: 2px; }
+  [data-bin='small'] { background-color: color-mix(in srgb, var(--brand) 10%, var(--panel-raised)); }
+  [data-bin='medium'] { background-color: color-mix(in srgb, var(--brand) 22%, var(--panel-raised)); }
+  [data-bin='large'] { background-color: color-mix(in srgb, var(--brand) 36%, var(--panel-raised)); }
+  .year-cell[data-bin='unknown'] { color: var(--muted); border: 1px dashed var(--control-line); }
+  .partial { background-image: var(--partial-hatch); }
   .no-record { color: var(--ink-2); }
   .history-values[open] { display: grid; gap: var(--space-2); }
   summary { min-block-size: var(--target-min); cursor: pointer; align-content: center; width: fit-content; color: var(--brand); font-weight: 650; font-size: var(--t-base); }
   @media (max-width: 40rem) {
     .teaching-matrix { --teaching-course-width: 8.5rem; }
     .desktop-years { display: none; }
-    .phone-years { display: revert; }
+    .phone-years, .matrix-scroll { display: revert; }
     .matrix-course { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
     .year-lists, .year-lists ul { padding: 0; margin: 0; list-style: none; }
     .year-lists > li { border-block-start: 1px solid var(--line); }

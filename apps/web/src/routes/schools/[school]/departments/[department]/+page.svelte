@@ -11,9 +11,8 @@
   import Pagination from '$lib/ui/Pagination.svelte';
   import SectionHeader from '$lib/ui/SectionHeader.svelte';
   import Sparkline from '$lib/ui/Sparkline.svelte';
-  import StatRow from '$lib/ui/StatRow.svelte';
-  import StatTile from '$lib/ui/StatTile.svelte';
   import { changeQuery, displayValue } from '$lib/ui/format';
+  import { partialTermLabel, partialTerms } from '$lib/ui/partial-terms';
   import '$lib/schools-browse.css';
   import type { PageProps } from './$types';
 
@@ -33,6 +32,8 @@
     .sort().reverse().map((value) => ({ value, label: value })));
   let historical = $derived([...(data.trends ?? [])].reverse());
   let latest = $derived(historical.at(-1));
+  let partial = $derived(partialTerms(historical.map(({ term, offerings }) => [term, offerings])));
+  let courseCount = $derived(data.complete ? data.courses : data.trends?.find(({ term }) => term === data.term)?.courses ?? null);
 
   function termHref(term: string, keepQuery = true) {
     return changeQuery(page.url, (params) => {
@@ -45,7 +46,7 @@
 
 <svelte:head><title>{department.department} · {department.schoolName}｜UniCourse</title></svelte:head>
 
-<div class="browse-page">
+<div class="browse-page department-page">
   <nav class="browse-crumbs" aria-label="所在位置">
     <a href="/">首頁</a><span aria-hidden="true">/</span><a href="/schools">學校</a><span aria-hidden="true">/</span><a href={schoolHref(department.school)}>{department.schoolName}</a>
   </nav>
@@ -56,26 +57,29 @@
         {#if data.updatedAt}<span>列表更新於 <time datetime={data.updatedAt}>{importedAt(data.updatedAt)}</time>（臺北時間）</span>{/if}</p>
     </div>
     <div class="browse-actions">
-      <a class="browse-button browse-primary" href="#offerings">看本期課表 ↓</a>
-      <a class="browse-button" href={schoolSearch}>進階查課</a>
+      <a class="browse-button browse-primary" href={schoolSearch}>進階查課</a>
       {#if data.website && isHttpUrl(data.website)}<a class="browse-button" href={data.website} rel="external">校方官網 ↗</a>{/if}
     </div>
   </header>
 
   <section class="browse-stack" aria-labelledby="offerings">
     <SectionHeader title={`${termLabel}課表`} id="offerings" />
+    <div class="department-summary">
+      <p class="browse-note"><strong>{displayValue(data.total)} 班</strong> · {displayValue(courseCount)} 門課 · {displayValue(data.complete ? data.teachers : null)} 位授課教師</p>
+      <details class="history">
+        <summary>歷年開課變化 {#if historical.length >= 3 && latest}<span class="ui-tabular">{historical[0].term}–{latest.term}</span><Sparkline label={`各學期班次，從舊到新${partial.size ? `，斜紋表示${partialTermLabel}` : ''}`} values={historical.map(({ offerings }) => offerings)} labels={historical.map(({ term }) => term)} min={0} showArea={false} partial={historical.map(({ term }) => partial.has(term))} />{/if}</summary>
+        {#if data.trends === null}
+          <ErrorState title="暫時無法取得歷年開課統計" retryHref={page.url.pathname + page.url.search} />
+        {:else}
+          <SchoolsTermHistory label="各學期班次" points={historical.map(({ term, offerings }) => ({ term, value: offerings, partial: partial.has(term) }))} termHref={termHref} />
+        {/if}
+      </details>
+    </div>
+    <div class="timetable-controls">
     <div class="timetable-filter"><FilterBar action={`${base}#offerings`} label="課表篩選" clearHref={data.query ? termHref(data.term, false) : undefined}>
       <FilterSelect name="term" label="選擇學期" allLabel={null} value={data.term} options={[{ value: 'all', label: '所有學期' }, ...termOptions]} />
       <label class="browse-field">搜尋教師或課程<input type="search" name="q" value={data.query} maxlength="100" placeholder="教師、課名或課號" /></label>
     </FilterBar></div>
-    <div class="browse-compact-stats department-stats"><StatRow label={`${termLabel}開課概況`}>
-      <StatTile label="班次" value={data.total} unit="班" />
-      <StatTile label="課程" value={data.complete ? data.courses : data.trends?.find(({ term }) => term === data.term)?.courses ?? null} unit="門" />
-      <StatTile label="授課教師" value={data.complete ? data.teachers : null} unit="位" note={data.complete ? undefined : '班次未完整納入'} />
-      <StatTile label={latest ? `近期班次 · ${latest.term}` : '近期班次'} value={latest?.offerings ?? null} unit="班">
-        {#snippet detail()}{#if historical.length >= 3}<Sparkline label="各學期班次，從舊到新" values={historical.map(({ offerings }) => offerings)} labels={historical.map(({ term }) => term)} min={0} showArea={false} />{/if}{/snippet}
-      </StatTile>
-    </StatRow></div>
     {#if data.sampleSize}
       <div class="distribution">
         <p class="browse-note"><strong>必選修分布</strong></p>
@@ -94,6 +98,7 @@
         {#if !data.complete}<p class="browse-note">分布僅計入最新 {displayValue(data.sampleSize)} 班次。</p>{/if}
       </div>
     {/if}
+    </div>
     {#if data.resultsError}
       <ErrorState title="暫時無法載入課表" retryHref={page.url.pathname + page.url.search} />
     {:else if data.offerings.length}
@@ -109,33 +114,32 @@
       </EmptyState>
     {/if}
   </section>
-  <details class="history browse-stack">
-    <summary>查看歷年開課變化</summary>
-    {#if data.trends === null}
-      <ErrorState title="暫時無法取得歷年開課統計" retryHref={page.url.pathname + page.url.search} />
-    {:else}
-      <SchoolsTermHistory label="各學期班次" points={historical.map(({ term, offerings }) => ({ term, value: offerings }))} termHref={termHref} />
-    {/if}
-  </details>
-
 </div>
 
 <style>
-  .department-stats :global(.stat-row) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .department-page, .department-page .browse-stack { gap: var(--space-2); }
+  .department-page .browse-crumbs + .browse-head { margin-block-start: calc(-1 * var(--space-2)); }
+  .department-summary { display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 0 var(--space-3); }
+  .department-summary p { align-self: center; }
   .timetable-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
-  .history summary { min-block-size: var(--target-min); align-content: center; cursor: pointer; width: fit-content; color: var(--brand); font-size: var(--t-base); font-weight: 650; }
+  .timetable-controls { display: grid; grid-template-columns: minmax(0, 2fr) minmax(12rem, 1fr); gap: var(--space-2); align-items: start; }
+  .history[open] { flex-basis: 100%; }
+  .history summary { min-block-size: var(--target-min); align-content: center; cursor: pointer; width: fit-content; color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; }
+  .history summary span { color: var(--muted); font-size: var(--t-sm); }
+  .history summary :global(svg) { margin-inline-start: var(--space-1); }
   .distribution { display: grid; gap: .3rem; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel-raised); }
-  @media (max-width: 40rem) {
-    .department-stats :global(.stat-row) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .timetable-meta :global(nav) { display: none; }
-  }
   .segments { display: flex; gap: 2px; height: .5rem; overflow: hidden; border-radius: var(--radius-pill); }
   .segments > span { flex-basis: 0; }
-  .distribution ul { display: flex; flex-wrap: wrap; list-style: none; gap: .45rem .85rem; padding: 0; margin: 0; font-size: var(--t-base); }
+  .distribution ul { display: flex; flex-wrap: wrap; list-style: none; gap: .25rem .65rem; padding: 0; margin: 0; font-size: var(--t-sm); }
   .distribution li { display: flex; align-items: baseline; gap: .35rem; white-space: nowrap; }
   .distribution li span { display: inline-block; width: .55rem; height: .55rem; border-radius: 50%; }
-  @media (max-width: 40rem) {
-    .timetable-filter :global(form) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; }
+  @media (max-width: 45rem) {
+    .timetable-controls { grid-template-columns: minmax(0, 1fr); }
+    .distribution { grid-template-columns: auto 1fr; padding: var(--space-1) var(--space-2); align-items: center; }
+    .distribution .segments { grid-area: 2 / 1 / auto / -1; }
+    .distribution ul { grid-column: 2; grid-row: 1; }
+    .timetable-filter :global(form) { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+    .timetable-filter .browse-field { grid-column: 1 / -1; grid-row: 1; }
     .timetable-filter :global(.actions button) { padding-inline: var(--space-2); }
     .timetable-filter :global(.actions) { display: contents; }
     .timetable-filter :global(.actions a) { grid-column: 1 / -1; justify-self: start; }

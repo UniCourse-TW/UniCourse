@@ -16,6 +16,7 @@
   --down: #be123c;
   --warn: #b45309;
   --warn-wash: #fef3c7;
+  --partial-hatch: repeating-linear-gradient(135deg, transparent 0 3px, color-mix(in srgb, var(--brand) 50%, transparent) 3px 4px);
   --info: #1d4ed8;
   --chip: #f4f4f5;
   --table-head: #fafafa;

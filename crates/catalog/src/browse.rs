@@ -1,5 +1,7 @@
 //! Overview, ranking and browsing queries (docs/stage2-contract.md).
 
+use std::collections::BTreeMap;
+
 use serde::Serialize;
 use sqlx::{FromRow, PgPool};
 use utoipa::ToSchema;
@@ -35,6 +37,9 @@ pub struct CourseRanking {
     /// Up to ten terms with offerings, newest first, including withdrawn offerings.
     #[sqlx(json)]
     pub trend: Vec<EnrollmentPoint>,
+    /// Imported class section counts, including withdrawn offerings, by term.
+    #[sqlx(json)]
+    pub sections_by_term: BTreeMap<String, i64>,
     /// Whether the newest offering comes from a synthetic demo snapshot.
     pub is_demo: bool,
 }
@@ -182,17 +187,29 @@ pub async fn rankings(
         ""
     };
     sqlx::query_as(&format!(
-        "SELECT ranking.school, school.name AS school_name, ranking.course_code, ranking.title,
+        "WITH top_courses AS MATERIALIZED (
+             SELECT * FROM course_rankings AS ranking
+             WHERE ($1::text IS NULL OR ranking.school = $1) {academic_filter}
+             ORDER BY ranking.enrolled_total DESC NULLS LAST, ranking.capacity_total DESC NULLS LAST,
+                 ranking.terms DESC, ranking.school, ranking.course_code
+             LIMIT $2
+         )
+         SELECT ranking.school, school.name AS school_name, ranking.course_code, ranking.title,
              ranking.title_en, ranking.terms, ranking.offerings, ranking.enrolled_total,
              ranking.capacity_total, ranking.latest_offering_id::text AS latest_offering_id,
              ranking.is_demo, ranking.latest_active_offering_id::text AS latest_active_offering_id,
-             ranking.trend
-         FROM course_rankings AS ranking
+             ranking.trend, sections.sections_by_term
+         FROM top_courses AS ranking
          JOIN schools AS school ON school.slug = ranking.school
-         WHERE ($1::text IS NULL OR ranking.school = $1) {academic_filter}
+         CROSS JOIN LATERAL (
+             SELECT coalesce(jsonb_object_agg(term, sections), '{{}}'::jsonb) AS sections_by_term
+             FROM (
+                 SELECT term, count(*) AS sections FROM offerings
+                 WHERE school = ranking.school AND course_code = ranking.course_code GROUP BY term
+             ) AS term_counts
+         ) AS sections
          ORDER BY ranking.enrolled_total DESC NULLS LAST, ranking.capacity_total DESC NULLS LAST,
-             ranking.terms DESC, ranking.school, ranking.course_code
-         LIMIT $2",
+             ranking.terms DESC, ranking.school, ranking.course_code",
     ))
     .persistent(false)
     .bind(school)

@@ -2,17 +2,21 @@
 
 use axum::{
     Json,
-    extract::{Path, State, rejection::PathRejection},
+    extract::{
+        Path, Query, State,
+        rejection::{PathRejection, QueryRejection},
+    },
     http::StatusCode,
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
 use unicourse_catalog as catalog;
+use unicourse_catalog::{CourseRatingStats, RatingStats};
 use utoipa::ToSchema;
 
 use crate::{
     ApiError, AppState, Body, ErrorBody, auth::CurrentUser, bad_request, database_error, error,
-    path, text,
+    invalid_query, path, query, text,
 };
 
 #[derive(FromRow, Serialize, ToSchema)]
@@ -25,17 +29,6 @@ pub(crate) struct Rating {
     review: Option<String>,
     created_at: String,
     updated_at: String,
-}
-
-#[derive(Serialize, ToSchema)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct RatingStats {
-    count: i64,
-    /// Mean score; `null` without ratings.
-    average: Option<f64>,
-    /// Number of ratings with score 1, 2, 3, 4 and 5.
-    #[schema(min_items = 5, max_items = 5)]
-    histogram: Vec<i64>,
 }
 
 #[derive(FromRow, Serialize, ToSchema)]
@@ -135,24 +128,73 @@ pub(crate) async fn stats(
     State(pool): State<PgPool>,
     segments: Result<Path<(String, String)>, PathRejection>,
 ) -> Result<Json<RatingStats>, ApiError> {
-    let (school, code) = course(&pool, segments).await?;
-    let (count, average, histogram): (i64, Option<f64>, Vec<i64>) = sqlx::query_as(
-        "SELECT count(*), avg(score)::float8,
-             ARRAY[count(*) FILTER (WHERE score = 1), count(*) FILTER (WHERE score = 2),
-                 count(*) FILTER (WHERE score = 3), count(*) FILTER (WHERE score = 4),
-                 count(*) FILTER (WHERE score = 5)]
-         FROM ratings WHERE school = $1 AND course_code = $2",
-    )
-    .bind(&school)
-    .bind(&code)
-    .fetch_one(&pool)
-    .await
-    .map_err(database_error)?;
-    Ok(Json(RatingStats {
-        count,
-        average,
-        histogram,
-    }))
+    let (school, code) = path(segments, "Course not found", |(school, code)| {
+        vec![school.as_str(), code.as_str()]
+    })?;
+    catalog::course_rating_stats(&pool, &[(&school, &code)])
+        .await
+        .map_err(database_error)?
+        .pop()
+        .map(|row| Json(row.stats))
+        .ok_or_else(|| error(StatusCode::NOT_FOUND, "Course not found"))
+}
+
+#[derive(Deserialize)]
+pub(crate) struct BatchStatsQuery {
+    courses: String,
+}
+
+fn parse_course_keys(courses: &str) -> Result<Vec<(String, String)>, ApiError> {
+    let invalid = || invalid_query("Expected 1–200 comma-separated school:courseCode pairs");
+    let mut pairs = Vec::new();
+    let mut pair = String::new();
+    let mut escaped = false;
+    for character in courses.chars().chain(std::iter::once(',')) {
+        match character {
+            '\0' => return Err(invalid()),
+            '\\' if !escaped => escaped = true,
+            ',' if !escaped => {
+                let (school, code) = pair.split_once(':').ok_or_else(invalid)?;
+                if pairs.len() >= 200 || school.is_empty() || code.is_empty() {
+                    return Err(invalid());
+                }
+                pairs.push((school.to_owned(), code.to_owned()));
+                pair.clear();
+            }
+            ',' | '\\' => {
+                pair.push(character);
+                escaped = false;
+            }
+            _ if escaped => return Err(invalid()),
+            _ => pair.push(character),
+        }
+    }
+    if !pair.is_empty() {
+        return Err(invalid());
+    }
+    Ok(pairs)
+}
+
+#[utoipa::path(get, operation_id = "batchRatingStats", path = "/api/ratings/stats", params(
+    ("courses" = String, Query, description = "1–200 comma-separated school:courseCode pairs. Escape literal commas and backslashes in course codes with a backslash before URL encoding.")
+), responses(
+    (status = 200, description = "Stats for known courses in request order, deduplicated; unknown courses are omitted", body = [CourseRatingStats]),
+    (status = 400, body = ErrorBody),
+    (status = 500, body = ErrorBody)
+))]
+pub(crate) async fn batch_stats(
+    State(pool): State<PgPool>,
+    filters: Result<Query<BatchStatsQuery>, QueryRejection>,
+) -> Result<Json<Vec<CourseRatingStats>>, ApiError> {
+    let courses = parse_course_keys(&query(filters)?.courses)?;
+    let keys: Vec<_> = courses
+        .iter()
+        .map(|(school, code)| (school.as_str(), code.as_str()))
+        .collect();
+    catalog::course_rating_stats(&pool, &keys)
+        .await
+        .map(Json)
+        .map_err(database_error)
 }
 
 const MY_RATING: &str = "SELECT score, review, unicourse_iso_precise(created_at) AS created_at,
