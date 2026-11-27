@@ -17,13 +17,14 @@
     minWidth?: string;
     maxHeight?: string;
     scrollHint?: boolean;
+    header?: Snippet<[TableColumn<Row>, 'ascending' | 'descending' | undefined]>;
     cell?: Snippet<[Row, TableColumn<Row>]>;
     empty?: Snippet;
   }
 
   let {
     caption, columns, rows, rowKey, rowHref, groupLabel, rowHeaderColumn, stickyColumn, clientSort = false, order,
-    minWidth = '38rem', maxHeight = '30rem', scrollHint = true, cell, empty
+    minWidth = '38rem', maxHeight = '30rem', scrollHint = true, header, cell, empty
   }: Props = $props();
 
   const collator = new Intl.Collator('zh-TW', { numeric: true });
@@ -81,7 +82,9 @@
             <th scope="col" class:numeric={column.numeric} class:sticky={stickyId === column.id}
               class:sortable={clientSort && column.sortable} data-align={column.align} style:inline-size={column.width}
               aria-sort={direction}>
-              {#if ready && clientSort && column.sortable && (column.value || column.sortValue)}
+              {#if header}
+                {@render header(column, direction)}
+              {:else if ready && clientSort && column.sortable && (column.value || column.sortValue)}
                 <button type="button" onclick={() => toggleSort(column)}>
                   {column.label}
                   <span aria-hidden="true">{direction ? (direction === 'ascending' ? '↑' : '↓') : '↕'}</span>
@@ -147,7 +150,7 @@
   table { inline-size: 100%; border-collapse: separate; border-spacing: 0; text-align: start; }
   caption { padding: var(--space-2) var(--space-3); text-align: start; color: var(--muted); font-size: var(--t-sm); }
   th, td { padding: var(--table-pad-block, 0.375rem) 0.625rem; border-block-end: 1px solid var(--line); text-align: start; }
-  .row-group td { padding-block: var(--space-1); background: var(--table-head); color: var(--ink-2); font-weight: 650; font-size: var(--t-sm); }
+  .row-group td { padding-block: var(--space-1); background: var(--table-group-bg, var(--table-head)); color: var(--ink-2); font-weight: 650; font-size: var(--table-group-font-size, var(--t-sm)); }
   thead th {
     position: sticky;
     inset-block-start: 0;

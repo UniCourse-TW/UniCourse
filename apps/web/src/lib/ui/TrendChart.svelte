@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { linePath, lineSegments, spreadIndexes, zeroBasedScale } from './chart-scale';
+  import { chartScale, linePath, lineSegments, spreadIndexes } from './chart-scale';
+  import type { Snippet } from 'svelte';
   import ChartValues from './ChartValues.svelte';
   import { displayValue, finiteValue } from './format';
   import { partialTermLabel } from './partial-terms';
@@ -15,14 +16,18 @@
     termPairs?: boolean;
     linkedBars?: boolean;
     condensed?: boolean;
+    highlight?: string;
+    yearsOnly?: boolean;
+    localScale?: boolean;
+    header?: Snippet;
   }
 
-  let { label, points, unit, kind = 'column', termHref, yearTicks = false, termPairs = false, linkedBars = false, condensed = false }: Props = $props();
+  let { label, points, unit, kind = 'column', termHref, yearTicks = false, termPairs = false, linkedBars = false, condensed = false, highlight, yearsOnly = false, localScale = false, header }: Props = $props();
   let rows = $derived(points.map((point) => ({ ...point, value: finiteValue(point.value) })));
   let values = $derived(rows.flatMap(({ value }) => value === null ? [] : [value]));
   let compact = $derived(values.length <= 3);
   let compactRows = $derived(rows.length <= 3 ? rows : rows.filter((point) => point.value !== null));
-  let scale = $derived(zeroBasedScale(values, linkedBars ? 5 : 4));
+  let scale = $derived(chartScale(values, linkedBars ? 5 : 4, kind === 'column' || !localScale));
   const chartWidth = 1000;
   const chartHeight = 200;
   let slot = $derived(chartWidth / Math.max(1, rows.length));
@@ -58,12 +63,13 @@
 
 <figure>
   <figcaption>{label}</figcaption>
+  {#if header}{@render header()}{/if}
   {#if !values.length}
     <p>{rows.length ? '各期數值均未公布。' : '尚無學期資料。'}</p>
   {:else if compact}
     <dl class="period-values" aria-label={label}>
       {#each compactRows as point (point.term)}
-        <div class:partial={point.partial}>
+        <div class:partial={point.partial} class:selected={point.term === highlight}>
           <dt>{#if termHref && point.value !== null}<a href={termHref(point.term)}>{point.term}</a>{:else}{point.term}{/if}</dt>
           <dd class:missing={point.value === null}>{point.value === null ? '未公布' : displayValue(point.value)}{#if point.value !== null && unit} <small>{unit}</small>{/if}</dd>
           {#if point.partial}<small>{partialTermLabel}</small>{/if}
@@ -85,7 +91,10 @@
             {@const y = ordinate(tick)}
             <line class="gridline" class:baseline={tick === 0} x1="0" x2={chartWidth} y1={y} y2={y} vector-effect="non-scaling-stroke" />
           {/each}
-          {#if termPairs}{#each yearBoundaries as index (index)}<line class="year-divider" x1={slot * index} x2={slot * index} y1="0" y2={chartHeight} vector-effect="non-scaling-stroke" />{/each}{/if}
+          {#each rows as row, index (row.term)}
+            {#if row.term === highlight}<rect class="highlight" x={index * slot} y="0" width={slot} height={chartHeight} />{/if}
+          {/each}
+          {#if termPairs || yearsOnly}{#each yearBoundaries as index (index)}<line class="year-divider" x1={slot * index} x2={slot * index} y1="0" y2={chartHeight} vector-effect="non-scaling-stroke" />{/each}{/if}
           {#if kind === 'column'}
             {@const zero = ordinate(0)}
             {#each bars as { x, y }, index}
@@ -109,6 +118,9 @@
                 <path class="series" d={linePath(segment)} vector-effect="non-scaling-stroke" />
               {/if}
             {/each}
+            {#each bars as { x, y }, index}
+              {#if y !== null && rows[index].term === highlight}<line class="current-point" x1={x} x2={x} y1={y} y2={y} vector-effect="non-scaling-stroke" />{/if}
+            {/each}
           {/if}
         </svg>
         {#if linkedBars && termHref}
@@ -129,16 +141,18 @@
           {#each rows as row, index (row.term)}
             {#if desktopTicks.has(index) || phoneTicks.has(index)}
               <span class:phone={phoneTicks.has(index)} class:desktop={desktopTicks.has(index)} class:end={yearTicks && index === rows.length - 1}
-                style:inset-inline-start={yearTicks && index === rows.length - 1 ? undefined : `${100 * (index + 0.5) / rows.length}%`}>{yearTicks && index !== rows.length - 1 ? row.term.split('-')[0] : row.term}</span>
+                style:inset-inline-start={yearTicks && index === rows.length - 1 ? undefined : `${100 * (index + 0.5) / rows.length}%`}>{yearTicks && (yearsOnly || index !== rows.length - 1) ? row.term.split('-')[0] : row.term}</span>
             {/if}
           {/each}
         </div>
       </div>
     </div>
-    {#if (!condensed && (unit || yearTicks)) || hasMissing || hasPartial}
+    {#if (!condensed && (unit || yearTicks)) || hasMissing || hasPartial || (highlight && rows.some(({ term }) => term === highlight))}
       <p class="chart-legend">
         {#if unit && !condensed}<span>單位：{unit}</span>{/if}
-        {#if yearTicks && !condensed}<span>{termPairs ? '直線分隔學年；1 為上學期，2 為下學期。' : '橫軸為學年，每柱一學期。'}</span>{/if}
+        {#if yearTicks && !condensed}<span>{termPairs ? '直線分隔學年；1 為上學期，2 為下學期。' : kind === 'column' ? '橫軸為學年，每柱一學期。' : '橫軸為學年，每個數值對應一學期。'}</span>{/if}
+        {#if localScale && kind === 'line' && scale.min !== 0}<span>縱軸從 {displayValue(scale.min)} 起。</span>{/if}
+        {#if highlight && rows.some(({ term }) => term === highlight)}<span class="selection">所選學期 {highlight}</span>{/if}
         {#if hasMissing}<span>空白表示沒有資料。</span>{/if}
         {#if hasPartial}<span><i aria-hidden="true"></i>{partialTermLabel}</span>{/if}
       </p>
@@ -168,6 +182,10 @@
   .gridline { stroke: var(--line); }
   .baseline { stroke: var(--control-line); }
   rect { fill: var(--series-1); }
+  .highlight { fill: var(--brand-wash); }
+  .current-point { stroke: var(--brand); stroke-width: 7; stroke-linecap: round; }
+  .selection { color: var(--brand-ink); }
+  .period-values .selected { background: var(--brand-wash); border-color: var(--brand); }
   .partial-bar, .partial-guide { fill: var(--brand-wash); stroke: var(--brand-ring); stroke-dasharray: 2 2; stroke-width: 1; }
   .chart-legend { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); }
   .chart-legend i { display: inline-block; inline-size: 1em; block-size: .65em; margin-inline-end: .3em; background: var(--brand-wash); border: 1px dashed var(--brand-ring); }

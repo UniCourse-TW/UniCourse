@@ -88,7 +88,7 @@
   {#if navigating.to && !navigating.willUnload}<div class="progress" aria-hidden="true"></div>{/if}
 </header>
 
-<main class="page" id="main-content" tabindex="-1">
+<main class="page" class:empty-search={pathname === '/' && page.data.content?.kind === 'search' && page.data.content.result?.total === 0} id="main-content" tabindex="-1">
   {@render children()}
 </main>
 
@@ -158,6 +158,8 @@
   @keyframes progress { from { transform: translateX(0); } to { transform: translateX(185%); } }
   @media (prefers-reduced-motion: reduce) { .progress { width: 100%; animation: none; } }
   .page { flex: 1; padding-block: clamp(1.5rem, 4vw, 3rem) var(--space-12); }
+  .page.empty-search { flex: 0; padding-block-end: var(--space-6); }
+  .page.empty-search + .site-footer { flex: 1; }
   .site-footer { border-block-start: 1px solid var(--line); color: var(--muted); background: var(--panel); font-size: var(--t-base); }
   .footer-inner { display: flex; justify-content: space-between; flex-wrap: wrap; align-items: start; gap: var(--space-4) var(--space-6); padding-block: var(--space-5); }
   .footer-inner p { margin: 0; }

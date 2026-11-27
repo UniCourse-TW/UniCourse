@@ -62,7 +62,7 @@
   .full { border-color: var(--brand); background: var(--brand); }
   .unknown { border-style: dashed; background: transparent; }
   .hatched, .ticks { flex-wrap: nowrap; }
-  .hatched .partial { background-image: var(--partial-hatch); }
+  .hatched .partial { background-image: var(--heatstrip-partial-hatch, var(--partial-hatch)); }
   .ticks { margin-block-end: .2rem; color: var(--ink-2); font: var(--heatstrip-tick-size, var(--t-xs)) / 1 var(--font-mono); }
   .ticks span { display: inline-grid; justify-content: center; inline-size: var(--heatstrip-cell-size, 10px); }
   .counts .cell { display: grid; place-items: center; font: var(--t-xs) / 1 var(--font-mono); color: var(--ink-2); }

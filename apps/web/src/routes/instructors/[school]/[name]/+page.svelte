@@ -67,7 +67,7 @@
   </StatRow></div>
   {#if rating.count}
     <div class="rating-summary">
-      <p><strong>{data.ratedCourses.length === 1 ? `${data.ratedCourses[0].title}：` : ''}{displayValue(rating.count)} 則課程評價</strong> · ★ {rating.mean} 分{#if rating.count < 3} · 樣本少{/if}</p>
+      <p><strong>{displayValue(rating.count)} 則課程評價</strong> · ★ {rating.mean} 分{#if rating.count < 3} · 樣本少{/if}</p>
       <p class="browse-note">學生對課程的評價，不是對教師的評分。{ratingNote}。</p>
       {#if data.ratedCourses.length === 1}<a href={`/courses/${data.ratedCourses[0].id}#ratings`}>看{data.ratedCourses[0].title}的課程評價 →</a>
       {:else}<details><summary>看各課程評價</summary><ul>{#each data.ratedCourses as course (course.id)}
@@ -79,12 +79,12 @@
   <section class="browse-stack" aria-labelledby="history">
     <SectionHeader title="歷年授課" id="history" description="按學年比較已公布的修課人次，點選數值可查看該學年最新一班。" />
     {#if truncated}<p class="browse-note">各課程的學年統計僅計入最近 {displayValue(data.listed)} 班；下方可查看完整的各學期總數。</p>{/if}
-    {@render offeringFilters()}
     <SchoolsTeachingHistory periods={data.matrix.periods} rows={data.matrix.rows} trends={data.trends} />
   </section>
 
   <section class="browse-stack" aria-labelledby="offerings">
     <SectionHeader title={`開課列表（${displayValue(data.listed)} 班）`} id="offerings" />
+    {@render offeringFilters()}
     {#if truncated}<p class="browse-note">這裡可篩選最近 {displayValue(data.listed)} 班（共 {displayValue(summary.offerings)} 班）。<a href={`/?${new URLSearchParams({ school: instructor.school, term: 'all', q: instructor.name })}`}>按教師姓名查找較早班次</a></p>{/if}
     {#if data.rows.length}
       {#if data.totalPages > 1 || filtered}<p class="browse-note">{displayValue(data.firstRow)}–{displayValue(data.firstRow + data.rows.length - 1)}／{displayValue(data.matched)} 班</p>{/if}
@@ -103,7 +103,6 @@
 
 {#snippet offeringFilters()}
   <div class="instructor-filters">
-    <p class="browse-note"><strong>篩選開課列表</strong> · 套用後跳至班次</p>
     <FilterBar action={`${base}#offerings`} label="開課列表篩選" clearHref={filtered || data.oldestFirst ? `${base}#offerings` : undefined}>
       <FilterSelect name="term" label="學期" value={data.term} options={termOptions} />
       <FilterSelect name="course" label="課程" value={data.courseCode} options={courseOptions} />
@@ -119,6 +118,7 @@
   .instructor-units a { display: inline-grid; align-items: center; min-block-size: var(--target-min); }
   .section-jump { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
   .rating-summary { border-inline-start: 3px solid var(--brand-ring); padding-inline-start: var(--space-2); }
+  .rating-summary strong { font-size: var(--t-md); font-weight: 750; }
   .rating-summary summary { min-block-size: var(--target-min); align-content: center; cursor: pointer; color: var(--ink-2); }
   .rating-summary a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
   .rating-summary ul { margin-block: 0; padding-inline-start: var(--space-5); }

@@ -22,7 +22,7 @@
   const courseHref = (row: Offering) => `/courses/${row.id}`;
   const termColumn: TableColumn<Offering> = { id: 'term', label: '學期', value: (row) => row.term, sortable: true };
   const gradeColumn: TableColumn<Offering> = { id: 'grade', label: '年級', value: (row) => row.grade, align: 'center', width: '3.5rem' };
-  const groupKey = (row: Offering) => mode === 'instructor' ? row.courseCode : row.title;
+  const groupKey = (row: Offering) => mode === 'instructor' ? row.courseCode : row.id.toString();
   let groups = $derived.by(() => {
     const grouped = new Map<string, Offering[]>();
     for (const row of offerings) {
@@ -33,7 +33,7 @@
     }
     return [...grouped.values()];
   });
-  const previewSize = (group: Offering[]) => group.length > (mode === 'instructor' ? 5 : 3) ? 2 : group.length;
+  const previewSize = (group: Offering[]) => group.length > 5 ? 2 : group.length;
   let desktopRows = $derived(groups.flatMap((group) => mode === 'instructor' ? group.slice(0, previewSize(group)) : group));
   let hasMeter = $derived(offerings.some((row) => row.enrolled != null && (reportedCapacity(row) ?? 0) > 0));
   let hasRemaining = $derived(offerings.some((row) => {
@@ -55,7 +55,6 @@
   function groupLabel(row: Offering) {
     const group = groupStarts.get(row.id);
     if (!group) return undefined;
-    if (mode === 'department') return group.length > 1 ? `${row.title} · 本頁 ${displayValue(group.length)} 班` : undefined;
     const terms = groupTerms?.get(row.courseCode);
     if (!terms || group.length < 2) return undefined;
     const sorted = group.map(({ term }) => term).sort();
@@ -114,7 +113,7 @@
 {/snippet}
 
 {#if hasMeter}<p class="browse-note offering-legend">條長為滿額比例。{#if hasRemaining}「餘」為匯入時剩餘名額。{/if}</p>{/if}
-<div class="table-view">
+<div class="table-view" class:instructor={mode === 'instructor'}>
   {@render desktopTable(desktopRows, caption, true)}
   {#if mode === 'instructor'}{#each groups.filter((group) => previewSize(group) < group.length) as group (group[0].id)}
     <details class="more-offerings"><summary>{group[0].title} · 顯示其餘 {group.length - previewSize(group)} 班</summary>
@@ -141,7 +140,7 @@
   </DataTable>
 {/snippet}
 
-<ul class="card-view" aria-label={caption} role="list">
+<ul class="card-view" class:department={mode === 'department'} aria-label={caption} role="list">
   {#each groups as group (group[0].id)}
     {#each group.slice(0, previewSize(group)) as row (row.id)}{@render card(row, true)}{/each}
     {#if previewSize(group) < group.length}<li class="extra-group"><details class="more-offerings"><summary>{group[0].title} · 顯示其餘 {group.length - previewSize(group)} 班</summary>
@@ -167,13 +166,14 @@
       <div class="card-meta secondary-meta">
         {#if mode === 'department'}<div class="people">{@render teachers(row)}</div>
         {:else}<div class="people">{@render unit(row)}</div>{/if}
-        <span class="meeting">{time.length ? time.join('；') : '時地未公布'}</span>
+        {#if time.length}<span class="meeting">{time.join('；')}</span>{:else if mode === 'instructor'}<span>時地未公布</span>{/if}
         {@render rating(row)}
       </div>
     </li>
 {/snippet}
 
 <style>
+  .table-view.instructor { --table-group-bg: var(--panel); --table-group-font-size: .8125rem; }
   .table-view { --table-pad-block: .25rem; }
   .table-view :global(caption) { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
   .table-view .browse-course-cell { padding-block: .15rem; }
@@ -194,13 +194,15 @@
   .fill { display: block; block-size: 100%; background: var(--brand); border-radius: inherit; }
   .fill.exceeded { background: var(--warn); }
   small { color: var(--muted); }
-  .capacity-note { padding-inline: var(--space-1); border-radius: var(--radius-control); background: var(--warn-wash); color: var(--warn); font-size: var(--t-sm); white-space: nowrap; }
+  .capacity-note { padding-inline: var(--space-1); border-radius: var(--radius-control); background: var(--warn-wash); color: var(--warn); font-size: var(--t-sm); font-weight: 700; white-space: nowrap; }
   .publication-note { color: var(--ink-2); font-size: var(--t-sm); }
   .slot { display: block; overflow-wrap: anywhere; }
   @media (max-width: 40rem) {
     .table-view { display: none; }
     .card-view { display: grid; list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel-raised); }
     .card-view li { min-inline-size: 0; padding: 0 var(--space-3) var(--space-2); overflow-wrap: anywhere; }
+    .department li { padding-inline: var(--space-2); }
+    .department .secondary-meta { margin-block-start: .125rem; }
     .card-view li + li { border-block-start: 1px solid var(--line); }
     .card-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-2); }
     .card-course { grid-column: 1; display: flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
