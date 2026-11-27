@@ -10,9 +10,10 @@
     numbered?: boolean;
     jump?: boolean;
     compact?: boolean;
+    showPageWords?: boolean;
   }
 
-  let { url, page, totalPages, parameter = 'page', label = '分頁', numbered = false, jump = false, compact = false }: Props = $props();
+  let { url, page, totalPages, parameter = 'page', label = '分頁', numbered = false, jump = false, compact = false, showPageWords = false }: Props = $props();
   let pages = $derived(numbered && totalPages <= 7 ? Array.from({ length: totalPages }, (_, index) => index + 1) : []);
 
   function pageHref(next: number) {
@@ -34,7 +35,7 @@
 {/snippet}
 
 {#if totalPages > 1}
-  <nav aria-label={label} class:compact>
+  <nav aria-label={label} class:compact class:hide-page-words={compact && !showPageWords}>
     {#if page > 1}<a href={pageHref(page - 1)} rel="prev"><span aria-hidden="true">←</span> <span class="page-word">上一頁</span></a>{/if}
     {#if pages.length}
       {#each pages as position (position)}
@@ -90,6 +91,6 @@
   summary::-webkit-details-marker { display: none; }
   @media (max-width: 30rem) {
     .compact { gap: var(--space-1); }
-    .compact .page-word { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+    .hide-page-words .page-word { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
   }
 </style>

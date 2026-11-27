@@ -19,11 +19,13 @@
     partial?: readonly boolean[];
     /** Show short series as columns on the same horizontal and vertical scales. */
     sparseBars?: boolean;
+    /** Minimum bar height in SVG units for positive measurements. */
+    minimumBarHeight?: number;
     /** Omit the legend when the surrounding table already supplies one. */
     showPartialLegend?: boolean;
   }
 
-  let { values, label, labels, min, max, decorative = false, showValues = false, showArea = true, showSparse = true, partial = [], sparseBars = false, showPartialLegend }: Props = $props();
+  let { values, label, labels, min, max, decorative = false, showValues = false, showArea = true, showSparse = true, partial = [], sparseBars = false, minimumBarHeight = 1, showPartialLegend }: Props = $props();
   let samples = $derived(values.map(finiteValue));
   let includeZero = $derived(sparseBars || partial.some(Boolean));
   let scale = $derived.by(() => {
@@ -77,7 +79,8 @@
     {#each points as point, index}
       {#if point && (drawBars || partial[index])}
         {@const width = Math.min(5, 62 / Math.max(1, samples.length - 1))}
-        <rect class="bar" class:partial-mark={partial[index]} x={point.x - width / 2} y={point.y > zero ? zero : Math.min(point.y, zero - 1)} {width} height={Math.max(1, Math.abs(zero - point.y))} />
+        {@const height = Math.max((samples[index] ?? 0) > 0 ? minimumBarHeight : 1, Math.abs(zero - point.y))}
+        <rect class="bar" class:partial-mark={partial[index]} x={point.x - width / 2} y={point.y > zero ? zero : zero - height} {width} {height} />
       {/if}
     {/each}
   </svg>
