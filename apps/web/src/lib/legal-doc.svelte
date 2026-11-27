@@ -50,17 +50,6 @@
     return () => observer.disconnect();
   });
 
-  // Phones: every h2 carries a 「目錄 ↑」 link (the pages mark them `.to-toc`); they open the contents too.
-  onMount(() => {
-    const prose = document.querySelector('.prose');
-    if (!prose) return;
-    const onClick = (event: Event) => {
-      if ((event.target as HTMLElement).closest('a.to-toc')) toToc(event as MouseEvent);
-    };
-    prose.addEventListener('click', onClick);
-    return () => prose.removeEventListener('click', onClick);
-  });
-
   /** Opens the collapsed phone contents and moves focus there, not just the scroll position. */
   function toToc(event: MouseEvent) {
     if (!tocDetails) return;
@@ -104,9 +93,6 @@
       {#if contact}<span class="sep" aria-hidden="true">·</span><a href={`#${contact.id}`}>{contact.title}</a>{/if}
       <span class="sep" aria-hidden="true">·</span><a class="arrow-link" href={sibling.href}><span>{sibling.label}</span><span aria-hidden="true">→</span></a>
     </p>
-    {#if sections.some((section) => section.id === 'reviews')}
-      <a class="reviews-jump" href="#reviews">外部評論索引 <span aria-hidden="true">↓</span></a>
-    {/if}
   </header>
   <div class="doc-layout" class:has-gist={summary.length > 0}>
     {#if summary.length}
@@ -146,7 +132,7 @@
       </p>
     </div>
   </div>
-  <a class="toc-fab" class:shown={tocAway} href="#toc" onclick={toToc} aria-hidden={tocAway ? undefined : 'true'} tabindex={tocAway ? undefined : -1}><span aria-hidden="true">☰</span> 目錄</a>
+  <a class="toc-fab" class:shown={tocAway} href="#toc" onclick={toToc} aria-hidden={tocAway ? undefined : 'true'} tabindex={tocAway ? undefined : -1}><span aria-hidden="true">↑</span> 回目錄</a>
 </article>
 
 <style>
@@ -154,7 +140,6 @@
   .doc { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); max-inline-size: 66rem; min-inline-size: 0; margin-inline: auto; color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
   .arrow-link { display: inline-flex; gap: 0.3em; align-items: center; }
   .doc-head { display: grid; gap: var(--space-1); }
-  .reviews-jump { display: none; }
   /* The gist shares the prose column: same left edge as the first h2 and the same 52 em measure. */
   .gist { grid-column: 2; max-inline-size: 52em; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-panel); background: var(--panel); }
   .gist h2 { margin: 0 0 var(--space-1); font-size: var(--t-base); font-weight: 650; color: var(--ink-2); }
@@ -167,7 +152,7 @@
   .meta { margin: 0; color: var(--muted); font-size: var(--t-base); }
   .meta .sep { margin-inline: 0.4em; color: var(--axis); }
   .meta a, .doc-toc a, .next a, .prose :global(a) { color: var(--brand-ink); text-underline-offset: 0.15em; }
-  .reviews-jump:focus-visible, :is(.meta, .doc-toc, .next, .prose) :global(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: 2px; }
+  :is(.meta, .doc-toc, .next, .prose) :global(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: 2px; }
 
   .doc-layout { display: grid; grid-template-columns: 13.5rem minmax(0, 1fr); gap: var(--space-5) var(--space-8); align-items: start; }
   .doc-toc { grid-column: 1; grid-row: 1; align-self: start; position: sticky; inset-block-start: 4.75rem; font-size: var(--t-md); }
@@ -182,14 +167,14 @@
   .doc-toc li a:hover { background: var(--brand-wash); color: var(--brand-ink); }
   .doc-toc li a[aria-current='true'] { border-inline-start-color: var(--brand); color: var(--brand-ink); font-weight: 600; background: var(--brand-wash); }
   .doc-toc .sub { display: grid; margin: 0; padding: 0 0 0 var(--space-3); list-style: none; }
-  .doc-toc .sub a { min-block-size: 2rem; color: var(--muted); font-size: var(--t-base); }
+  .doc-toc .sub a { min-block-size: 2rem; color: var(--ink-2); font-size: var(--t-base); }
   .doc-toc .sibling { margin-block-start: var(--space-1); padding-block-start: var(--space-1); border-block-start: 1px solid var(--line); }
   .doc-toc .sibling a { color: var(--brand-ink); font-weight: 600; }
 
   /* Long-form text: 15 px on 1.85 (storyboard). One measure for text and tables alike: each section is
      52 em at the prose size and tables fill it. */
   .prose :global(section) { max-inline-size: 52em; }
-  .prose { min-inline-size: 0; font-size: var(--t-md); line-height: 1.85; overflow-wrap: anywhere; hanging-punctuation: none; }
+  .prose { min-inline-size: 0; font-size: 0.9375rem; line-height: 1.85; overflow-wrap: anywhere; hanging-punctuation: none; }
   .prose :global(h2) { margin: var(--space-8) 0 var(--space-2); font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); scroll-margin-block-start: 4.75rem; }
   .prose :global(h3) { margin: var(--space-6) 0 var(--space-1); font-size: var(--t-lg); font-weight: 650; line-height: var(--leading-tight); scroll-margin-block-start: 4.75rem; }
   .prose :global(p), .prose :global(ul), .prose :global(ol) { margin: 0 0 var(--space-3); }
@@ -213,27 +198,26 @@
   .prose :global(.callout) { margin: 0 0 var(--space-3); padding: var(--space-3) var(--space-4); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); }
   .prose :global(.callout .note) { display: block; margin-block-start: var(--space-2); color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
   .prose :global(.contact-routes) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-3); margin: 0 0 var(--space-3); }
-  .prose :global(.contact-routes .route-row) { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
-  .prose :global(.contact-routes .route-tag) { display: inline-block; padding: 0 7px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; line-height: 1.7; }
-  .prose :global(.contact-routes .route-tag.private) { background: var(--brand-wash); color: var(--brand-ink); }
-  /* A section heading row: the h2, an optional status badge beside it, and (phones only) 「目錄 ↑」. */
   .prose :global(.h2-row) { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); align-items: baseline; margin: var(--space-8) 0 var(--space-2); }
   .prose :global(section:first-of-type .h2-row) { margin-block-start: 0; }
-  .has-gist .prose :global(section:first-of-type .h2-row) { margin-block-start: var(--space-6); }
   .prose :global(.h2-row h2) { margin: 0; }
-  .prose :global(.h2-row .status) { margin: 0; align-self: center; }
-  .prose :global(.h2-row .to-toc) { display: none; }
   /* A section's one-paragraph answer before the detail: what, and what to do. */
-  .prose :global(p.lead) { padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); line-height: 1.7; }
+  .prose :global(p.lead) { padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink-2); font-size: inherit; line-height: inherit; }
   .prose :global(p.lead strong) { color: var(--ink); }
   .prose :global(.contact-routes > div) { display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .prose :global(.contact-routes h3) { margin: 0; font-size: var(--t-md); }
   .prose :global(.contact-routes .route-kind) { margin: 0; color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .prose :global(.contact-routes p) { margin: 0; color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
-  .prose :global(.contact-routes a.route) { display: inline-flex; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
+  .prose :global(.contact-routes a.route) { display: inline-flex; align-items: center; gap: var(--space-1); justify-self: start; min-block-size: var(--target-min); font-weight: 650; }
+  .prose :global(.contact-routes .route-access) { color: var(--ink-2); font-size: var(--t-base); font-weight: 600; }
+  .prose :global(.account-data th:nth-child(-n+2)) { inline-size: 40%; }
+  .prose :global(.account-data td:last-child) { white-space: nowrap; }
+  .prose :global(.review-data td:first-child) { inline-size: 8rem; }
+  .prose :global(.doc-fold) { margin-block-end: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); }
+  .prose :global(.doc-fold summary) { min-block-size: var(--target-min); padding: var(--space-2) var(--space-3); scroll-margin-block-start: 5rem; color: var(--brand-ink); font-weight: 650; cursor: pointer; }
+  .prose :global(.doc-fold summary:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: var(--radius-control); }
+  .prose :global(.doc-fold > :not(summary)) { inline-size: calc(100% - 2 * var(--space-3)); margin-inline: var(--space-3); }
   .toc-fab { display: none; }
-  .prose :global(.status.live) { background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); color: color-mix(in srgb, var(--up) 85%, var(--ink)); }
-  .prose :global(.status) { display: inline-block; margin-inline-end: var(--space-1); padding: 0 7px; border-radius: var(--radius-pill); background: var(--warn-wash); color: var(--warn); font-size: var(--t-sm); font-weight: 600; line-height: 1.6; }
   .next { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-6) 0 0; padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); font-size: var(--t-base); font-weight: 500; }
   .next a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); }
   .next .back { color: var(--ink-2); }
@@ -252,6 +236,12 @@
     .prose :global(.stacked td[data-label])::before { content: attr(data-label); color: var(--muted); font-size: var(--t-sm); font-weight: 600; line-height: inherit; }
     .prose :global(.stacked td:first-child) { display: block; padding-block-end: var(--space-1); font-weight: 600; }
     .prose :global(.stacked td:first-child)::before { display: none; }
+    .prose :global(.stacked.account-data td[data-label]) { grid-template-columns: 4rem minmax(0, 1fr); }
+    .prose :global(.stacked.boards tr) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0 var(--space-2); }
+    .prose :global(.stacked.boards td[data-label]) { display: block; white-space: normal; }
+    .prose :global(.stacked.boards td[data-label])::before { display: none; }
+    .prose :global(.stacked.boards td:last-child) { grid-column: 1 / -1; color: var(--ink-2); }
+    .prose :global(.review-data td:first-child) { inline-size: auto; }
     .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: auto; white-space: normal; }
   }
   @media (max-width: 56rem) {
@@ -262,9 +252,9 @@
     .gist { order: 1; }
     .prose { order: 2; }
     .doc-toc { position: static; scroll-margin-block-start: 4.75rem; }
-    .reviews-jump { display: inline-flex; justify-self: start; align-items: center; gap: 0.3em; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); }
     .doc-toc details::details-content { content-visibility: auto; }
     .doc-toc details:not([open])::details-content { content-visibility: hidden; }
+    .doc-toc .sub a { min-block-size: var(--target-min); }
     .doc-toc summary { display: flex; align-items: center; justify-content: space-between; min-block-size: var(--target-min); padding-inline: var(--space-3); color: var(--ink-2); font-size: var(--t-base); cursor: pointer; pointer-events: auto; }
     .doc-toc summary::after { content: '▾'; color: var(--muted); }
     .doc-toc details[open] summary::after { content: '▴'; }
@@ -277,10 +267,6 @@
     .toc-fab { position: fixed; inset-block-end: calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); inset-inline-end: var(--space-4); z-index: 20; display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 18%, transparent); color: var(--ink); font-size: var(--t-base); font-weight: 650; text-decoration: none; opacity: 0; pointer-events: none; transition: opacity 150ms; }
     .toc-fab.shown { opacity: 1; pointer-events: auto; }
     .toc-fab:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-    /* Phones: a way back to the contents at every section heading, not only at the end of the text. */
-    .prose :global(.h2-row) { align-items: center; justify-content: space-between; }
     .prose :global(section + section .h2-row) { margin-block-start: var(--space-5); }
-    .prose :global(.h2-row .to-toc) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); margin-inline-end: calc(-1 * var(--space-2)); padding-inline: var(--space-2); border-radius: var(--radius-control); color: var(--muted); font-size: var(--t-sm); font-weight: 600; text-decoration: none; }
-    .prose :global(.h2-row .to-toc:hover) { color: var(--brand-ink); background: var(--hover-row); }
   }
 </style>

@@ -26,7 +26,7 @@ async function openMenu(page: Page) {
   }).toPass({ timeout: 10_000 });
 }
 
-/** Phones fold a post's author tools (編輯／刪除) behind one ⋯ button; desktop shows them inline. */
+/** Open the author tools disclosure when the current page uses one. */
 async function openAuthorTools(item: Locator) {
   const more = item.locator('details.more > summary').first();
   if (await more.isVisible()) await more.click();
@@ -52,11 +52,10 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(page).toHaveURL(/\/auth\?next=/);
 
   await page.getByRole('link', { name: '建立帳號', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '建立帳號' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '加入 UniCourse 社群' })).toBeVisible();
   await page.getByLabel('帳號').fill(username);
   await page.getByLabel('密碼').fill('correct horse battery');
-  // The optional display name sits in a collapsed「加上顯示名稱」section.
-  await page.getByText('加上顯示名稱').click();
+  await page.getByText('顯示名稱（選填）', { exact: false }).click();
   await page.getByLabel('顯示名稱').fill('測試同學');
   await page.getByRole('button', { name: '建立帳號' }).click();
 
@@ -121,10 +120,15 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   // The author can edit their reply.
   const reply = page.getByRole('article', { name: '測試同學 的回覆' });
   await openAuthorTools(reply);
-  await reply.locator('summary', { hasText: '編輯' }).click();
+  await reply.locator('details.panel > summary', { hasText: '編輯' }).click();
   await reply.getByLabel('內容').fill(`同問，補充 ${username}`);
   await reply.getByRole('button', { name: '儲存修改' }).click();
   await expect(reply.locator('.content')).toHaveText(`同問，補充 ${username}`);
+  const replyUpvote = reply.getByRole('button', { name: '推這則回覆' });
+  await expect(replyUpvote).toHaveText('▲推');
+  await replyUpvote.click();
+  await expect(replyUpvote).toHaveAttribute('aria-pressed', 'true');
+  await expect(reply.getByLabel('回覆分數')).toHaveText('+1');
 
   const upvote = thread.getByRole('button', { name: '推', exact: true });
   await expect(upvote).toHaveAttribute('aria-pressed', 'false');
@@ -156,7 +160,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(page).toHaveURL(/\/forum\/\d+$/);
   const threadUrl = page.url();
   await openAuthorTools(thread);
-  await thread.locator('summary', { hasText: '刪除' }).click();
+  await thread.locator('details.panel > summary', { hasText: '刪除' }).click();
   await thread.getByRole('button', { name: '確定刪除' }).click();
   await expect(page).toHaveURL(/\/forum$/);
   expect((await page.goto(threadUrl))?.status()).toBe(404);
@@ -177,6 +181,44 @@ test('rejects a wrong password inline and keeps next on the same origin', async 
   await page.getByRole('button', { name: '登入' }).click();
   await expect(page.getByRole('alert')).toContainText('帳號或密碼錯誤');
   await expect(page.locator('input[name="next"]')).toHaveValue('/');
+});
+
+test('registration moves focus to the summary when both credentials need correction', async ({ page }) => {
+  await page.goto('/auth?mode=register');
+  await expect(page.getByRole('button', { name: '顯示密碼' })).toBeVisible();
+  await page.getByLabel('帳號', { exact: true }).fill('bad!');
+  const password = page.getByLabel('密碼', { exact: true });
+  await password.fill('short');
+  await page.getByRole('button', { name: '建立帳號' }).click();
+
+  const summary = page.getByRole('alert').filter({ hasText: '有多個欄位需要修正' });
+  await expect(summary).toBeFocused();
+  await password.fill('a-valid-test-password');
+  await expect(summary).toBeHidden();
+});
+
+test('saves a profile while the phone preview is open', async ({ page }) => {
+  const username = `preview_${Date.now().toString(36)}`;
+  await page.goto('/auth?mode=register&next=/settings');
+  await expect(page.getByRole('button', { name: '顯示密碼' })).toBeVisible();
+  await page.getByLabel('帳號', { exact: true }).fill(username);
+  await page.getByLabel('密碼', { exact: true }).fill('a-valid-test-password');
+  await page.getByRole('button', { name: '建立帳號' }).click();
+  await expect(page).toHaveURL(/\/settings$/);
+
+  const save = page.getByRole('button', { name: '儲存', exact: true });
+  await expect(save).toBeDisabled();
+  const bio = page.getByLabel('自我介紹', { exact: true });
+  await bio.fill('這是草稿。');
+  const preview = page.getByText('預覽個人頁').filter({ visible: true });
+  await preview.click();
+  await expect(page.locator('.preview-fold .bio')).toHaveText('這是草稿。');
+  await save.click();
+
+  await expect(page.getByRole('status')).toContainText('已儲存，個人頁已更新');
+  await expect(preview).toContainText('目前公開版本');
+  await bio.fill('這次還沒儲存。');
+  await expect(page.getByRole('status')).toContainText('有 1 項變更尚未儲存');
 });
 
 test('a missing thread is a 404 page', async ({ page }) => {
