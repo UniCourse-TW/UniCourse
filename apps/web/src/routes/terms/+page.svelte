@@ -58,6 +58,7 @@
 
   <section aria-labelledby="reviews">
     <h2 id="reviews">外部評論索引</h2>
+    <p class="lead"><strong>索引什麼：</strong>PTT 四個課程板 2016 年起公開文章的標題、日期、作者帳號與 120 字內摘要，不存全文。<strong>要移除某一筆：</strong>到<a href="#removal">聯絡與移除</a>私密告訴維護者即可，不必公開提出。</p>
     <p><span class="status live">已上線</span>課程頁的「外部評價」區列出其他網站上與這門課相關的公開文章。本站只做搜尋索引，不轉載全文：讀者看到的是標題、日期與開頭摘要，點標題會回到原網站閱讀全文。</p>
     <h3>目前收錄的看板</h3>
     <p>只收錄 PTT（批踢踢實業坊）上專門討論課程的四個看板，從 2016 年起的文章。</p>
@@ -86,26 +87,26 @@
       <li>歐趴糖、Dcard、想鑑你 NTU Rating 等沒有明確允許的網站，課程頁只提供用課名與教師組成的站外搜尋連結；本站不抓取、不儲存這些網站的任何內容。</li>
       <li>索引內容只用於搜尋與連結，不用於訓練模型，也不提供給第三方。</li>
     </ul>
-    <h3>更新與移除</h3>
+    <div class="h3-row"><h3>更新與移除</h3><a class="shortcut" href={PRIVATE_REPORT_URL} rel="noopener external">私密聯絡 <span aria-hidden="true">↗</span></a></div>
     <p>索引由維護者定期重新抓取並匯入，目前不是每晚自動更新，因此新文章會晚一段時間才出現。原文在 PTT 刪除後，本站不會自動得知；請用下方<a href="#removal">聯絡與移除</a>的管道告訴我們，該筆索引會被移除。</p>
     <p>各站的處理方式也列在<a href="/landscape#third-party">課程網站總覽的第三方查課網站</a>。</p>
   </section>
 
   <section aria-labelledby="removal">
     <h2 id="removal">聯絡與移除</h2>
-    <p>先選管道：<strong>涉及個人資料、帳號，或你不想公開提出的移除請求，請走私密聯絡</strong>；一般的資料錯誤（課程資料、錯配的外部文章）可以公開回報。文章作者、被提及的教師或當事人都可以要求移除外部索引中的某一筆。</p>
+    <p>先選管道：<strong>涉及個資、帳號或不想公開的請求走私密聯絡</strong>，一般的資料錯誤可以公開回報。</p>
     <div class="contact-routes">
       <div>
         <p class="route-kind">公開回報</p>
         <h3>可公開的資料錯誤</h3>
-        <p>更正課程資料、回報錯配的外部文章，結果大家都看得到。請不要附上學號、聯絡方式等個人資料。</p>
-        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 建立 issue <span aria-hidden="true">↗</span></a>
+        <p>更正課程資料、回報錯配的外部文章。請不要附上學號、聯絡方式等個人資料。</p>
+        <p class="route-row"><a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 建立 issue <span aria-hidden="true">↗</span></a><span class="route-tag">結果公開</span></p>
       </div>
       <div>
         <p class="route-kind">私密聯絡</p>
         <h3>含個資或不想公開的請求</h3>
-        <p>移除索引中與你有關的文章、帳號問題，或任何不想公開提出的請求。用 GitHub 的私密回報表單送出，只有維護者看得到。</p>
-        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密回報給維護者 <span aria-hidden="true">↗</span></a>
+        <p>移除索引中與你有關的文章、帳號問題，或任何不想公開提出的請求；文章作者、被提及的教師或當事人都可以提出。用 GitHub 的私密回報表單送出。</p>
+        <p class="route-row"><a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密回報給維護者 <span aria-hidden="true">↗</span></a><span class="route-tag private">僅維護者可見</span></p>
       </div>
     </div>
     <p>請附上相關頁面的連結。請求通常在七天內處理，結果會回覆在同一則 issue 或私密回報中。</p>

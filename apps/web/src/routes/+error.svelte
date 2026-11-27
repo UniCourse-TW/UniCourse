@@ -14,9 +14,10 @@
     if (route.startsWith('/courses/')) {
       return {
         title: '找不到這個開課班次',
-        description: '這個班次可能已不在校方系統，或連結已失效。可試著用原課號或課名搜尋，看看其他學期有沒有開：',
-        secondary: { href: '/', label: '回首頁' },
-        also: [SCHOOLS, FORUM],
+        description: '這個班次可能已下架，或連結已失效。用原課號或課名搜尋同一門課的其他學期：',
+        // The data routes lead (coverage first), the forum stays a site-wide way out.
+        secondary: SCHOOLS,
+        also: [{ href: '/', label: '回首頁' }, FORUM],
         search: true
       };
     }

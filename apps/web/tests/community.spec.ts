@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 const API = 'http://127.0.0.1:3001';
 
@@ -24,6 +24,12 @@ async function openMenu(page: Page) {
     }
     await expect(nav.getByRole('link', { name: '個人頁面' })).toBeVisible({ timeout: 1000 });
   }).toPass({ timeout: 10_000 });
+}
+
+/** Phones fold a post's author tools (編輯／刪除) behind one ⋯ button; desktop shows them inline. */
+async function openAuthorTools(item: Locator) {
+  const more = item.locator('details.more > summary').first();
+  if (await more.isVisible()) await more.click();
 }
 
 test('registers, rates a course, posts a linked question, replies, votes and logs out', async ({ page, request }) => {
@@ -112,6 +118,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
 
   // The author can edit their reply.
   const reply = page.getByRole('article', { name: '測試同學 的回覆' });
+  await openAuthorTools(reply);
   await reply.locator('summary', { hasText: '編輯' }).click();
   await reply.getByLabel('內容').fill(`同問，補充 ${username}`);
   await reply.getByRole('button', { name: '儲存修改' }).click();
@@ -145,6 +152,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await page.getByRole('link', { name: title }).click();
   await expect(page).toHaveURL(/\/forum\/\d+$/);
   const threadUrl = page.url();
+  await openAuthorTools(thread);
   await thread.locator('summary', { hasText: '刪除' }).click();
   await thread.getByRole('button', { name: '確定刪除' }).click();
   await expect(page).toHaveURL(/\/forum$/);
@@ -164,7 +172,7 @@ test('rejects a wrong password inline and keeps next on the same origin', async 
   await page.getByLabel('帳號').fill('nobody_here');
   await page.getByLabel('密碼').fill('wrong password');
   await page.getByRole('button', { name: '登入' }).click();
-  await expect(page.getByRole('alert')).toContainText('帳號或密碼錯誤。');
+  await expect(page.getByRole('alert')).toContainText('帳號或密碼錯誤');
   await expect(page.locator('input[name="next"]')).toHaveValue('/');
 });
 

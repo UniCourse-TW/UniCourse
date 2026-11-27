@@ -86,7 +86,8 @@
 .cm-btn.danger { color: var(--on-brand) !important; background: var(--down); border-color: var(--down); }
 .cm-btn.block { inline-size: 100%; }
 .cm-btn[aria-busy='true'] { opacity: 0.6; cursor: progress; filter: none; }
-.cm-btn:disabled:not([aria-busy='true']) { color: var(--muted) !important; background: var(--chip); border-color: var(--line); cursor: default; filter: none; }
+/* Disabled keeps the brand outline at reduced opacity, so the main action stays findable in both themes. */
+.cm-btn:disabled:not([aria-busy='true']) { color: var(--brand-ink) !important; background: var(--panel-raised); border-color: var(--brand); opacity: 0.55; cursor: not-allowed; filter: none; }
 
 /* Form fields: label row (label + hint/counter on the right) above a 44 px control. */
 .cm-form { display: grid; gap: var(--space-3); }
