@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { TermTrend } from '@unicourse/api-client';
   import ChartValues from '$lib/ui/ChartValues.svelte';
-  import { spreadIndexes, zeroBasedScale } from '$lib/ui/chart-scale';
+  import { zeroBasedScale } from '$lib/ui/chart-scale';
   import { displayValue } from '$lib/ui/format';
   import { partialTermLabel, partialTerms } from '$lib/ui/partial-terms';
   import type { TableColumn } from '$lib/ui/types';
@@ -20,22 +20,21 @@
   let missing = $derived(rows.some(({ enrolled }) => enrolled === null));
   let selected = $derived(rows.find((row) => row.term === term));
   let yearGroups = $derived.by(() => {
-    const groups = new Map<string, TermTrend[]>();
+    const groups = new Map<string, Map<string, TermTrend>>();
     for (const row of rows) {
-      const year = row.term.split('-')[0];
+      const [year, semester] = row.term.split('-');
       const group = groups.get(year);
-      if (group) group.push(row);
-      else groups.set(year, [row]);
+      if (group) group.set(semester, row);
+      else groups.set(year, new Map([[semester, row]]));
     }
     return Array.from(groups);
   });
+  let semesters = $derived([...new Set(['1', '2', ...rows.map(({ term }) => term.split('-')[1])])].sort());
   let charts = $derived(measures.map((measure) => {
     const values = rows.flatMap((row) => row[measure.key] ?? []);
     return { ...measure, scale: zeroBasedScale(values), plot: values.length >= 6 };
   }));
   let showCharts = $derived(charts.some(({ plot }) => plot));
-  let desktopYears = $derived(new Set(spreadIndexes(yearGroups.length, 7)));
-  let phoneYears = $derived(new Set(spreadIndexes(yearGroups.length, 5)));
   let columns = $derived<TableColumn<TermTrend>[]>([
     { id: 'term', label: '學期', value: (row) => row.term },
     ...measures.map(({ key, label }) => ({ id: key, label, value: (row: TermTrend) => row[key], numeric: true })),
@@ -48,7 +47,7 @@
 {:else}
   {#if showCharts || partial.size || missing}
     <ul class="legend" aria-label="歷年開課圖例" role="list">
-      {#if showCharts}<li>每柱一學期，同學年由左至右排列</li>{/if}
+      {#if showCharts}<li>每柱一學期，同學年從左至右為{semesters.length === 2 ? '上、下學期' : semesters.join('、') + ' 學期'}</li>{/if}
       {#if partial.size}<li><i aria-hidden="true"></i>{partialTermLabel}（推估）</li>{/if}
       {#if missing}<li>修課人次空白：校方未公布</li>{/if}
     </ul>
@@ -70,11 +69,12 @@
               <div class="gridlines">{#each scale.ticks as tick (tick)}<i style:inset-block-end={`${tick / scale.max * 100}%`}></i>{/each}</div>
               <div class="groups columns">
                 {#each yearGroups as [year, group] (year)}
-                  <div class="year" style:flex-grow={group.length}>
-                    {#each group as row (row.term)}
-                      {@const value = row[key]}
-                      <div class="column" class:selected={row.term === term} title={`${row.term} 學期 · ${value === null ? '未公布' : `${displayValue(value)} ${unit}`}${partial.has(row.term) ? ` · ${partialTermLabel}` : ''}`}>
-                        {#if value !== null}
+                  <div class="year">
+                    {#each semesters as semester (semester)}
+                      {@const row = group.get(semester)}
+                      {@const value = row?.[key]}
+                      <div class="column" class:selected={row?.term === term} title={row && `${row.term} 學期 · ${value === null ? '未公布' : `${displayValue(value)} ${unit}`}${partial.has(row.term) ? ` · ${partialTermLabel}` : ''}`}>
+                        {#if row && value != null}
                           <i class:partial={partial.has(row.term)} class:zero={value === 0} style:block-size={`${value / scale.max * 100}%`}></i>
                         {/if}
                       </div>
@@ -83,9 +83,9 @@
                 {/each}
               </div>
             </div>
-            <div class="groups year-ticks ui-tabular" aria-hidden="true">
-              {#each yearGroups as [year, group], index (year)}
-                <span style:flex-grow={group.length}><span class:desktop={desktopYears.has(index)} class:phone={phoneYears.has(index)}>{year}</span></span>
+            <div class="groups year-ticks ui-tabular" class:dense={yearGroups.length > 11} aria-hidden="true">
+              {#each yearGroups as [year] (year)}
+                <span>{year}</span>
               {/each}
             </div>
           </div>
@@ -126,16 +126,17 @@
   .plot-area { position: relative; min-inline-size: 0; block-size: 7.5rem; }
   .gridlines, .columns { position: absolute; inset: 0; }
   .gridlines i { position: absolute; inset-inline: 0; border-block-start: 1px solid var(--line); }
-  .groups { display: flex; gap: clamp(2px, .5vw, 6px); }
-  .groups > * { flex-basis: 0; min-inline-size: 0; }
-  .year { display: flex; gap: 1px; }
+  .groups { display: flex; }
+  .groups > * { flex: 1 1 0; min-inline-size: 0; }
+  .year { display: flex; gap: 1px; border-inline-end: 1px solid var(--line); }
+  .year:first-child { border-inline-start: 1px solid var(--line); }
   .column { display: flex; flex: 1 1 0; flex-direction: column; justify-content: end; align-items: center; min-inline-size: 0; }
   .column.selected { background: var(--brand-wash); box-shadow: inset 0 0 0 1px var(--line); }
   .column i { inline-size: 82%; min-block-size: 3px; border-radius: 2px 2px 0 0; background: var(--series-1); }
   .column i.partial { background: var(--partial-fill); }
   .column i.zero { min-block-size: 1px; }
-  .year-ticks { grid-column: 2; margin-block-start: var(--space-1); color: var(--ink-2); text-align: center; }
-  .year-ticks > span > span:not(.desktop) { visibility: hidden; }
+  .year-ticks { grid-column: 2; margin-block-start: var(--space-1); color: var(--ink-2); text-align: center; font-size: max(12px, .75rem); }
+  .year-ticks.dense > :nth-child(even) { visibility: hidden; }
   .values { display: grid; gap: var(--space-1); margin: 0; }
   .values > div { position: relative; display: flex; align-items: center; justify-content: space-between; padding-inline: var(--space-2); border-block-end: 1px solid var(--line); }
   .values a { display: inline-flex; align-items: center; min-block-size: var(--target-min); min-inline-size: var(--target-min); font-weight: 650; }
@@ -155,7 +156,6 @@
     figure + figure { border-start-start-radius: 0; border-start-end-radius: 0; }
     figure:has(+ figure .plot) .year-ticks { display: none; }
     .plot-area { block-size: 5.5rem; }
-    .year-ticks > span > span:not(.phone) { visibility: hidden; }
-    .year-ticks > span > span.phone { visibility: visible; }
   }
+  @media (max-width: 22rem) { .year-ticks > :nth-child(even) { visibility: hidden; } }
 </style>

@@ -24,9 +24,10 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
     .sort((left, right) => left.title.localeCompare(right.title, 'zh-TW'))
     .map(({ courseCode, title }) => ({ value: courseCode, label: `${title} · ${courseCode}` }));
   const term = url.searchParams.get('term') ?? '';
+  const year = url.searchParams.get('year')?.match(/^\d{3,4}$/)?.[0] ?? '';
   const courseCode = url.searchParams.get('course') ?? '';
   const oldestFirst = url.searchParams.get('sort') === 'oldest';
-  const matches = offerings.filter((row) => (!term || row.term === term) && (!courseCode || row.courseCode === courseCode));
+  const matches = offerings.filter((row) => (!year || row.term.startsWith(`${year}-`)) && (!term || row.term === term) && (!courseCode || row.courseCode === courseCode));
   if (oldestFirst) matches.sort((left, right) => left.term.localeCompare(right.term, undefined, { numeric: true }));
   const requestedPage = Number(url.searchParams.get('page'));
   const pageSize = 50;
@@ -63,8 +64,8 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const matrixRows = matrix.rows.map((row) => ({ ...row, department: latestByCourse.get(row.id)?.department ?? null }));
 
   return {
-    instructor, courses: courseOptions, term, courseCode, oldestFirst, rows, termsByCourse, matched: matches.length, page, totalPages,
-    listedTerms: [...new Set(offerings.map(({ term }) => term))].sort().reverse(), firstRow: (page - 1) * pageSize + 1,
+    instructor, courses: courseOptions, term, year, courseCode, oldestFirst, rows, termsByCourse, matched: matches.length, page, totalPages,
+    listedTerms: [...new Set(offerings.map(({ term }) => term).filter((term) => !year || term.startsWith(`${year}-`)))].sort().reverse(), firstRow: (page - 1) * pageSize + 1,
     matrix: { periods: matrix.periods, rows: matrixRows }, trends: trendResult?.data ?? null, summaryRatings, ratedCourses,
     externalReviews: externalReviews?.data ?? null,
     courseReviews: courseReviews.filter(({ count }) => count > 0),
