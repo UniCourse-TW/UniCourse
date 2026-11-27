@@ -2,7 +2,7 @@
   import { onMount, untrack } from 'svelte';
   import { afterNavigate, goto } from '$app/navigation';
   import { navigating, page } from '$app/state';
-  import { ISSUES_URL, statusLabels as crawlLabels, systemLabels, systems } from '$lib/institutions';
+  import { ISSUES_URL, directoryStatusLabels, systemLabels, systems } from '$lib/institutions';
   import {
     categories, categoryLabels, indexPolicy, indexPolicyLabels, INDEXED_PTT_BOARDS, institutions, institutionsByCode, isSchoolSite, kindLabels,
     loginLabel, operatorLabels, siteStatuses, sites as allSites, statusLabels, type SchoolSection, type Site
@@ -17,6 +17,7 @@
   import StatTile from '$lib/ui/StatTile.svelte';
   import StatusPill from '$lib/ui/StatusPill.svelte';
   import ChartValues from '$lib/ui/ChartValues.svelte';
+  import { changeQuery } from '$lib/ui/format';
   import type { TableColumn } from '$lib/ui/types';
   import type { PageProps } from './$types';
 
@@ -36,11 +37,10 @@
   let hydrated = $state(false);
   let updating = $derived(Boolean(navigating.to?.url.pathname === '/landscape'));
   /** The third-party table is a summary: the per-school sections below hold every site. */
-  const THIRD_PREVIEW = 15;
-  const PHONE_PREVIEW = 5;
-  let phone = $state(false);
+  const PREVIEW = 5;
+  const THIRD_BATCH = 10;
   let extraThird = $state(0);
-  let thirdLimit = $derived((phone ? PHONE_PREVIEW : THIRD_PREVIEW) + extraThird);
+  let thirdLimit = $derived(PREVIEW + extraThird);
   let thirdRows = $derived(data.thirdParty.slice(0, thirdLimit));
   let thirdStatus = $derived(Object.fromEntries(siteStatuses.map((status) => [status, data.thirdParty.filter((site) => site.status === status).length])) as Record<Site['status'], number>);
   /** Every school for the search box's 「跳到該校」 suggestions, whatever the current filter shows. */
@@ -109,14 +109,13 @@
   let debounce: ReturnType<typeof setTimeout> | undefined;
   /** Status bars: each system's mix (default) or the systems' sizes on one scale. */
   let stackMode = $state<'share' | 'count'>('share');
-  const SCHOOL_BATCH = 15;
-  let schoolPreview = $derived(phone ? PHONE_PREVIEW : 12);
-  let crossPreview = $derived(phone ? PHONE_PREVIEW : 8);
-  let aboutOpen = $state(true);
-  let schoolHead = $derived(data.schools.slice(0, schoolPreview));
+  const SCHOOL_BATCH = 10;
+  let aboutOpen = $state(false);
+  let filtersOpen = $state(false);
+  let schoolHead = $derived(data.schools.slice(0, PREVIEW));
   let schoolBatches = $derived.by(() => {
     const batches: SchoolSection[][] = [];
-    for (let index = schoolPreview; index < data.schools.length; index += SCHOOL_BATCH) {
+    for (let index = PREVIEW; index < data.schools.length; index += SCHOOL_BATCH) {
       batches.push(data.schools.slice(index, index + SCHOOL_BATCH));
     }
     return batches;
@@ -124,30 +123,17 @@
   /** A narrow filter (one to three schools) opens their site lists right away. */
   let openSchools = $derived(filtered && data.schools.length <= 3);
   /** UniCourse's own crawl status, said once above the school list instead of a column of identical pills. */
-  let crawlSummary = $derived.by(() => {
-    if (!data.crawl) return null;
-    const rows = data.schools.map((school) => ({ name: school.name, status: data.crawl?.[school.code]?.status })).filter((row) => row.status);
-    const others = rows.filter((row) => row.status !== 'live') as { name: string; status: keyof typeof crawlLabels }[];
-    return { live: rows.length - others.length, others };
-  });
+  let importedSchools = $derived(data.crawl ? data.schools.filter((school) => data.crawl?.[school.code]?.status === 'live').length : null);
   let topMax = $derived(Math.max(1, ...data.topThird.map((row) => row.count)));
   afterNavigate(({ from, to }) => {
     if (from?.url.search !== to?.url.search) extraThird = 0;
   });
   onMount(() => {
     hydrated = true;
-    const width = window.matchMedia('(max-width: 40rem)');
-    const updateLayout = () => {
-      phone = width.matches;
-      aboutOpen = !phone || location.hash === '#about';
-    };
-    updateLayout();
-    width.addEventListener('change', updateLayout);
     requestAnimationFrame(revealHash);
     window.addEventListener('hashchange', revealHash);
     return () => {
       clearTimeout(debounce);
-      width.removeEventListener('change', updateLayout);
       window.removeEventListener('hashchange', revealHash);
     };
   });
@@ -219,7 +205,7 @@
   <details class="school" id={school.id} open={openSchools || undefined}>
     <summary>
       <!-- 147 of 150 schools are 已收錄, so only the exceptions carry a pill (the line above the list says the rest). -->
-      <h3 id={`${school.id}-title`} class="s-name">{school.name} <small class="code">{school.code}</small>{#if crawl && crawl.status !== 'live'} <StatusPill status={crawl.status} />{/if}</h3>
+      <h3 id={`${school.id}-title`} class="s-name">{school.name} <small class="code">{school.code}</small>{#if crawl && crawl.status !== 'live'} <StatusPill status={crawl.status === 'pending_import' ? 'planned' : crawl.status} label={directoryStatusLabels[crawl.status]} />{/if}</h3>
       <span class="s-where">{school.systemLabel}・{school.ownership === 'public' ? '公立' : '私立'}{#if school.city}・{school.city}{/if}</span>
       <span class="s-stats">
       <span class="s-n ui-tabular"><span class="s-lbl">官方 </span>{school.official.length}</span>
@@ -229,8 +215,10 @@
           <span class="mini" aria-hidden="true">
             <i class="active" style:inline-size={`${pct(school.status.active, total)}%`}></i><i class="inactive" style:inline-size={`${pct(school.status.inactive, total)}%`}></i><i class="unknown" style:inline-size={`${pct(school.status.unknown, total)}%`}></i>
           </span>
-          <span class="school-status ui-tabular" aria-label={`運作 ${school.status.active}、停止 ${school.status.inactive}、不明 ${school.status.unknown}`}>
-            <span aria-hidden="true">{school.status.active} / {school.status.inactive} / {school.status.unknown}</span>
+          <span class="school-status ui-tabular">
+            <span>運作 <b>{school.status.active}</b></span>
+            <span>停止 <b>{school.status.inactive}</b></span>
+            <span>不明 <b>{school.status.unknown}</b></span>
           </span>
         {:else}
           <span class="muted">尚未盤點</span>
@@ -254,7 +242,9 @@
   </details>
 {/snippet}
 
-<div class="landscape" class:hydrated id="top">
+<svelte:window onkeydown={(event) => { if (event.key === 'Escape' && filtersOpen) filtersOpen = false; }} />
+
+<div class="landscape" id="top">
   <header class="page-head">
     <div class="title-row">
       <h1>臺灣大專校院課程網站總覽</h1>
@@ -264,7 +254,7 @@
       </div>
     </div>
     <p class="dek">
-      全國 {number.format(data.totalSchools)} 所大專校院已盤點 {number.format(data.surveyedSchools)} 所，共 {number.format(data.totalSites)} 個課程網站（每個網站只算一次，跨校平台不重複計）・查核於 <time datetime={data.checkedAt}>{data.checkedAt.replaceAll('-', '/')}</time>，狀態為當日探測結果
+      全國課程查詢、選課與第三方工具名錄 · 查核於 <time datetime={data.checkedAt}>{data.checkedAt.replaceAll('-', '/')}</time>
       {#if !data.crawl}・<span class="warn">各校收錄狀態暫時無法取得</span>{/if}
     </p>
   </header>
@@ -314,7 +304,7 @@
           </ul>
         {/if}
       </div>
-      <details class="more">
+      <details class="more" bind:open={filtersOpen}>
         <summary>篩選{#if selectCount}<span class="badge-count">{selectCount}</span>{/if}</summary>
         <!-- svelte-ignore a11y_no_static_element_interactions (change events bubble from the selects inside) -->
         <div class="fields" onchange={() => submitSoon()}>
@@ -331,21 +321,22 @@
       <!-- Without JavaScript 套用 submits; with it, every change applies itself, so the button goes away. -->
       {#if !hydrated}<button type="submit" class="apply">套用</button>{/if}
     </form>
+    {#if data.shownSites}
+      <nav class="section-links" aria-label="跳至網站清單">
+        {#if data.thirdParty.length}<a class="route" onclick={() => (filtersOpen = false)} href="#third-party">第三方 <span class="ui-tabular">{number.format(data.thirdParty.length)}</span></a>{/if}
+        {#if data.cross.length}<a class="route" onclick={() => (filtersOpen = false)} href="#cross">跨校與全國 <span class="ui-tabular">{number.format(data.cross.length)}</span></a>{/if}
+        {#if data.schools.length}<a class="route" onclick={() => (filtersOpen = false)} href="#schools-title">各校 <span class="ui-tabular">{number.format(data.schools.length)}</span></a>{/if}
+      </nav>
+    {/if}
   </div>
 
   <div class="filter-summary">
     <p class="result" role="status" aria-live="polite">
       {#if updating}<span class="dot" aria-hidden="true"></span>更新中…
       {:else if filtered}符合 <strong class="ui-tabular">{number.format(data.shownSites)}</strong> / {number.format(data.totalSites)} 個網站
-        {#if data.thirdParty.length}・<a class="action" href="#third-party">看第三方清單 ↓</a>{/if}
-        {#if data.schools.length}・<a class="action" href="#schools-title">看 {number.format(data.schools.length)} 所學校 ↓</a>{/if}
         <a class="clear inline-clear" href="/landscape">清除全部條件</a>
       {:else}
-        <!-- Unfiltered: go straight to the lists (they sit below two charts); typing filters everything. -->
-        <span class="routes-label">直接看</span>
-        <a class="route" href="#third-party">第三方網站 <span class="ui-tabular">{number.format(data.thirdParty.length)}</span></a>
-        {#if data.cross.length}<a class="route" href="#cross">跨校平台 <span class="ui-tabular">{number.format(data.cross.length)}</span></a>{/if}
-        <a class="route" href="#schools-title">各校 <span class="ui-tabular">{number.format(data.schools.length)}</span></a>
+        共 <strong class="ui-tabular">{number.format(data.totalSites)}</strong> 個網站，按網址去重。
       {/if}
     </p>
     {#if filtered}
@@ -360,20 +351,125 @@
     {/if}
   </div>
 
-  <StatRow label="網站統計">
+  <div class="landscape-metrics"><StatRow label="網站統計">
     <StatTile label={filtered ? '符合的學校' : '已盤點到網站的學校'} value={data.stats.schools} unit="所"
       note={filtered ? `已盤點 ${number.format(data.surveyedSchools)} / ${number.format(data.totalSchools)} 所` : `名錄共 ${number.format(data.totalSchools)} 所，${number.format(data.totalSchools - data.surveyedSchools)} 所尚無網站`} />
-    <StatTile label="官方網站" value={data.stats.official} unit="個" note="校方與政府營運" />
+    <StatTile label="官方網站" value={data.stats.official} unit="個" note="校方及政府，含跨校與全國" />
     <StatTile label="第三方網站" value={data.stats.third} unit="個" note="含第三方跨校與全國平台" />
     <StatTile label="運作中" value={data.stats.active} unit="個"
       note={`停止 ${number.format(data.stats.inactive)}・不明 ${number.format(data.stats.unknown)}`} />
-  </StatRow>
+  </StatRow></div>
 
   {#if data.shownSites === 0}
     <EmptyState title="沒有符合的網站" description="換個關鍵字，或放寬體系、功能與狀態。">
       {#snippet action()}<a class="action" href="/landscape">清除篩選</a>{/snippet}
     </EmptyState>
   {:else}
+    <section aria-labelledby="third-party" class="third">
+      <SectionHeader id="third-party" level={2} title="第三方查課網站" />
+      {#if data.thirdParty.length}
+        <p class="third-count">
+          共 <strong class="ui-tabular">{number.format(data.thirdParty.length)}</strong> 個（含第三方跨校與全國平台）。運作中 {number.format(thirdStatus.active)}・停止 {number.format(thirdStatus.inactive)}・不明 {number.format(thirdStatus.unknown)}，依名稱排序
+          {#if !filters.status}<a class="action" href={changeQuery(new URL('#third-party', page.url), (params) => {
+            params.set('kind', 'third');
+            params.set('status', 'active');
+          })}>只看運作中</a>{/if}
+          <a class="action" href="/terms#reviews">收錄原則</a>
+        </p>
+      {/if}
+      <div class="third-table">
+      <DataTable caption="第三方查課網站（點網站名稱開新頁；表頭可排序）" columns={thirdColumns}
+        rows={thirdRows} rowKey={(site) => site.url} rowHeaderColumn="site" stickyColumn="site"
+        rowHref={(site) => site.url} clientSort minWidth="58rem" maxHeight="none">
+        {#snippet cell(site, column)}
+          {#if column.id === 'site'}
+            <span class="site-cell">{site.name}<span class="ext" aria-hidden="true">&nbsp;↗</span>{#if !isSchoolSite(site)} <span class="cat">{site.scope === 'national' ? '全國' : '跨校'}</span>{/if}{#if site.operatorName}<small>{site.operatorName}</small>{/if}</span>
+          {:else if column.id === 'login' || column.id === 'operator'}
+            <span class="nowrap">{column.value?.(site)}</span>
+          {:else if column.id === 'category'}
+            <span class="cats">{#each site.category as category (category)}<span class="cat">{categoryLabels[category]}</span>{/each}</span>
+          {:else if column.id === 'status'}
+            <span class="st {site.status}"><i aria-hidden="true"></i>{statusLabels[site.status]}</span>
+          {:else if column.id === 'policy'}
+            <span class="nowrap" class:policy-excerpt={indexPolicy(site) === 'excerpt'}>{indexPolicyLabels[indexPolicy(site)]}</span>
+          {:else}
+            {column.value?.(site) ?? '—'}
+          {/if}
+        {/snippet}
+        {#snippet empty()}
+          <span>這組篩選沒有第三方網站。</span>
+        {/snippet}
+      </DataTable>
+      </div>
+      <!-- Phones use compact rows for the same preview. -->
+      <ul class="third-rows" aria-label="第三方查課網站">
+        {#each thirdRows as site (site.url)}
+          <li>
+            <a class="third-name" href={site.url} rel="noopener external">{site.name}<span class="ext" aria-hidden="true">&nbsp;↗</span></a>
+            <span class="st {site.status}"><i aria-hidden="true"></i>{statusLabels[site.status]}</span>
+            <span class="third-meta">
+              <span>{!isSchoolSite(site) && site.schools.length ? `${site.scope === 'national' ? '全國' : '跨校'}・` : ''}{schoolsOf(site)}・{loginLabel(site.loginRequired)}</span>
+              {#each site.category as category (category)}<span class="cat">{categoryLabels[category]}</span>{/each}
+              {#if indexPolicy(site) === 'excerpt'}<span class="cat excerpt">索引摘要</span>{/if}
+            </span>
+          </li>
+        {:else}
+          <li class="third-empty">這組篩選沒有第三方網站。</li>
+        {/each}
+      </ul>
+      {#if data.thirdParty.length > PREVIEW}
+        <div class="table-foot">
+          <p aria-live="polite">已列出 {number.format(thirdRows.length)} / {number.format(data.thirdParty.length)} 個</p>
+          {#if hydrated && thirdRows.length < data.thirdParty.length}
+            <button type="button" class="action" onclick={() => (extraThird += THIRD_BATCH)}>再顯示 {number.format(Math.min(THIRD_BATCH, data.thirdParty.length - thirdRows.length))} 個</button>
+          {:else if !hydrated}
+            <a class="action" href="#schools-title">依校查看 ↓</a>
+          {/if}
+        </div>
+      {/if}
+    </section>
+
+    {#if data.cross.length}
+      <section class="cross" id="cross" aria-labelledby="cross-title">
+        <SectionHeader id="cross-title" level={2} title={`跨校與全國平台（${number.format(data.cross.length)} 個）`}
+          description="含官方與第三方平台；第三方平台也列在上方清單。" />
+        <SitesList label="跨校與全國平台" sites={data.cross} showOperator collapseAfter={PREVIEW} header />
+      </section>
+    {/if}
+
+    <section aria-labelledby="schools-title" class="schools">
+      <SectionHeader id="schools-title" level={2} title={`各校（${number.format(data.schools.length)} 所）`}
+        description="點校名展開該校的官方與第三方網站。">
+        {#snippet actions()}<a class="action" href="/schools">UniCourse 各校收錄狀態 →</a>{/snippet}
+      </SectionHeader>
+      {#if importedSchools !== null}
+        <p class="crawl-line">
+          UniCourse 已收錄其中 <strong class="ui-tabular">{number.format(importedSchools)}</strong> 所的課程。
+        </p>
+      {/if}
+      {#if data.schools.length === 0}
+        <EmptyState title="沒有符合的學校" description="換個校名，或取消「有第三方站的學校」。">
+          {#snippet action()}<a class="action" href="/landscape">清除篩選</a>{/snippet}
+        </EmptyState>
+      {:else}
+        <div class="school-table">
+          <div class="school-cols" aria-hidden="true">
+            <span>學校</span><span>體系・地區</span><span class="n">官方</span><span class="n">第三方</span><span>網站狀態</span>
+          </div>
+          {#each schoolHead as school (school.code)}{@render schoolRow(school)}{/each}
+          {#each schoolBatches as batch, index (batch[0].code)}
+            {@const start = schoolHead.length + index * SCHOOL_BATCH + 1}
+            <details class="rest-schools">
+              <summary>
+                <span class="closed">顯示第 {number.format(start)}–{number.format(start + batch.length - 1)} 所</span>
+                <span class="opened">收合第 {number.format(start)}–{number.format(start + batch.length - 1)} 所</span>
+              </summary>
+              {#each batch as school (school.code)}{@render schoolRow(school)}{/each}
+            </details>
+          {/each}
+        </div>
+      {/if}
+    </section>
     <div class="viz">
       <section class="panel" aria-labelledby="by-system">
         <div class="panel-head">
@@ -438,120 +534,6 @@
         {/if}
       </section>
     </div>
-
-    <section aria-labelledby="third-party" class="third">
-      <div class="third-head">
-        <SectionHeader id="third-party" level={2} title="第三方查課網站"
-          description={`學生、社群與公司做的評價、排課、成績分布與彙整服務。UniCourse 只給連結；PTT 的 ${INDEXED_PTT_BOARDS.length} 個課程看板另外索引短摘要。`}>
-          {#snippet actions()}<a class="back" href="#filters">回篩選 ↑</a>{/snippet}
-        </SectionHeader>
-      </div>
-      {#if data.thirdParty.length}
-        <p class="third-count">
-          共 <strong class="ui-tabular">{number.format(data.thirdParty.length)}</strong> 個（含第三方跨校與全國平台）。運作中 {number.format(thirdStatus.active)}・停止 {number.format(thirdStatus.inactive)}・不明 {number.format(thirdStatus.unknown)}，依名稱排序
-          {#if !filters.status}<a class="action" href={`/landscape?${new URLSearchParams({ ...(filters.q ? { q: filters.q } : {}), kind: 'third', status: 'active' })}`}>只看運作中</a>{/if}
-          <a class="action" href="/terms#reviews">收錄原則</a>
-        </p>
-      {/if}
-      <div class="third-table">
-      <DataTable caption="第三方查課網站（點網站名稱開新頁；表頭可排序）" columns={thirdColumns}
-        rows={thirdRows} rowKey={(site) => site.url} rowHeaderColumn="site" stickyColumn="site"
-        rowHref={(site) => site.url} clientSort minWidth="58rem" maxHeight="none">
-        {#snippet cell(site, column)}
-          {#if column.id === 'site'}
-            <span class="site-cell">{site.name}<span class="ext" aria-hidden="true">&nbsp;↗</span>{#if site.operatorName}<small>{site.operatorName}</small>{/if}</span>
-          {:else if column.id === 'login' || column.id === 'operator'}
-            <span class="nowrap">{column.value?.(site)}</span>
-          {:else if column.id === 'category'}
-            <span class="cats">{#each site.category as category (category)}<span class="cat">{categoryLabels[category]}</span>{/each}</span>
-          {:else if column.id === 'status'}
-            <span class="st {site.status}"><i aria-hidden="true"></i>{statusLabels[site.status]}</span>
-          {:else if column.id === 'policy'}
-            <span class="nowrap" class:policy-excerpt={indexPolicy(site) === 'excerpt'}>{indexPolicyLabels[indexPolicy(site)]}</span>
-          {:else}
-            {column.value?.(site) ?? '—'}
-          {/if}
-        {/snippet}
-        {#snippet empty()}
-          <span>這組篩選沒有第三方網站。</span>
-        {/snippet}
-      </DataTable>
-      </div>
-      <!-- Phones use compact rows for the same preview. -->
-      <ul class="third-rows" aria-label="第三方查課網站">
-        {#each thirdRows as site (site.url)}
-          <li>
-            <a class="third-name" href={site.url} rel="noopener external">{site.name}<span aria-hidden="true">&nbsp;↗</span></a>
-            <span class="st {site.status}"><i aria-hidden="true"></i>{statusLabels[site.status]}</span>
-            <span class="third-meta">
-              <span>{schoolsOf(site)}・{loginLabel(site.loginRequired)}</span>
-              {#each site.category as category (category)}<span class="cat">{categoryLabels[category]}</span>{/each}
-              {#if indexPolicy(site) === 'excerpt'}<span class="cat excerpt">索引摘要</span>{/if}
-            </span>
-          </li>
-        {:else}
-          <li class="third-empty">這組篩選沒有第三方網站。</li>
-        {/each}
-      </ul>
-      {#if thirdRows.length < data.thirdParty.length}
-        <p class="table-foot">
-          已列出 {number.format(thirdRows.length)} / {number.format(data.thirdParty.length)} 個・
-          {#if hydrated}
-            <button type="button" class="action" onclick={() => (extraThird += THIRD_PREVIEW)}>再顯示 {number.format(Math.min(THIRD_PREVIEW, data.thirdParty.length - thirdRows.length))} 個</button>
-          {:else}
-            其餘列在下方各校段落，或<a class="action" href="/landscape?kind=third">只看第三方網站</a>
-          {/if}
-        </p>
-      {/if}
-    </section>
-
-    {#if data.cross.length}
-      <section class="cross" id="cross" aria-labelledby="cross-title">
-        <SectionHeader id="cross-title" level={2} title={`跨校與全國平台（${number.format(data.cross.length)} 個）`}
-          description="教育部與聯盟平台、跨校 LMS，以及涵蓋多校的第三方服務；每個平台只列一次，說明只露一行，點列看全文。">
-          {#snippet actions()}<a class="back" href="#filters">回篩選 ↑</a>{/snippet}
-        </SectionHeader>
-        <SitesList label="跨校與全國平台" sites={data.cross} showOperator collapseAfter={crossPreview} header />
-      </section>
-    {/if}
-
-    <section aria-labelledby="schools-title" class="schools">
-      <SectionHeader id="schools-title" level={2} title={`各校（${number.format(data.schools.length)} 所）`}
-        description={`依教育部學校代碼排序${filtered ? '，只列出符合篩選的學校' : '，沒有盤點到網站的學校也列出'}。官方／第三方是該校自己的網站數，不含跨校平台；點一列展開該校網站。`}>
-        {#snippet actions()}
-          <a class="action" href="/schools">UniCourse 各校收錄狀態 →</a>
-          <a class="back" href="#filters">回篩選 ↑</a>
-        {/snippet}
-      </SectionHeader>
-      {#if crawlSummary}
-        <p class="crawl-line">
-          UniCourse 已收錄其中 <strong class="ui-tabular">{number.format(crawlSummary.live)}</strong> 所的課程{#if crawlSummary.others.length}；{crawlSummary.others.map((school) => `${school.name}（${crawlLabels[school.status]}）`).join('、')}在列中另外標示{/if}；展開一列可前往該校在 UniCourse 的課程頁。
-        </p>
-      {/if}
-      {#if data.schools.length === 0}
-        <EmptyState title="沒有符合的學校" description="換個校名，或取消「有第三方站的學校」。">
-          {#snippet action()}<a class="action" href="/landscape">清除篩選</a>{/snippet}
-        </EmptyState>
-      {:else}
-        <p class="school-key">網站狀態依序為「運作／停止／不明」。</p>
-        <div class="school-table">
-          <div class="school-cols" aria-hidden="true">
-            <span>學校</span><span>體系・地區</span><span class="n">官方</span><span class="n">第三方</span><span>網站狀態</span>
-          </div>
-          {#each schoolHead as school (school.code)}{@render schoolRow(school)}{/each}
-          {#each schoolBatches as batch, index (batch[0].code)}
-            {@const start = schoolHead.length + index * SCHOOL_BATCH + 1}
-            <details class="rest-schools">
-              <summary>
-                <span class="closed">顯示第 {number.format(start)}–{number.format(start + batch.length - 1)} 所</span>
-                <span class="opened">收合第 {number.format(start)}–{number.format(start + batch.length - 1)} 所</span>
-              </summary>
-              {#each batch as school (school.code)}{@render schoolRow(school)}{/each}
-            </details>
-          {/each}
-        </div>
-      {/if}
-    </section>
   {/if}
 
   <section class="about" id="about" aria-labelledby="about-title">
@@ -561,9 +543,9 @@
         <li>學校名錄來自教育部「大專校院名錄」等開放資料，共 {number.format(data.totalSchools)} 所；網站清單由 UniCourse 逐校盤點，記錄在 repo 的 <code>data/course-sites.json</code>。</li>
         <li>「運作中」指查核當日可連線且約一年內有更新；「停止」含無法連線、已下架或公告停用；「不明」指無法確認。</li>
         <li>「官方」是校方或政府營運的網站，其餘（學生、社群、公司）算第三方。體系圖合計 {number.format(totalBySystem.reduce((sum, count) => sum + count, 0))} 次，即符合的 {number.format(data.shownSites)} 個網站，扣除 {number.format(data.systemTally.national)} 個全國平台{#if data.systemTally.repeats}，加上 {number.format(data.systemTally.repeats)} 次跨體系重計{/if}。</li>
-        <li>統計磚、兩張圖與所有清單都依目前篩選計算；沒有篩選時就是全部資料。</li>
+        <li>統計與清單依目前篩選計算。各校名錄按教育部學校代碼排序，逐校所列官網與第三方網站數不含跨校或全國平台。</li>
         <li>UniCourse 只為 PTT 的 {INDEXED_PTT_BOARDS.length} 個課程看板（{INDEXED_PTT_BOARDS.join('、')}）索引不超過 120 字的摘要，與<a href="/terms#reviews">使用條款</a>列出的看板相同；其他網站只給連結。</li>
-        <li>各校的「{Object.values(crawlLabels).join('／')}」是 UniCourse 自己的資料收錄狀態，與<a href="/schools">各校收錄狀態</a>頁一致。</li>
+        <li>各校的「{Object.values(directoryStatusLabels).join('／')}」是 UniCourse 自己的資料收錄狀態，與<a href="/schools">各校收錄狀態</a>頁一致。</li>
         <li>發現錯誤或遺漏，歡迎到 <a href={ISSUES_URL} rel="noopener external">GitHub issues ↗</a> 回報。</li>
       </ul>
     </details>
@@ -573,7 +555,7 @@
 <style>
   .landscape {
     display: grid;
-    gap: var(--space-6);
+    gap: var(--space-4);
     min-inline-size: 0;
     --shell-height: calc(3.75rem + 1px);
     color: var(--ink);
@@ -591,13 +573,11 @@
   .head-actions a { display: inline-flex; align-items: center; min-block-size: 2rem; }
   .dek { margin: 0; color: var(--muted); font-size: var(--t-base); }
   .warn { color: var(--warn); }
-  .routes-label { margin-inline-end: var(--space-2); color: var(--muted); }
-  .route { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: 2rem; margin-inline-end: var(--space-3); color: var(--ink-2); font-weight: 600; text-underline-offset: 0.15em; }
+  .section-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); }
+  .route { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-weight: 600; text-underline-offset: 0.15em; }
   .route span { color: var(--muted); font-weight: 500; }
   .route::after { content: '↓'; color: var(--muted); font-weight: 400; }
   .route:hover { color: var(--brand-ink); }
-  .back { display: inline-flex; align-items: center; min-block-size: 2rem; padding-inline: var(--space-1); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; text-underline-offset: 0.15em; }
-  .back:hover { color: var(--brand-ink); }
   /* Site status in tables: a small dot and the word, not a pill, so a column of them stays quiet. */
   .st { display: inline-flex; gap: 0.4em; align-items: center; color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
   .st i { inline-size: 8px; block-size: 8px; border-radius: 50%; }
@@ -614,8 +594,8 @@
     scroll-margin-block-start: var(--shell-height);
     z-index: 5;
     display: grid;
-    gap: var(--space-2);
-    padding: var(--space-2) 0;
+    gap: 0;
+    padding: var(--space-1) 0;
     border-block-end: 1px solid var(--line);
     background: var(--bg);
   }
@@ -644,11 +624,37 @@
     font: var(--t-base) / var(--leading-table) var(--font-sans);
   }
   .search input:focus { outline: none; }
-  /* Desktop shows the selects inline whether or not the disclosure is open; phone gets a 篩選 toggle. */
-  .more { display: contents; }
-  .more summary { display: none; }
-  .more::details-content { display: contents; content-visibility: visible; }
   .fields { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+  .more[open] .fields {
+    position: absolute;
+    z-index: 6;
+    inset-inline: 0;
+    inset-block-start: calc(var(--target-min) + var(--space-2));
+    padding: var(--space-3);
+    border: 1px solid var(--control-line);
+    border-radius: var(--radius-control);
+    background: var(--panel-raised);
+  }
+  .more summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--target-min);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--control-line);
+    border-radius: var(--radius-control);
+    background: var(--panel-raised);
+    color: var(--ink-2);
+    font-size: var(--t-base);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+  .more summary::-webkit-details-marker { display: none; }
+  .more summary::after { content: '▾'; color: var(--muted); }
+  .more[open] summary::after { content: '▴'; }
+  .more summary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .badge-count { display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 5px; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); }
   /* The school-level switch looks like a toggle chip, so it does not read as a fifth select. */
   .check {
     display: inline-flex;
@@ -684,9 +690,8 @@
   .apply { color: var(--on-brand); background: var(--brand); cursor: pointer; }
   .clear:hover { background: var(--brand-wash); }
   :is(.apply, .clear, .action):focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .filter-summary { display: grid; gap: var(--space-2); margin-block-start: calc(-1 * var(--space-5)); }
+  .filter-summary { display: grid; gap: var(--space-2); margin-block-start: calc(-1 * var(--space-2)); }
   .result { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-1); margin: 0; min-block-size: 1.25rem; color: var(--muted); font-size: var(--t-sm); }
-  .result .action { min-block-size: 0; font-size: var(--t-sm); }
   .result .dot { inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--brand); }
   .result strong { color: var(--ink); font-weight: 600; }
   .chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
@@ -695,23 +700,20 @@
   .viz { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--space-3); align-items: stretch; }
   .finder { position: relative; display: flex; flex: 1 1 16rem; min-inline-size: 0; }
   .finder .search { flex: 1 1 auto; }
-  .finder-head { padding: var(--space-1) var(--space-2); color: var(--muted); font-size: var(--t-xs); }
   .finder-list { position: absolute; inset-inline: 0; inset-block-start: calc(100% + 4px); z-index: 10; display: grid; margin: 0; padding: var(--space-1); list-style: none; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); box-shadow: 0 8px 24px color-mix(in srgb, var(--ink) 14%, transparent); }
   .finder-list button { display: flex; gap: var(--space-2); align-items: baseline; justify-content: space-between; inline-size: 100%; min-block-size: var(--target-min); padding: 0 var(--space-2); border: 0; border-radius: calc(var(--radius-control) - 2px); background: transparent; color: var(--ink); font: var(--t-base) / 1.3 var(--font-sans); text-align: start; cursor: pointer; }
   .finder-list small { color: var(--muted); font-size: var(--t-xs); white-space: nowrap; }
   .finder-list [aria-selected='true'] button, .finder-list button:hover { background: var(--brand-wash); color: var(--brand-ink); }
-  .third-head { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: end; justify-content: space-between; }
-  .third-head > :global(:first-child) { flex: 1 1 32rem; min-inline-size: 0; }
   .third-rows { display: none; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
   .panel { display: grid; gap: var(--space-3); align-content: start; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); min-inline-size: 0; }
   .stack { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; font-size: var(--t-base); }
   /* Fixed label and value columns, so every row's 100% bar has the same length. */
-  .stack li { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 14rem; grid-template-areas: 'label track values'; gap: var(--space-1) var(--space-3); align-items: center; }
+  .stack li { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 12rem; grid-template-areas: 'label track values'; gap: var(--space-1) var(--space-3); align-items: center; }
   .stack-label { grid-area: label; color: var(--ink-2); font-size: var(--t-sm); }
   .stack-label small { color: var(--muted); font-size: var(--t-xs); }
   .stack .track { grid-area: track; }
   .stack.share .track { background: none; }
-  .track { display: flex; min-inline-size: 3rem; block-size: 14px; overflow: hidden; border-radius: 3px; background: var(--chip); }
+  .track { display: flex; block-size: 12px; overflow: hidden; border-radius: 3px; background: var(--chip); }
   .seg { display: block; block-size: 100%; }
   /* No text sits on the bars, so the status colours can be strong in both themes. */
   .seg.active, .legend i.active, .v.active i, .mini .active { background: color-mix(in srgb, var(--up) 80%, var(--panel)); }
@@ -725,8 +727,9 @@
   .v.active { color: var(--ink); font-weight: 650; }
   .legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; color: var(--ink-2); font-size: var(--t-sm); }
   .legend i { display: inline-block; inline-size: 10px; block-size: 10px; margin-inline-end: 6px; border-radius: 2px; vertical-align: -1px; }
-  .table-foot { margin: 0; color: var(--muted); font-size: var(--t-base); }
-  .table-foot button.action { min-block-size: var(--target-min); border: 0; background: transparent; cursor: pointer; font: inherit; font-weight: 600; color: var(--brand-ink); text-decoration: underline; text-underline-offset: 0.15em; }
+  .table-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); margin: 0; color: var(--muted); font-size: var(--t-base); }
+  .table-foot p { margin: 0; }
+  .table-foot button.action { min-block-size: var(--target-min); padding-inline: var(--space-3); border: 1px solid var(--control-line); background: var(--panel-raised); cursor: pointer; font: inherit; font-weight: 600; color: var(--brand-ink); text-decoration: underline; text-underline-offset: 0.15em; }
   .quiet { margin: 0; color: var(--muted); font-size: var(--t-base); }
 
   /* Ranking: one 32 px row per school, the count right-aligned beside a thin bar. */
@@ -743,7 +746,7 @@
   .site-cell { display: block; overflow-wrap: anywhere; min-inline-size: 13rem; }
   .third-table :global(th a) { text-decoration: none; }
   .third-table :global(th a:is(:hover, :focus-visible)) { text-decoration: underline; }
-  .site-cell .ext { color: var(--muted); font-weight: 400; white-space: nowrap; }
+  .ext { color: var(--muted); font-weight: 400; white-space: nowrap; }
   /* Inline-block stops the row link's underline from reaching the operator line. */
   .site-cell small { display: inline-block; inline-size: 100%; color: var(--muted); font-size: var(--t-xs); font-weight: 400; text-decoration: none; }
   .inline-clear { min-block-size: 0 !important; margin-inline-start: var(--space-2); padding: 0 !important; background: none !important; text-decoration: underline; }
@@ -761,14 +764,14 @@
   .cat { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: 0.75rem; font-weight: 500; line-height: 1.6; white-space: nowrap; }
   .cat.excerpt { background: var(--brand-wash); color: var(--brand-ink); font-weight: 600; }
   .policy-excerpt { color: var(--up); font-weight: 600; }
-  :is(#about, .cross, .school), .landscape :global(:is(#third-party, #schools-title)) { scroll-margin-block-start: calc(var(--shell-height) + 4.5rem); }
+  :is(#about, .cross, .school), .landscape :global(:is(#third-party, #schools-title)) { scroll-margin-block-start: var(--shell-height); }
 
   /* Schools: a compact index, one summary row per school; a row opens that school's site list. */
   .schools { gap: var(--space-3); }
   .school-table { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); overflow: hidden; }
   .school-cols, .school > summary {
     display: grid;
-    grid-template-columns: minmax(14rem, 1.5fr) minmax(10rem, 1fr) 3.5rem 3.5rem minmax(14rem, 1.4fr) 1rem;
+    grid-template-columns: minmax(14rem, 1.5fr) minmax(10rem, 1fr) 3.5rem 3.5rem minmax(16rem, 1.4fr) 1rem;
     gap: var(--space-3);
     align-items: center;
     padding: 0 var(--space-3);
@@ -776,7 +779,6 @@
   .school-cols { min-block-size: 2.25rem; border-block-end: 1px solid var(--line); background: var(--table-head); color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .school-cols::after { content: ''; }
   .crawl-line { margin: 0; color: var(--ink-2); font-size: var(--t-sm); }
-  .school-key { margin: 0; color: var(--ink-2); font-size: var(--t-sm); }
   .crawl-line strong { color: var(--ink); }
   .s-name :global(.pill), .s-name :global(span) { vertical-align: 1px; }
   .school-cols .n, .s-n { text-align: end; }
@@ -798,6 +800,7 @@
   /* Desktop: the counts and the mix are grid cells; narrow screens put them on their own line. */
   .s-stats { display: contents; }
   .s-mix { display: flex; gap: var(--space-2); align-items: center; min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .school-status { display: flex; gap: var(--space-2); }
   .mini { display: flex; flex: none; inline-size: 4.5rem; block-size: 8px; overflow: hidden; border-radius: 2px; background: var(--chip); }
   .mini i { display: block; block-size: 100%; }
   .school-body { display: grid; gap: var(--space-2); padding: var(--space-2) var(--space-3) var(--space-3); border-block-start: 1px solid var(--line); background: var(--panel); }
@@ -837,29 +840,6 @@
   }
   @media (max-width: 40rem) {
     .dek { font-size: var(--t-sm); }
-    .more { display: block; }
-    .more::details-content { display: block; content-visibility: auto; }
-    .more:not([open])::details-content { content-visibility: hidden; }
-    .more summary {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2);
-      min-block-size: var(--target-min);
-      padding: 0 var(--space-3);
-      border: 1px solid var(--control-line);
-      border-radius: var(--radius-control);
-      background: var(--panel-raised);
-      color: var(--ink-2);
-      font-size: var(--t-base);
-      font-weight: 600;
-      cursor: pointer;
-      list-style: none;
-    }
-    .more summary::-webkit-details-marker { display: none; }
-    .more summary::after { content: '▾'; color: var(--muted); }
-    .more[open] summary::after { content: '▴'; }
-    .more summary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-    .badge-count { display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 5px; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); }
     /* Search, 篩選 and 套用 share one row; the fields open beneath them. */
     .finder { flex: 1 1 7rem; }
     .more summary, .apply { flex: none; }
@@ -880,26 +860,23 @@
     .stack-values { gap: var(--space-2); font-size: var(--t-sm); }
     .rank li { grid-template-columns: 1.5rem minmax(0, max-content) minmax(3rem, 1fr) 3rem; gap: var(--space-2); min-block-size: 2.25rem; }
     .rank a { display: inline-flex; align-items: center; min-block-size: 2.25rem; }
-    .toolbar .more[open] .fields {
-      position: absolute;
-      inset-inline: 0;
-      inset-block-start: 100%;
-      padding: var(--space-3);
-      border: 1px solid var(--control-line);
-      border-radius: var(--radius-control);
-      background: var(--panel-raised);
-    }
-    .s-stats { grid-template-columns: auto auto minmax(0, 1fr); gap: var(--space-3); }
-    .s-n, .s-mix { font-size: 0.875rem; }
-    .s-mix { justify-content: end; }
-    /* Phones read the status words; the mini bar returns inside the opened row's list. */
+    .s-stats { grid-template-columns: 3rem 3.8rem minmax(0, 1fr); gap: var(--space-1); }
+    .s-mix { justify-content: end; overflow: visible; }
+    .school-status { gap: var(--space-1); }
     .mini { display: none; }
+    .landscape-metrics :global(.tile) { padding: var(--space-2); }
+    .landscape-metrics :global(.tile dd) { font-size: var(--t-xl); }
+    .landscape-metrics :global(.tile > p) { font-size: var(--t-xs); }
+    .third-name { min-block-size: var(--target-min); align-content: center; text-decoration: none; }
+    .third-name:is(:hover, :focus-visible) { text-decoration: underline; }
     .stack .track { min-inline-size: 0; }
   }
   @media (max-width: 39rem) {
     .landscape { --shell-height: calc(2 * var(--target-min) + var(--space-1) + 1px); }
   }
-  @media (min-width: 40.01rem) {
-    .badge-count { display: none; }
+  @media (max-width: 22.5rem) {
+    :is(#about, .cross, .school), .landscape :global(:is(#third-party, #schools-title)) {
+      scroll-margin-block-start: calc(var(--shell-height) + 2rem);
+    }
   }
 </style>
