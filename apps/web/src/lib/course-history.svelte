@@ -382,7 +382,8 @@
   /* Terms with far fewer sections than usual: the bar keeps its true height in a lighter tint, on a faint
      textured full-height column (no text inside; the counts are in the hover text, readout and note). */
   .slot.partial .fill, .slot.partial .cap.capacity { min-block-size: 3px; }
-  .slot > .ghost { inset-block: 0; z-index: 0; inline-size: min(92%, 2.75rem); border-block-end: 0; border-radius: 3px 3px 0 0; pointer-events: none; }
+  /* A partial term keeps its real bar height; the texture sits on the bar itself, never on a full-height column. */
+  .slot > .ghost { display: none; }
   .slot.partial > :is(.fill, .cap, .tick, .over-seg) { z-index: 1; }
   .slot > .here-flag { inset-block: -1.5rem auto; z-index: 2; inline-size: max-content; padding: 0 5px; border-radius: 3px; background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); font-weight: 650; line-height: 1.35rem; white-space: nowrap; pointer-events: none; }
   .slot > .here-flag.end { inset-inline-end: 0; }
@@ -396,7 +397,7 @@
   /* Over capacity: only the part above 名額 is orange, stacked on the brand bar. */
   .slot.overbooked .fill { border-radius: 0; }
   .slot > .over-seg { background: var(--warn); }
-  .slot.partial .fill, .slot.partial .cap.capacity { background: color-mix(in srgb, var(--brand) 45%, var(--panel-raised)); }
+  .slot.partial .fill, .slot.partial .cap.capacity { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand) 60%, var(--panel-raised)) 0 3px, color-mix(in srgb, var(--brand) 30%, var(--panel-raised)) 3px 6px); }
   .slot.partial > .over-seg { background: color-mix(in srgb, var(--warn) 55%, var(--panel-raised)); }
   .slot.current .tick { border-block-start-width: 3px; }
   .slot .none { inset-block-end: 2px; inline-size: auto; color: var(--muted); font-size: var(--t-sm); line-height: 1; }
@@ -464,7 +465,7 @@
   .sections a { display: inline-flex; align-items: center; min-block-size: 2rem; font-weight: 600; }
   .here { margin-inline-start: var(--space-2); padding: 0 6px; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-family: var(--font-sans); font-size: var(--t-xs); font-weight: 650; }
   .withdrawn { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; }
-  .more { color: var(--ink-2); font-size: var(--t-sm); }
+  .more { color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
 
   .collapsible:not(:has(.expand:checked)) tr.extra { display: none; }
   .collapsible:has(.expand:checked) .gap-row, .collapsible:not(:has(.expand:checked)) .collapse-row { display: none; }
@@ -502,7 +503,7 @@
     td.value { grid-row: 1; grid-column: 3; align-self: center; inline-size: auto; text-align: end; }
     tr:not(:has(td.ratio)) td.value { grid-column: 2 / -1; }
     .names { grid-row: 2; grid-column: 1 / 3; align-self: center; }
-    .sections { grid-row: 2; grid-column: 3; justify-content: end; }
+    .sections { grid-row: 2; grid-column: 3; justify-content: end; min-inline-size: max-content; }
     .ratio .cell-bar { gap: var(--space-1); }
     .ratio .track { flex: 1 1 3rem; min-inline-size: 2rem; }
     .pct { min-inline-size: 0; }
@@ -510,7 +511,7 @@
     .track { max-inline-size: 6rem; }
     .value { min-inline-size: 0; }
     .sections { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; white-space: normal; }
-    .sections .more { margin-inline-start: auto; padding-inline: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); min-block-size: 2.25rem; display: inline-flex; align-items: center; }
+    .sections .more { flex: none; white-space: nowrap; margin-inline-start: auto; padding-inline: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); min-block-size: 2.25rem; display: inline-flex; align-items: center; }
     .sections a { min-block-size: var(--target-min); }
   }
 </style>
