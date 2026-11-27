@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { popularSearches } from '$lib/overview-paths';
+  import { searchExamples } from '$lib/overview-paths';
 
   /**
    * The shared error view (states.md §3–4): a human title first, the HTTP status demoted to an
@@ -33,7 +33,7 @@
 
   let { status, message, title, description, primary, secondary, also = [], search = false, query = '', crossTerm = false, context, retryHref }: Props = $props();
 
-  const examples = popularSearches.slice(0, 3);
+  const examples = searchExamples.slice(0, 3);
 
   let notFound = $derived(status === 404);
   let heading = $derived(title ?? (notFound ? '找不到這個頁面' : '暫時無法顯示'));
