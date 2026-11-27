@@ -23,6 +23,8 @@
 {#snippet postList(items: ExternalReviews['posts'])}
   <ul class="article-list">
     {#each items as post (post.url)}
+      {@const title = post.title.trimEnd()}
+      {@const tail = title.match(/[\p{Script=Latin}\d-]+$|\S{1,2}$/u)?.[0] ?? ''}
       <li>
         <p class="post-meta">
           <Badge label={post.sourceLabel} /> <span>{post.board}</span>
@@ -30,7 +32,7 @@
           {#if post.pushScore != null}<span class="ui-tabular">推 {displayValue(post.pushScore)}</span>{/if}
           {#if post.isDemo}<Badge label="示範資料" tone="demo" />{/if}
         </p>
-        <a href={post.url} target="_blank" rel="noopener noreferrer nofollow">{post.title} <span aria-hidden="true">↗</span></a>
+        <a href={post.url} target="_blank" rel="noopener noreferrer nofollow">{title.slice(0, title.length - tail.length)}<span class="link-end">{tail} <span aria-hidden="true">↗</span></span></a>
         {#if post.excerpt}<p class="excerpt">{post.excerpt}</p>{/if}
       </li>
     {/each}
@@ -56,7 +58,7 @@
       </div>
     {:else}
       <p class="index-count">
-        <span>{total ? '暫無可開啟的索引連結' : 'PTT 索引未找到提及這位教師的文章'}</span>
+        <span>{total ? '暫無可開啟的索引連結' : '目前收錄的 PTT 看板中，沒有比對到這位教師。'}</span>
         <a class="ptt-search" href={pttSearch} target="_blank" rel="noopener noreferrer" aria-label="透過 Google 搜尋 PTT（另開分頁）">搜尋 PTT ↗</a>
       </p>
       {#if courseReviews.length}
@@ -92,6 +94,7 @@
   .article-list li { padding-block: var(--space-2); border-block-start: 1px solid var(--line); overflow-wrap: anywhere; }
   .article-list a, summary { display: block; width: fit-content; min-block-size: var(--target-min); align-content: center; font-weight: 650; }
   summary { display: list-item; color: var(--brand-ink); cursor: pointer; }
+  .link-end, .browse-button, .ptt-search { white-space: nowrap; }
   .outbound { display: grid; gap: var(--space-1); }
   .excerpt { margin: 0; color: var(--ink-2); font-size: var(--t-base); }
   h3, p { margin: 0; }

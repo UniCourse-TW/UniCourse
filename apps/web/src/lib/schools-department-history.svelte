@@ -47,7 +47,11 @@
 {:else}
   {#if showCharts || partial.size || missing}
     <ul class="legend" aria-label="歷年開課圖例" role="list">
-      {#if showCharts}<li>每柱一學期，同學年從左至右為{semesters.length === 2 ? '上、下學期' : semesters.join('、') + ' 學期'}</li>{/if}
+      {#if showCharts}
+        <li><i class="semester-key" aria-hidden="true"></i>上學期（左）</li>
+        <li><i class="semester-key second-semester" aria-hidden="true"></i>下學期{semesters.includes('3') ? '（中）' : '（右）'}</li>
+        {#if semesters.includes('3')}<li><i class="semester-key summer-semester" aria-hidden="true"></i>暑期（右）</li>{/if}
+      {/if}
       {#if partial.size}<li><i aria-hidden="true"></i>{partialTermLabel}（推估）</li>{/if}
       {#if missing}<li>修課人次空白：校方未公布</li>{/if}
     </ul>
@@ -57,7 +61,7 @@
       <figure>
         <figcaption><strong>{label}</strong> <span>（{unit}）</span>
           {#if selected && plot}
-            <span class="selection"><span>{selected.term}</span> <strong>{selected[key] === null ? '未公布' : displayValue(selected[key])}</strong></span>
+            <span class="selection"><span>{selected.term}</span> <strong>{selected[key] === null ? '未公布' : `${displayValue(selected[key])} ${unit}`}</strong></span>
           {/if}
         </figcaption>
         {#if plot}
@@ -73,7 +77,7 @@
                     {#each semesters as semester (semester)}
                       {@const row = group.get(semester)}
                       {@const value = row?.[key]}
-                      <div class="column" class:selected={row?.term === term} title={row && `${row.term} 學期 · ${value === null ? '未公布' : `${displayValue(value)} ${unit}`}${partial.has(row.term) ? ` · ${partialTermLabel}` : ''}`}>
+                      <div class="column" class:second-semester={semester === '2'} class:summer-semester={semester === '3'} class:selected={row?.term === term} title={row && `${row.term} 學期 · ${value === null ? '未公布' : `${displayValue(value)} ${unit}`}${partial.has(row.term) ? ` · ${partialTermLabel}` : ''}`}>
                         {#if row && value != null}
                           <i class:partial={partial.has(row.term)} class:zero={value === 0} style:block-size={`${value / scale.max * 100}%`}></i>
                         {/if}
@@ -116,6 +120,10 @@
   .legend { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin: 0; padding: 0; list-style: none; color: var(--ink-2); font-size: var(--t-sm); }
   .legend li { display: flex; align-items: center; gap: var(--space-1); }
   .legend i, dd i { display: inline-block; flex: none; inline-size: .75rem; block-size: .4rem; border-radius: var(--radius-pill); background: var(--partial-fill); }
+  .legend .semester-key, .column { --semester-color: var(--series-1); }
+  .legend .second-semester, .column.second-semester { --semester-color: var(--series-2); }
+  .legend .summer-semester, .column.summer-semester { --semester-color: var(--series-3); }
+  .legend .semester-key { background: var(--semester-color); }
   .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
   figure { display: grid; align-content: start; gap: var(--space-2); margin: 0; padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
   figcaption { display: flex; align-items: baseline; gap: var(--space-1); color: var(--ink); font-size: var(--t-base); }
@@ -132,8 +140,8 @@
   .year:first-child { border-inline-start: 1px solid var(--line); }
   .column { display: flex; flex: 1 1 0; flex-direction: column; justify-content: end; align-items: center; min-inline-size: 0; }
   .column.selected { background: var(--brand-wash); box-shadow: inset 0 0 0 1px var(--line); }
-  .column i { inline-size: 82%; min-block-size: 3px; border-radius: 2px 2px 0 0; background: var(--series-1); }
-  .column i.partial { background: var(--partial-fill); }
+  .column i { inline-size: 82%; min-block-size: 3px; border-radius: 2px 2px 0 0; background: var(--semester-color); }
+  .column i.partial { background: color-mix(in srgb, var(--semester-color) 58%, var(--panel-raised)); }
   .column i.zero { min-block-size: 1px; }
   .year-ticks { grid-column: 2; margin-block-start: var(--space-1); color: var(--ink-2); text-align: center; font-size: max(12px, .75rem); }
   .year-ticks.dense > :nth-child(even) { visibility: hidden; }
