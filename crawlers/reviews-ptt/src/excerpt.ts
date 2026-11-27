@@ -30,7 +30,7 @@ interface Section {
 
 // Template field labels that hold facts, not opinions. Matched against the start of a normalised label.
 const FACT_LABEL =
-  /^(哪一?學年|修課|學年|學期|年度|上課時|時段|時間|節次|課名|課程名|課號|科號|課程編|流水號|授課|老師|教師|教授|開課|系所|類別|課別|學分|必選修|選別|對象|用書|課本|教科書|教材|講義|參考書|大綱|課程大概|課程內容|內容|教了什麼|上課方式|上課地點|教室|評分|評量|成績|給分|考試|考題|作業|分數|涼度|甜度|難度|深度|負擔|推薦度|推薦指數|點名|出席|人數|修課人數|先修|建議先修|擋修|加簽|給加簽|英文授課|語言|前言|網址|連結|總成績|班上排名|成績分布|申請)/;
+  /^(哪一?學年|修課|修業|學年|學期|年度|上課時|時段|時間|節次|課名|課程名|課號|科號|課程編|流水號|授課|老師|教師|教授|開課|系所|所屬|向度|類別|課別|學分|必選修|選別|對象|用書|上課用書|課本|教科書|教材|講義|參考書|大綱|課程大概|課程內容|內容|教了什麼|上課方式|上課地點|教室|評分|評量|成績|給分|考試|考題|作業|分數|涼度|甜度|難度|深度|負擔|推薦度|推薦指數|點名|出席|人數|修課人數|先修|建議先修|擋修|加簽|給加簽|英文授課|語言|前言|網址|連結|總成績|班上排名|成績分布|申請)/;
 // Labels whose answers are opinions, best first.
 const OPINION_LABELS: RegExp[] = [
   /總結|心得|結語|感想|總評|評價|感受|想法|想說|後記|閒聊|碎念|評論/,
@@ -86,12 +86,20 @@ interface Header {
 }
 
 const GREEK = 'αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ';
-const GREEK_HEADER = new RegExp(`^[${GREEK}]\\s*([\\u3400-\\u9fff][^\\s（(:：]{0,15})\\s*(.*)$`, 'u');
-const BRACKET_HEADER = /^[【〖［\[]([^】〗］\]]{1,20})[】〗］\]]\s*[:：]?\s*(.*)$/u;
+// A few stray symbols may come first (`[▁  Ψ 總結`, colour-code residue).
+const GREEK_HEADER = new RegExp(`^[^\\p{L}\\p{N}]{0,4}\\s*[${GREEK}]\\s*([\\u3400-\\u9fff][^\\s（(:：]{0,15})\\s*(.*)$`, 'u');
+// `【心得/結語】`, `<上課>` (older NTHU_Course posts).
+const BRACKET_HEADER = /^[【〖［\[<＜〈]([^】〗］\]>＞〉]{1,20})[】〗］\]>＞〉]\s*[:：]?\s*(.*)$/u;
 // `⊕課名⊕`, `▲教授▲`, `￡教了什麼￡`: a label wrapped in the same non-ASCII symbol.
 const WRAPPED_HEADER = /^([^\s\p{L}\p{N}\p{P}\x00-\x7f]|[★☆●○◎◆◇■□▲△▼▽⊕⊙※＊￡￥＄＠＃])\s*([\p{Script=Han}][^\s]{0,14}?)\s*\1\s*[:：]?\s*(.*)$/u;
 // `★心得：`, `◎ 推薦：` and `心得：` / `課名: 微積分`: a short label and a colon.
 const COLON_HEADER = /^[^\p{L}\p{N}\s]{0,2}\s*([\p{Script=Han}][\p{Script=Han}A-Za-z/／、（）()\s]{0,11}?)\s*[:：]\s*(.*)$/u;
+
+// Templates copied without their symbols: `授課教師 (若為多人合授請寫開課教師…)`, `教了什麼（課程大概內容…）`
+// (a known label and a long hint), or a known label alone on its line (`課名`, `其他`).
+const HINTED_HEADER = /^([\p{Script=Han}、]{2,12}?)\s*([（(][^）)]{6,}(?:[）)].*)?)$/u;
+const BARE_LABEL =
+  /^(課名|課程名稱|教授|老師|授課教師|修課年度|學分|教了什麼|上課方式|考試作業|評分方式|其[它他]|心得|總結|結語|感想|評價|建議|補充|備註|最後想說的話)$/u;
 
 // NTHU_Course asks `給加簽嗎?` without a colon.
 const QUESTION_HEADER = /^(給加簽嗎|會加簽嗎|加簽嗎|有點名嗎|會點名嗎)\s*[?？]?\s*(.*)$/u;
@@ -116,6 +124,15 @@ function parseHeader(line: string): Header | undefined {
       return { label, value, open, block: true };
     }
   }
+  if (BARE_LABEL.test(line)) return { label: line, value: '', open: false, block: true };
+  const hinted = HINTED_HEADER.exec(line);
+  if (hinted) {
+    const label = normaliseLabel(hinted[1]);
+    if (isFactLabel(label) || isOpinionLabel(label) >= 0) {
+      const { value, open } = stripHint(hinted[2]);
+      return { label, value, open, block: true };
+    }
+  }
   const colon = COLON_HEADER.exec(line);
   if (colon) {
     const label = normaliseLabel(colon[1]);
@@ -135,7 +152,8 @@ function sections(lines: string[]): { sections: Section[]; fields: number } {
   let fields = 0;
   // Lines left in which the hint of the last header may still close: `加簽習慣？嚴禁遲到等…)`.
   let hint = 0;
-  // The last header was a one-line fact whose value may wrap onto the next lines (`課本：…` + `Edition: …`).
+  // The last header was a one-line fact (`課本：…`, `▲教授▲ 林國瑞`) whose value may wrap onto the next lines
+  // (`Edition: …`); prose after it is not part of it.
   let fact = false;
   // The previous line was a header with no value; a line that is only a hint in parentheses may follow.
   let bare = false;
@@ -168,13 +186,18 @@ function sections(lines: string[]): { sections: Section[]; fields: number } {
     }
     const header = parseHeader(line);
     if (!header) {
+      // Prose after a one-line fact (`甜度：2 涼度：5` then the review) is not the fact's value wrapping.
+      if (fact && (line.match(/[\p{Script=Han}]/gu)?.length ?? 0) >= 4) {
+        fact = false;
+        result.push({ lines: [] });
+      }
       result.at(-1)!.lines.push(raw);
       continue;
     }
     fields += 1;
     hint = header.open ? 2 : 0;
     bare = !header.value;
-    fact = !header.block;
+    fact = !header.block || (isFactLabel(header.label) && header.value.length > 0 && [...header.value].length <= 12);
     result.push({ label: header.label, lines: header.value ? [value(header.value)] : [] });
   }
   return { sections: result.filter((section) => section.lines.some((line) => line.trim())), fields };
@@ -182,7 +205,8 @@ function sections(lines: string[]): { sections: Section[]; fields: number } {
 
 /** True for lines that carry no opinion text: facts, ratings, numbers, dividers, forward headers. */
 function isNoise(line: string): boolean {
-  if (/^(作者|標題|時間|看板|站內|發信站|轉信站|來源|Origin|Path)\s*[:：]/u.test(line)) return true;
+  // Forward headers: `作者: x (y) 看板: z`, `發信人: …`, `標  題: …`, `發信站: 無名小站 (…)`.
+  if (/^(作\s*者|標\s*題|時\s*間|看\s*板|站\s*內|發信人|發信站|轉信站|來\s*源|Origin|Path)\s*[:：]/u.test(line)) return true;
   const letters = line.match(/[\p{L}]/gu)?.length ?? 0;
   const cjk = line.match(/[\p{Script=Han}]/gu)?.length ?? 0;
   if (letters === 0) return true;
@@ -218,6 +242,8 @@ interface Line {
   text: string;
   /** Width of the original line, indentation included. */
   width: number;
+  /** A blank line came before it (a double-spaced paragraph). */
+  gap?: boolean;
 }
 
 // Editors wrap at about 78 cells; the authors' own line breaks are usually shorter and uneven. A line at the
@@ -235,11 +261,11 @@ function sentences(lines: Line[]): string[] {
   const units: string[] = [];
   let current = '';
   let wrapped = false;
-  for (const [index, { text: line, width: cells }] of lines.entries()) {
+  for (const [index, { text: line, width: cells, gap }] of lines.entries()) {
     // A numbered or bulleted item always starts a new sentence.
     const item = /^([（(]?\d{1,2}[.、)）]|[（(][一二三四五六七八九十][）)]|[一二三四五六七八九十][、.])/u.test(line);
     if (!current) current = line;
-    else if (wrapped && !item) current += /[A-Za-z0-9]$/u.test(current) && /^[A-Za-z0-9]/u.test(line) ? ` ${line}` : line;
+    else if (wrapped && !item) current += gap || (/[A-Za-z0-9]$/u.test(current) && /^[A-Za-z0-9]/u.test(line)) ? ` ${line}` : line;
     else {
       units.push(current);
       current = line;
@@ -286,12 +312,19 @@ function answer(section: Section, minLetters: number): string | undefined {
   // Paragraphs in order; the first with enough text wins. Dropped lines end a paragraph too, so text on both
   // sides of a fact is not joined.
   const paragraphs: Line[][] = [[]];
+  let gap = false;
   for (const raw of section.lines) {
     const trimmed = raw.trim();
     const text = trimmed && !isNoise(trimmed) ? tidyLine(trimmed) : '';
     if (text && /^(無|沒有|略|同上|如上|以上|N\/?A)[。.!！]?$/iu.test(text)) continue;
-    if (text) paragraphs.at(-1)!.push({ text, width: width(raw) });
-    else if (paragraphs.at(-1)!.length) paragraphs.push([]);
+    const current = paragraphs.at(-1)!;
+    const previous = current.at(-1);
+    // Some authors double-space a wrapped paragraph; a blank line after a line that continues does not end it.
+    const continues =
+      !trimmed && previous != null && (/[，,、；;]$/u.test(previous.text) || (previous.width >= WRAP_WIDTH && !SENTENCE_END.test(previous.text.at(-1) ?? '')));
+    if (text) current.push({ text, width: width(raw), gap: gap && current.length > 0 });
+    else if (current.length && !continues) paragraphs.push([]);
+    gap = !trimmed;
   }
   for (const paragraph of paragraphs) {
     const excerpt = fitSentences(sentences(paragraph));
@@ -306,11 +339,14 @@ function answer(section: Section, minLetters: number): string | undefined {
  * article header, `※` lines, the signature and comments; their indentation is kept.
  */
 export function selectExcerpt(lines: string[]): string | undefined {
-  // A standalone `--` starts a signature (forwarded posts keep the original one inside the body).
-  const end = lines.findIndex((line) => line.trim() === '--');
+  // A standalone `--` with only a few lines after it starts a signature (forwarded posts keep the original one
+  // inside the body); one followed by more text is a divider.
+  const end = lines.findIndex(
+    (line, index) => line.trim() === '--' && lines.slice(index + 1).filter((rest) => rest.trim()).length <= 10
+  );
   const body = end >= 0 ? lines.slice(0, end) : lines;
-  // Quoted text in replies (`: 原文`) is someone else's post.
-  const own = body.map((line) => (/^[:：](\s|$)/u.test(line.trim()) ? '' : line.trimEnd()));
+  // Quoted text in replies (`: 原文`, `> 原文` in mail-style forwards) is someone else's post.
+  const own = body.map((line) => (/^[:：>＞](\s|$)/u.test(line.trim()) ? '' : line.trimEnd()));
   const { sections: parts, fields } = sections(own);
 
   const ranked = parts
@@ -323,12 +359,15 @@ export function selectExcerpt(lines: string[]): string | undefined {
   const firstField = parts.findIndex((section) => section.label);
   const aside = (section: Section, index: number) =>
     fields >= 2 && index < firstField && section.lines.filter((line) => line.trim()).length <= 2;
-  const free = parts.filter((section, index) => !section.label && !aside(section, index));
+  // Fields with other labels (`【助教表現】`, `<學習>`, `【課程】` written as prose) count as free text too.
+  const other = (label: string) => isOpinionLabel(label) < 0 && !FACT_LABEL.test(label);
+  const free = parts.filter((section, index) => (section.label ? other(section.label) : !aside(section, index)));
   const style = parts.filter((section) => section.label && STYLE_LABEL.test(section.label));
-  const candidates = [...ranked.map((entry) => entry.section), ...free, ...style];
-  // A substantial answer first (`一個字 修爆` loses to a later field with a real sentence), then any.
-  for (const minLetters of [16, 8]) {
-    for (const section of candidates) {
+  const opinions = [...ranked.map((entry) => entry.section), ...free];
+  // A substantial answer first (`一個字 修爆` loses to a later field with a real sentence), then a short opinion
+  // (`算是好課`); 上課方式 only with a real sentence (`老師PPT` is a fact).
+  for (const [sections, minLetters] of [[[...opinions, ...style], 16], [opinions, 4]] as const) {
+    for (const section of sections) {
       const text = answer(section, minLetters);
       if (text) return text;
     }

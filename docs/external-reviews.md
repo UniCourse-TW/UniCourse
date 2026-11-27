@@ -94,12 +94,15 @@ into template fields and takes the first field with an opinion answer, in this o
    NCHU-Courses `【心得/結語】`, NTHU_Course `心得：`),
 2. 其它 / 建議 / 補充 / 備註 / 老師的喜好、個性 (NTUcourse `ω 其它`, NCTU-Teacher `￥其他￥`),
 3. 推薦 / 注意事項 (NTUcourse `Ω 私心推薦指數`, NCHU-Courses `【注意事項】`),
-4. free text outside the template (a post without a template, or the review after NTHU-style `課名：…` lines),
+4. free text: a post without a template, the review after NTHU-style `課名：…` / `甜度：3 涼度：4` lines, and
+   fields with other labels (`【助教表現】`, `<學習>`),
 5. 上課方式 (often written as an opinion).
 
-An answer needs at least 16 letters to win (`一個字 修爆` loses to a later field); if none has, 8 are enough.
-Label-value lines (`學分：3`, `涼度：★★★★`, `10% 期中考`, grade tables), star ratings, links, quoted text of
-replies (`: …`), forward headers and template symbols never count. The excerpt is whole sentences up to 120
+An answer needs at least 16 letters to win (`一個字 修爆` loses to a later field); if none has, a short answer
+from steps 1–4 is enough from 4 letters (`算是好課`, not `爽課`). Label-value lines (`學分：3`, `涼度：★★★★`,
+`10% 期中考`, grade tables), star ratings, links, quoted text (`: …`, `> …`), forward headers (`作者:`,
+`發信人:`, `標  題:`) and template symbols never count. Templates copied without their symbols
+(`授課教師 (若為多人合授…)`, a bare `課名` line) are recognised too. The excerpt is whole sentences up to 120
 characters (lines the author's editor wrapped are joined, the author's own line breaks become spaces); a first
 sentence longer than that is cut at a comma and ends in `…`. When no field qualifies, the post has no excerpt.
 NTUcourse posts whose author answered 否/不… to the reuse question get no excerpt whatever their content.
