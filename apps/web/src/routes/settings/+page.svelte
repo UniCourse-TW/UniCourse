@@ -4,7 +4,7 @@
   import '$lib/community-ui.css';
   import { initial, slashDate } from '$lib/community-format';
   import { profileHref } from '$lib/community-paths';
-  import { PRIVATE_REPORT_URL } from '$lib/legal-contact';
+  import ResetHelp from '$lib/legal-reset-help.svelte';
   import type { SubmitFunction } from '@sveltejs/kit';
   import type { PageProps } from './$types';
 
@@ -35,7 +35,7 @@
   let previewName = $derived(current.displayName.trim() || data.profile.username);
   let previewSchool = $derived(current.school ? (schoolNames[current.school] ?? '') : '');
   // One label for what the preview shows: the draft being typed, the version just saved, or the stored one.
-  let version = $derived(dirty ? '含未儲存的變更' : savedVisible ? '已更新為剛儲存的內容' : '目前公開的內容');
+  let version = $derived(dirty ? '含未儲存的變更（尚未公開）' : savedVisible ? '已更新為剛儲存的內容' : '與目前公開的相同');
   let joined = $derived(slashDate(data.profile.createdAt));
   let profile = $derived(profileHref(data.profile.username));
 
@@ -78,7 +78,8 @@
     <h1>設定</h1>
     <p class="cm-dek">
       <span class="who-line mono">@{data.profile.username}</span>
-      {#if !savedVisible}<span class="sep dek-sep">·</span><a class="dek-link" href={profile}>查看公開個人頁 <span aria-hidden="true">→</span></a>{/if}
+      <!-- The header keeps the same links in every state, so saving never moves the page. -->
+      <span class="sep dek-sep">·</span><a class="dek-link" href={profile}>查看公開個人頁 <span aria-hidden="true">→</span></a>
       <!-- Phones stack the panels; this in-page jump (muted, unlike the link beside it) goes to the account panel. -->
       <a class="dek-link jump-link" href="#account">帳號與登出 <span aria-hidden="true">↓</span></a>
     </p>
@@ -130,49 +131,46 @@
           <div class="status" role="status">
             {#if saving}<span class="cm-sr">儲存中…</span>
             {:else if savedVisible}
-              <span class="ok"><span aria-hidden="true">✓</span> 已儲存，個人頁已更新</span>
-              <a class="status-link" href={profile}>查看更新後的個人頁 <span aria-hidden="true">→</span></a>
-            {:else if hydrated && dirty}<span class="pending">有 {changes} 項變更尚未儲存</span>
+              <!-- One success message, with the updated page linked inside it. -->
+              <span class="ok"><span aria-hidden="true">✓</span><span>已儲存，<a href={profile}>個人頁</a>已更新</span></span>
+            {:else if hydrated && dirty}<span class="pending">有 {changes} 項變更尚未儲存</span><span class="preview-note">預覽已即時更新</span>
             {:else if hydrated}<span class="idle">尚未變更，修改後才能儲存</span>{/if}
           </div>
         </div>
         <!-- Phones: the preview folds under the save line, its summary saying which version it shows. -->
         <details class="preview-fold">
-          <summary>預覽個人頁 <span class="version" class:draft={dirty} class:fresh={savedVisible && !dirty}>{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
+          <summary>預覽公開個人頁 <span class="version" class:draft={dirty}>{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
           {@render previewCard()}
         </details>
       </form>
     </section>
 
-    <aside class="preview" class:fresh={savedVisible && !dirty} aria-labelledby="preview-title">
+    <aside class="preview" aria-labelledby="preview-title">
       <div class="preview-heading">
         <h2 id="preview-title">個人頁預覽</h2>
-        <span class="version" class:draft={dirty} class:fresh={savedVisible && !dirty}>{#if savedVisible && !dirty}<span aria-hidden="true">✓ </span>{/if}{version}</span>
+        <span class="version" class:draft={dirty}>{version}</span>
       </div>
       {@render previewCard()}
     </aside>
 
     <section id="account" class="cm-panel" aria-labelledby="account-title" tabindex="-1">
       <h2 id="account-title">帳號</h2>
-      <p class="lead">只有你能開啟這個管理區；帳號名稱本身仍會公開顯示。</p>
+      <p class="lead">管理資訊僅自己可見，帳號名稱公開。</p>
       <!-- The facts first, then the two things to do (password help, sign out) side by side. -->
       <dl class="facts">
         <div><dt>帳號</dt><dd><span class="mono">@{data.profile.username}</span> <span class="cm-hint">建立後無法更改</span></dd></div>
         <div><dt>加入於</dt><dd class="num">{joined}</dd></div>
         {#if data.profile.isAdmin}<div><dt>權限</dt><dd>管理員</dd></div>{/if}
         <div class="account-action">
-          <dt>重設密碼</dt>
-          <dd>
-            <p class="cm-hint">由維護者協助重設，需 GitHub 帳號。</p>
-            <a class="cm-btn quiet" href={PRIVATE_REPORT_URL} rel="noopener external">私密聯絡維護者 <span aria-hidden="true">↗</span><span class="cm-sr">（GitHub）</span></a>
-          </dd>
-        </div>
-        <div class="account-action">
           <dt>登出</dt>
           <dd>
             <p class="cm-hint">只登出這個瀏覽器。</p>
             <form method="POST" action="/auth?/logout"><button class="cm-btn leave">登出</button></form>
           </dd>
+        </div>
+        <div class="reset-row">
+          <dt>密碼</dt>
+          <dd><ResetHelp summary="重設密碼：由維護者手動處理" id="settings-reset" align="start" /></dd>
         </div>
       </dl>
     </section>
@@ -206,10 +204,16 @@
   .save-row .cm-btn { min-inline-size: 6rem; }
   .status { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; min-block-size: var(--target-min); font-size: 0.8125rem; }
   .ok { display: inline-flex; gap: 0.3em; align-items: center; padding: 0 var(--space-2); border-radius: var(--radius-pill); color: var(--up); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); font-size: var(--t-base); font-weight: 650; line-height: 1.9; }
-  .status-link { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-size: var(--t-base); font-weight: 600; }
+  .ok a { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 0.15em; }
+  .preview-note { color: var(--ink-2); }
+  @media (max-width: 56rem) { .preview-note { display: none; } }
   .pending { color: var(--warn); font-weight: 600; }
   .idle { color: var(--ink-2); }
-  .settings .cm-count { color: var(--ink-2); }
+  /* Where a field shows (a public-scope hint) reads stronger than its plain character count, which sits
+     right after the label so the limit is seen before typing. */
+  .settings .cm-label { justify-content: flex-start; gap: 0 var(--space-3); }
+  .settings .cm-count { color: var(--muted); }
+  .settings .cm-field > .cm-hint { color: var(--ink-2); font-size: 0.8125rem; }
   .facts { display: grid; margin: 0; border-block-start: 1px solid var(--line); }
   .facts div { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: var(--space-3); padding-block: var(--space-2); border-block-end: 1px solid var(--line); font-size: var(--t-base); }
   dt { color: var(--muted); }
@@ -217,17 +221,14 @@
   dd .cm-hint { display: block; }
   .account-action { align-items: baseline; }
   .account-action dd { display: flex; gap: var(--space-1) var(--space-3); flex-wrap: wrap; align-items: center; justify-content: space-between; }
-  .account-action .quiet { padding-inline: 0; color: var(--brand-ink) !important; text-decoration: underline; }
+  .reset-row { grid-template-columns: 5rem minmax(0, 1fr); }
+  .reset-row dd { min-inline-size: 0; }
   .preview { grid-column: 2; grid-row: 1; display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .preview .preview-card { background: var(--panel-raised); }
   .preview-heading { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
   .version { display: inline-block; padding: 0 6px; border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
   .version.draft { color: var(--warn); background: var(--warn-wash); }
-  .version.fresh { color: var(--up); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); }
-  /* Just saved: the preview frame lights up once, so the change is seen where it lands. */
-  .preview.fresh { border-color: color-mix(in srgb, var(--up) 55%, var(--line)); animation: fresh 1.6s ease-out; }
-  @keyframes fresh { from { box-shadow: 0 0 0 4px color-mix(in srgb, var(--up) 30%, transparent); } to { box-shadow: 0 0 0 0 transparent; } }
-  @media (prefers-reduced-motion: reduce) { .preview.fresh { animation: none; } }
+  /* Saved: the preview keeps its ordinary frame; the one success signal is the status beside the button. */
   .preview-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .avatar { display: grid; place-items: center; inline-size: 3rem; block-size: 3rem; border-radius: 50%; color: var(--brand-ink); background: var(--brand-wash); font-size: 1.25rem; font-weight: 650; }
   .who { min-inline-size: 0; }
@@ -249,6 +250,15 @@
     /* The handle on its own line; the two links share the next one. */
     .who-line { flex-basis: 100%; }
     .cm-dek .dek-link { min-block-size: var(--target-min); margin-inline-end: var(--space-2); }
-    .facts div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+    /* Label left (small, muted), value right: four short rows instead of eight stacked lines. */
+    .facts div { grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); align-items: center; }
+    .facts dt { font-size: var(--t-sm); }
+    .facts dd { text-align: end; }
+    .facts dd .cm-hint { display: inline; margin-inline-start: var(--space-1); }
+    .account-action dd { justify-content: end; }
+    .account-action dd .cm-hint { display: none; }
+    .facts .reset-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .facts .reset-row dt { display: none; }
+    .facts .reset-row dd { text-align: start; }
   }
 </style>

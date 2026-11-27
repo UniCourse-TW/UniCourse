@@ -29,7 +29,7 @@
     crossTerm?: boolean;
     /** One line under the search box: where the words to search for can be found. */
     hint?: string;
-    /** Diagnostic detail (the dead id), shown beside a link to report the broken link. */
+    /** Diagnostic detail (the dead address), shown with the status beside a link to report the broken link. */
     context?: string;
     /** Current path, for the retry link on server errors. */
     retryHref?: string;
@@ -76,13 +76,14 @@
 
 <div class="error-wrap">
 <section class="error-page" class:outage={!notFound} aria-labelledby="error-title">
-  <p class="eyebrow"><span class="ui-tabular code">{status}</span>{#if !notFound}暫時無法取得{#if message && message !== detail} · {message}{/if}{/if}</p>
+  <!-- A 404 leads with the problem and the search box; its status code goes with the address in the report line. -->
+  {#if !notFound || !context}<p class="eyebrow"><span class="ui-tabular code">{status}</span>{#if !notFound}暫時無法取得{#if message && message !== detail} · {message}{/if}{/if}</p>{/if}
   <h1 id="error-title">{heading}</h1>
   <p class="detail">{detail}</p>
   {#if search}
     <form class="search" method="GET" action="/" role="search" aria-label="搜尋課程">
       <label class="search-field">
-        <span class="field-label">已知的課號、課名或教師</span>
+        <span class="field-label">已知的課號、課名或教師{#if hint}<span class="field-hint">（{hint}）</span>{/if}</span>
         <span class="input-wrap">
           <svg class="icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
           <input bind:this={searchInput} type="search" name="q" defaultValue={query} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" />
@@ -100,12 +101,11 @@
       </label>
       <button type="submit">搜尋課程</button>
     </form>
-    {#if hint}<p class="hint">{hint}</p>{/if}
     {#if crossTerm}
       <a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: query })}`}>查「{query}」的其他學期 <span aria-hidden="true">→</span></a>
     {:else if !query && !back}
       <nav class="examples" aria-label="熱門搜尋">
-        <span class="examples-label">熱門搜尋</span>
+        <span class="examples-label">或試試熱門搜尋</span>
         <ul>{#each examples as example (example)}<li><a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: example })}`}>{example}</a></li>{/each}</ul>
       </nav>
     {/if}
@@ -130,7 +130,7 @@
     </nav>
   {/if}
   {#if context}
-    <p class="diagnostic"><span>{context}</span><a href={PUBLIC_REPORT_URL} rel="noopener external">回報這個失效連結 <span aria-hidden="true">↗</span></a></p>
+    <p class="diagnostic"><span>你開啟的連結（{status}）：<code>{context}</code></span><a href={PUBLIC_REPORT_URL} rel="noopener external">回報這個失效連結 <span aria-hidden="true">↗</span></a></p>
   {/if}
 </section>
 </div>
@@ -157,11 +157,13 @@
   .code { padding: 0 6px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--panel-raised); font-family: var(--font-mono); font-weight: 500; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .detail { margin: 0; color: var(--ink-2); }
-  .diagnostic { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; margin: var(--space-1) 0 0; color: var(--ink-2); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
-  .diagnostic a { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-weight: 600; text-underline-offset: 0.15em; }
+  /* One row: the address that failed (with its status) and the action to report it. */
+  .diagnostic { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); align-items: center; inline-size: 100%; margin: var(--space-1) 0 0; padding: var(--space-1) var(--space-3); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); font-variant-numeric: tabular-nums; }
+  .diagnostic code { font-family: var(--font-mono); font-size: 0.92em; color: var(--ink); }
+  .diagnostic a { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); margin-inline-start: auto; color: var(--brand-ink); font-weight: 600; text-underline-offset: 0.15em; }
   .diagnostic a:hover { color: var(--brand-ink); }
   .diagnostic a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .hint { margin: calc(-1 * var(--space-1)) 0 0; color: var(--ink-2); font-size: 0.8125rem; }
+  .field-hint { color: var(--ink-2); font-weight: 400; }
   /* Toolbar row: words (with the family's search icon), scope, button. */
   .search { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: end; inline-size: 100%; margin-block-start: var(--space-2); }
   .search-field { display: grid; flex: 1 1 14rem; gap: var(--space-1); }
@@ -212,16 +214,19 @@
   .examples { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: 0; }
   .examples-label { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
   .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-  .chip { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: var(--t-sm); font-weight: 600; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
+  /* Outlined brand chips, the same as the empty-search suggestions (a grey fill read as disabled). */
+  .chip { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 55%, var(--line)); border-radius: var(--radius-pill); color: var(--brand-ink); background: var(--panel-raised); font-size: var(--t-base); font-weight: 600; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
   .chip:hover { color: var(--brand-ink); background: var(--brand-wash); }
   .chip:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .also { display: grid; gap: var(--space-1); inline-size: 100%; margin-block-start: var(--space-4); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
   .also-label { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
-  .also ul { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; }
-  .also a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-underline-offset: 0.15em; }
+  /* The same 44 px link rows on every width (side by side on desktop, stacked on phones). */
+  .also ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
+  .also a { display: flex; gap: 0.3em; align-items: center; justify-content: space-between; min-block-size: var(--target-min); padding-inline: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-decoration: none; }
+  .also a:hover { border-color: var(--control-line); }
   /* Every way out has the same weight; order carries priority (各校收錄狀態, then 回首頁). */
   .also a { color: var(--brand-ink); }
-  .also a:hover { text-decoration-thickness: 2px; }
+
 
   @media (max-width: 40rem) {
     .error-wrap { min-block-size: 0; }
@@ -237,7 +242,7 @@
     .examples { display: grid; gap: var(--space-2); inline-size: 100%; }
     .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); }
     /* The ways out are separate 44 px rows with room between them, so a thumb never hits the wrong one. */
-    .also ul { display: grid; gap: var(--space-2); }
-    .also a { justify-content: space-between; inline-size: 100%; padding-inline: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); text-decoration: none; }
+    .also ul { gap: var(--space-1); }
+    .diagnostic a { margin-inline-start: 0; }
   }
 </style>

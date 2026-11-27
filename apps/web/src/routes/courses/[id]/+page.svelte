@@ -8,6 +8,7 @@
   import { fillRatio, nearlyFull, publishedCapacity } from '$lib/course-history';
   import { averageScore, courseKey } from '$lib/community-format';
   import { labelledExtra } from '$lib/course-extra';
+  import { postKind, postKindLabels } from '$lib/course-external-text';
   import { englishTitle } from '$lib/course-title';
   import { shortDateTime } from '$lib/community-format';
   import { importedAt, isHttpUrl, meeting, requirement } from '$lib/format';
@@ -63,11 +64,18 @@
   let titleEn = $derived(englishTitle(course.titleEn));
   let externalTotal = $derived(data.externalReviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0);
   /** Indexed posts naming this offering's teacher, when every post is listed (same rule as the section). */
-  let externalMine = $derived.by(() => {
+  let externalMinePosts = $derived.by(() => {
     const posts = data.externalReviews?.posts ?? [];
     if (!course.instructors.length || posts.length !== externalTotal) return undefined;
     const own = new Set(course.instructors);
-    return posts.filter((post) => (post.match?.instructor && own.has(post.match.instructor)) || post.teachers.some((name) => own.has(name))).length;
+    return posts.filter((post) => (post.match?.instructor && own.has(post.match.instructor)) || post.teachers.some((name) => own.has(name)));
+  });
+  let externalMine = $derived(externalMinePosts?.length);
+  /** What this teacher's posts are (「提問」), when they are all one kind, so the jump link says it up front. */
+  let externalMineKind = $derived.by(() => {
+    const kinds = new Set(externalMinePosts?.map((post) => postKind(post.tag)));
+    const [only] = kinds;
+    return kinds.size === 1 && only !== 'other' ? postKindLabels[only] : undefined;
   });
   // Indexed posts move above the site's own sections while those are both still empty, so the page's
   // most useful signal is not below two empty states.
@@ -200,8 +208,8 @@
     </div>
     {#if termTotal}
       <div class="tile" class:partial={termTotal.partial}>
-        <!-- Short label (one line on phones); the term and how many sections it covers go in the sub-line. -->
-        <dt>同學期各班合計</dt>
+        <!-- The scope is in the label (how many sections the sum covers); the term goes in the sub-line. -->
+        <dt>同學期 {displayValue(termTotal.offeringCount)} 班合計</dt>
         {#if termTotal.enrolled == null && termTotal.capacity != null}
           <dd><span class="value num">{displayValue(termTotal.capacity)}</span><small>名額</small></dd>
         {:else if termTotal.enrolled != null}
@@ -209,19 +217,19 @@
         {:else}
           <dd><span class="value">—</span><small>人數未公布</small></dd>
         {/if}
-        <dd class="note"><a href="#history"><span class="mono">{termTotal.term}</span>・{#if termTotal.partial}<span title={termTotal.usualSections ? `其他學期通常約 ${displayValue(termTotal.usualSections)} 班` : undefined}>只收錄 {displayValue(termTotal.offeringCount)} 班</span>{:else}{displayValue(termTotal.offeringCount)} 班{/if}&nbsp;↓</a></dd>
+        <dd class="note"><a href="#history"><span class="mono">{termTotal.term}</span>・{#if termTotal.partial}<span title={`其他學期通常約 ${displayValue(termTotal.usualSections)} 班，這一期的合計不能和其他學期直接比較`}>只收錄部分</span>{:else}含本班{/if}&nbsp;↓</a></dd>
       </div>
     {/if}
     <div class="tile">
       {#if totals?.enrolledTotal != null}
-        <dt>跨學期累計修課人次</dt>
+        <dt>{displayValue(totals.terms)} 期累計修課人次</dt>
         <dd><span class="value num">{displayValue(totals.enrolledTotal)}</span><small>人次</small></dd>
-        <dd class="note"><a href="#history">{displayValue(totals.terms)} 期・{displayValue(totals.offerings)} 班&nbsp;↓</a></dd>
+        <dd class="note"><a href="#history">{displayValue(totals.offerings)} 班{#if span}・<span class="mono">{history.rows.at(-1)?.term}</span> 起{/if}&nbsp;↓</a></dd>
       {:else if totals?.capacityTotal != null}
         <!-- No published enrolment: the running total is of 名額, said in the label. -->
-        <dt>歷年名額合計</dt>
+        <dt>{displayValue(totals.terms)} 期名額合計</dt>
         <dd><span class="value num">{displayValue(totals.capacityTotal)}</span><small>名額</small></dd>
-        <dd class="note"><a href="#history">{displayValue(totals.terms)} 期・{displayValue(totals.offerings)} 班&nbsp;↓</a></dd>
+        <dd class="note"><a href="#history">{displayValue(totals.offerings)} 班{#if span}・<span class="mono">{history.rows.at(-1)?.term}</span> 起{/if}&nbsp;↓</a></dd>
       {:else if totals}
         <dt>歷年開課</dt>
         <dd><span class="value num">{displayValue(totals.terms)}</span><small>期</small></dd>
@@ -254,7 +262,7 @@
 
   <!-- Jump links in page order; indexed posts lead (with their count) when they come first on the page. -->
   {#snippet externalLink()}
-    <a href="#external-reviews" class:lead={externalFirst}>外站討論{#if externalTotal} <span class="num">{displayValue(externalTotal)}</span> 篇{#if externalMine != null && externalMine < externalTotal}<span class="sub-count">（本班教師 <span class="num">{displayValue(externalMine)}</span>）</span>{/if}{/if} ↓</a>
+    <a href="#external-reviews" class:lead={externalFirst}>外站討論{#if externalTotal} <span class="num">{displayValue(externalTotal)}</span> 篇{#if externalMine != null && externalMine < externalTotal}<span class="sub-count">（本班教師 <span class="num">{displayValue(externalMine)}</span> 篇{#if externalMine && externalMineKind}・{externalMineKind}{/if}）</span>{/if}{/if} ↓</a>
   {/snippet}
   <nav class="section-links" aria-label="本頁段落">
     {#if externalFirst}{@render externalLink()}{/if}
@@ -276,7 +284,7 @@
     {#if !history.available}
       <p class="notice">歷年開課暫時無法取得，先列出本學期。</p>
     {/if}
-    <CourseHistory rows={history.rows} currentId={course.id} school={course.school} courseCode={course.courseCode} />
+    <CourseHistory rows={history.rows} currentId={course.id} school={course.school} courseCode={course.courseCode} own={{ enrolled: course.enrolled ?? null, capacity }} />
     {#if history.available && history.rows.length === 1}
       <p class="muted small">目前只收錄到這一期，之後匯入其他學期後會在這裡畫出歷年修課人數。</p>
     {/if}
@@ -418,7 +426,7 @@
   .tile dd { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; margin: 0; min-inline-size: 0; }
   .tile .value { font-size: var(--t-3xl); font-weight: 600; line-height: var(--leading-tight); overflow-wrap: anywhere; }
   .tile small { color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
-  .tile .note { color: var(--ink-2); font-size: 0.8125rem; }
+  .tile .note { color: var(--ink-2); font-size: 0.8125rem; text-wrap: pretty; }
   .tile .note a { color: var(--ink-2); text-decoration: none; }
   .tile .value.small-value { font-size: var(--t-xl); }
   .tile .thin .value { font-size: var(--t-2xl); }
@@ -465,7 +473,7 @@
   .extra div { min-inline-size: 0; }
   .extra dt { color: var(--muted); font-size: var(--t-sm); }
   .extra dd { margin: 0; overflow-wrap: anywhere; }
-  .source { padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); color: var(--muted); font-size: var(--t-sm); }
+  .source { padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); color: var(--ink-2); font-size: var(--t-base); }
 
   @media (max-width: 64rem) {
     .tiles, .tiles.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -482,5 +490,10 @@
     .tiles { gap: var(--space-2); }
     .tile { padding: var(--space-3); }
     .tile .value { font-size: var(--t-2xl); }
+    /* One line of section chips that scrolls sideways, so no chip wraps onto a line of its own. */
+    .section-links { flex-wrap: nowrap; gap: var(--space-2); margin-block: 0 var(--space-1); margin-inline: calc(-1 * var(--space-4)); padding-inline: var(--space-4); overflow-x: auto; scrollbar-width: none; }
+    .section-links::-webkit-scrollbar { display: none; }
+    .section-links a { flex: none; padding-inline: var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); text-decoration: none; white-space: nowrap; }
+    .section-links a.lead { border-radius: var(--radius-pill); }
   }
 </style>

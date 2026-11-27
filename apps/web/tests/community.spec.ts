@@ -191,6 +191,10 @@ test('rejects a wrong password inline and keeps next on the same origin', async 
   await page.getByRole('button', { name: '登入' }).click();
   await expect(page.getByRole('alert')).toContainText('帳號或密碼錯誤');
   await expect(page.locator('input[name="next"]')).toHaveValue('/');
+  // Password help is explained in place (no e-mail reset, what to send, no GitHub alternative).
+  const reset = page.locator('#reset-help');
+  await expect(reset).toContainText('不要寫密碼');
+  await expect(reset.getByRole('link', { name: /開啟私密回報表單/ })).toHaveAttribute('href', /github\.com/);
 });
 
 test('registration moves focus to the summary when both credentials need correction', async ({ page }) => {
@@ -220,7 +224,7 @@ test('saves a profile while the phone preview is open', async ({ page }) => {
   await expect(save).toBeDisabled();
   const bio = page.getByLabel('自我介紹', { exact: true });
   await bio.fill('這是草稿。');
-  const preview = page.getByText('預覽個人頁').filter({ visible: true });
+  const preview = page.getByText('預覽公開個人頁').filter({ visible: true });
   await preview.click();
   await expect(page.locator('.preview-fold .bio')).toHaveText('這是草稿。');
   await save.click();

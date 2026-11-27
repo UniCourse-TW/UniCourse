@@ -20,10 +20,10 @@
     { id: 'changes', title: '條款變更' }
   ];
   const summary: GistPoint[] = [
-    { lead: '課程資料', text: '來自各校公開系統，可能比校方晚更新；選課與上課以校方為準。' },
-    { lead: '帳號', text: '查課不用登入；評分、發文與回覆需要帳號，內容會公開並可能被搜尋引擎索引。' },
-    { lead: '外部評價', text: '只索引 PTT 四個課程板的公開文章標題與短摘要，不轉載全文；其他網站只給搜尋連結。' },
-    { lead: '更正與移除', text: '一般錯誤公開回報；涉及個資或不想公開的，', link: { href: PRIVATE_REPORT_URL, label: '在 GitHub 私密回報', external: true } }
+    { lead: '課程資料', href: '#data', text: '來自各校公開系統，可能比校方晚更新，以校方為準。' },
+    { lead: '帳號', href: '#account', text: '查課不用登入；評分與發文需要帳號，內容會公開。' },
+    { lead: '外部評價', href: '#reviews', text: '只索引 PTT 四個課程板的標題與短摘要，不轉載全文。' },
+    { lead: '移除', href: '#removal', text: '想移除與你有關的內容，私密聯絡維護者即可，不必公開。' }
   ];
 </script>
 
@@ -43,7 +43,7 @@
     <div class="h2-row"><h2 id="sources">資料來源與授權</h2></div>
     <p>本站的資料有三種來源，每一筆課程都保留原始連結，可回到校方頁面核對：</p>
     <details class="doc-fold">
-      <summary>查看 3 類資料的來源與授權</summary>
+      <summary>3 類來源：學校名錄、課程與修課人數、課程網站總覽</summary>
       <table role="table" class="sources stacked">
         <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">資料</th><th role="columnheader" scope="col">來源</th><th role="columnheader" scope="col">授權與使用方式</th></tr></thead>
         <tbody role="rowgroup">
@@ -54,6 +54,7 @@
       </table>
       <p>遇到登入、驗證碼或禁止抓取的校方系統，本站不會從該系統取用資料。若教育部提供該校的課程資料，本站仍可能收錄。實際進度見<a href="/schools">各校收錄狀態</a>。本站的程式碼與資料檔以開源方式公開於 GitHub。</p>
     </details>
+    <p class="section-end"><a href="#toc"><span aria-hidden="true">↑</span> 回目錄</a></p>
   </section>
 
   <section aria-labelledby="account">
@@ -65,6 +66,7 @@
       <li>違反上述規範的內容可能被移除；情節嚴重時會停用帳號。</li>
     </ul>
     <p>你送出的公開內容會以帳號名稱顯示，並可能被搜尋引擎索引；細節見<a href="/privacy#public">隱私權政策的公開內容</a>。</p>
+    <p class="section-end"><a href="#toc"><span aria-hidden="true">↑</span> 回目錄</a></p>
   </section>
 
   <section aria-labelledby="reviews">
@@ -97,30 +99,33 @@
       </ul>
       <p class="update-note">原文在 PTT 刪除後，本站不會自動得知；<a class="private" href={PRIVATE_REPORT_URL} rel="noopener external">私密聯絡維護者<span aria-hidden="true"> ↗</span></a>或用下方<a href="#removal">聯絡與移除</a>的任一管道告訴我們，該筆索引會被移除。</p>
     </details>
+    <p class="section-end"><a href="#toc"><span aria-hidden="true">↑</span> 回目錄</a></p>
   </section>
 
   <section aria-labelledby="removal">
     <div class="h2-row"><h2 id="removal">聯絡與移除</h2></div>
     <p>先選管道：<strong>涉及個資、帳號或不想公開的請求走私密聯絡</strong>，一般的資料錯誤可以公開回報。</p>
+    <!-- What both routes share is said once, before the cards: GitHub, the page link, the reply time. -->
+    <p class="routes-shared">兩個管道都在 GitHub 送出（免費帳號即可，不需要會寫程式）；請附上相關頁面連結，通常七天內在同一則回報回覆。</p>
     <div class="contact-routes">
       <div>
         <p class="route-kind">私密聯絡</p>
         <h3>含個資或不想公開的請求</h3>
         <p>移除與你有關的索引或處理帳號問題。文章作者、被提及的教師或當事人都可以提出。</p>
-        <p class="route-access">需 GitHub 帳號 · 僅維護者可見</p>
-        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">在 GitHub 私密回報 <span aria-hidden="true">↗</span></a>
-        <ul class="route-meta"><li>附上相關頁面連結</li><li>通常七天內在同一則回報回覆</li></ul>
+        <p class="route-needs">請寫明：要處理的頁面或文章、你和它的關係、希望怎麼處理。</p>
+        <p class="route-access">僅維護者可見</p>
+        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密申請移除或帳號協助 <span aria-hidden="true">↗</span></a>
       </div>
       <div>
         <p class="route-kind">公開回報</p>
         <h3>可公開的資料錯誤</h3>
-        <p>回報錯配的外部文章或其他資料錯誤。請勿附上個資。</p>
-        <p class="route-access">需 GitHub 帳號 · 所有人可見</p>
+        <p>回報錯配的外部文章或其他資料錯誤，請勿附上個資。</p>
+        <p class="route-access">所有人可見</p>
         <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 公開回報 <span aria-hidden="true">↗</span></a>
-        <ul class="route-meta"><li>附上相關頁面連結</li><li>通常七天內在同一則 issue 回覆</li></ul>
       </div>
     </div>
     <p>移除索引不影響原網站上的文章；要刪除原文請聯絡該網站。</p>
+    <p class="section-end"><a href="#toc"><span aria-hidden="true">↑</span> 回目錄</a></p>
   </section>
 
   <section aria-labelledby="changes">
