@@ -7,7 +7,6 @@
   import CourseHistory from '$lib/course-history.svelte';
   import { fillRatio, nearlyFull, publishedCapacity } from '$lib/course-history';
   import { averageScore, courseKey } from '$lib/community-format';
-  import Stars from '$lib/community-stars.svelte';
   import { labelledExtra } from '$lib/course-extra';
   import { postKind } from '$lib/course-external-text';
   import { englishTitle } from '$lib/course-title';
@@ -53,8 +52,15 @@
   // When and where is what a student checks first: the head lists every slot, once, on the page.
   let slots = $derived(course.schedule ?? []);
   let scheduleText = $derived(slots.length ? undefined : course.scheduleText?.trim() || undefined);
-  // The newest imported term is still running: its numbers are a snapshot, older terms are final.
-  let latestTerm = $derived(history.rows[0]?.term === course.term);
+  // A term of the current academic year (August to July) is still running: its numbers are a snapshot of
+  // the last import. Anything older is a finished class whose numbers are its final selection result,
+  // even when it is the newest term UniCourse has for this school.
+  let latestTerm = $derived.by(() => {
+    const year = Number(course.term.split('-')[0]);
+    const now = new Date();
+    const academic = now.getFullYear() - 1911 - (now.getMonth() < 7 ? 1 : 0);
+    return Number.isFinite(year) && year >= academic && history.rows[0]?.term === course.term;
+  });
   let titleEn = $derived(englishTitle(course.titleEn));
   let externalTotal = $derived(data.externalReviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0);
   // Indexed posts move above the site's own sections while those are both still empty, so the page's
@@ -68,13 +74,6 @@
   let externalQuestions = $derived(
     (data.externalReviews?.posts ?? []).filter((post) => postKind(post.tag) === 'question').length
   );
-  let externalMine = $derived.by(() => {
-    const own = new Set(course.instructors);
-    return (data.externalReviews?.posts ?? []).filter((post) =>
-      [post.match?.instructor, ...post.teachers].some((name) => name && own.has(name))).length;
-  });
-  // A short list of site posts leaves the right column half empty; the one-line external strip fills it.
-  let externalBeside = $derived(!externalFirst && externalTotal === 0 && (data.posts?.posts.length ?? 0) < 3);
   let updated = $derived(shortDateTime(course.importedAt));
   let importDay = $derived(updated.split(' ')[0]);
   let externalLabel = $derived(
@@ -135,7 +134,7 @@
         <span class="item mono">{course.term}</span>
         <span class="item mono">{course.courseCode}{#if course.classCode}-{course.classCode}{/if}</span>
         {#if course.instructors.length}
-          <span class="item">{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{/each}</span>
+          <span class="item people">{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{/each}</span>
         {:else}<span class="item muted">教師未公布</span>{/if}
         <span class="item">{#if course.credits != null}<b class="num">{credits(course.credits)}</b> 學分{:else}學分未公布{/if}</span>
         <span class="item">{#if requirementLabel}<b>{requirementLabel}</b>{#if requirementDetail}<a class="detail" href="#requirement-detail" title={`校方原文：「${requirementDetail}」`} aria-label="必選修的校方原文">ⓘ</a>{/if}{:else}必選修未公布{/if}</span>
@@ -186,9 +185,10 @@
           <dd class="meter" aria-hidden="true"><span style:width={`${Math.min(100, ratio * 100)}%`}></span></dd>
           {#if latestTerm}
             <!-- The term is in the sentence, so an older term's snapshot is not read as today's seats. -->
-            <dd class="note" title="UniCourse 匯入校方資料當時的快照，即時名額以校方為準">{course.term} {ratio > 1 ? `超額，名額的 ${share}%` : `已選 ${share}%`}{#if full && ratio <= 1}，接近額滿{/if}・{importDay} 匯入</dd>
+            <dd class="note" title="UniCourse 匯入校方資料當時的快照，即時名額以校方為準">{course.term} {ratio > 1 ? `超額，名額的 ${share}%` : `已選 ${share}%`}{#if full && ratio <= 1}，接近額滿{/if}・<span class="nowrap">{importDay} 匯入</span></dd>
           {:else}
-            <dd class="note">{course.term} 選課結果：{ratio > 1 ? `超額，名額的 ${share}%` : `名額的 ${share}%`}</dd>
+            <!-- A finished class: its final result, said as history so it is not read as today's seats. -->
+            <dd class="note"><span class="past">{course.term} 歷史班次</span>{ratio > 1 ? `最終超額 ${share}%` : `最終選課 ${share}%`}</dd>
           {/if}
         {:else}
           <dd class="note">{capacity == null && course.enrolled != null ? '校方未公布名額' : '人數與名額未公布'}</dd>
@@ -197,7 +197,8 @@
     </div>
     {#if termTotal}
       <div class="tile" class:partial={termTotal.partial}>
-        <dt>{termTotal.term} {termTotal.partial ? `已收錄的 ${displayValue(termTotal.offeringCount)} 班合計` : `全部 ${displayValue(termTotal.offeringCount)} 班合計`}</dt>
+        <!-- Short label; that only some sections were collected is said once, under the chart and in the table. -->
+        <dt>{termTotal.term}・{displayValue(termTotal.offeringCount)} 班合計</dt>
         {#if termTotal.enrolled == null && termTotal.capacity != null}
           <dd><span class="value num">{displayValue(termTotal.capacity)}</span><small>名額</small></dd>
         {:else if termTotal.enrolled != null}
@@ -205,19 +206,19 @@
         {:else}
           <dd><span class="value">—</span><small>人數未公布</small></dd>
         {/if}
-        <dd class="note"><a href="#history">{#if termTotal.partial}其他學期約 {displayValue(termTotal.usualSections)} 班，看歷年{:else}各班與歷年{/if}&nbsp;↓</a></dd>
+        <dd class="note"><a href="#history">各班與歷年&nbsp;↓</a></dd>
       </div>
     {/if}
     <div class="tile">
       {#if totals?.enrolledTotal != null}
-        <dt>歷年累計修課</dt>
+        <dt>歷年累計</dt>
         <dd><span class="value num">{displayValue(totals.enrolledTotal)}</span><small>人次</small></dd>
         <dd class="note"><a href="#history">{displayValue(totals.terms)} 期・{displayValue(totals.offerings)} 班&nbsp;↓</a></dd>
       {:else if totals?.capacityTotal != null}
         <!-- No published enrolment: the running total is of 名額, said in the label. -->
-        <dt>歷年累計名額</dt>
-        <dd><span class="value num">{displayValue(totals.capacityTotal)}</span><small>人次</small></dd>
-        <dd class="note"><a href="#history">{displayValue(totals.terms)} 期・{displayValue(totals.offerings)} 班・未公布修課人數&nbsp;↓</a></dd>
+        <dt>歷年名額合計</dt>
+        <dd><span class="value num">{displayValue(totals.capacityTotal)}</span><small>名額</small></dd>
+        <dd class="note"><a href="#history">{displayValue(totals.terms)} 期・{displayValue(totals.offerings)} 班・僅計已公布&nbsp;↓</a></dd>
       {:else if totals}
         <dt>歷年開課</dt>
         <dd><span class="value num">{displayValue(totals.terms)}</span><small>期</small></dd>
@@ -232,12 +233,17 @@
       {#if externalTile}
         <dt>外站討論（{externalLabel}）</dt>
         <dd><span class="value num">{displayValue(externalTotal)}</span><small>篇</small></dd>
-        <dd class="note"><a href="#external-reviews">心得 {displayValue(externalReviews)}・提問 {displayValue(externalQuestions)}・本班教師 {displayValue(externalMine)} 篇&nbsp;↓</a></dd>
+        <dd class="note"><a href="#external-reviews">心得 {displayValue(externalReviews)}・提問 {displayValue(externalQuestions)}&nbsp;↓</a></dd>
+        <!-- All three sources from the head: indexed posts above, the site's own ratings and threads here. -->
+        <dd class="note links">
+          {#if stats}<a href="#ratings">站內評價 {displayValue(ratingCount)}&nbsp;↓</a>{/if}
+          {#if data.posts}<a href="#forum-title">站內討論 {displayValue(data.posts.total)}&nbsp;↓</a>{/if}
+        </dd>
       {:else}
         <dt>同學評價</dt>
         {#if stats && ratingCount > 0}
           <!-- The sample size sits with the average, so 4.0 from one person never reads like a consensus. -->
-          <dd class:thin={ratingCount < 3}><span class="value num">{averageScore(stats.average)}</span><Stars score={stats.average ?? 0} decorative /><small class="sample" class:sparse={ratingCount < 3}>{ratingCount < 3 ? `僅 ${ratingCount} 則` : `${displayValue(ratingCount)} 則`}</small></dd>
+          <dd class:thin={ratingCount < 3}><span class="value num">{averageScore(stats.average)}</span><small class="out-of">/ 5</small><small class="sample" class:sparse={ratingCount < 3}>{ratingCount < 3 ? `僅 ${ratingCount} 則` : `${displayValue(ratingCount)} 則`}</small></dd>
         {:else if stats}
           <dd><span class="value small-value">尚無評價</span></dd>
         {:else}
@@ -295,13 +301,10 @@
       {:else}
         <EmptyState title="還沒有人討論這門課" description="問問修過的同學作業量、給分或考古題。" />
       {/if}
-      {#if externalBeside}
-        <CourseExternalReviews school={course.school} courseCode={course.courseCode} title={course.title} instructors={course.instructors} reviews={data.externalReviews} />
-      {/if}
     </section>
   </div>
 
-  {#if !externalFirst && !externalBeside}
+  {#if !externalFirst}
     <CourseExternalReviews school={course.school} courseCode={course.courseCode} title={course.title} instructors={course.instructors} reviews={data.externalReviews} />
   {/if}
 
@@ -372,9 +375,12 @@
   .when-line .slot { gap: 0; }
   .when-line .room::before { content: '·'; margin-inline: var(--space-2); color: var(--muted); }
   /* Everything else about the class on one wrapping line: term, code, teachers, credits, 必選修, language. */
-  .meta { display: flex; flex-wrap: wrap; gap: 0.125rem var(--space-3); align-items: center; color: var(--ink-2); font-size: var(--t-base); }
-  .meta .item { white-space: nowrap; }
-  .meta .item + .item::before { content: '·'; margin-inline-end: var(--space-3); color: var(--muted); }
+  /* Each item carries its dot in the gap before it; the row clips anything left of its edge, so a wrapped
+     line never starts with a stray「・」. */
+  .meta { display: flex; flex-wrap: wrap; gap: 0.125rem 1.5em; align-items: center; color: var(--ink-2); font-size: var(--t-base); overflow: clip; overflow-clip-margin: 4px; }
+  .meta .item { position: relative; white-space: nowrap; }
+  .meta .item.people { white-space: normal; }
+  .meta .item::before { content: '·'; position: absolute; inset-inline-start: -1.5em; inline-size: 1.5em; color: var(--muted); text-align: center; }
   .meta b { color: var(--ink); font-weight: 650; }
   .meta .detail { margin-inline-start: 2px; color: var(--muted); font-size: var(--t-sm); text-decoration: none; }
   .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: end; }
@@ -404,8 +410,10 @@
   .tile.partial .value { color: var(--ink-2); }
   .tile .note a:hover { color: var(--brand-ink); text-decoration: underline; }
   .tile .note.links { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); }
-  .tile .sample { align-self: center; padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-weight: 600; }
-  .tile .sample.sparse { background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 40%, transparent); }
+  .tile .sample { margin-inline-start: var(--space-1); color: var(--ink-2); font-weight: 600; white-space: nowrap; }
+  .tile .sample.sparse { padding: 0 6px; border-radius: var(--radius-pill); background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 40%, transparent); }
+  .nowrap { white-space: nowrap; }
+  .tile .past { margin-inline-end: 0.4em; padding: 0 5px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 650; white-space: nowrap; }
   .lead-facts { padding-block: var(--space-2) var(--space-4); }
   .meter { display: block !important; block-size: 10px; margin-block: var(--space-1) 0 !important; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .meter span { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); }
@@ -451,7 +459,6 @@
     .crumbs { margin-block-end: calc(-1 * var(--space-4)); }
     .actions .button { flex: 1 1 auto; }
     .actions-note { text-align: start; }
-    .meta .item { white-space: normal; }
     .when-line { font-size: var(--t-md); }
     .tiles { gap: var(--space-2); }
     .tile { padding: var(--space-3); }

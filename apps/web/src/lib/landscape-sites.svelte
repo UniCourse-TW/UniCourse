@@ -1,6 +1,4 @@
 <script lang="ts">
-  import Badge from '$lib/ui/Badge.svelte';
-  import type { BadgeTone } from '$lib/ui/types';
   import {
     categoryLabels, isOfficial, kindLabels, loginLabel, operatorLabels, sourceLabels, statusLabels, type Site
   } from '$lib/landscape-data';
@@ -21,7 +19,8 @@
   let head = $derived(collapseAfter && sites.length > collapseAfter + 2 ? sites.slice(0, collapseAfter) : sites);
   let tail = $derived(sites.slice(head.length));
 
-  const tones: Record<Site['status'], BadgeTone> = { active: 'live', inactive: 'blocked', unknown: 'none' };
+  /** Descriptions longer than about one line open with the row instead of wrapping it. */
+  const LONG = 28;
 
   /** A click anywhere on a row with notes (not on a link or the disclosure itself) opens them. */
   function toggleRow(event: MouseEvent) {
@@ -42,9 +41,9 @@
 
 {#snippet row(site: Site)}
   {@const official = isOfficial(site)}
-  {@const detail = Boolean(site.notes || site.repo)}
-  <!-- The description is shown in full; survey notes open from anywhere on the row (the cell's
-       disclosure is the keyboard and no-JS control). -->
+  {@const detail = Boolean(site.notes || site.repo || (site.features && site.features.length > LONG))}
+  <!-- The description shows one line; the rest and the survey notes open from anywhere on the row (the
+       cell's disclosure is the keyboard and no-JS control). -->
   <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (the summary is the keyboard control) -->
   <li class:third={!official} class:expandable={detail} onclick={detail ? toggleRow : undefined}>
     <span class="kind">{kindLabels[official ? 'official' : 'third']}</span>
@@ -56,16 +55,16 @@
       {#each site.category as category (category)}<span class="cat">{categoryLabels[category]}</span>{/each}
     </span>
     <span class="login">{loginLabel(site.loginRequired)}</span>
-    <span class="status"><Badge tone={tones[site.status]} label={statusLabels[site.status]} dot /></span>
+    <span class="status st {site.status}"><i aria-hidden="true"></i>{statusLabels[site.status]}</span>
     <span class="features">
       {#if detail}
         <details class="more">
           <summary><span class="text">{site.features ?? '—'}</span><span class="chev" aria-hidden="true"></span><span class="sr-only">（說明與原始碼）</span></summary>
-          <dl>
+          {#if site.notes || site.repo || (site.operatorName && official && !showOperator)}<dl>
             {#if site.notes}<dt>說明</dt><dd>{site.notes}</dd>{/if}
             {#if site.operatorName && official && !showOperator}<dt>營運者</dt><dd>{operatorLabels[site.operator]}（{site.operatorName}）</dd>{/if}
             {#if site.repo}<dt>原始碼</dt><dd><a href={site.repo} rel="noopener external">{host(site.repo)}{site.repo.replace(/^https?:\/\/[^/]+/, '')}</a></dd>{/if}
-          </dl>
+          </dl>{/if}
         </details>
       {:else}
         <span class="text">{site.features ?? '—'}</span>
@@ -77,7 +76,7 @@
 <div class="sites-box">
   {#if header}
     <!-- Same order as the third-party table above: site, functions, login, status; then the notes. -->
-    <div class="cols" aria-hidden="true"><span>類型</span><span>網站</span><span>功能</span><span>登入</span><span>狀態</span><span>說明（點列看備註）</span></div>
+    <div class="cols" aria-hidden="true"><span>類型</span><span>網站</span><span>功能</span><span>登入</span><span>狀態</span><span>說明（點列展開）</span></div>
   {/if}
   <ul class="sites" aria-label={label}>
     {#each head as site (site.url)}{@render row(site)}{/each}
@@ -161,7 +160,14 @@
     white-space: nowrap;
   }
   .login { color: var(--ink-2); white-space: nowrap; font-size: var(--t-sm); line-height: 1.5; }
+  /* Status as a small dot and the word (same as the third-party table above), not a pill per row. */
   .status { white-space: nowrap; }
+  .st { display: inline-flex; gap: 0.4em; align-items: center; color: var(--ink-2); font-size: var(--t-sm); line-height: 1.5; }
+  .st i { inline-size: 8px; block-size: 8px; border-radius: 50%; }
+  .st.active { color: var(--ink); }
+  .st.active i { background: var(--up); }
+  .st.inactive i { background: var(--down); }
+  .st.unknown i { border: 1.5px solid var(--muted); }
   .features { color: var(--ink-2); min-inline-size: 0; font-size: var(--t-sm); line-height: 1.5; overflow-wrap: anywhere; }
   .form { margin-inline-start: var(--space-1); padding: 0 5px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink-2); font-size: var(--t-xs); white-space: nowrap; }
   .sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -169,7 +175,9 @@
   .more { display: block; }
   .more > summary { display: flex; gap: var(--space-2); align-items: baseline; justify-content: space-between; border-radius: var(--radius-control); cursor: pointer; list-style: none; }
   .more > summary::-webkit-details-marker { display: none; }
-  .text { color: var(--ink-2); }
+  .text { min-inline-size: 0; color: var(--ink-2); }
+  /* Closed rows keep the description to one line, so every row is about one line tall. */
+  .more:not([open]) .text { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; line-clamp: 1; }
   /* A quiet chevron instead of a repeated 「＋備註」 label on every row. */
   .chev { flex: none; inline-size: 1.25rem; color: var(--muted); text-align: center; }
   .chev::before { content: '▾'; }

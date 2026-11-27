@@ -15,7 +15,7 @@ function listType(raw: string | null): ListType | '' {
   return listTypes.find((type) => type === raw) ?? '';
 }
 
-export const load: PageServerLoad = async ({ fetch, url }) => {
+export const load: PageServerLoad = async ({ fetch, url, locals }) => {
   const page = Number(url.searchParams.get('page') ?? '1');
   const filters = {
     type: listType(url.searchParams.get('type')),
@@ -53,19 +53,21 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   if (posts.response.status === 400) error(400, apiMessage(posts.error));
   if (!posts.data || !schools.data) error(503, UNAVAILABLE);
   const [all, ...byType] = counts;
-  // A young forum suggests a few well-attended courses to write about (one per school, so the list
-  // is not three sections of the same general course).
+  // A young forum suggests a few well-attended courses to write about: the signed-in reader's own
+  // school first (someone at 臺大 has no use for 逢甲's general course), otherwise one per school so
+  // the list is not three sections of the same general course.
   const young = (all?.total ?? 0) <= 5 && !filters.type && !query.school && !query.q && !query.tag;
-  const ranked = young
-    ? await client
-        .GET('/api/rankings/courses', { params: { query: { limit: 30, academic: true } } })
-        .then((result) => result.data ?? [])
-        .catch(() => [])
-    : [];
+  const rank = (school?: string) =>
+    client
+      .GET('/api/rankings/courses', { params: { query: { limit: school ? 3 : 30, academic: true, school } } })
+      .then((result) => result.data ?? [])
+      .catch(() => []);
+  const ownSchool = young ? (locals.user?.school ?? undefined) : undefined;
+  const mine = ownSchool ? await rank(ownSchool) : [];
+  const ranked = !young ? [] : mine.length ? mine : await rank();
   const titles = await courseTitles(fetch, posts.data.posts);
   const seen = new Set<string>();
-  const suggestions = ranked
-    .filter((entry) => !seen.has(entry.school) && seen.add(entry.school))
+  const suggestions = (mine.length ? ranked : ranked.filter((entry) => !seen.has(entry.school) && seen.add(entry.school)))
     .slice(0, 3)
     .map((entry) => ({
       school: entry.school,
@@ -79,6 +81,8 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   return {
     courseTitles: titles,
     suggestions,
+    /** The suggestions come from the reader's own school (named in the heading). */
+    suggestionsSchool: mine.length ? (mine[0].schoolName ?? null) : null,
     filters,
     compose: url.searchParams.get('compose') === '1',
     posts: posts.data,
