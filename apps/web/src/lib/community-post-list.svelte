@@ -27,12 +27,10 @@
 </script>
 
 <!--
-  A compact list in the tag.analysis.tw style. Desktop: title, a one-line summary, then one muted line with
-  category, course, author and tags; replies / score / date in aligned columns on the right. Phones: title,
-  summary, category and course, then「author · time」with replies and score at a fixed right-hand spot, and
-  the tags on their own line. The whole row is clickable through the title link; the other links sit above it.
+  Category, course and author follow the title and excerpt. Tags sit at the end of the context row
+  on desktop and on their own line on phones. The stretched title link sits behind the other links.
 -->
-<div class="post-list" class:dense>
+<div class="post-list" class:dense class:with-context={showCourse}>
   <div class="cols" aria-hidden="true">
     <span>文章</span><span>回覆</span><span>分數</span><span>時間</span>
   </div>
@@ -49,7 +47,7 @@
               {#if post.school && showCourse}
                 <a class="over ctx" href={forumHref({ school: post.school, courseCode: post.courseCode ?? undefined })}>
                   <!-- School, course and code are separate parts (each kept whole) with a visible divider. -->
-                  <span class="part">{schoolNames[post.school] ?? post.school}</span>{#if courseTitle}<span class="divider">·</span><span class="part course">{courseTitle}</span>{/if}{#if post.courseCode}{' '}<span class="part mono code">{post.courseCode}</span>{/if}
+                  <span class="part">{schoolNames[post.school] ?? post.school}</span>{#if post.courseCode}<span class="part course"><span class="divider" aria-hidden="true">·</span>{courseTitle ?? post.courseCode}</span>{#if !showAuthor && courseTitle}{' '}<span class="part mono code">{post.courseCode}</span>{/if}{/if}
                 </a>
               {/if}
             </p>
@@ -57,7 +55,7 @@
             {#if post.tags.length || !(post.school && showCourse)}
               <!-- Without a course to name, phones show the type badge at the head of the tag line (the kicker
                    above would be a line holding one badge). -->
-              <span class="tags">{#if !(post.school && showCourse)}<span class="cm-type tag-type" data-type={post.type}>{postTypeLabels[post.type]}</span>{/if}{#each post.tags as tag (tag)}<a class="over tag" href={forumHref({ tag })}>#{tag}</a>{/each}</span>
+              <span class="tags">{#if !(post.school && showCourse)}<span class="cm-type tag-type" data-type={post.type}>{postTypeLabels[post.type]}</span>{/if}{#each (showCourse ? post.tags.slice(0, 2) : post.tags) as tag (tag)}<a class="over tag" href={forumHref({ tag })}>#{tag}</a>{/each}</span>
             {/if}
           </div>
           <!-- Time first in the markup, so the phone line reads「11/27 13:04 … 回覆 0 · 分數 0」; desktop
@@ -126,7 +124,7 @@
     color: var(--muted);
   }
   .kicker .cm-type { font-size: 0.8125rem; }
-  .kicker .part { white-space: nowrap; }
+  .kicker .part { overflow-wrap: anywhere; }
   .kicker .divider { margin-inline: 0.35em; color: var(--axis); }
   .kicker .code { color: var(--muted); }
   .kicker .course { font-weight: 600; }
@@ -139,9 +137,11 @@
   .ctx:hover { color: var(--brand-ink) !important; }
   .ctx:hover :is(.part), .author:hover { text-decoration-color: currentColor; }
   .who { flex: none; min-inline-size: 0; }
-  .author::before { content: '@'; }
+  .post-list:not(.with-context) .author::before { content: '@'; }
   .tags { display: flex; flex: 1 1 0; flex-wrap: nowrap; gap: 0 var(--space-2); min-inline-size: 0; overflow: hidden; white-space: nowrap; }
   .tag { flex: none; padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2) !important; font-size: 0.8125rem; line-height: 1.6; text-decoration: none; }
+  .with-context .tags { flex: 0 1 auto; flex-wrap: wrap; overflow: visible; margin-inline-start: auto; }
+  .with-context .tag { flex: 0 1 auto; white-space: normal; overflow-wrap: anywhere; }
   .tag:hover { color: var(--brand-ink) !important; text-decoration: underline; }
   .tag-type { display: none; flex: none; font-size: 0.8125rem; }
   .tag-type[data-type='article'] { color: var(--brand-ink); background: var(--brand-wash); }
@@ -188,5 +188,15 @@
     dt { position: static; inline-size: auto; block-size: auto; overflow: visible; clip: auto; color: var(--muted); font-size: var(--t-sm); }
     dd { font-size: var(--t-sm); }
     .when dt { display: none; }
+    .with-context .ctx, .with-context .tag { display: inline-block; padding-block: 0.25rem; }
+    .with-context .ctx { min-block-size: 1.625rem; }
+    .with-context .who { margin-block-start: 0 !important; }
+    .with-context .who::after { content: none; }
+    .with-context .stats { flex: 0 0 auto; gap: var(--space-2); margin-inline-start: auto; white-space: nowrap; }
+    .with-context .stats .replies { margin-inline-start: 0; padding-inline-start: 0; }
+    .with-context .stats .score::before { content: none; }
+    .with-context .tags { flex-basis: 100%; margin-block-start: var(--space-1) !important; }
+    .with-context .tag { padding-inline: var(--space-2); }
+
   }
 </style>

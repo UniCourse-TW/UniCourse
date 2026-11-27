@@ -48,9 +48,7 @@
   const SPARSE = 5;
   const DISTRIBUTION_MIN = 3;
   let sparse = $derived(ratingCount < SPARSE && profile.posts.length < SPARSE);
-  /** One or two ratings are not an average worth a big number: the tile says how many more it needs. */
   let averageShown = $derived(average !== null && ratingCount >= DISTRIBUTION_MIN ? average.toFixed(1) : null);
-  /** Below the threshold the average is a one-line footnote with the progress, never a tile with a dash. */
   let sampleNote = $derived(`樣本不足（${ratingCount}／${DISTRIBUTION_MIN} 則）`);
   /** Which schools the ratings cover, said next to the rating count (not as the person's own school). */
   let coverage = $derived(
@@ -100,16 +98,12 @@
 
     {#if sparse}
       <section class="stats-side" aria-label="活動摘要">
-        <!-- The two counts are also the jump links to their sections (a corner arrow and a whole-tile hover);
-             the average needs three ratings, so until then it is one footnote line, not a tile with a dash. -->
+        <!-- The activity counts link directly to their lists. -->
         <StatRow label="活動統計">
-          <a class="tile-link" href="#ratings" aria-label="課程評價 {ratingCount} 則，跳到評價列表"><StatTile label="課程評價" value={ratingCount} unit="則" note={coverage ?? '還沒有評價'} /></a>
-          <a class="tile-link" href="#posts" aria-label="發表文章 {profile.posts.length} 篇，跳到文章列表"><StatTile label="發表文章" value={profile.posts.length} unit="篇" note={profile.posts.length ? `收到 ${replies} 則回覆` : '還沒有文章'} /></a>
+          <a class="tile-link" href="#ratings" aria-label="查看評價，共 {ratingCount} 則"><StatTile label="查看評價 ↓" value={ratingCount} unit="則" note={coverage ?? '還沒有評價'} /></a>
+          <a class="tile-link" href="#posts" aria-label="查看文章，共 {profile.posts.length} 篇"><StatTile label="查看文章 ↓" value={profile.posts.length} unit="篇" note={profile.posts.length ? `收到 ${replies} 則回覆` : '還沒有文章'} /></a>
           {#if averageShown}<StatTile label="平均給分" value={averageShown} unit="/ 5" note={`${ratingCount} 則評價`} />{/if}
         </StatRow>
-        {#if ratingCount > 0 && !averageShown}
-          <p class="avg-foot">平均給分：<b>{sampleNote}</b>，滿 {DISTRIBUTION_MIN} 則後顯示。</p>
-        {/if}
       </section>
     {/if}
   </header>
@@ -118,8 +112,8 @@
   {#if !sparse}
   <section class="summary" aria-label="活動摘要">
     <StatRow label="活動統計">
-      <a class="tile-link" href="#ratings" aria-label="課程評價 {ratingCount} 則，跳到評價列表"><StatTile label="課程評價" value={ratingCount} unit="則" note={ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : averageShown ? `平均給分 ${averageShown} / 5` : ratingCount ? sampleNote : undefined} /></a>
-      <a class="tile-link" href="#posts" aria-label="發表文章 {profile.posts.length} 篇，跳到文章列表"><StatTile label="發表文章" value={profile.posts.length} unit="篇" note={profile.posts.length >= POST_CAP ? `顯示最近 ${POST_CAP} 篇` : undefined} /></a>
+      <a class="tile-link" href="#ratings" aria-label="查看評價，共 {ratingCount} 則"><StatTile label="查看評價 ↓" value={ratingCount} unit="則" note={ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : averageShown ? `平均給分 ${averageShown} / 5` : undefined} /></a>
+      <a class="tile-link" href="#posts" aria-label="查看文章，共 {profile.posts.length} 篇"><StatTile label="查看文章 ↓" value={profile.posts.length} unit="篇" note={profile.posts.length >= POST_CAP ? `顯示最近 ${POST_CAP} 篇` : undefined} /></a>
       <StatTile label="文章收到的回覆" value={replies} unit="則" />
       {#if topSchool}
         <StatTile label="最常評的學校" value={topSchool.name} note={`${topSchool.count} 則評價`} />
@@ -134,16 +128,17 @@
     <div class="block-head">
       <h2 id="ratings">課程評價（{ratingCount}）</h2>
       {#if hydrated && ratingCount > 1}
-        <div class="sort" role="group" aria-label="評價排序">
-          <button type="button" aria-pressed={sort === 'recent'} onclick={() => (sort = 'recent')}>最新</button>
-          <button type="button" aria-pressed={sort === 'score'} onclick={() => (sort = 'score')}>給分高</button>
+        <div class="sort-tools" role="group" aria-labelledby="rating-sort">
+          <span id="rating-sort">評價排序</span>
+          <div class="sort">
+            <button type="button" aria-pressed={sort === 'recent'} onclick={() => (sort = 'recent')}>最新</button>
+            <button type="button" aria-pressed={sort === 'score'} onclick={() => (sort = 'score')}>給分高</button>
+          </div>
         </div>
       {/if}
     </div>
-    {#if ratingCount}
-      <!-- One muted line: which schools the ratings cover and, below the threshold, the same sample note as the
-           header, saying why there is no distribution yet. -->
-      <p class="rating-context"><span class="nowrap">評價涵蓋校別：{ratedSchool ?? `${schoolCounts.length} 所學校`}</span>{#if ratingCount < DISTRIBUTION_MIN}<span class="sep" aria-hidden="true">·</span><span class="nowrap">{sampleNote}，滿 {DISTRIBUTION_MIN} 則才顯示分布</span>{/if}</p>
+    {#if ratingCount > 0 && ratingCount < DISTRIBUTION_MIN}
+      <p class="rating-context">{sampleNote}，暫不顯示平均與分布。</p>
     {/if}
     {#if ratingCount >= DISTRIBUTION_MIN && average !== null}
       <div class="dist">
@@ -163,7 +158,7 @@
         <table>
           <caption class="cm-sr">{name} 的課程評價</caption>
           <thead>
-            <tr><th scope="col" class="c-course">課程</th><th scope="col" class="c-school">學校</th><th scope="col" class="c-score">給分</th><th scope="col" class="c-when">時間</th><th scope="col">評論</th></tr>
+            <tr><th scope="col" class="c-course">課程</th><th scope="col" class="c-score">給分</th><th scope="col" class="c-when">時間</th><th scope="col">評論</th></tr>
           </thead>
           <tbody>
             {#each ratings as rating (key(rating))}
@@ -172,9 +167,8 @@
               <tr>
                 <th scope="row" data-label="課程">
                   <a href={courseHref(rating)}>{rating.title ?? rating.courseCode}</a>
-                  <span class="mono code">{rating.courseCode}</span>
+                  <span class="course-meta"><span>{data.schoolNames[rating.school] ?? rating.school}</span><span class="mono">{rating.courseCode}</span></span>
                 </th>
-                <td data-label="學校" class="school">{data.schoolNames[rating.school] ?? rating.school}</td>
                 <td data-label="給分" class="score-cell">
                   <span class="num score">{rating.score} / 5</span>
                   <span class="stars" aria-hidden="true"><Stars score={rating.score} /></span>
@@ -219,14 +213,10 @@
   .person { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--space-4); align-items: center; }
   .person > .bio, .person > .edit { grid-column: 1 / -1; }
   .edit { justify-self: start; margin-block-start: var(--space-3); }
-  /* A count tile that is also the jump link to its section: same tile, a link's hover and focus. */
-  /* Every tile label is the same muted text; a jump tile adds a corner arrow and a whole-tile hover. */
+  /* The full tile is a jump link with a visible hover and focus treatment. */
   .tile-link { position: relative; display: block; min-inline-size: 0; border-radius: var(--radius-panel); color: inherit !important; text-decoration: none; }
   .tile-link :global(.tile) { block-size: 100%; transition: border-color 0.15s, background-color 0.15s; }
-  .tile-link::after { content: '↓'; position: absolute; inset-block-start: var(--space-2); inset-inline-end: var(--space-3); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; }
   .tile-link:hover :global(.tile) { border-color: var(--brand); background: var(--brand-wash); }
-  .stats-side .avg-foot { margin-block-start: var(--space-2) !important; color: var(--muted); font-size: var(--t-sm); text-wrap: pretty; }
-  .avg-foot b { color: var(--ink-2); font-weight: 600; }
   .stats-side { min-inline-size: 0; }
   .stats-side :global(.stat-row) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .stats-side :global(.stat-row:has(> :nth-child(2):last-child)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -249,7 +239,6 @@
   /* The fourth tile may hold a school name, not a count: keep it readable but smaller than the numbers. */
   .summary :global(.stat-row > :nth-child(4) dd) { font-size: var(--t-xl); line-height: 1.3; min-block-size: 2.1rem; display: flex; align-items: center; }
   .bio.empty { color: var(--muted); font-size: var(--t-sm); }
-  .nowrap { white-space: nowrap; }
   .rating-context { color: var(--muted); font-size: var(--t-base); margin-block-end: var(--space-2) !important; }
   .dist { max-inline-size: 55rem; }
   .dist { margin-block-end: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
@@ -260,6 +249,7 @@
   .block { margin-block-start: var(--space-8); scroll-margin-block-start: 5rem; }
   .block-head { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; justify-content: space-between; margin-block-end: var(--space-3); }
   .block-head h2 { font-size: var(--t-lg) !important; scroll-margin-block-start: 5rem; }
+  .sort-tools { display: flex; align-items: center; gap: var(--space-2); color: var(--muted); font-size: var(--t-sm); }
   .sort { display: inline-flex; padding: 2px; border: 1px solid var(--line); border-radius: calc(var(--radius-control) + 2px); background: var(--panel); }
   .sort button {
     min-block-size: 2.25rem;
@@ -283,14 +273,12 @@
   :is(thead, tbody) tr > :last-child { padding-inline-end: var(--space-4); }
   tbody tr:hover { background: var(--hover-row); }
   /* Fixed column shares, so the review gets the remaining width and the date sits right next to the score. */
-  .c-course { inline-size: 22%; }
-  .c-school { inline-size: 14%; }
+  .c-course { inline-size: 25%; }
   .c-score { inline-size: 12%; }
   .c-when { inline-size: 7.5rem; }
   tbody th a { font-weight: 600; text-decoration: none; }
   tbody th a:hover { text-decoration: underline; }
-  .code { display: block; color: var(--muted); font-size: var(--t-xs); }
-  .school { color: var(--ink-2); }
+  .course-meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--ink-2); font-size: var(--t-sm); overflow-wrap: anywhere; }
   .score { display: inline-block; color: var(--ink); font-weight: 650; }
   .stars { display: inline-block; margin-inline-start: var(--space-1); }
   .review .text { display: block; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -323,11 +311,9 @@
     tbody tr > :is(th, td):nth-child(n) { padding: 0; border: 0 !important; inline-size: auto; }
     tbody th { grid-column: 1; }
     tbody td[data-label='給分'] { grid-column: 2; grid-row: 1; text-align: end; }
-    /* The date stays at the row's end as on desktop: right of the school line. */
-    .school { grid-column: 1; grid-row: 2; inline-size: auto; font-size: var(--t-sm); color: var(--ink-2); }
-    .when { grid-column: 2; grid-row: 2; font-size: var(--t-sm); }
-    .review { grid-column: 1 / -1; inline-size: auto; }
-    .code { font-size: var(--t-sm); overflow-wrap: anywhere; }
+    .when { grid-column: 2; grid-row: 2; align-self: center; color: var(--ink-2); font-size: var(--t-sm); }
+    .review { grid-column: 1 / -1; grid-row: 3; inline-size: auto; }
+    .sort button, .more { min-block-size: var(--target-min); }
     .stars { display: block; margin: 0; }
   }
 </style>

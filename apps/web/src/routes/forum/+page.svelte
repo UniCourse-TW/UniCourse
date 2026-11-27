@@ -19,7 +19,7 @@
   let pages = $derived(Math.max(1, Math.ceil(total / data.posts.pageSize)));
   let first = $derived((filters.page - 1) * data.posts.pageSize + 1);
   let last = $derived(first + data.posts.posts.length - 1);
-  let filtered = $derived(Boolean(filters.type || filters.school || filters.q || filters.tag));
+  let filtered = $derived(Boolean(filters.type || filters.school || filters.courseCode || filters.q || filters.tag));
   let narrowed = $derived(Boolean(filters.school || filters.q || filters.tag));
   /** Only a category chip is active: the empty state can speak about that category. */
   let onlyType = $derived(Boolean(filters.type) && !narrowed && !filters.courseCode);
@@ -100,11 +100,11 @@
       <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.5" /><path d="m13 13 4 4" /></svg>
       <input name="q" type="search" maxlength="100" defaultValue={filters.q} placeholder="搜尋標題與內文" />
     </label>
-    <!-- One submit button, right next to the keyword (phones too); the course scope opens below it. -->
+    <!-- The same submit button applies the keyword, course scope and sort selection. -->
     <button class="cm-btn submit">搜尋</button>
     <details class="scope" open={Boolean(scope) || undefined}>
-      <summary><span class="scope-part">{#if scope}已套用 {scopeCount} 項：<b>{scope}</b>{:else}學校、課號與標籤{/if}</span><span class="chev" aria-hidden="true"></span></summary>
-      <div class="scope-fields" role="group" aria-label="學校、課號與標籤">
+      <summary><span class="scope-part">{#if scope}已套用 {scopeCount} 項：<b>{scope}</b>{:else if data.sortable}篩選與排序{#if data.oldest} · 最早發文{/if}{:else}進階篩選{/if}</span><span class="chev" aria-hidden="true"></span></summary>
+      <div class="scope-fields" role="group" aria-label={data.sortable ? '篩選與排序' : '進階篩選'}>
         <FilterSelect name="school" label="學校" options={schoolOptions} value={filters.school} allLabel="全部學校" />
         <label class="code-field">
           <span>課號</span>
@@ -115,10 +115,18 @@
           <span>標籤</span>
           <input name="tag" maxlength="100" defaultValue={filters.tag} placeholder="例如 作業" spellcheck="false" />
         </label>
+        {#if data.sortable}
+          <div class="sort-field">
+            <label for="forum-sort">排序</label>
+            <select id="forum-sort" name="sort" value={data.oldest ? 'oldest' : ''}>
+              <option value="">最新發文</option>
+              <option value="oldest">最早發文</option>
+            </select>
+          </div>
+        {/if}
       </div>
     </details>
     {#if filters.type}<input type="hidden" name="type" value={filters.type} />{/if}
-    {#if data.oldest}<input type="hidden" name="sort" value="oldest" />{/if}
     {#if filtered || filters.courseCode}<a class="clear" href="/forum">清除</a>{/if}
   </form>
 
@@ -127,8 +135,7 @@
       {#each typeChips as chip (chip.key)}
         {@const n = data.counts[chip.key]}
         {#if n === 0 && chip.type && filters.type !== chip.type}
-          <!-- An empty category stays in the set but is plain text, not a pill: there is nothing to open. -->
-          <span class="chip-empty" aria-disabled="true" title="目前沒有{chip.label}">{chip.label} <span class="num">0</span></span>
+          <span class="cm-chip chip-empty" aria-disabled="true" aria-label="目前沒有{chip.label}">{chip.label}<span class="n">0</span></span>
         {:else}
           <a class="cm-chip" href={filterHref({ ...filters, type: chip.type, page: 1 })}
             aria-current={filters.type === chip.type ? 'true' : undefined}>
@@ -196,37 +203,11 @@
         </EmptyState>
       {/if}
     {:else}
-      <!-- The list header: what is listed and how many (the one count on the page), then the sort. -->
       <div class="list-head">
-        <h2 id="results">{filtered || filters.courseCode ? '符合的文章' : '最新文章'}<span class="count num">{fmt.format(total)} 篇</span></h2>
-        {#if data.sortable}
-          <form class="sort-form" method="GET" action="/forum">
-            {#each Object.entries(filters) as [name, value] (name)}
-              {#if name !== 'page' && value}<input type="hidden" {name} {value} />{/if}
-            {/each}
-            <label class="sort-field">
-              <span>排序</span>
-              <select name="sort" value={data.oldest ? 'oldest' : ''} onchange={(event) => event.currentTarget.form?.requestSubmit()}>
-                <option value="">最新發文</option>
-                <option value="oldest">最早發文</option>
-              </select>
-            </label>
-            <noscript><button type="submit" class="cm-btn secondary">套用排序</button></noscript>
-          </form>
-        {:else}
-          <span class="sort-note">依發文時間・最新在前</span>
-        {/if}
+        <h2 id="results">{filtered ? '符合的文章' : data.oldest ? '文章' : '最新文章'}<span class="count num">{fmt.format(total)} 篇</span></h2>
+        {#if invite}<a class="young-note" href="#sparse-title">論壇剛開張 · 看熱門課程 <span aria-hidden="true">↘</span></a>{/if}
       </div>
-      {#if invite}
-        <p class="young-note">
-          論壇剛開張{#if data.recentCount}，近 7 天新增 <b class="num">{fmt.format(data.recentCount)}</b> 篇{/if}。<a href="#sparse-title">看看你修過哪些熱門課<span class="arrow-side" aria-hidden="true"> →</span><span class="arrow-down" aria-hidden="true"> ↓</span></a>
-        </p>
-      {/if}
-      <CommunityPostList posts={data.posts.posts} {schoolNames} courseTitles={data.courseTitles} dense label={filtered ? '符合的文章' : '最新文章'} />
-      {#if invite}
-        <!-- Wide screens: under the list (the right column is the taller one); phones: after the suggestions. -->
-        <p class="find-line wide">修的是別門課？<a class="find" href="/">先查課，從課程頁發文會自動帶上課號 →</a></p>
-      {/if}
+      <CommunityPostList posts={data.posts.posts} {schoolNames} courseTitles={data.courseTitles} dense label={filtered ? '符合的文章' : '文章'} />
       {#if pages > 1}
         <footer class="pager">
           <p class="num">第 {fmt.format(first)}–{fmt.format(last)} 篇<span class="sep">·</span>共 {fmt.format(total)} 篇</p>
@@ -239,11 +220,14 @@
     <!-- A young forum: a short, open list of well-attended courses to write about, apart from the results. -->
     <aside class="sparse" aria-labelledby="sparse-title">
       <div class="sparse-head">
-        <h2 id="sparse-title">修過這些熱門課？寫一篇心得</h2>
-        <p class="sparse-dek">{data.suggestionsSchool ?? '各校'}累計修課人次最多的課。點課名看課程，或直接寫心得。</p>
+        <h2 id="sparse-title">{data.suggestionsSchool ? `${data.suggestionsSchool}熱門課程` : '熱門課程'}</h2>
+        <p class="sparse-dek" id="suggest-scale">
+          <span>歷年修課 · 各課收錄期間累計</span>
+          {#if topEnrolled > 0}<span class="scale num">尺度 0–{fmt.format(topEnrolled)} 人次</span>{/if}
+        </p>
       </div>
       <div class="suggest-frame">
-        <table class="suggest">
+        <table class="suggest" aria-describedby="suggest-scale">
           <caption class="cm-sr">依{data.suggestionsSchool ?? '各校'}累計修課人次推薦的課程</caption>
           <thead>
             <tr><th scope="col">課程</th><th scope="col" class="count-col">累計修課人次</th><th scope="col"><span class="cm-sr">動作</span></th></tr>
@@ -258,20 +242,19 @@
                 </th>
                 <td class="suggest-count">
                   <!-- Bars share one scale starting at 0 (the footnote names the full bar), so the courses compare at a glance. -->
-                  {#if share !== null}<span class="bar" aria-hidden="true"><span style:inline-size="{share}%"></span></span>{/if}
+                  {#if share !== null}<span class="bar" aria-hidden="true"><span style:inline-size="{share > 0 ? `max(3px, ${share}%)` : '0'}"></span></span>{/if}
                   <span class="num value">{displayValue(entry.enrolledTotal)}<small> 人次</small></span>
                   {#if entry.terms}<span class="range num">{entry.terms.first === entry.terms.last ? entry.terms.first : `${entry.terms.first}–${entry.terms.last}`}・{entry.terms.count} 個學期</span>{/if}
                 </td>
                 <td class="suggest-act">
-                  <a class="cm-btn secondary write" href={writeHref(entry.school, entry.courseCode)} aria-label={`寫「${entry.title}」的心得`}>寫心得</a>
+                  <a class="write" href={writeHref(entry.school, entry.courseCode)} aria-label={`寫心得：${entry.title}`}>寫心得 <span aria-hidden="true">→</span></a>
                 </td>
               </tr>
             {/each}
           </tbody>
         </table>
       </div>
-      <p class="scale-note">長條同一比例、從 0 起算，滿格 = <span class="num">{fmt.format(topEnrolled)}</span> 人次；學期區間為各課的收錄範圍。</p>
-      <p class="find-line narrow">修的是別門課？<a class="find" href="/">先查課，從課程頁發文會自動帶上課號 →</a></p>
+      <p class="scale-note"><a href="/">查其他課程 →</a></p>
     </aside>
   {/if}
   </div>
@@ -368,8 +351,9 @@
     .board.rail { grid-template-columns: minmax(0, 1fr) 20rem; gap: var(--space-8); }
   }
   .sparse { display: grid; gap: var(--space-2); min-inline-size: 0; container: suggest / inline-size; }
-  .sparse h2 { margin: 0; font-size: var(--t-lg); font-weight: 650; letter-spacing: var(--tracking-heading); }
-  .sparse-dek { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; text-wrap: pretty; }
+  .sparse h2 { scroll-margin-block-start: 7rem; margin: 0; font-size: var(--t-lg); font-weight: 650; letter-spacing: var(--tracking-heading); }
+  .sparse-dek { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); margin-block-start: var(--space-1) !important; color: var(--muted); font-size: var(--t-sm); text-wrap: pretty; }
+  .sparse-dek .scale { white-space: nowrap; }
   .suggest-frame { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); overflow: hidden; }
   .suggest { inline-size: 100%; border-collapse: collapse; font-size: var(--t-base); }
   .suggest thead th { padding: var(--space-2) var(--space-4); border-block-end: 1px solid var(--line); color: var(--muted); background: var(--table-head); font-size: var(--t-sm); font-weight: 600; text-align: start; }
@@ -387,7 +371,10 @@
   .suggest-count small { margin-inline-start: 0.25em; color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
   .suggest-count .range { grid-column: 1 / -1; color: var(--muted); font-size: var(--t-sm); }
   .suggest-act { inline-size: 1%; text-align: end !important; }
-  .write { min-block-size: 2.25rem; padding-inline: var(--space-3); font-size: var(--t-sm); }
+  .write { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
+  @media (hover: hover) and (pointer: fine) {
+    .suggest tr:not(:first-child):not(:hover):not(:focus-within) .write { opacity: 0; }
+  }
   .nowrap { white-space: nowrap; }
   .scale-note { margin: 0 !important; color: var(--muted); font-size: var(--t-sm); text-wrap: pretty; }
   /* Narrow (the right column, or a phone): course and 寫心得 on the first line, the bar with its count
@@ -395,34 +382,30 @@
   @container suggest (max-width: 34rem) {
     .suggest thead { display: none; }
     .suggest, .suggest tbody { display: block; }
-    .suggest tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-3); align-items: center; padding: var(--space-3); }
+    .suggest tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); }
     .suggest tbody tr + tr { border-block-start: 1px solid var(--line); }
     .suggest tbody tr > :is(th, td):nth-child(n) { display: block; padding: 0; border: 0; }
     .suggest-count { grid-column: 1 / -1; grid-row: 2; display: grid !important; }
     .suggest-act { grid-column: 2; grid-row: 1; inline-size: auto; }
-    .write { min-block-size: var(--target-min); }
   }
-  /* An empty category: plain muted words beside the pills, not a pill of its own (nothing to open). */
-  .chip-empty { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: 2.25rem; padding-inline: var(--space-2); color: var(--muted); font: 500 var(--t-sm) / 1 var(--font-sans); white-space: nowrap; cursor: default; }
-  .find-line { margin: var(--space-3) 0 0 !important; color: var(--muted); font-size: var(--t-sm); }
-  .find { color: var(--brand-ink); font-weight: 600; }
-  .list-head { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); justify-content: space-between; align-items: center; margin: 0 0 var(--space-2); color: var(--ink-2); font-size: var(--t-sm); }
+  .types .chip-empty { color: var(--muted); background: transparent; border: 1px solid var(--line); cursor: default; }
+  .list-head { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); justify-content: space-between; align-items: center; margin-block-end: var(--space-1); }
   .list-head h2 { display: flex; gap: var(--space-2); align-items: baseline; margin: 0; font-size: var(--t-lg); }
-  .list-head .count { color: var(--ink-2); font-size: var(--t-base); font-weight: 600; letter-spacing: 0; }
-  .sort-note { color: var(--muted); }
-  /* One line above a young forum's list; it points to the suggestions (right column or below). */
-  .young-note { margin: 0 0 var(--space-2) !important; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); color: var(--ink-2); background: var(--brand-wash); font-size: var(--t-base); text-wrap: pretty; }
-  .young-note b { color: var(--ink); font-weight: 650; }
-  .young-note a { font-weight: 600; }
-  .arrow-down { display: none; }
-  .find-line.narrow { display: none; }
-  @media (max-width: 63.99rem) {
-    .arrow-side, .find-line.wide { display: none; }
-    .arrow-down { display: inline; }
-    .find-line.narrow { display: block; margin-block-start: 0 !important; }
+  .list-head .count { color: var(--ink-2); font-size: var(--t-base); font-weight: 600; letter-spacing: 0; white-space: nowrap; }
+  .young-note { display: inline-flex; align-items: center; gap: 0.25em; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; }
+  .sort-field {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-block-size: var(--target-min);
+    padding-inline-start: var(--space-2);
+    border: 1px solid var(--control-line);
+    border-radius: var(--radius-control);
+    background: var(--panel-raised);
+    color: var(--muted);
+    font-size: var(--t-sm);
+    font-weight: 600;
   }
-  .sort-form, .sort-field { display: flex; align-items: center; gap: var(--space-2); }
-  .sort-field { min-block-size: var(--target-min); padding-inline-start: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); }
   .sort-field select { min-block-size: calc(var(--target-min) - 2px); padding: 0 var(--space-2); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink); font: inherit; color-scheme: var(--ui-color-scheme); }
   .submit { flex: none; order: 1; }
   .toolbar > .clear { order: 2; }
@@ -469,10 +452,12 @@
     .scope-fields { flex-basis: 100%; padding-block-start: var(--space-2); }
     .scope-fields :global(.field) { flex: 1 1 100%; }
     .scope-fields :global(.field select) { flex: 1; max-inline-size: none; }
-    .code-field { flex: 1 1 100%; }
+    .code-field, .sort-field { flex: 1 1 100%; }
+    .sort-field select { flex: 1; }
     .code-field input { flex: 1; inline-size: auto; min-inline-size: 0; }
     /* The removable chips below already clear each filter; the text link only adds a wrapped row here. */
     .toolbar > .clear { display: none; }
+    .chip-bar { margin-block-end: var(--space-2); }
     /* Category chips scroll sideways rather than wrapping into a tall block. */
     .types {
       flex-wrap: nowrap;
