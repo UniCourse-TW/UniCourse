@@ -204,9 +204,11 @@ async function prepareFixtures() {
   const headers = { 'content-type': 'application/json', cookie: `uc_session=${fixtures.session}` };
 
   // One thread about the example course, with one reply, created once and reused.
-  const mine = await getJson(`${api}/api/posts?school=${course.school}&courseCode=${encodeURIComponent(course.courseCode)}&pageSize=1`);
-  if (mine?.posts?.length) {
-    fixtures.postId = mine.posts[0].id;
+  // Pick the thread that has replies: the newest post may be the zero-reply fixture below.
+  const mine = await getJson(`${api}/api/posts?school=${course.school}&courseCode=${encodeURIComponent(course.courseCode)}&pageSize=50`);
+  const answered = mine?.posts?.find((post) => post.replyCount > 0);
+  if (answered) {
+    fixtures.postId = answered.id;
   } else {
     const post = await fetch(`${api}/api/posts`, {
       method: 'POST',
