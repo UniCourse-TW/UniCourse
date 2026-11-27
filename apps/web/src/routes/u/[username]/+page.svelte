@@ -5,7 +5,6 @@
   import { dateTime, initial, oneLine, shortDateTime, slashDate } from '$lib/community-format';
   import Stars from '$lib/community-stars.svelte';
   import { courseSearchHref } from '$lib/community-paths';
-  import BarList from '$lib/ui/BarList.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import StatRow from '$lib/ui/StatRow.svelte';
   import StatTile from '$lib/ui/StatTile.svelte';
@@ -49,7 +48,6 @@
   const DISTRIBUTION_MIN = 3;
   let sparse = $derived(ratingCount < SPARSE && profile.posts.length < SPARSE);
   let averageShown = $derived(average !== null && ratingCount >= DISTRIBUTION_MIN ? average.toFixed(1) : null);
-  let sampleNote = $derived(`樣本不足（${ratingCount}／${DISTRIBUTION_MIN} 則）`);
   /** Which schools the ratings cover, said next to the rating count (not as the person's own school). */
   let coverage = $derived(
     schoolCounts.length === 0 ? undefined : ratedSchool ? `涵蓋 1 所：${ratedSchool}` : `涵蓋 ${schoolCounts.length} 所學校`
@@ -78,6 +76,13 @@
   <meta name="description" content={`${name} 在 UniCourse 的 ${ratingCount} 則課程評價與 ${profile.posts.length} 篇文章。`} />
 </svelte:head>
 
+{#snippet jumpTile(section: 'ratings' | 'posts', label: string, value: number, unit: string, note?: string)}
+  <a class="tile-link" href="#{section}" aria-label="查看{section === 'ratings' ? '評價' : '文章'}，共 {value} {unit}">
+    <StatTile {label} {value} {unit} {note} />
+    <span class="tile-arrow" aria-hidden="true">↓</span>
+  </a>
+{/snippet}
+
 <div class="cm profile">
   <header class="identity" class:with-stats={sparse}>
     <div class="person">
@@ -100,8 +105,8 @@
       <section class="stats-side" aria-label="活動摘要">
         <!-- The activity counts link directly to their lists. -->
         <StatRow label="活動統計">
-          <a class="tile-link" href="#ratings" aria-label="查看評價，共 {ratingCount} 則"><StatTile label="查看評價 ↓" value={ratingCount} unit="則" note={coverage ?? '還沒有評價'} /></a>
-          <a class="tile-link" href="#posts" aria-label="查看文章，共 {profile.posts.length} 篇"><StatTile label="查看文章 ↓" value={profile.posts.length} unit="篇" note={profile.posts.length ? `收到 ${replies} 則回覆` : '還沒有文章'} /></a>
+          {@render jumpTile('ratings', '課程評價', ratingCount, '則', coverage ?? '還沒有評價')}
+          {@render jumpTile('posts', '文章', profile.posts.length, '篇', profile.posts.length ? `收到 ${replies} 則回覆` : '還沒有文章')}
           {#if averageShown}<StatTile label="平均給分" value={averageShown} unit="/ 5" note={`${ratingCount} 則評價`} />{/if}
         </StatRow>
       </section>
@@ -112,8 +117,8 @@
   {#if !sparse}
   <section class="summary" aria-label="活動摘要">
     <StatRow label="活動統計">
-      <a class="tile-link" href="#ratings" aria-label="查看評價，共 {ratingCount} 則"><StatTile label="查看評價 ↓" value={ratingCount} unit="則" note={ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : averageShown ? `平均給分 ${averageShown} / 5` : undefined} /></a>
-      <a class="tile-link" href="#posts" aria-label="查看文章，共 {profile.posts.length} 篇"><StatTile label="查看文章 ↓" value={profile.posts.length} unit="篇" note={profile.posts.length >= POST_CAP ? `顯示最近 ${POST_CAP} 篇` : undefined} /></a>
+      {@render jumpTile('ratings', '課程評價', ratingCount, '則', ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : averageShown ? `平均給分 ${averageShown} / 5` : undefined)}
+      {@render jumpTile('posts', '文章', profile.posts.length, '篇', profile.posts.length >= POST_CAP ? `顯示最近 ${POST_CAP} 篇` : undefined)}
       <StatTile label="文章收到的回覆" value={replies} unit="則" />
       {#if topSchool}
         <StatTile label="最常評的學校" value={topSchool.name} note={`${topSchool.count} 則評價`} />
@@ -138,12 +143,16 @@
       {/if}
     </div>
     {#if ratingCount > 0 && ratingCount < DISTRIBUTION_MIN}
-      <p class="rating-context">{sampleNote}，暫不顯示平均與分布。</p>
+      <p class="rating-context">目前有 {ratingCount} 則評價，滿 {DISTRIBUTION_MIN} 則才顯示平均與分布。</p>
     {/if}
     {#if ratingCount >= DISTRIBUTION_MIN && average !== null}
       <div class="dist">
         <h3 class="eyebrow">給分分布・平均給分 <span class="num avg">{average.toFixed(1)}</span> / 5</h3>
-        <BarList label="給分分布" items={histogram} unit="則" />
+        <dl class="distribution" aria-label="各分數的評價則數">
+          {#each histogram as { label, value } (label)}
+            <div><dt>{label}</dt><dd class="num">{value} 則</dd></div>
+          {/each}
+        </dl>
       </div>
     {/if}
     {#if ratingCount === 0}
@@ -166,7 +175,7 @@
               {@const long = (rating.review?.length ?? 0) > LONG_REVIEW}
               <tr>
                 <th scope="row" data-label="課程">
-                  <a href={courseHref(rating)}>{rating.title ?? rating.courseCode}</a>
+                  <a class="row-link" href={courseHref(rating)}>{rating.title ?? rating.courseCode}</a>
                   <span class="course-meta"><span>{data.schoolNames[rating.school] ?? rating.school}</span><span class="mono">{rating.courseCode}</span></span>
                 </th>
                 <td data-label="給分" class="score-cell">
@@ -215,8 +224,10 @@
   .edit { justify-self: start; margin-block-start: var(--space-3); }
   /* The full tile is a jump link with a visible hover and focus treatment. */
   .tile-link { position: relative; display: block; min-inline-size: 0; border-radius: var(--radius-panel); color: inherit !important; text-decoration: none; }
-  .tile-link :global(.tile) { block-size: 100%; transition: border-color 0.15s, background-color 0.15s; }
-  .tile-link:hover :global(.tile) { border-color: var(--brand); background: var(--brand-wash); }
+  .tile-link :global(.tile) { block-size: 100%; border-color: var(--control-line); transition: border-color 0.15s, background-color 0.15s; }
+  .tile-link :global(dt) { padding-inline-end: var(--space-5); color: var(--brand-ink); font-weight: 650; }
+  .tile-arrow { position: absolute; inset-block-start: var(--space-2); inset-inline-end: var(--space-3); color: var(--brand-ink); font-size: var(--t-lg); font-weight: 650; }
+  .tile-link:is(:hover, :focus-visible) :global(.tile) { border-color: var(--brand); background: var(--brand-wash); }
   .stats-side { min-inline-size: 0; }
   .stats-side :global(.stat-row) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .stats-side :global(.stat-row:has(> :nth-child(2):last-child)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -242,11 +253,17 @@
   .rating-context { color: var(--muted); font-size: var(--t-base); margin-block-end: var(--space-2) !important; }
   .dist { max-inline-size: 55rem; }
   .dist { margin-block-end: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
-  .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; margin-block-end: var(--space-2) !important; color: var(--ink-2) !important; font-size: var(--t-sm) !important; letter-spacing: 0 !important; }
+  .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; margin-block-end: var(--space-2) !important; color: var(--ink-2) !important; font-size: max(0.8125rem, var(--t-sm)) !important; letter-spacing: 0 !important; }
   .eyebrow .avg { margin-inline-start: 0.3em; font-size: var(--t-lg); font-weight: 650; color: var(--ink); }
-  .dist :global(.bar-row) { grid-template-columns: 2.5rem minmax(0, 1fr) 3rem; min-block-size: 1.625rem; padding-block: 0; }
-  .dist :global(.track) { grid-row: auto; grid-column: auto; }
-  .block { margin-block-start: var(--space-8); scroll-margin-block-start: 5rem; }
+  .distribution { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; font-size: 0.8125rem; }
+  .distribution div + div { border-inline-start: 1px solid var(--line); padding-inline-start: var(--space-2); }
+  .distribution dt { color: var(--ink-2); }
+  .distribution dd { margin: 0; font-weight: 650; }
+  .profile :is(.handle .mono, .course-meta, .course-meta .mono, .when, .sort-tools, .sort button, .more, thead th, .eyebrow) {
+    font-size: max(0.8125rem, var(--t-sm));
+  }
+  .profile :global(.tile :is(dt, small, p)) { font-size: max(0.8125rem, var(--t-sm)); }
+  .block { margin-block-start: var(--space-6); scroll-margin-block-start: 5rem; }
   .block-head { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; justify-content: space-between; margin-block-end: var(--space-3); }
   .block-head h2 { font-size: var(--t-lg) !important; scroll-margin-block-start: 5rem; }
   .sort-tools { display: flex; align-items: center; gap: var(--space-2); color: var(--muted); font-size: var(--t-sm); }
@@ -278,13 +295,17 @@
   .c-when { inline-size: 7.5rem; }
   tbody th a { font-weight: 600; text-decoration: none; }
   tbody th a:hover { text-decoration: underline; }
+  tbody tr:focus-within { background: var(--hover-row); }
+  tbody tr { position: relative; }
+  .row-link::after { content: ''; position: absolute; inset: 0; }
+  .row-link:focus-visible::after { outline: var(--focus-ring); outline-offset: -3px; border-radius: var(--radius-control); }
   .course-meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--ink-2); font-size: var(--t-sm); overflow-wrap: anywhere; }
   .score { display: inline-block; color: var(--ink); font-weight: 650; }
   .stars { display: inline-block; margin-inline-start: var(--space-1); }
   .review .text { display: block; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
   .review .clamp { display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; }
   .review .none { color: var(--muted); }
-  .more { margin-block-start: 2px; padding: 0; border: 0; background: none; color: var(--brand-ink); font: 600 var(--t-sm) / 1.5 var(--font-sans); cursor: pointer; min-block-size: 1.75rem; }
+  .more { position: relative; z-index: 1; min-inline-size: var(--target-min); margin-block-start: 2px; padding: 0; border: 0; background: none; color: var(--brand-ink); font: 600 var(--t-sm) / 1.5 var(--font-sans); cursor: pointer; min-block-size: 1.75rem; }
   .more:hover { text-decoration: underline; }
   .score-cell { white-space: nowrap; }
   .when { color: var(--muted); white-space: nowrap; }
@@ -302,7 +323,8 @@
     .stats-side :global(.stat-row) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
     .stats-side :global(.tile) { padding: var(--space-2) var(--space-3); }
     .stats-side :global(.tile dd) { font-size: var(--t-2xl); }
-    .stats-side :global(.tile p) { font-size: var(--t-sm); line-height: 1.4; }
+    .stats-side :global(.tile p) { line-height: 1.4; }
+    .tile-arrow { inset-block-start: var(--space-1); }
     /* Stack: each rating becomes a short card-like row; column names come from data-label. */
     thead { display: none; }
     table, tbody, tr, tbody :is(th, td) { display: block; }
@@ -310,10 +332,11 @@
     tbody tr:last-child { border-block-end: 0; }
     tbody tr > :is(th, td):nth-child(n) { padding: 0; border: 0 !important; inline-size: auto; }
     tbody th { grid-column: 1; }
+    tbody th { grid-row: 1 / span 2; }
     tbody td[data-label='給分'] { grid-column: 2; grid-row: 1; text-align: end; }
     .when { grid-column: 2; grid-row: 2; align-self: center; color: var(--ink-2); font-size: var(--t-sm); }
     .review { grid-column: 1 / -1; grid-row: 3; inline-size: auto; }
     .sort button, .more { min-block-size: var(--target-min); }
-    .stars { display: block; margin: 0; }
+    .stars { display: none; }
   }
 </style>

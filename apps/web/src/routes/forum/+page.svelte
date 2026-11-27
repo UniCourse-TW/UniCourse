@@ -23,8 +23,6 @@
   let narrowed = $derived(Boolean(filters.school || filters.q || filters.tag));
   /** Only a category chip is active: the empty state can speak about that category. */
   let onlyType = $derived(Boolean(filters.type) && !narrowed && !filters.courseCode);
-  let scopeCount = $derived([filters.school, filters.courseCode, filters.tag].filter(Boolean).length);
-  let scope = $derived([filters.school ? (schoolNames[filters.school] ?? filters.school) : '', filters.courseCode, filters.tag ? `#${filters.tag}` : ''].filter(Boolean).join('・'));
   // `form` is a failed create (it carries `title`); course checks never land here.
   let created = $derived(form && 'title' in form && typeof form.title === 'string' ? form : undefined);
   let draft = $derived(
@@ -102,8 +100,8 @@
     </label>
     <!-- The same submit button applies the keyword, course scope and sort selection. -->
     <button class="cm-btn submit">搜尋</button>
-    <details class="scope" open={Boolean(scope) || undefined}>
-      <summary><span class="scope-part">{#if scope}已套用 {scopeCount} 項：<b>{scope}</b>{:else if data.sortable}篩選與排序{#if data.oldest} · 最早發文{/if}{:else}進階篩選{/if}</span><span class="chev" aria-hidden="true"></span></summary>
+    <details class="scope">
+      <summary>{data.sortable ? '篩選與排序' : '更多篩選'}{#if data.oldest} · 最早發文{/if}<span class="chev" aria-hidden="true"></span></summary>
       <div class="scope-fields" role="group" aria-label={data.sortable ? '篩選與排序' : '進階篩選'}>
         <FilterSelect name="school" label="學校" options={schoolOptions} value={filters.school} allLabel="全部學校" />
         <label class="code-field">
@@ -147,13 +145,13 @@
     {#if narrowed || filters.courseCode}
       <div class="cm-chips" role="group" aria-label="已套用的篩選">
         {#if filters.school}
-          <a class="cm-chip remove" href={filterHref({ ...filters, school: '', courseCode: '', page: 1 })} aria-label="移除篩選：學校 {schoolNames[filters.school] ?? filters.school}">
-            {schoolNames[filters.school] ?? filters.school}{#if filters.courseCode}&nbsp;<span class="mono">{filters.courseCode}</span>{/if} <span aria-hidden="true">×</span>
+          <a class="cm-chip remove" href={filterHref({ ...filters, school: '', courseCode: '', page: 1 })} aria-label="移除篩選：學校 {schoolNames[filters.school] ?? filters.school}{filters.courseCode ? '與課號' : ''}">
+            {schoolNames[filters.school] ?? filters.school} <span aria-hidden="true">×</span>
           </a>
         {/if}
         {#if filters.courseCode}
           <a class="cm-chip remove" href={filterHref({ ...filters, courseCode: '', page: 1 })} aria-label="移除篩選：課號 {filters.courseCode}">
-            只看課號 <span class="mono">{filters.courseCode}</span> <span aria-hidden="true">×</span>
+            課號 <span class="mono">{filters.courseCode}</span> <span aria-hidden="true">×</span>
           </a>
         {/if}
         {#if filters.tag}
@@ -220,9 +218,12 @@
     <!-- A young forum: a short, open list of well-attended courses to write about, apart from the results. -->
     <aside class="sparse" aria-labelledby="sparse-title">
       <div class="sparse-head">
-        <h2 id="sparse-title">{data.suggestionsSchool ? `${data.suggestionsSchool}熱門課程` : '熱門課程'}</h2>
+        <div class="sparse-title">
+          <h2 id="sparse-title">{data.suggestionsSchool ? `${data.suggestionsSchool}熱門課程` : '熱門課程'}</h2>
+          <a href="/">查其他課程 →</a>
+        </div>
         <p class="sparse-dek" id="suggest-scale">
-          <span>歷年修課 · 各課收錄期間累計</span>
+          <span>依各課收錄期間的累計修課人次排序</span>
           {#if topEnrolled > 0}<span class="scale num">尺度 0–{fmt.format(topEnrolled)} 人次</span>{/if}
         </p>
       </div>
@@ -237,14 +238,14 @@
               {@const share = entry.enrolledTotal != null && topEnrolled ? (entry.enrolledTotal / topEnrolled) * 100 : null}
               <tr>
                 <th scope="row" class="suggest-course">
-                  <a href="/courses/{entry.offeringId}">{entry.title}</a>
+                  <a class="row-link" href="/courses/{entry.offeringId}">{entry.title}</a>
                   <span class="muted"><span class="nowrap">{entry.schoolName}</span><span class="sep">·</span><span class="mono">{entry.courseCode}</span></span>
                 </th>
                 <td class="suggest-count">
                   <!-- Bars share one scale starting at 0 (the footnote names the full bar), so the courses compare at a glance. -->
                   {#if share !== null}<span class="bar" aria-hidden="true"><span style:inline-size="{share > 0 ? `max(3px, ${share}%)` : '0'}"></span></span>{/if}
-                  <span class="num value">{displayValue(entry.enrolledTotal)}<small> 人次</small></span>
-                  {#if entry.terms}<span class="range num">{entry.terms.first === entry.terms.last ? entry.terms.first : `${entry.terms.first}–${entry.terms.last}`}・{entry.terms.count} 個學期</span>{/if}
+                  <span class="num value" title={entry.enrolledTotal == null ? '目前沒有收錄累計修課人次' : undefined}>{displayValue(entry.enrolledTotal)}<small> 人次</small></span>
+                  {#if entry.terms}<span class="range num">{entry.terms.count} 期 · {entry.terms.first === entry.terms.last ? entry.terms.first : `${entry.terms.first}–${entry.terms.last}`}</span>{/if}
                 </td>
                 <td class="suggest-act">
                   <a class="write" href={writeHref(entry.school, entry.courseCode)} aria-label={`寫心得：${entry.title}`}>寫心得 <span aria-hidden="true">→</span></a>
@@ -254,7 +255,6 @@
           </tbody>
         </table>
       </div>
-      <p class="scale-note"><a href="/">查其他課程 →</a></p>
     </aside>
   {/if}
   </div>
@@ -296,11 +296,28 @@
   .search input::placeholder, .code-field input::placeholder { color: var(--muted); }
   .search input:focus-visible, .code-field input:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-color: var(--brand); }
   .toolbar :global(.field) { min-block-size: var(--target-min); }
-  /* Desktop: the scope fields sit inline in the toolbar; phones collapse them behind 課程範圍. */
-  .scope { display: contents; }
-  .scope summary { display: none; }
-  .scope::details-content { display: contents; content-visibility: visible; }
-  .scope-fields { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+  .scope { order: 2; }
+  .scope[open] { flex-basis: 100%; }
+  .scope summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--target-min);
+    padding: 0 var(--space-3);
+    border: 1px solid var(--control-line);
+    border-radius: var(--radius-control);
+    background: var(--panel-raised);
+    color: var(--ink-2);
+    font-size: var(--t-base);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+  .scope summary::-webkit-details-marker { display: none; }
+  .scope .chev::before { content: '▾' / ''; color: var(--muted); }
+  .scope[open] .chev::before { content: '▴' / ''; }
+  .scope-fields { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; padding-block-start: var(--space-2); }
+  .scope-fields :global(.field label) { font-size: 0.8125rem; }
   .code-field {
     display: inline-flex;
     align-items: center;
@@ -359,30 +376,37 @@
   .suggest thead th { padding: var(--space-2) var(--space-4); border-block-end: 1px solid var(--line); color: var(--muted); background: var(--table-head); font-size: var(--t-sm); font-weight: 600; text-align: start; }
   .suggest tbody :is(th, td) { padding: var(--space-2) var(--space-4); text-align: start; vertical-align: middle; font-weight: 400; }
   .suggest tbody tr + tr :is(th, td) { border-block-start: 1px solid var(--line); }
+  .suggest tr { position: relative; }
+  .suggest tbody tr:hover, .suggest tbody tr:focus-within { background: var(--hover-row); }
   .suggest-course { min-inline-size: 0; }
+  .row-link::after { content: ''; position: absolute; inset: 0; }
+  .row-link:focus-visible::after { outline: var(--focus-ring); outline-offset: -3px; border-radius: var(--radius-control); }
   .suggest-course a { font-weight: 650; }
   .suggest .muted { display: block; color: var(--muted); font-size: 0.8125rem; }
   .suggest .count-col { inline-size: 45%; }
   .suggest-count { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-3); align-items: center; }
   /* Thin, slightly softened bars: they rank the courses but stay quieter than the post titles. */
   .suggest-count .bar { block-size: 0.375rem; border-radius: 2px; background: var(--chip); overflow: hidden; }
-  .suggest-count .bar > span { display: block; block-size: 100%; border-radius: 2px; background: color-mix(in srgb, var(--brand) 78%, var(--panel-raised)); }
+  .suggest-count .bar > span { display: block; block-size: 100%; border-radius: 2px; background: color-mix(in srgb, var(--brand) 52%, var(--panel-raised)); }
   .suggest-count .value { color: var(--ink); font-weight: 600; text-align: end; white-space: nowrap; }
   .suggest-count small { margin-inline-start: 0.25em; color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
   .suggest-count .range { grid-column: 1 / -1; color: var(--muted); font-size: var(--t-sm); }
   .suggest-act { inline-size: 1%; text-align: end !important; }
-  .write { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
-  @media (hover: hover) and (pointer: fine) {
-    .suggest tr:not(:first-child):not(:hover):not(:focus-within) .write { opacity: 0; }
-  }
+  .write { position: relative; z-index: 1; display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
   .nowrap { white-space: nowrap; }
-  .scale-note { margin: 0 !important; color: var(--muted); font-size: var(--t-sm); text-wrap: pretty; }
+  .sparse-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 var(--space-2); }
+  .sparse-title a { display: inline-flex; min-block-size: var(--target-min); align-items: center; font-size: 0.8125rem; }
+  .forum .mono, .forum :is(.cm-chip, .rules, .young-note, .sparse-dek, .suggest th, .suggest small, .suggest .range, .write, .code-field, .sort-field) {
+    font-size: max(0.8125rem, var(--t-sm));
+  }
+  .forum .cm-chip[aria-current='true'] .n { opacity: 1; }
+  .forum .cm-chip.remove { max-inline-size: 100%; white-space: normal; overflow-wrap: anywhere; }
   /* Narrow (the right column, or a phone): course and 寫心得 on the first line, the bar with its count
      under them across the row, then the term range. */
   @container suggest (max-width: 34rem) {
     .suggest thead { display: none; }
     .suggest, .suggest tbody { display: block; }
-    .suggest tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-3); align-items: center; padding: var(--space-2) var(--space-3); }
+    .suggest tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-3); align-items: center; padding: var(--space-1) var(--space-3); }
     .suggest tbody tr + tr { border-block-start: 1px solid var(--line); }
     .suggest tbody tr > :is(th, td):nth-child(n) { display: block; padding: 0; border: 0; }
     .suggest-count { grid-column: 1 / -1; grid-row: 2; display: grid !important; }
@@ -406,7 +430,7 @@
     font-size: var(--t-sm);
     font-weight: 600;
   }
-  .sort-field select { min-block-size: calc(var(--target-min) - 2px); padding: 0 var(--space-2); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink); font: inherit; color-scheme: var(--ui-color-scheme); }
+  .sort-field select { min-block-size: var(--target-min); padding: 0 var(--space-2); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink); font: inherit; color-scheme: var(--ui-color-scheme); }
   .submit { flex: none; order: 1; }
   .toolbar > .clear { order: 2; }
   .facts { display: flex; flex-wrap: wrap; gap: 0 0.35em; }
@@ -415,41 +439,14 @@
   /* A real target next to the main button, not a stray small link. */
   .rules { display: inline-flex; gap: 0.35em; align-items: center; min-block-size: var(--target-min); padding-inline: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; text-decoration: none; }
   .rules:hover { border-color: var(--control-line); background: var(--hover-row); color: var(--ink); }
-  .scope-part b { font-weight: 600; color: var(--ink); }
 
   @media (max-width: 40rem) {
-    .scope { display: block; flex: 1 1 auto; min-inline-size: 0; }
-    .scope summary { gap: var(--space-2); }
-    .scope-part { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-    /* Keyword and 搜尋 share the first row; the course scope is a full-width secondary button below. */
     .search { flex: 1 1 10rem; }
     .toolbar > .submit { flex: 0 0 auto; padding-inline: var(--space-4); }
-    .scope { flex: 1 1 100%; order: 2; }
-    /* The description takes its own line; the counts follow without a dot at the line start. */
+    .scope { flex: 1 1 100%; }
+    .scope summary { justify-content: space-between; inline-size: 100%; }
     .facts > span:first-child { flex-basis: 100%; }
     .facts > span:nth-child(2)::before { content: none; }
-    .scope::details-content { display: block; content-visibility: auto; }
-    .scope:not([open])::details-content { content-visibility: hidden; }
-    .scope summary {
-      display: inline-flex;
-      align-items: center;
-      max-inline-size: 100%;
-      min-block-size: var(--target-min);
-      padding: 0 var(--space-3);
-      border: 1px solid var(--control-line);
-      border-radius: var(--radius-control);
-      background: var(--panel-raised);
-      color: var(--ink-2);
-      font-size: var(--t-base);
-      font-weight: 600;
-      cursor: pointer;
-      list-style: none;
-    }
-    .scope summary::-webkit-details-marker { display: none; }
-    .scope summary { justify-content: space-between; inline-size: 100%; }
-    .scope .chev::before { content: '▾'; color: var(--muted); }
-    .scope[open] .chev::before { content: '▴'; }
-    .scope-fields { flex-basis: 100%; padding-block-start: var(--space-2); }
     .scope-fields :global(.field) { flex: 1 1 100%; }
     .scope-fields :global(.field select) { flex: 1; max-inline-size: none; }
     .code-field, .sort-field { flex: 1 1 100%; }

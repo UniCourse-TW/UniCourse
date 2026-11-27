@@ -285,7 +285,9 @@
   .segmented label:has(input:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
   .mono-input { font-family: var(--font-mono); }
-  .course-check { min-block-size: 1.25rem; color: var(--muted); font-size: var(--t-sm); }
+  .drawer :global(.cm-input::placeholder) { opacity: 1; }
+  .drawer :global(:is(.cm-hint, .cm-count)), .course-check, .tag-chip { font-size: max(0.8125rem, var(--t-sm)); }
+  .course-check { min-block-size: 1.25rem; color: var(--muted); }
   .course-check[data-status='found'] { color: var(--up); font-weight: 600; }
   .course-check[data-status='missing'], .course-check[data-status='unavailable'] { color: var(--warn); }
   .tag-input { display: flex; flex-wrap: wrap; gap: var(--space-1); align-items: center; padding-block: 0.375rem; }
@@ -309,7 +311,6 @@
     border-radius: var(--radius-pill);
     color: var(--brand-ink);
     background: var(--brand-wash);
-    font-size: var(--t-sm);
     font-weight: 600;
   }
   .tag-chip button {
@@ -331,6 +332,8 @@
   @media (max-width: 40rem) {
     .drawer { padding: var(--space-4) var(--space-4) var(--space-8); border: 0; box-shadow: none; }
     .pair { grid-template-columns: 1fr; }
+    .segmented label, .tag-input input { min-block-size: var(--target-min); }
+    .tag-chip button { inline-size: var(--target-min); block-size: var(--target-min); }
     .submit .cm-btn:first-child { flex: 1; }
   }
 </style>

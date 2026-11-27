@@ -32,7 +32,7 @@ async function openAuthorTools(item: Locator) {
   if (await more.isVisible()) await more.click();
 }
 
-test('registers, rates a course, posts a linked question, replies, votes and logs out', async ({ page, request }) => {
+test('registers, rates a course, posts a linked question, replies, votes and logs out', async ({ page, request, browser }) => {
   // The fixture's 115-1 線性代數 offering at nthu (DEMO201), looked up through the API.
   const search = await request.get(`${API}/api/courses`, { params: { q: '線性', school: 'nthu', term: '115-1' } });
   const [course] = (await search.json()) as { id: string; courseCode: string }[];
@@ -110,8 +110,8 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   // On phones the course link stays visible and the historical figures expand on demand.
   await expect(card.getByRole('link', { name: '線性代數', exact: true }).first()).toHaveAttribute('href', `/courses/${course.id}`);
 
-  // Reply (the thread's 寫回覆 link jumps to the box, which names the signed-in identity), then upvote the question.
-  await thread.getByRole('link', { name: /^寫回覆/ }).click();
+  // The first-reply link jumps to the box, which names the signed-in identity.
+  await thread.getByRole('link', { name: /^寫第一則回覆/ }).click();
   await expect(page.getByLabel('寫第一則回覆')).toBeFocused();
   await expect(page.locator('#reply-form')).toContainText('以 測試同學 的身分');
   // A thread with no replies asks for the first one; afterwards the box is the plain 寫回覆.
@@ -140,6 +140,17 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(upvote).toHaveAttribute('aria-pressed', 'true');
   await expect(thread.getByLabel('文章分數')).toHaveText('+1');
 
+  const threadPath = new URL(page.url()).pathname;
+  const guest = await browser.newPage();
+  try {
+    await guest.goto(new URL(threadPath, page.url()).href);
+    await guest.getByRole('link', { name: '建立帳號並返回' }).click();
+    await expect(guest.getByRole('heading', { name: '建立 UniCourse 帳號' })).toBeVisible();
+    await expect(guest.locator('input[name="next"]')).toHaveValue(`${threadPath}#reply-form`);
+  } finally {
+    await guest.close();
+  }
+
   // The forum list for the course shows the thread with its reply and score.
   await page.goto('/forum?school=nthu&courseCode=DEMO201');
   await expect(page.getByRole('link', { name: title })).toBeVisible();
@@ -154,9 +165,9 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(page.getByRole('heading', { name: '測試同學' })).toBeVisible();
   const activity = page.getByRole('group', { name: '活動統計' });
   // Below the sample threshold only the ratings section explains why there is no average or distribution.
-  await expect(activity).not.toContainText('樣本不足');
-  await expect(page.getByRole('region', { name: '課程評價（1）' })).toContainText('樣本不足（1／3 則）');
-  await expect(page.getByText('樣本不足', { exact: false })).toHaveCount(1);
+  const sampleNote = '目前有 1 則評價，滿 3 則才顯示平均與分布。';
+  await expect(page.getByRole('region', { name: '課程評價（1）' })).toContainText(sampleNote);
+  await expect(page.getByText(sampleNote, { exact: true })).toHaveCount(1);
   // The count tiles double as jump links to their sections.
   await expect(activity.getByRole('link', { name: /查看評價，共 1 則/ })).toHaveAttribute('href', '#ratings');
   // The number is the accessible score and the adjacent stars are decorative.
