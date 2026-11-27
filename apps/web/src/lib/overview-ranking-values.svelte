@@ -26,6 +26,6 @@
 </script>
 
 {#if courses.length && terms.length}
-  <ChartValues label="近期修課人數（人）" summary="查看各期修課人數" {columns} {rows}
-    rowKey={({ course }) => course.latestOfferingId} minWidth="36rem" />
+  <ChartValues label="各學期修課人數（人）" summary="查看各期修課人數" {columns} {rows}
+    rowKey={({ course }) => course.latestOfferingId} minWidth={`${12 + terms.length * 3.5}rem`} />
 {/if}

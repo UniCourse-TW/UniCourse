@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { chartScale, linePath, lineSegments, spreadIndexes } from './chart-scale';
+  import { linePath, lineSegments, spreadIndexes, zeroBasedScale } from './chart-scale';
   import type { Snippet } from 'svelte';
   import ChartValues from './ChartValues.svelte';
   import { displayValue, finiteValue } from './format';
@@ -18,21 +18,22 @@
     condensed?: boolean;
     highlight?: string;
     yearsOnly?: boolean;
+    /** @deprecated All trend charts now include zero. */
     localScale?: boolean;
     header?: Snippet;
   }
 
-  let { label, points, unit, kind = 'column', termHref, yearTicks = false, termPairs = false, linkedBars = false, condensed = false, highlight, yearsOnly = false, localScale = false, header }: Props = $props();
+  let { label, points, unit, kind = 'column', termHref, yearTicks = false, termPairs = false, linkedBars = false, condensed = false, highlight, yearsOnly = false, header }: Props = $props();
   let rows = $derived(points.map((point) => ({ ...point, value: finiteValue(point.value) })));
   let values = $derived(rows.flatMap(({ value }) => value === null ? [] : [value]));
   let compact = $derived(values.length <= 3);
   let compactRows = $derived(rows.length <= 3 ? rows : rows.filter((point) => point.value !== null));
-  let scale = $derived(chartScale(values, linkedBars ? 5 : 4, kind === 'column' || !localScale));
+  let scale = $derived(zeroBasedScale(values, linkedBars ? 5 : 4));
   const chartWidth = 1000;
   const chartHeight = 200;
   let slot = $derived(chartWidth / Math.max(1, rows.length));
   let bars = $derived(rows.map(({ value }, index) => ({ x: slot * (index + 0.5), y: value === null ? null : ordinate(value) })));
-  let segments = $derived(lineSegments(bars.map(({ x, y }) => y === null ? null : { x, y })));
+  let segments = $derived(lineSegments(bars.map(({ x, y }, index) => y === null || rows[index].partial ? null : { x, y })));
   let desktopTicks = $derived(yearTicks ? yearlyTicks(rows, condensed ? 7 : 12, 1) : spreadIndexes(rows.length, 7));
   let phoneTicks = $derived(yearTicks ? yearlyTicks(rows, condensed ? 2 : 5, 3) : spreadIndexes(rows.length, 3));
   let hasMissing = $derived(rows.some(({ value }) => value === null));
@@ -100,7 +101,7 @@
             {#each bars as { x, y }, index}
               {#if y !== null}
                 {#if y === zero}
-                  <line class="zero" x1={x - slot * 0.32} x2={x + slot * 0.32} y1={y} y2={y} vector-effect="non-scaling-stroke" />
+                  <line class="zero" class:partial-zero={rows[index].partial} x1={x - slot * 0.32} x2={x + slot * 0.32} y1={y} y2={y} vector-effect="non-scaling-stroke" />
                 {:else}
                   <rect class:partial-bar={rows[index].partial} x={x - slot * 0.32} y={Math.min(y, zero)} width={slot * 0.64} height={Math.abs(zero - y)} vector-effect="non-scaling-stroke" />
                 {/if}
@@ -108,7 +109,11 @@
             {/each}
           {:else}
             {#each bars as { x, y }, index}
-              {#if y !== null && rows[index].partial}<line class="partial-guide" x1={x} x2={x} y1={y} y2={chartHeight} vector-effect="non-scaling-stroke" />{/if}
+              {#if y !== null && rows[index].partial}
+                <line class="partial-guide" x1={x} x2={x} y1={y} y2={ordinate(0)} vector-effect="non-scaling-stroke" />
+                <path class="partial-point-outline" d={`M${x},${y} h0.01`} vector-effect="non-scaling-stroke" />
+                <path class="partial-point-center" d={`M${x},${y} h0.01`} vector-effect="non-scaling-stroke" />
+              {/if}
             {/each}
             {#each segments as segment}
               {#if segment.length === 1}
@@ -119,7 +124,7 @@
               {/if}
             {/each}
             {#each bars as { x, y }, index}
-              {#if y !== null && rows[index].term === highlight}<line class="current-point" x1={x} x2={x} y1={y} y2={y} vector-effect="non-scaling-stroke" />{/if}
+              {#if y !== null && !rows[index].partial && rows[index].term === highlight}<line class="current-point" x1={x} x2={x} y1={y} y2={y} vector-effect="non-scaling-stroke" />{/if}
             {/each}
           {/if}
         </svg>
@@ -151,10 +156,9 @@
       <p class="chart-legend">
         {#if unit && !condensed}<span>單位：{unit}</span>{/if}
         {#if yearTicks && !condensed}<span>{termPairs ? '直線分隔學年；1 為上學期，2 為下學期。' : kind === 'column' ? '橫軸為學年，每柱一學期。' : '橫軸為學年，每個數值對應一學期。'}</span>{/if}
-        {#if localScale && kind === 'line' && scale.min !== 0}<span>縱軸從 {displayValue(scale.min)} 起。</span>{/if}
         {#if highlight && rows.some(({ term }) => term === highlight)}<span class="selection">所選學期 {highlight}</span>{/if}
         {#if hasMissing}<span>空白表示沒有資料。</span>{/if}
-        {#if hasPartial}<span><i aria-hidden="true"></i>{partialTermLabel}</span>{/if}
+        {#if hasPartial}<span><i aria-hidden="true"></i>{partialTermLabel}{kind === 'line' ? '，折線於該期中斷' : ''}</span>{/if}
       </p>
     {/if}
   {/if}
@@ -186,9 +190,12 @@
   .current-point { stroke: var(--brand); stroke-width: 7; stroke-linecap: round; }
   .selection { color: var(--brand-ink); }
   .period-values .selected { background: var(--brand-wash); border-color: var(--brand); }
-  .partial-bar, .partial-guide { fill: var(--brand-wash); stroke: var(--brand-ring); stroke-dasharray: 2 2; stroke-width: 1; }
+  .partial-bar, .partial-guide, .zero.partial-zero { fill: var(--warn-wash); stroke: var(--warn); stroke-dasharray: 2 2; stroke-width: 1; }
+  .partial-point-outline, .partial-point-center { fill: none; stroke-linecap: round; }
+  .partial-point-outline { stroke: var(--warn); stroke-width: 6; }
+  .partial-point-center { stroke: var(--panel-raised); stroke-width: 3; }
   .chart-legend { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); }
-  .chart-legend i { display: inline-block; inline-size: 1em; block-size: .65em; margin-inline-end: .3em; background: var(--brand-wash); border: 1px dashed var(--brand-ring); }
+  .chart-legend i { display: inline-block; inline-size: 1em; block-size: .65em; margin-inline-end: .3em; background: var(--warn-wash); border: 1px dashed var(--warn); }
   .series, .point, .zero { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .point { stroke-width: 5; }
   .terms { grid-column: 2; position: relative; min-block-size: 1.25rem; margin-block-start: var(--space-2); font-family: var(--font-mono); }

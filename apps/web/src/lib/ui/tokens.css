@@ -140,3 +140,14 @@
 }
 
 .ui-tabular { font-variant-numeric: tabular-nums; }
+
+/* Keep native disabled controls legible against a known surface in both themes. */
+:where(button, input, select, textarea):disabled {
+  -webkit-text-fill-color: currentColor;
+  opacity: 1;
+}
+:where(button, input, select, textarea):disabled:not([aria-busy='true']) {
+  background-color: var(--chip);
+  color: var(--ink-2);
+  cursor: not-allowed;
+}

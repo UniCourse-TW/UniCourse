@@ -51,7 +51,8 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
   await expect(card.getByText(/班次 01/)).toBeVisible();
   await expect(card.getByText('58 / 60', { exact: true })).toBeVisible();
   await expect(card.locator('.meter .capacity-marker')).toHaveCount(1);
-  await expect(page.getByText(/條長＝人數（本頁等尺度）.*刻線＝名額.*橘＝超額/)).toBeVisible();
+  await page.getByText('結果顯示', { exact: true }).click();
+  await expect(page.getByText(/條長＝人數（本頁等尺度）.*刻線＝名額.*橘＝超額/).filter({ visible: true })).toBeVisible();
 
   // fixtures/nthu-114-2.json has a 線性代數 offering too, so each term filter shows a different set.
   await term.selectOption('all');
@@ -110,6 +111,8 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
 test('uses a desktop table and keeps all parts inside the phone viewport', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/?q=線性&school=nthu&term=all', { waitUntil: 'networkidle' });
+  const navSearch = page.getByRole('navigation', { name: '主要導覽' }).getByRole('link', { name: '前往查課' });
+  await expect(navSearch).toHaveAttribute('href', '#course-keyword');
   const table = page.getByRole('table', { name: /開課班次/ });
   await expect(table.getByRole('columnheader', { name: '修課人數／名額' })).toBeVisible();
   await expect(table.getByRole('rowheader').first()).toContainText('線性代數');
@@ -129,6 +132,12 @@ test('uses a desktop table and keeps all parts inside the phone viewport', async
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByRole('article')).toHaveCount(2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/terms');
+  await expect(navSearch).toHaveAttribute('href', '/#course-keyword');
+  await navSearch.click();
+  await expect(page).toHaveURL('/#course-keyword');
+  await expect(page.getByRole('searchbox', { name: '關鍵字' })).toBeInViewport();
 });
 
 test('keeps global filters on pagination redirects and offers applicable empty-state actions', async ({ page }) => {
@@ -138,8 +147,7 @@ test('keeps global filters on pagination redirects and offers applicable empty-s
   await page.goto('/?q=zzzz-no-such-course&term=all');
   await expect(page.getByRole('status')).toContainText('0 班次');
   const results = page.getByRole('region', { name: '搜尋結果' });
-  await expect(results.getByRole('heading', { name: '沒有符合的課程' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '搜尋「zzzz-no-such-course」' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '找不到「zzzz-no-such-course」的課程' })).toBeVisible();
   await expect(page.getByRole('searchbox')).toHaveCount(1);
   await expect(results.getByRole('link', { name: '查全部學期' })).toHaveCount(0);
   await expect(results.getByRole('searchbox', { name: '關鍵字' })).toHaveValue('zzzz-no-such-course');
