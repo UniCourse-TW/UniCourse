@@ -31,11 +31,11 @@
   let { school, courseCode, instructors = [], title, reviews }: Props = $props();
 
   /** Posts listed before「再顯示」. */
-  const initialPosts = 6;
+  const initialPosts = 5;
   /** Posts each「再顯示」adds. */
   const stepPosts = 10;
   /** Teachers listed in the summary before「其他 N 位」. */
-  const initialTeachers = 6;
+  const initialTeachers = 8;
 
   type Sort = 'relevant' | 'newest' | 'push';
   const sortLabels: Record<Sort, string> = { relevant: '本班教師在前・心得優先', newest: '最新發文', push: '推文最多' };
@@ -118,8 +118,8 @@
   onMount(() => (ready = true));
   let filtersOpen = $state(false);
   let teacher = $state<string>('');
-  /** Only posts naming this offering's teachers (any of them). */
-  let mineOnly = $state(false);
+  /** Only posts naming this offering's teachers (`mine`), or only everyone else's (`others`). */
+  let scope = $state<'' | 'mine' | 'others'>('');
   /** Posts shown per list after hydration, keyed by list id; grows by `stepPosts`. */
   let limits = $state<Record<string, number>>({});
   let term = $state<string>('');
@@ -130,7 +130,7 @@
     rows.filter(
       (row) =>
         (!teacher || row.teachers.includes(teacher)) &&
-        (!mineOnly || row.mine) &&
+        (!scope || row.mine === (scope === 'mine')) &&
         (!term || (term === noTerm ? !row.post.term : row.post.term === term)) &&
         (!kind || row.kind === kind)
     )
@@ -143,8 +143,8 @@
       return b.time - a.time;
     })
   );
-  let filtering = $derived(Boolean(teacher || term || kind || mineOnly));
-  let activeFilters = $derived([teacher, term, kind].filter(Boolean).length + Number(mineOnly));
+  let filtering = $derived(Boolean(teacher || term || kind || scope));
+  let activeFilters = $derived([teacher, term, kind, scope].filter(Boolean).length);
   /**
    * The default view lists this offering's teacher in a group of its own, so a lone question by that
    * teacher is not mistaken for the top review; everyone else follows, reviews first.
@@ -152,8 +152,6 @@
   let grouped = $derived(sort === 'relevant' && !filtering && mineCount > 0 && mineCount < rows.length);
   let mineRows = $derived(ordered.filter((row) => row.mine));
   let otherRows = $derived(ordered.filter((row) => !row.mine));
-  /** What this offering's teacher's posts are, said next to the count (「1 篇・提問」). */
-  let mineKinds = $derived(kinds.filter((value) => rows.some((row) => row.mine && row.kind === value)).map((value) => postKindLabels[value]).join('、'));
   let mineLine = $derived.by(() => {
     const names = instructors.join('、');
     if (mineReviews === mineRows.length) return `本班教師 ${names}・${mineRows.length} 篇心得評價`;
@@ -166,7 +164,7 @@
   }
 
   function clearFilters() {
-    mineOnly = false;
+    scope = '';
     teacher = '';
     term = '';
     kind = '';
@@ -183,7 +181,7 @@
 </script>
 
 {#snippet linkText(link: { label: string; query: string | undefined })}
-  在 {link.label} 搜尋{#if link.query}<span class="query">「{link.query}」</span>{/if}<span aria-hidden="true"> ↗</span><span class="sr-only">（開啟外部網站）</span>
+  <span class="site">在 <b>{link.label}</b> 搜尋</span>{#if link.query}<span class="query">「{link.query}」</span>{/if}<span class="out" aria-hidden="true">↗</span><span class="sr-only">（開啟外部網站）</span>
 {/snippet}
 
 {#snippet postList(items: Row[], labelledby: string | undefined, listId: string, scope = '')}
@@ -206,14 +204,15 @@
             {#if boards.length > 1}<span>{row.post.board}</span>{/if}
             {#if row.author}<span class="author">{row.author}</span>{/if}
             {#if row.post.pushScore}<span class="push num" class:down={row.post.pushScore < 0}>推 {pushLabel(row.post.pushScore)}</span>{/if}
+            {#if !row.parts.length}
+              <!-- No excerpt: a small tag on the meta line instead of a line of its own. -->
+              <span class="title-only" title="這篇的開頭沒有可摘錄的心得文字，請點標題看原文">只收錄標題</span>
+            {/if}
           </p>
           {#if row.parts.length}
             <p class="excerpt">
               {#each row.parts as part, i (i)}{#if part.label}<span class="label">{part.label}</span>{/if}{part.text}{#if i < row.parts.length - 1}<span class="sep" aria-hidden="true"> ・ </span>{/if}{/each}{#if !endsSentence(row.parts)}…{/if}
             </p>
-          {:else}
-            <!-- Same place as an excerpt, so a title-only post is told apart by position, not by a chip. -->
-            <p class="excerpt title-only" title="這篇的開頭沒有可摘錄的心得文字，請點標題看原文">只收錄標題，內容請看原文</p>
           {/if}
         </article>
       </li>
@@ -238,10 +237,11 @@
   {#if !reviews || total === 0}
     <!-- Nothing indexed (or the index is down): one line, so the sections below move up. -->
     <div class="strip">
-      <h2 id="external-title">外站討論</h2>
-      <p class="strip-text" role={reviews ? undefined : 'alert'}>
-        {reviews ? '還沒有收錄到這門課的外站文章。' : '外站討論暫時無法載入，請稍後再試。'}
-      </p>
+      <div class="strip-text">
+        <h2 id="external-title">外站討論</h2>
+        <p class="strip-lead" role={reviews ? undefined : 'alert'}><b>{reviews ? '還沒有收錄到這門課的外站文章' : '外站討論暫時無法載入，請稍後再試'}</b></p>
+        {#if reviews}<p class="strip-sub">UniCourse 只索引 PTT 課程看板的標題與開頭摘要；其他網站可以直接搜尋這門課。</p>{/if}
+      </div>
       {#if links.length}
         <ul class="links" aria-label="到其他網站搜尋">
           {#each links as link (link.source)}
@@ -282,10 +282,16 @@
       <aside class="summary" aria-label="外部文章摘要">
         <!-- Two different filters, kept apart so nobody adds them up: this offering's teacher (a match on
              the title), then the post types (which add up to the total). -->
+        <!-- This offering's teacher vs everyone else: two toggles that split the total, so a reader can go
+             straight to either group. -->
         <div class="figures" role="group" aria-label="快速篩選">
-          <button type="button" class="figure mine-toggle" aria-pressed={mineOnly} disabled={!ready || mineCount === 0} onclick={() => (mineOnly = !mineOnly)}>
+          <button type="button" class="figure mine-toggle" aria-pressed={scope === 'mine'} disabled={!ready || mineCount === 0} onclick={() => (scope = scope === 'mine' ? '' : 'mine')}>
             <span class="fig-label">本班教師{#if instructors.length} {instructors.join('、')}{/if}</span>
-            <span class="fig-value"><b class="num">{displayValue(mineCount)}</b><span class="fig-unit">篇</span>{#if mineKinds}<span class="fig-kind">{mineKinds}</span>{/if}</span>
+            <span class="fig-value"><b class="num">{displayValue(mineCount)}</b><span class="fig-unit">篇</span></span>
+          </button>
+          <button type="button" class="figure" aria-pressed={scope === 'others'} disabled={!ready || mineCount === rows.length} onclick={() => (scope = scope === 'others' ? '' : 'others')}>
+            <span class="fig-label">其他教師與未標教師</span>
+            <span class="fig-value"><b class="num">{displayValue(rows.length - mineCount)}</b><span class="fig-unit">篇</span></span>
           </button>
         </div>
         <div class="kinds" role="group" aria-label="文章類型">
@@ -348,7 +354,7 @@
         <div class="list-bar">
           <p class="status" role="status" aria-live="polite">
             {#if filtering}
-              符合條件 <b class="num">{ordered.length}</b> 篇{#if mineOnly}・本班教師{/if}{#if teacher}・教師 {teacherLabel(teacher)}{/if}{#if term}・{term === noTerm ? '標題沒寫學期' : term}{/if}{#if kind}・{postKindLabels[kind]}{/if}
+              符合條件 <b class="num">{ordered.length}</b> 篇{#if scope === 'mine'}・本班教師{:else if scope === 'others'}・其他教師與未標教師{/if}{#if teacher}・教師 {teacherLabel(teacher)}{/if}{#if term}・{term === noTerm ? '標題沒寫學期' : term}{/if}{#if kind}・{postKindLabels[kind]}{/if}
               <button type="button" class="clear" onclick={clearFilters}>清除篩選</button>
             {:else if instructors.length && mineCount === 0}
               沒有找到本班教師 {instructors.join('、')} 的文章；下面是其他教師開這門課的文章，心得評價在前。
@@ -404,7 +410,7 @@
           <h3 class="group-head others" id="external-others">其他教師與標題沒寫教師・<span class="num">{otherRows.length}</span> 篇・心得評價在前</h3>
           {@render postList(otherRows, 'external-others', 'others', '其他教師與未標教師：')}
         {:else if ordered.length}
-          {@render postList(ordered, undefined, `all-${teacher}-${term}-${kind}-${mineOnly}-${sort}`)}
+          {@render postList(ordered, undefined, `all-${teacher}-${term}-${kind}-${scope}-${sort}`)}
         {:else}
           <p class="none">沒有符合條件的文章。<button type="button" class="clear" onclick={clearFilters}>清除篩選</button></p>
         {/if}
@@ -428,11 +434,19 @@
 
   /* Compact state: heading, one sentence and the search links on one wrapped line. */
   .compact { padding-block: var(--space-3); }
-  .strip { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: center; }
+  /* Empty state (states.md): heading, one bold sentence, a line of explanation, then the search buttons. */
+  .strip { display: grid; gap: var(--space-3); }
   .strip h2 { font-size: var(--t-lg); }
-  .strip-text { color: var(--ink-2); }
+  .strip-text { display: grid; gap: var(--space-1); }
+  .strip-lead { color: var(--ink); font-size: var(--t-md); }
+  .strip-lead b { font-weight: 650; }
+  .strip-sub { color: var(--ink-2); font-size: var(--t-sm); }
   .links { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0; list-style: none; }
-  .links a { display: inline-flex; align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-sm); font-weight: 600; text-decoration: none; white-space: nowrap; }
+  /* Labels may wrap inside their own box (the site name never breaks), so a long one cannot spill out. */
+  .links a { display: inline-flex; flex-wrap: wrap; gap: 0 0.25em; align-items: center; min-block-size: var(--target-min); padding: var(--space-1) var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-sm); font-weight: 500; line-height: 1.35; text-decoration: none; overflow-wrap: anywhere; }
+  .links .site { white-space: nowrap; }
+  .links .site b { font-weight: 650; }
+  .links .out { color: var(--muted); }
   .links a:hover { background: var(--hover-row); }
 
   /* Desktop: text and search links side by side above the summary and list; phones put the links last. */
@@ -455,11 +469,12 @@
   .query { font-weight: 500; }
 
   .layout { display: grid; grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
+  /* The summary column follows the reader down the long post list instead of ending in blank space. */
+  .layout > .summary { position: sticky; inset-block-start: 4.75rem; }
   .summary { display: grid; gap: var(--space-4); min-inline-size: 0; }
-  .figures { display: grid; gap: var(--space-2); }
+  .figures { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-2); }
   .figure { display: grid; align-content: start; justify-items: start; gap: 0.125rem; min-inline-size: 0; padding: var(--space-2) var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--brand) 5%, var(--panel-raised)); color: var(--muted); font-size: var(--t-sm); text-align: start; }
   .fig-value { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; }
-  .fig-kind { margin-inline-start: var(--space-1); padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 650; }
   .kind-counts { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--ink-2); }
   .kind-counts b { color: var(--ink); font-weight: 650; }
   .figure:not(:disabled):hover { border-color: var(--brand); background: var(--hover-row); }
@@ -526,7 +541,7 @@
   .grow-btn { min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; }
   .grow-btn:hover { background: var(--hover-row); }
   .grow .clear { min-block-size: var(--target-min); margin: 0; }
-  .excerpt.title-only { color: var(--muted); font-style: italic; }
+  .meta .title-only { padding: 0 6px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--muted); font-size: var(--t-xs); line-height: 1.5; }
   .status b { color: var(--ink); }
   .clear { margin-inline-start: var(--space-2); padding: 0; border: 0; background: none; color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
   .none { padding: var(--space-4) 0; color: var(--ink-2); }
@@ -558,6 +573,7 @@
   @media (max-width: 64rem) {
     .external:not(.compact) { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'layout' 'elsewhere'; }
     .layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+    .layout > .summary { position: static; }
     .summary { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
     .figures { grid-column: 1 / -1; }
   }
@@ -567,7 +583,7 @@
     /* Phones keep the teacher toggle, the type chips and the per-year chart; the teacher list is the
        select under 「教師、學期與排序」. */
     .by-teacher { display: none; }
-    .figure { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; min-block-size: var(--target-min); }
+    .figure { min-block-size: var(--target-min); }
     .figure b { font-size: var(--t-lg); }
     .columns { block-size: 3.5rem; }
     .posts > .toolbar { order: 0; }
@@ -583,10 +599,16 @@
     select { inline-size: 100%; max-inline-size: none; min-block-size: var(--target-min); }
     .chip { min-block-size: var(--target-min); }
     .teacher { min-block-size: var(--target-min); }
-    /* Outbound searches: one row of short buttons (the query stays in each link's accessible name). */
-    .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr)); inline-size: 100%; }
-    .links a { inline-size: 100%; justify-content: center; padding-inline: var(--space-2); }
-    .links .query { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    /* Outbound searches: one full-width button per site, stacked; long names and queries wrap inside. */
+    .links { display: grid; grid-template-columns: minmax(0, 1fr); inline-size: 100%; }
+    .links a { inline-size: 100%; padding-inline: var(--space-3); }
+    .links .out { margin-inline-start: auto; }
+    /* The post list comes before the per-year chart; the type chips and the two scope toggles stay on top. */
+    .summary { display: contents; }
+    .summary > .years { order: 2; }
+    .layout { display: flex; flex-direction: column; align-items: stretch; }
+    .posts { order: 1; }
+    .figures { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
     .title { font-size: var(--t-base); }
   }
 </style>

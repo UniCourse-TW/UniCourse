@@ -29,9 +29,6 @@
   let histogram = $derived(
     [5, 4, 3, 2, 1].map((score) => ({ label: `${score} 分`, value: profile.ratings.filter((rating) => rating.score === score).length }))
   );
-  /** 1 to 5, for the small column chart in the summary strip. */
-  let columns = $derived([...histogram].reverse());
-  let columnMax = $derived(Math.max(1, ...histogram.map((bar) => bar.value)));
   let schoolCounts = $derived.by(() => {
     const counts = new Map<string, number>();
     for (const rating of profile.ratings) counts.set(rating.school, (counts.get(rating.school) ?? 0) + 1);
@@ -52,7 +49,7 @@
       : schoolCounts[0][1] === schoolCounts.at(-1)![1] ? `${schoolCounts.length} 所，各 ${schoolCounts[0][1]} 則`
       : `${schoolCounts.length} 所`
   );
-  /** Fewer than this many ratings and posts: one line of counts instead of four big tiles. */
+  /** Fewer than this many ratings and posts: three tiles beside the name instead of four plus a chart. */
   const SPARSE = 5;
   let sparse = $derived(ratingCount < SPARSE && profile.posts.length < SPARSE);
 
@@ -80,63 +77,60 @@
 </svelte:head>
 
 <div class="cm profile">
-  <header class="identity">
-    <span class="avatar" aria-hidden="true">{initial(name)}</span>
-    <div class="who">
-      <h1>{name}</h1>
-      <p class="handle">
-        <span class="mono">@{profile.username}</span>
-        {#if schoolName}<span class="sep">·</span>{schoolName}{/if}
-        <span class="sep">·</span><time datetime={profile.createdAt}>{slashDate(profile.createdAt)}</time> 加入
-      </p>
-      {#if profile.bio}<p class="bio">{profile.bio}</p>
-      {:else if isMe}<p class="bio empty">還沒有自我介紹・<a href="/settings">到設定新增</a>（只有你看得到這行）</p>{/if}
-      {#if !sparse}
-        <nav class="jump" aria-label="本頁段落">
-          <a href="#ratings">課程評價 <span class="num">{ratingCount}</span> <span aria-hidden="true">↓</span></a>
-          <a href="#posts">發表的文章 <span class="num">{profile.posts.length}</span> <span aria-hidden="true">↓</span></a>
-        </nav>
-      {/if}
+  <header class="identity" class:with-stats={sparse}>
+    <div class="person">
+      <span class="avatar" aria-hidden="true">{initial(name)}</span>
+      <div class="who">
+        <h1>{name}</h1>
+        <p class="handle">
+          <span class="mono">@{profile.username}</span>
+          {#if schoolName}<span class="sep">·</span>{schoolName}{/if}
+          <span class="sep">·</span><time datetime={profile.createdAt}>{slashDate(profile.createdAt)}</time> 加入
+        </p>
+        {#if profile.bio}<p class="bio">{profile.bio}</p>
+        {:else if isMe}<p class="bio empty">還沒有自我介紹・<a href="/settings">到設定新增</a>（只有你看得到這行）</p>{/if}
+        {#if !sparse}
+          <nav class="jump" aria-label="本頁段落">
+            <a href="#ratings">課程評價 <span class="num">{ratingCount}</span> <span aria-hidden="true">↓</span></a>
+            <a href="#posts">發表的文章 <span class="num">{profile.posts.length}</span> <span aria-hidden="true">↓</span></a>
+          </nav>
+        {/if}
+        {#if isMe}<a class="cm-btn secondary edit" href="/settings">編輯個人資料</a>{/if}
+      </div>
     </div>
-    {#if isMe}<a class="cm-btn secondary edit" href="/settings">編輯個人資料</a>{/if}
+
+    {#if sparse}
+      <!-- Little activity: the family's stat tiles beside the name (below it on phones). Ratings and posts
+           link down to their sections; a handful of scores is said in words, not drawn as a one-bar chart. -->
+      <section class="stats-side" aria-label="活動摘要">
+        <StatRow label="活動統計">
+          <a class="tile-link" href="#ratings">
+            <StatTile label="課程評價" value={ratingCount} unit="則" note={schoolCounts.length ? `${schoolSpread}・看評價 ↓` : '還沒有評價'} />
+          </a>
+          <a class="tile-link" href="#posts">
+            <StatTile label="發表文章" value={profile.posts.length} unit="篇" note={profile.posts.length ? `共 ${replies} 則回覆・看文章 ↓` : '還沒有發文'} />
+          </a>
+          {#if ratingCount}
+            <div class="tile-plain">
+              <StatTile
+                label={ratingCount === 1 ? '給分' : '平均給分'}
+                value={ratingCount === 1 ? profile.ratings[0].score : average === null ? null : average.toFixed(1)}
+                unit="/ 5 分"
+                note={ratingCount === 1 ? '只有 1 則，還看不出給分習慣' : `${histogram.filter((bar) => bar.value).map((bar) => `${bar.label} ${bar.value} 則`).join('、')}；滿 ${SPARSE} 則後畫分布`}
+              />
+            </div>
+          {/if}
+        </StatRow>
+      </section>
+    {/if}
   </header>
 
-  {#if sparse}
-    <!-- Little activity: one strip, not four big tiles. Ratings and posts jump to their sections; the
-         small 1–5 chart stays grey and says so until there are enough ratings to read a habit. -->
-    <section class="strip" aria-label="活動摘要">
-      <div role="group" aria-label="活動統計" class="strip-row">
-        <a class="strip-item" href="#ratings">
-          <span class="strip-label">課程評價</span>
-          <span><b class="num">{ratingCount}</b> 則{#if average !== null}・{ratingCount === 1 ? `${profile.ratings[0].score} 分` : `平均 ${average.toFixed(1)}`}{/if}</span>
-          <span class="go" aria-hidden="true">↓</span>
-        </a>
-        <a class="strip-item" href="#posts">
-          <span class="strip-label">發表文章</span>
-          <span><b class="num">{profile.posts.length}</b> 篇</span>
-          <span class="go" aria-hidden="true">↓</span>
-        </a>
-        {#if ratingCount}
-          <figure class="mini-dist" class:few={ratingCount < 3}>
-            <div class="mini-cols" role="img" aria-label={`給分分布：${histogram.map((bar) => `${bar.label} ${bar.value} 則`).join('、')}`}>
-              {#each columns as bar (bar.label)}
-                <span class="mini-col"><span class="mini-fill" style:block-size={`${(bar.value / columnMax) * 100}%`}></span><span class="mini-x" aria-hidden="true">{bar.label.replace(' 分', '')}</span></span>
-              {/each}
-            </div>
-            <figcaption>{ratingCount < 3 ? '給分分布・樣本太少，還看不出習慣' : '給分分布（1–5 分）'}</figcaption>
-          </figure>
-        {/if}
-      </div>
-      <p class="strip-note">
-        {#if profile.posts.length}這些文章共收到 <b class="num">{replies}</b> 則回覆（含本人的回覆）{/if}{#if profile.posts.length && schoolCounts.length}<span class="sep">·</span>{/if}{#if schoolCounts.length}評價過 {schoolSpread}{/if}
-      </p>
-    </section>
-  {:else}
+  {#if !sparse}
   <section class="summary" aria-label="活動摘要">
     <StatRow label="活動統計">
       <StatTile label="課程評價" value={ratingCount} unit="則" note={ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : undefined} />
       <StatTile label="發表文章" value={profile.posts.length} unit="篇" note={profile.posts.length >= POST_CAP ? `顯示最近 ${POST_CAP} 篇` : undefined} />
-      <StatTile label="這些文章收到的回覆" value={replies} unit="則" note="含本人的回覆" />
+      <StatTile label="文章收到的回覆" value={replies} unit="則" />
       {#if topSchool}
         <StatTile label="最常評的學校" value={topSchool.name} note={`${topSchool.count} 則評價`} />
       {:else}
@@ -148,7 +142,7 @@
         <h2 class="eyebrow" id="dist-title">
           給分分布<span class="sep">·</span>平均 <span class="num avg">{average.toFixed(1)}</span><span class="cm-hint">（滿分 5）<span class="sep">·</span>{ratingCount} 則</span>
         </h2>
-        <BarList label="給分分布" items={histogram} unit="則" showValues={false} />
+        <BarList label="給分分布" items={histogram} unit="則" />
       </div>
     {/if}
   </section>
@@ -194,7 +188,7 @@
                 </td>
                 <td data-label="評論" class="review">
                   {#if rating.review}
-                    <span class="text" class:clamp={long && !expanded.includes(id)}>{expanded.includes(id) ? rating.review : oneLine(rating.review)}</span>
+                    <span class="text" class:clamp={!expanded.includes(id)} title={long && !expanded.includes(id) ? rating.review : undefined}>{expanded.includes(id) ? rating.review : oneLine(rating.review)}</span>
                     {#if hydrated && long}
                       <button type="button" class="more" aria-expanded={expanded.includes(id)} onclick={() => toggle(id)}>{expanded.includes(id) ? '收合' : '展開全文'}</button>
                     {/if}
@@ -226,7 +220,22 @@
 
 <style>
   .profile .sep { margin-inline: 0.4em; color: var(--axis); }
-  .identity { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-4); align-items: start; }
+  .identity { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+  /* Wide screens: the person on the left, the three activity tiles filling the right. */
+  .identity.with-stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr); }
+  .person { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+  .edit { justify-self: start; margin-block-start: var(--space-3); }
+  .stats-side { min-inline-size: 0; }
+  .stats-side :global(.stat-row) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .stats-side :global(.stat-row:has(> :nth-child(2):last-child)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tile-link, .tile-plain { display: grid; min-inline-size: 0; }
+  .tile-link { border-radius: var(--radius-panel); color: inherit !important; text-decoration: none; }
+  .tile-link :global(.tile) { block-size: 100%; transition: border-color 120ms, background-color 120ms; }
+  .tile-link:hover :global(.tile) { border-color: var(--control-line); background: var(--hover-row); }
+  .tile-link:hover :global(.tile p) { color: var(--brand-ink); }
+  .tile-link:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  /* The score tile is information, not a control: no border, so it does not look like the two links. */
+  .tile-plain :global(.tile) { block-size: 100%; border-color: transparent; background: transparent; padding-inline: var(--space-2); }
   .avatar {
     display: grid;
     place-items: center;
@@ -257,24 +266,6 @@
   /* The fourth tile may hold a school name, not a count: keep it readable but smaller than the numbers. */
   .summary :global(.stat-row > :nth-child(4) dd) { font-size: var(--t-xl); line-height: 1.3; min-block-size: 2.1rem; display: flex; align-items: center; }
   .bio.empty { color: var(--muted); font-size: var(--t-sm); }
-  /* Sparse activity: one strip of two linked counts and a small grey 1–5 chart, then one note line. */
-  .strip { display: grid; gap: var(--space-1); margin-block-start: var(--space-5); }
-  .strip-row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: stretch; }
-  .strip-item { display: inline-flex; gap: var(--space-2); align-items: baseline; min-block-size: var(--target-min); padding: var(--space-2) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); color: var(--ink-2) !important; font-size: var(--t-base); text-decoration: none; }
-  .strip-item:hover { border-color: var(--control-line); background: var(--hover-row); }
-  .strip-item:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .strip-label { color: var(--muted); font-size: var(--t-sm); }
-  .strip-item b { color: var(--ink); font-size: var(--t-xl); font-weight: 650; }
-  .strip-item .go { color: var(--brand-ink); font-weight: 600; }
-  .strip-note { margin: 0 !important; color: var(--ink-2); font-size: var(--t-sm); }
-  .strip-note b { color: var(--ink); }
-  .mini-dist { display: flex; gap: var(--space-3); align-items: center; margin: 0; padding: var(--space-1) var(--space-3) var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
-  .mini-cols { display: grid; grid-template-columns: repeat(5, 1rem); gap: 4px; align-items: end; padding-block-end: 0.9rem; }
-  .mini-col { position: relative; display: flex; flex-direction: column; justify-content: end; block-size: 1.5rem; border-block-end: 1px solid var(--control-line); }
-  .mini-fill { display: block; border-radius: 2px 2px 0 0; background: var(--brand); }
-  .mini-dist.few .mini-fill { background: color-mix(in srgb, var(--muted) 70%, var(--panel)); }
-  .mini-x { position: absolute; inset-block-start: 100%; inset-inline: 0; color: var(--muted); font-size: var(--t-xs); line-height: 1.2; text-align: center; }
-  .mini-dist figcaption { max-inline-size: 12rem; color: var(--muted); font-size: var(--t-xs); line-height: 1.35; }
   .dist { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; margin-block-end: var(--space-2) !important; color: var(--ink-2) !important; font-size: var(--t-sm) !important; letter-spacing: 0 !important; }
   .eyebrow .avg { margin-inline-start: 0.3em; font-size: var(--t-lg); font-weight: 650; color: var(--ink); }
@@ -319,13 +310,19 @@
   .more:hover { text-decoration: underline; }
   .when { color: var(--ink-2); inline-size: 1%; }
 
+  @media (max-width: 56rem) {
+    .identity.with-stats { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
+  }
   @media (max-width: 48rem) {
     .summary { grid-template-columns: minmax(0, 1fr); }
   }
   @media (max-width: 40rem) {
-    .identity { grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); }
+    .person { gap: var(--space-3); }
     .avatar { inline-size: 3.25rem; block-size: 3.25rem; font-size: 1.375rem; }
-    .edit { grid-column: 1 / -1; }
+    /* Three tiles side by side stay readable at 390 px; the notes wrap under each number. */
+    .stats-side :global(.stat-row) { gap: var(--space-2); }
+    .stats-side :global(.tile) { padding: var(--space-2) var(--space-3); }
+    .stats-side :global(.tile dd) { font-size: var(--t-2xl); }
     .jump a { min-block-size: var(--target-min); }
     .summary :global(.stat-row) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     /* Stack: each rating becomes a short card-like row; column names come from data-label. */

@@ -220,6 +220,11 @@ export interface Landscape {
   };
   /** Status split per education system (filtered set), for the stacked bars. */
   bySystem: { system: EducationSystem; label: string; active: number; inactive: number; unknown: number }[];
+  /**
+   * How the system rows add up against the site total: national platforms belong to no system, and a
+   * platform covering schools of several systems is counted once per system.
+   */
+  systemTally: { national: number; repeats: number };
   /** Schools with the most third-party sites (filtered set, like every other number on the page). */
   topThird: { code: string; id: string; name: string; count: number }[];
   thirdParty: Site[];
@@ -301,6 +306,11 @@ export function buildLandscape(filters: LandscapeFilters): Landscape {
     })
     .filter((row) => row.active + row.inactive + row.unknown > 0);
 
+  const systemTally = {
+    national: kept.filter((site) => !systems.some((system) => inSystem(site, system))).length,
+    repeats: kept.reduce((sum, site) => sum + Math.max(0, systems.filter((system) => inSystem(site, system)).length - 1), 0)
+  };
+
   const thirdCounts = new Map<string, number>();
   for (const site of kept) {
     if (isOfficial(site) || !isSchoolSite(site)) continue;
@@ -330,8 +340,10 @@ export function buildLandscape(filters: LandscapeFilters): Landscape {
       unknown: count((site) => site.status === 'unknown')
     },
     bySystem,
+    systemTally,
     topThird,
-    thirdParty: kept.filter((site) => !isOfficial(site)).sort(byStatusThenName),
+    // By name: the status column then actually varies; 「只看運作中」 is a filter of its own.
+    thirdParty: kept.filter((site) => !isOfficial(site)).sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')),
     cross,
     schools
   };

@@ -8,7 +8,6 @@
     loginLabel, operatorLabels, siteStatuses, sites as allSites, statusLabels, type SchoolSection, type Site
   } from '$lib/landscape-data';
   import SitesList from '$lib/landscape-sites.svelte';
-  import Badge from '$lib/ui/Badge.svelte';
     import DataTable from '$lib/ui/DataTable.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import FilterChip from '$lib/ui/FilterChip.svelte';
@@ -18,7 +17,6 @@
   import StatTile from '$lib/ui/StatTile.svelte';
   import StatusPill from '$lib/ui/StatusPill.svelte';
   import ChartValues from '$lib/ui/ChartValues.svelte';
-  import type { BadgeTone } from '$lib/ui/types';
   import type { TableColumn } from '$lib/ui/types';
   import type { PageProps } from './$types';
 
@@ -103,10 +101,12 @@
   let debounce: ReturnType<typeof setTimeout> | undefined;
   /** Status bars: each system's mix (default) or the systems' sizes on one scale. */
   let stackMode = $state<'share' | 'count'>('share');
-  /** Phones list the third-party sites ten at a time. */
-  const THIRD_PHONE = 10;
+  /** Phones list the third-party sites eight at a time. */
+  const THIRD_PHONE = 8;
   /** School rows listed before 「顯示其餘 N 所」; a fragment link to a later school opens the rest. */
-  const SCHOOL_PREVIEW = 40;
+  const SCHOOL_PREVIEW = 20;
+  /** Cross-school platforms listed before 「顯示其餘」 (phones fewer: each row is three lines there). */
+  let crossPreview = $state(8);
   let restOpen = $state(false);
   let schoolHead = $derived(data.schools.length > SCHOOL_PREVIEW + 5 ? data.schools.slice(0, SCHOOL_PREVIEW) : data.schools);
   let schoolTail = $derived(data.schools.slice(schoolHead.length));
@@ -122,7 +122,10 @@
   let topMax = $derived(Math.max(1, ...data.topThird.map((row) => row.count)));
   onMount(() => {
     hydrated = true;
-    if (window.matchMedia('(max-width: 40rem)').matches) thirdLimit = THIRD_PHONE;
+    if (window.matchMedia('(max-width: 40rem)').matches) {
+      thirdLimit = THIRD_PHONE;
+      crossPreview = 4;
+    }
     revealHash();
     window.addEventListener('hashchange', revealHash);
     return () => {
@@ -143,7 +146,6 @@
     goto(query ? `/landscape?${query}` : '/landscape', { keepFocus: true, noScroll: true, replaceState: true });
   }
 
-  const siteTones: Record<Site['status'], BadgeTone> = { active: 'live', inactive: 'blocked', unknown: 'none' };
   const systemOptions = systems.map((system) => ({ value: system, label: systemLabels[system] }));
   const kindOptions = (['official', 'third'] as const).map((kind) => ({ value: kind, label: kindLabels[kind] }));
   const categoryOptions = categories.map((category) => ({ value: category, label: categoryLabels[category] }));
@@ -156,9 +158,9 @@
   }
 
   const allThirdColumns: TableColumn<Site>[] = [
-    { id: 'site', label: '網站', value: (site) => site.name, sortable: true, width: '18rem' },
+    { id: 'site', label: '網站', value: (site) => site.name, sortable: true },
     { id: 'schools', label: '學校', value: schoolsOf, sortable: true, width: '11rem' },
-    { id: 'category', label: '功能', value: (site) => site.category.map((c) => categoryLabels[c]).join('、') },
+    { id: 'category', label: '功能', value: (site) => site.category.map((c) => categoryLabels[c]).join('、'), width: '14rem' },
     { id: 'operator', label: '營運者', value: (site) => operatorLabels[site.operator], sortable: true, width: '5rem' },
     { id: 'login', label: '登入', value: (site) => loginLabel(site.loginRequired), width: '6.5rem' },
     { id: 'status', label: '狀態', value: (site) => statusLabels[site.status], sortable: true, width: '5.5rem' },
@@ -245,16 +247,9 @@
       全國 {number.format(data.totalSchools)} 所大專校院已盤點 {number.format(data.surveyedSchools)} 所，共 {number.format(data.totalSites)} 個課程網站（每個網站只算一次，跨校平台不重複計）・查核於 <time datetime={data.checkedAt}>{data.checkedAt.replaceAll('-', '/')}</time>，狀態為當日探測結果
       {#if !data.crawl}・<span class="warn">各校收錄狀態暫時無法取得</span>{/if}
     </p>
-    <!-- Section shortcuts as one short line; looking up one school is done in the single search box below. -->
-    <nav class="routes" aria-label="跳到本頁段落">
-      <span class="routes-label">跳到</span>
-      <a href="#third-party">第三方網站</a>
-      {#if data.cross.length}<a href="#cross">跨校平台</a>{/if}
-      <a href="#schools-title">各校清單</a>
-    </nav>
   </header>
 
-  <div class="toolbar">
+  <div class="toolbar" id="filters">
     <form
       method="GET"
       action="/landscape"
@@ -322,7 +317,13 @@
         {#if data.thirdParty.length}・<a class="action" href="#third-party">看第三方清單 ↓</a>{/if}
         {#if data.schools.length}・<a class="action" href="#schools-title">看 {number.format(data.schools.length)} 所學校 ↓</a>{/if}
         <a class="clear inline-clear" href="/landscape">清除全部條件</a>
-      {:else}這些條件會一起篩選下方的統計、圖表與清單{#if hydrated}，輸入即套用{/if}{/if}
+      {:else}
+        <!-- Unfiltered: go straight to the lists (they sit below two charts); typing filters everything. -->
+        <span class="routes-label">直接看</span>
+        <a class="route" href="#third-party">第三方網站 <span class="ui-tabular">{number.format(data.thirdParty.length)}</span></a>
+        {#if data.cross.length}<a class="route" href="#cross">跨校平台 <span class="ui-tabular">{number.format(data.cross.length)}</span></a>{/if}
+        <a class="route" href="#schools-title">各校 <span class="ui-tabular">{number.format(data.schools.length)}</span></a>
+      {/if}
     </p>
     {#if filtered}
       <div class="chips" role="group" aria-label="已套用的篩選">
@@ -354,9 +355,7 @@
       <section class="panel" aria-labelledby="by-system">
         <div class="panel-head">
           <SectionHeader id="by-system" level={2} title="各體系網站狀態"
-            description={`${filtered ? '依目前篩選' : `全部 ${number.format(data.totalSites)} 個網站`}・${stackMode === 'share'
-              ? '每列是該體系網站的狀態比例；跨校平台計入每個涵蓋的體系。'
-              : '條長是該體系的網站數（以最多的體系為滿格）；跨校平台計入每個涵蓋的體系。'}`} />
+            description={`${stackMode === 'share' ? '每列是該體系網站的狀態比例' : '條長是該體系的網站數（以最多的體系為滿格）'}。各列合計 ${number.format(totalBySystem.reduce((sum, n) => sum + n, 0))} 個＝${filtered ? '符合的' : '全部'} ${number.format(data.shownSites)} 個 − 不屬任何體系的全國平台 ${number.format(data.systemTally.national)} 個${data.systemTally.repeats ? ` ＋ 跨體系平台重複計入 ${number.format(data.systemTally.repeats)} 次` : ''}。`} />
           {#if hydrated && data.bySystem.length}
             <div class="mode" role="group" aria-label="長條顯示方式">
               <button type="button" aria-pressed={stackMode === 'share'} onclick={() => (stackMode = 'share')}>比例</button>
@@ -416,11 +415,13 @@
     <section aria-labelledby="third-party" class="third">
       <div class="third-head">
         <SectionHeader id="third-party" level={2} title="第三方查課網站"
-          description={`學生、社群與公司做的評價、排課、成績分布與彙整服務。UniCourse 只給連結；PTT 的 ${INDEXED_PTT_BOARDS.length} 個課程看板另外索引短摘要。`} />
+          description={`學生、社群與公司做的評價、排課、成績分布與彙整服務。UniCourse 只給連結；PTT 的 ${INDEXED_PTT_BOARDS.length} 個課程看板另外索引短摘要。`}>
+          {#snippet actions()}<a class="back" href="#filters">回篩選 ↑</a>{/snippet}
+        </SectionHeader>
       </div>
       {#if data.thirdParty.length}
         <p class="third-count">
-          共 <strong class="ui-tabular">{number.format(data.thirdParty.length)}</strong> 個：運作中 {number.format(thirdStatus.active)}・停止 {number.format(thirdStatus.inactive)}・不明 {number.format(thirdStatus.unknown)}，運作中排在前面
+          共 <strong class="ui-tabular">{number.format(data.thirdParty.length)}</strong> 個：運作中 {number.format(thirdStatus.active)}・停止 {number.format(thirdStatus.inactive)}・不明 {number.format(thirdStatus.unknown)}，依名稱排序
           {#if !filters.status}<a class="action" href={`/landscape?${new URLSearchParams({ ...(filters.q ? { q: filters.q } : {}), kind: 'third', status: 'active' })}`}>只看運作中</a>{/if}
           <a class="action" href="/terms#reviews">收錄原則</a>
         </p>
@@ -437,7 +438,7 @@
           {:else if column.id === 'category'}
             <span class="cats">{#each site.category as category (category)}<span class="cat">{categoryLabels[category]}</span>{/each}</span>
           {:else if column.id === 'status'}
-            <Badge tone={siteTones[site.status]} label={statusLabels[site.status]} dot />
+            <span class="st {site.status}"><i aria-hidden="true"></i>{statusLabels[site.status]}</span>
           {:else if column.id === 'policy'}
             <span class="nowrap" class:policy-excerpt={indexPolicy(site) === 'excerpt'}>{indexPolicyLabels[indexPolicy(site)]}</span>
           {:else}
@@ -454,7 +455,7 @@
         {#each thirdRows as site (site.url)}
           <li>
             <a class="third-name" href={site.url} rel="noopener external">{site.name}<span aria-hidden="true">&nbsp;↗</span></a>
-            <Badge tone={siteTones[site.status]} label={statusLabels[site.status]} dot />
+            <span class="st {site.status}"><i aria-hidden="true"></i>{statusLabels[site.status]}</span>
             <span class="third-meta">
               <span>{schoolsOf(site)}・{loginLabel(site.loginRequired)}</span>
               {#each site.category as category (category)}<span class="cat">{categoryLabels[category]}</span>{/each}
@@ -480,8 +481,10 @@
     {#if data.cross.length}
       <section class="cross" id="cross" aria-labelledby="cross-title">
         <SectionHeader id="cross-title" level={2} title={`跨校與全國平台（${number.format(data.cross.length)} 個）`}
-          description="教育部與聯盟平台、跨校 LMS，以及涵蓋多校的第三方服務；每個平台只列一次。" />
-        <SitesList label="跨校與全國平台" sites={data.cross} showOperator collapseAfter={8} header />
+          description="教育部與聯盟平台、跨校 LMS，以及涵蓋多校的第三方服務；每個平台只列一次，說明只露一行，點列看全文。">
+          {#snippet actions()}<a class="back" href="#filters">回篩選 ↑</a>{/snippet}
+        </SectionHeader>
+        <SitesList label="跨校與全國平台" sites={data.cross} showOperator collapseAfter={crossPreview} header />
       </section>
     {/if}
 
@@ -490,6 +493,7 @@
         description={`依教育部學校代碼排序${filtered ? '，只列出符合篩選的學校' : '，沒有盤點到網站的學校也列出'}。官方／第三方是該校自己的網站數，不含跨校平台；點一列展開該校網站。`}>
         {#snippet actions()}
           <a class="action" href="/schools">UniCourse 各校收錄狀態 →</a>
+          <a class="back" href="#filters">回篩選 ↑</a>
         {/snippet}
       </SectionHeader>
       {#if crawlSummary}
@@ -552,16 +556,26 @@
   .head-actions a { display: inline-flex; align-items: center; min-block-size: 2rem; }
   .dek { margin: 0; color: var(--muted); font-size: var(--t-base); }
   .warn { color: var(--warn); }
-  .routes { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; font-size: var(--t-sm); }
-  .routes-label { color: var(--muted); }
-  .routes a { display: inline-flex; align-items: center; min-block-size: 2rem; color: var(--ink-2); font-weight: 600; text-underline-offset: 0.15em; }
-  .routes a::after { content: '↓'; margin-inline-start: 0.2em; color: var(--muted); font-weight: 400; }
-  .routes a:hover { color: var(--brand-ink); }
+  .routes-label { margin-inline-end: var(--space-2); color: var(--muted); }
+  .route { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: 2rem; margin-inline-end: var(--space-3); color: var(--ink-2); font-weight: 600; text-underline-offset: 0.15em; }
+  .route span { color: var(--muted); font-weight: 500; }
+  .route::after { content: '↓'; color: var(--muted); font-weight: 400; }
+  .route:hover { color: var(--brand-ink); }
+  .back { display: inline-flex; align-items: center; min-block-size: 2rem; padding-inline: var(--space-1); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; text-underline-offset: 0.15em; }
+  .back:hover { color: var(--brand-ink); }
+  /* Site status in tables: a small dot and the word, not a pill, so a column of them stays quiet. */
+  .st { display: inline-flex; gap: 0.4em; align-items: center; color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
+  .st i { inline-size: 8px; block-size: 8px; border-radius: 50%; }
+  .st.active { color: var(--ink); }
+  .st.active i { background: var(--up); }
+  .st.inactive i { background: var(--down); }
+  .st.unknown i { border: 1.5px solid var(--muted); }
 
   /* Sticky toolbar: search, collapsible selects (phone), apply/clear, result count, chips. */
+  /* Sticky under the site header (3.75rem bar + its border), so filters stay reachable down the lists. */
   .toolbar {
     position: sticky;
-    inset-block-start: 0;
+    inset-block-start: calc(3.75rem + 1px);
     z-index: 5;
     display: grid;
     gap: var(--space-2);
@@ -654,7 +668,8 @@
   .third-rows { display: none; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
   .panel { display: grid; gap: var(--space-3); align-content: start; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); min-inline-size: 0; }
   .stack { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; font-size: var(--t-base); }
-  .stack li { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) auto; grid-template-areas: 'label track values'; gap: var(--space-1) var(--space-3); align-items: center; }
+  /* Fixed label and value columns, so every row's 100% bar has the same length. */
+  .stack li { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr) 14rem; grid-template-areas: 'label track values'; gap: var(--space-1) var(--space-3); align-items: center; }
   .stack-label { grid-area: label; color: var(--ink-2); font-size: var(--t-sm); }
   .stack-label small { color: var(--muted); font-size: var(--t-xs); }
   .stack .track { grid-area: track; }
@@ -738,10 +753,10 @@
   .s-where { color: var(--ink-2); font-size: var(--t-sm); }
   .s-n { color: var(--ink); font-size: var(--t-base); font-weight: 600; }
   .s-n.zero { color: var(--muted); font-weight: 400; }
-  .s-lbl { display: none; }
+  .s-lbl { display: none; margin-inline-end: 0.25em; }
   /* Desktop: the counts and the mix are grid cells; narrow screens put them on their own line. */
   .s-stats { display: contents; }
-  .s-mix { display: flex; gap: var(--space-2); align-items: center; min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
+  .s-mix { display: flex; gap: var(--space-2); align-items: center; min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .mini { display: flex; flex: none; inline-size: 4.5rem; block-size: 8px; overflow: hidden; border-radius: 2px; background: var(--chip); }
   .mini i { display: block; block-size: 100%; }
   .school-body { display: grid; gap: var(--space-2); padding: var(--space-2) var(--space-3) var(--space-3); border-block-start: 1px solid var(--line); background: var(--panel); }
@@ -767,7 +782,9 @@
     .s-name { flex: 0 1 auto; }
     .s-where { flex: 1 1 auto; font-size: var(--t-xs); color: var(--muted); }
     .school > summary::after { position: absolute; inset-block-start: var(--space-2); inset-inline-end: var(--space-3); }
-    .s-stats { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: 2px var(--space-3); align-items: center; }
+    /* Second line: fixed slots for the two counts, then the status words; never wraps to a third line. */
+    .s-stats { display: grid; flex: 1 1 100%; grid-template-columns: 3.5rem 4.75rem minmax(0, 1fr); gap: var(--space-2); align-items: center; }
+    .s-n { text-align: start; white-space: nowrap; }
     .s-n { font-size: var(--t-sm); }
     .s-lbl { display: inline; color: var(--muted); font-weight: 400; }
   }
@@ -817,6 +834,11 @@
     .rank li { grid-template-columns: 1rem minmax(0, max-content) minmax(3rem, 1fr) 3rem; gap: var(--space-2); min-block-size: 2.25rem; }
     .rank a { display: inline-flex; align-items: center; min-block-size: 2.25rem; }
     .school { scroll-margin-block-start: 8rem; }
+    /* Phones: the toolbar scrolls away (the two-row site header is already sticky); each list has 回篩選 ↑. */
+    .toolbar { position: static; }
+    /* Phones read the status words; the mini bar returns inside the opened row's list. */
+    .mini { display: none; }
+    .stack .track { min-inline-size: 0; }
   }
   @media (min-width: 40.01rem) {
     .badge-count { display: none; }

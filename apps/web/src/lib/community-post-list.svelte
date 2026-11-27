@@ -9,7 +9,8 @@
     showAuthor = true,
     label = '文章列表',
     dense = false,
-    courseTitles = {}
+    courseTitles = {},
+    showCourse = true
   }: {
     posts: PostSummary[];
     schoolNames?: Record<string, string>;
@@ -19,6 +20,8 @@
     label?: string;
     /** Compact rows: category, course and title on one line, then a one-line summary, then author and tags. */
     dense?: boolean;
+    /** False on a course's own page, where every row is about that course: the kicker keeps only the type. */
+    showCourse?: boolean;
   } = $props();
   const id = $props.id();
 </script>
@@ -40,7 +43,7 @@
           <div class="main">
             <p class="kicker">
               <span class="cm-type" data-type={post.type}>{postTypeLabels[post.type]}</span>
-              {#if post.school}
+              {#if post.school && showCourse}
                 <a class="over" href={forumHref({ school: post.school, courseCode: post.courseCode ?? undefined })}>
                   {schoolNames[post.school] ?? post.school}{#if courseTitle}&nbsp;<span class="course">{courseTitle}</span>{/if}{#if post.courseCode}&nbsp;<span class="mono">{post.courseCode}</span>{/if}
                 </a>
@@ -66,10 +69,12 @@
               {/if}
             {/if}
           </div>
+          <!-- Time first in the markup, so the phone line reads「11/27 13:04 · 回覆 0 · 分數 0」; desktop
+               places each value in its own column. -->
           <dl class="stats">
-            <div class="replies"><dt>回覆</dt><dd class="num">{post.replyCount}</dd></div>
-            <div><dt>分數</dt><dd class="cm-score" data-sign={scoreSign(post.score)}>{signed(post.score)}</dd></div>
             <div class="when"><dt>發表於</dt><dd class="num"><time datetime={post.createdAt} title={dateTime(post.createdAt)}>{shortDateTime(post.createdAt)}</time></dd></div>
+            <div class="replies"><dt>回覆</dt><dd class="num">{post.replyCount}</dd></div>
+            <div class="score"><dt>分數</dt><dd class="cm-score" data-sign={scoreSign(post.score)}>{signed(post.score)}</dd></div>
           </dl>
         </article>
       </li>
@@ -149,10 +154,16 @@
   .dense h3 { order: 0; flex-basis: 100%; min-inline-size: 0; margin: 0 !important; }
   .dense .excerpt { order: 1; flex-basis: 100%; min-inline-size: 0; }
   .dense .kicker { order: 2; flex: none; margin-block-start: 0.125rem !important; }
-  .dense .by.line { order: 3; flex: 1 1 auto; min-inline-size: 0; gap: 0 var(--space-2); }
+  /* One line, always: extra tags are clipped rather than wrapping the row to a fourth line. */
+  .dense .by.line { order: 3; flex: 1 1 0; flex-wrap: nowrap; min-inline-size: 0; gap: 0 var(--space-2); overflow: hidden; white-space: nowrap; }
+  .dense .by.line a { flex: none; }
   .dense article { padding-block: var(--space-2); }
   .stats { display: contents; }
-  .stats div { text-align: end; }
+  .stats div { grid-row: 1; text-align: end; }
+  .main { grid-row: 1; grid-column: 1; }
+  .stats .replies { grid-column: 2; }
+  .stats .score { grid-column: 3; }
+  .stats .when { grid-column: 4; }
   dt { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   dd { margin: 0; color: var(--ink-2); font-size: var(--t-base); font-variant-numeric: tabular-nums; }
   .when dd { color: var(--muted); }
@@ -163,13 +174,18 @@
 
   @media (max-width: 40rem) {
     .cols { display: none; }
-    article { grid-template-columns: minmax(0, 1fr); padding: var(--space-3); }
-    .excerpt { -webkit-line-clamp: 2; line-clamp: 2; }
-    .stats { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin: var(--space-1) 0 0; }
+    /* Phones: title, summary, then one fixed line of time · replies · score; course, author and tags last. */
+    article { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); padding: var(--space-3); }
+    .main, .dense .main { display: contents; }
+    h3, .dense h3 { order: 0; flex-basis: 100%; }
+    .excerpt, .dense .excerpt { order: 1; flex-basis: 100%; -webkit-line-clamp: 2; line-clamp: 2; }
+    .stats { order: 2; display: flex; flex-basis: 100%; flex-wrap: wrap; gap: 0; margin: var(--space-1) 0 0; }
     .stats div { display: flex; gap: 0.25em; align-items: baseline; text-align: start; }
+    .stats div + div::before { content: '·'; margin-inline: 0.5em; color: var(--muted); }
+    .kicker, .dense .kicker { order: 3; margin-block-start: var(--space-1) !important; }
+    .by, .dense .by.line { order: 4; flex: 1 1 auto; margin-block-start: var(--space-1) !important; }
     dt { position: static; inline-size: auto; block-size: auto; overflow: visible; clip: auto; color: var(--muted); font-size: var(--t-sm); }
     dd { font-size: var(--t-sm); }
-    .when { order: -1; }
     .when dt { display: none; }
   }
 </style>
