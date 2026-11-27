@@ -87,6 +87,8 @@ function examplePages(f) {
     { id: 'home', url: '/' },
     { id: 'search', url: `/?q=${encodeURIComponent('資料')}&school=&term=all` },
     { id: 'course', url: `/courses/${f.courseId}`, loggedIn: true },
+    // Optional: a course with indexed external reviews (UI_SHOTS_REVIEWED_COURSE=<offering id>).
+    ...(process.env.UI_SHOTS_REVIEWED_COURSE ? [{ id: 'course-reviewed', url: `/courses/${process.env.UI_SHOTS_REVIEWED_COURSE}` }] : []),
     { id: 'schools', url: '/schools' },
     { id: 'school', url: `/schools/${f.school}` },
     { id: 'department', url: `/schools/${f.school}/departments/${encodeURIComponent(f.department)}` },
