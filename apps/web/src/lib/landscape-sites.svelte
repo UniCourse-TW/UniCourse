@@ -30,12 +30,9 @@
 
   let shown = $derived(head.length + batches.reduce((count, batch) => count + (openBatches[batch[0].url] ? batch.length : 0), 0));
 
-  /** A click anywhere on a row with notes (not on a link or the disclosure itself) opens them. */
-  function toggleRow(event: MouseEvent) {
-    const target = event.target as HTMLElement;
-    if (target.closest('a, summary, dl')) return;
-    const details = (event.currentTarget as HTMLElement).querySelector('details');
-    if (details?.getClientRects().length) details.open = !details.open;
+  function purpose(features: string | null) {
+    const firstClause = features?.split(/[：；。，,（(]/u, 1)[0]?.trim();
+    return firstClause || features;
   }
 
   function host(url: string) {
@@ -50,15 +47,30 @@
 {#snippet row(site: Site)}
   {@const official = isOfficial(site)}
   {@const hasNotes = Boolean(site.notes || site.repo || (site.operatorName && official && !showOperator))}
-  {@const detail = hasNotes || (site.features?.length ?? 0) > 48}
-  <!-- The whole row is a pointer shortcut. The summary also works from the keyboard and without JavaScript. -->
-  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (the summary is the keyboard control) -->
-  <li class:third={!official} class:expandable={detail} onclick={detail ? toggleRow : undefined}>
+  {@const summary = purpose(site.features)}
+  {@const detail = hasNotes || summary !== site.features}
+  <li class:third={!official}>
     <span class="kind">{kindLabels[official ? 'official' : 'third']}</span>
-    <span class="name">
-      <a href={site.url} rel="noopener external">{site.name}<span class="ext" aria-hidden="true"> ↗</span></a>
-      <small class="host">{host(site.url)}{#if (showOperator || !official) && site.operatorName} · {site.operatorName}{/if}{#if site.sourceType !== 'web'}<span class="form">{sourceLabels[site.sourceType]}</span>{/if}</small>
-    </span>
+    <div class="name">
+      <div class="identity">
+        <a href={site.url} rel="noopener external">{site.name}<span class="ext" aria-hidden="true">&nbsp;↗</span></a>
+        <small class="host"><span>{host(site.url)}</span>{#if (showOperator || !official) && site.operatorName}<span>{site.operatorName}</span>{/if}{#if site.sourceType !== 'web'}<span class="form">{sourceLabels[site.sourceType]}</span>{/if}</small>
+      </div>
+      {#if detail}
+        <details class="more">
+          <summary>
+            <span class="phone-purpose">{summary ?? '—'}</span>
+            <span class="notes-label">網站詳情</span>
+          </summary>
+          <dl>
+            {#if summary !== site.features}<dt>用途</dt><dd>{site.features}</dd>{/if}
+            {#if site.notes}<dt>說明</dt><dd>{site.notes}</dd>{/if}
+            {#if site.operatorName && official && !showOperator}<dt>營運者</dt><dd>{operatorLabels[site.operator]}（{site.operatorName}）</dd>{/if}
+            {#if site.repo}<dt>原始碼</dt><dd><a href={site.repo} rel="noopener external">{host(site.repo)}{site.repo.replace(/^https?:\/\/[^/]+/, '')}</a></dd>{/if}
+          </dl>
+        </details>
+      {/if}
+    </div>
     <span class="cats">
       {#each site.category as category (category)}<span class="cat">{categoryLabels[category]}</span>{/each}
     </span>
@@ -66,27 +78,14 @@
       <span class="login">{loginLabel(site.loginRequired)}</span>
       <span class="status st {site.status}"><i aria-hidden="true"></i>{statusLabels[site.status]}</span>
     </span>
-    <span class="features">
-      {#if detail}
-        <details class="more">
-          <summary><span class="text">{site.features ?? '說明與原始碼'}</span><span class="notes-label">詳細<span class="chev" aria-hidden="true"></span></span></summary>
-          {#if site.notes || site.repo || (site.operatorName && official && !showOperator)}<dl>
-            {#if site.notes}<dt>說明</dt><dd>{site.notes}</dd>{/if}
-            {#if site.operatorName && official && !showOperator}<dt>營運者</dt><dd>{operatorLabels[site.operator]}（{site.operatorName}）</dd>{/if}
-            {#if site.repo}<dt>原始碼</dt><dd><a href={site.repo} rel="noopener external">{host(site.repo)}{site.repo.replace(/^https?:\/\/[^/]+/, '')}</a></dd>{/if}
-          </dl>{/if}
-        </details>
-      {:else}
-        <span class="text">{site.features ?? '—'}</span>
-      {/if}
-    </span>
+    <span class="features" class:inside-summary={detail}>{summary ?? '—'}</span>
   </li>
 {/snippet}
 
 <div class="sites-box">
   {#if header}
     <!-- Same order as the third-party table above: site, functions, login, status; then the notes. -->
-    <div class="cols" aria-hidden="true"><span>類型</span><span>網站</span><span>功能</span><span>登入</span><span>狀態</span><span>說明</span></div>
+    <div class="cols" aria-hidden="true"><span>類型</span><span>網站</span><span>功能</span><span>登入</span><span>狀態</span><span>用途</span></div>
   {/if}
   <ul class="sites" aria-label={label}>
     {#each head as site (site.url)}{@render row(site)}{/each}
@@ -153,14 +152,14 @@
   li:hover { background: var(--hover-row); }
   .kind { color: var(--muted); font-size: var(--t-sm); font-weight: 600; line-height: 1.5; }
   .third .kind { color: var(--ink-2); }
-  /* Name and host share a line when they fit, so most rows stay one line tall. */
-  .name { display: flex; flex-wrap: wrap; column-gap: var(--space-2); align-items: baseline; min-inline-size: 0; }
+  .name { min-inline-size: 0; }
+  .identity { display: flex; flex-wrap: wrap; column-gap: var(--space-2); align-items: baseline; min-inline-size: 0; }
   .name a { color: var(--brand-ink); font-weight: 600; text-underline-offset: 0.15em; text-decoration: none; overflow-wrap: anywhere; }
   .name a:hover { text-decoration: underline; }
   .name a:focus-visible, summary:focus-visible, dd a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: 2px; }
   .rest > summary:focus-visible { outline-offset: calc(-1 * var(--focus-offset)); }
   .ext { color: var(--muted); font-weight: 400; }
-  .host { color: var(--muted); font-size: var(--t-xs); overflow-wrap: anywhere; }
+  .host { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); color: var(--muted); font-size: var(--t-xs); overflow-wrap: anywhere; }
   .cats { display: flex; flex-wrap: wrap; gap: 2px var(--space-1); min-inline-size: 0; }
   .cat {
     padding: 0 6px;
@@ -179,23 +178,18 @@
   .st i { inline-size: 8px; block-size: 8px; border-radius: 50%; }
   .st.active { color: var(--ink); }
   .st.active i { background: var(--up); }
-  .st.inactive i { background: var(--down); }
+  .st.inactive i { background: var(--muted); }
   .st.unknown i { border: 1.5px solid var(--muted); }
   .features { color: var(--ink-2); min-inline-size: 0; font-size: var(--t-sm); line-height: 1.5; overflow-wrap: anywhere; }
   .form { margin-inline-start: var(--space-1); padding: 0 5px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink-2); font-size: var(--t-xs); white-space: nowrap; }
   .notes-label { display: inline-flex; gap: var(--space-1); color: var(--brand-ink); font-weight: 600; white-space: nowrap; }
   .shown-count { margin: 0; padding: var(--space-2) var(--space-3); border-block-start: 1px solid var(--line); color: var(--muted); font-size: var(--t-sm); }
-  li.expandable { cursor: pointer; }
-  .more { display: block; }
-  .more > summary { display: flex; gap: var(--space-2); align-items: baseline; justify-content: space-between; border-radius: var(--radius-control); cursor: pointer; list-style: none; }
+  .more > summary { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; list-style: none; }
   .more > summary::-webkit-details-marker { display: none; }
-  .text { min-inline-size: 0; color: var(--ink-2); }
-  .more:not([open]) .text { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; }
-  /* A quiet chevron instead of a repeated 「＋備註」 label on every row. */
-  .chev { flex: none; inline-size: 1.25rem; color: var(--muted); text-align: center; }
-  .chev::before { content: '▾'; }
-  .more[open] .chev::before { content: '▴'; }
-  li.expandable:hover .chev { color: var(--brand-ink); }
+  .notes-label::after { content: ' ▾'; color: var(--muted); }
+  .more[open] .notes-label::after { content: ' ▴'; }
+  .more > summary:hover .notes-label { text-decoration: underline; }
+  .phone-purpose { display: none; }
   dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px var(--space-3); margin: var(--space-1) 0 0; padding: var(--space-2); border-radius: var(--radius-control); background: var(--chip); color: var(--ink-2); cursor: auto; }
   dt { color: var(--muted); }
   dd { margin: 0; overflow-wrap: anywhere; }
@@ -228,12 +222,17 @@
     .cats { margin-inline-start: 2.3rem; align-items: center; }
     .status { order: -1; }
     .name a { min-block-size: var(--target-min); min-inline-size: var(--target-min); align-content: center; }
+    .name { display: contents; }
+    .identity { grid-area: name; }
     .host { display: none; }
+    .more { grid-area: features; font-size: var(--t-sm); }
+    .features.inside-summary { display: none; }
+    .phone-purpose { display: block; color: var(--ink-2); overflow-wrap: anywhere; }
+    .more > summary { justify-content: space-between; }
     .login { text-align: start; }
     .features { inline-size: 100%; }
-    .features > .text { display: block; padding-block-end: var(--space-1); }
+    .features { padding-block-end: var(--space-1); }
     .more > summary { min-block-size: var(--target-min); align-items: center; }
-    .more:not([open]) .text { -webkit-line-clamp: 1; line-clamp: 1; }
     dd a { display: inline-flex; min-block-size: var(--target-min); align-items: center; }
   }
   @media (prefers-reduced-motion: no-preference) {

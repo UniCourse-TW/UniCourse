@@ -13,6 +13,12 @@ test('the old static address redirects and the page renders from the bundled dat
   await page.locator('a[href="#third-party"]').first().click();
   await expect(page).toHaveURL(/#third-party$/);
   const thirdHeading = page.locator('#third-party');
+  await expect(page.locator('#by-system').locator('xpath=following::h2[@id="third-party"]')).toHaveCount(1);
+  const thirdPager = page.getByRole('navigation', { name: '第三方查課網站分頁' });
+  const firstRows = await thirdParty.filter({ visible: true }).getByRole('link').allTextContents();
+  await thirdPager.getByRole('link', { name: '下一頁' }).click();
+  await expect(page).toHaveURL(/third_page=2#third-party$/);
+  await expect(thirdParty.filter({ visible: true }).getByRole('link').first()).not.toHaveText(firstRows[0]);
   await expect(thirdHeading).toBeInViewport();
   await expect.poll(() => thirdHeading.evaluate((heading) => {
     const toolbar = document.getElementById('filters')!;

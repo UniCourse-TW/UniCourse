@@ -1,11 +1,12 @@
 import type { DirectoryStatus } from '$lib/institutions';
-import { directoryStatus, hasSchoolPage } from '$lib/institutions';
+import { directoryStatus, hasImportedOfferings, hasSchoolPage } from '$lib/institutions';
 import { buildLandscape, parseLandscapeFilters } from '$lib/landscape-data';
 import { catalog } from '$lib/server/catalog';
 import type { PageServerLoad } from './$types';
 
 export interface CrawlState {
   status: DirectoryStatus;
+  hasCourses: boolean;
   /** `/schools/{slug}` when the school has imported offerings. */
   href: string | null;
 }
@@ -22,7 +23,7 @@ async function loadCrawlStatus(fetch: typeof globalThis.fetch): Promise<Record<s
     return Object.fromEntries(
       result.data.institutions.map((institution) => [
         institution.code,
-        { status: directoryStatus(institution), href: hasSchoolPage(institution) ? `/schools/${institution.slug}` : null }
+        { status: directoryStatus(institution), hasCourses: hasImportedOfferings(institution), href: hasSchoolPage(institution) ? `/schools/${institution.slug}` : null }
       ])
     );
   } catch {
