@@ -8,6 +8,15 @@ test('the old static address redirects and the page renders from the bundled dat
   const tiles = page.getByRole('group', { name: '網站統計' });
   for (const label of ['已盤點到網站的學校', '官方網站', '第三方網站', '運作中']) await expect(tiles.getByRole('term').filter({ hasText: label })).toBeVisible();
   // Desktop shows the sortable table; phones get one short row per site instead.
+  const schoolJump = page.locator('#filters a[href="#schools-title"]');
+  await expect(schoolJump).toBeInViewport();
+  await schoolJump.click();
+  const schoolPager = page.getByRole('navigation', { name: '各校網站分頁' });
+  await expect(page.locator('.school-table .school')).toHaveCount(10);
+  await schoolPager.getByRole('link', { name: '下一頁' }).click();
+  await expect(page).toHaveURL(/school_page=2#schools-title$/);
+  await expect(page.locator('.school-table .school').first()).not.toContainText('國立政治大學');
+
   const thirdParty = page.getByRole('table', { name: /第三方查課網站/ }).or(page.getByRole('list', { name: '第三方查課網站' }));
   await expect(thirdParty.filter({ visible: true })).toHaveCount(1);
   await page.locator('a[href="#third-party"]').first().click();
@@ -18,6 +27,10 @@ test('the old static address redirects and the page renders from the bundled dat
   const firstRows = await thirdParty.filter({ visible: true }).getByRole('link').allTextContents();
   await thirdPager.getByRole('link', { name: '下一頁' }).click();
   await expect(page).toHaveURL(/third_page=2#third-party$/);
+  await expect(page).toHaveURL(/school_page=2/);
+  await page.getByRole('navigation', { name: '跨校與全國平台分頁' }).getByRole('link', { name: '下一頁' }).click();
+  await expect(page).toHaveURL(/platform_page=2#cross$/);
+  await page.locator('a[href="#third-party"]').first().click();
   await expect(thirdParty.filter({ visible: true }).getByRole('link').first()).not.toHaveText(firstRows[0]);
   await expect(thirdHeading).toBeInViewport();
   await expect.poll(() => thirdHeading.evaluate((heading) => {
@@ -27,14 +40,15 @@ test('the old static address redirects and the page renders from the bundled dat
   // Each school is one summary row; a fragment link opens that school's sites and its UniCourse link.
   await expect(page.getByRole('heading', { name: /^各校（\d+ 所）$/ })).toBeVisible();
   const ntu = page.locator('#ntu');
+  await page.goto('/landscape');
   await expect(ntu.getByRole('heading', { level: 3 })).toContainText('國立臺灣大學');
   await expect(ntu.locator(':scope > summary')).toContainText(/運作 \d+\s*停止 \d+\s*不明 \d+/);
   await expect(ntu.getByRole('list', { name: '國立臺灣大學的課程網站' })).toBeHidden();
   await page.goto('/landscape#ntu');
   await expect(ntu.getByRole('list', { name: '國立臺灣大學的課程網站' })).toBeVisible();
-  // Another fragment opens that school's row too.
-  await page.goto('/landscape#nthu');
-  await expect(page.locator('#nthu').getByRole('list', { name: '國立清華大學的課程網站' })).toBeVisible();
+  // Deep links can also reveal a school from a later page.
+  await page.goto('/landscape#fcu');
+  await expect(page.locator('#fcu').getByRole('list', { name: '逢甲大學的課程網站' })).toBeVisible();
 });
 
 test('filters are plain query parameters and narrow the school sections', async ({ page }) => {

@@ -1,11 +1,13 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
 
-  let { id, label, sections, children }: {
+  let { id, label, sections, children, trackCurrent = true, arrows = false }: {
     id?: string;
     label?: string;
     sections: { id: string; label: string; count?: string }[];
     children?: Snippet;
+    trackCurrent?: boolean;
+    arrows?: boolean;
   } = $props();
 
   let nav: HTMLElement;
@@ -25,6 +27,7 @@
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         updateEdges();
+        if (!trackCurrent) return;
         const edge = nav.getBoundingClientRect().bottom + 24;
         const headings = sections.flatMap(({ id }) => {
           const heading = document.getElementById(id);
@@ -73,7 +76,7 @@
   <div class="jump-links" bind:this={links} class:cutStart class:cutEnd onscroll={updateEdges}>
     {#each sections as section (section.id)}
       <a href={'#' + section.id} aria-current={active === section.id ? 'location' : undefined}>
-        {section.label}{#if section.count}<span>{section.count}</span>{/if}
+        {section.label}{#if section.count}<span>{section.count}</span>{/if}{#if arrows}<span aria-hidden="true">↓</span>{/if}
       </a>
     {/each}
     {@render children?.()}
@@ -121,7 +124,7 @@
     text-decoration: none;
     white-space: nowrap;
   }
-  a[aria-current] { background: var(--brand-wash); box-shadow: inset 0 -2px var(--brand); }
+  a[aria-current] { background: var(--brand-wash); }
   a:hover { text-decoration: underline; }
   a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   a span { color: var(--muted); font-variant-numeric: tabular-nums; }
