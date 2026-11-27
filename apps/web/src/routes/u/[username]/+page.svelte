@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import '$lib/community-ui.css';
   import CommunityPostList from '$lib/community-post-list.svelte';
-  import { initial, oneLine, slashDate } from '$lib/community-format';
+  import { dateTime, initial, oneLine, shortDateTime, slashDate } from '$lib/community-format';
   import Stars from '$lib/community-stars.svelte';
   import { courseSearchHref } from '$lib/community-paths';
   import BarList from '$lib/ui/BarList.svelte';
@@ -48,6 +48,11 @@
   const SPARSE = 5;
   const DISTRIBUTION_MIN = 3;
   let sparse = $derived(ratingCount < SPARSE && profile.posts.length < SPARSE);
+  /** One or two ratings are not an average worth a big number: the tile says how many more it needs. */
+  let averageShown = $derived(average !== null && ratingCount >= DISTRIBUTION_MIN ? average.toFixed(1) : null);
+  let averageNote = $derived(
+    ratingCount === 0 ? '還沒有評價' : ratingCount < DISTRIBUTION_MIN ? `需 ${DISTRIBUTION_MIN} 則評價` : `平均給分 ${average?.toFixed(1)}・${ratingCount} 則`
+  );
 
   let hydrated = $state(false);
   let sort = $state<'recent' | 'score'>('recent');
@@ -83,36 +88,31 @@
           {#if schoolName}<span class="sep">·</span>{schoolName}{/if}
           <span class="sep">·</span><time datetime={profile.createdAt}>{slashDate(profile.createdAt)}</time> 加入
         </p>
-        {#if profile.bio}<p class="bio">{profile.bio}</p>
-        {:else if isMe}<p class="bio empty">還沒有自我介紹・<a href="/settings">到設定新增</a>（只有你看得到這行）</p>{/if}
-        {#if isMe}<a class="cm-btn secondary edit" href="/settings">編輯個人資料</a>{/if}
       </div>
+      <!-- Bio and edit button start at the avatar's left edge, in line with the tiles below on phones. -->
+      {#if profile.bio}<p class="bio">{profile.bio}</p>
+      {:else if isMe}<p class="bio empty">還沒有自我介紹・<a href="/settings">到設定新增</a>（只有你看得到這行）</p>{/if}
+      {#if isMe}<a class="cm-btn secondary edit" href="/settings">編輯個人資料</a>{/if}
     </div>
 
     {#if sparse}
       <section class="stats-side" aria-label="活動摘要">
+        <!-- The two counts are also the jump links to their sections; the average waits for enough ratings. -->
         <StatRow label="活動統計">
-          <StatTile label="課程評價" value={ratingCount} unit="則" />
-          <StatTile label="發表文章" value={profile.posts.length} unit="篇" />
-          {#if average !== null}
-            <StatTile label="此帳號的平均給分" value={ratingCount === 1 ? average : average.toFixed(1)} unit="/ 5 分" />
-          {/if}
+          <a class="tile-link" href="#ratings" aria-label="課程評價 {ratingCount} 則，跳到評價列表"><StatTile label="課程評價 ↓" value={ratingCount} unit="則" /></a>
+          <a class="tile-link" href="#posts" aria-label="發表文章 {profile.posts.length} 篇，跳到文章列表"><StatTile label="發表文章 ↓" value={profile.posts.length} unit="篇" /></a>
+          <StatTile label="平均給分" value={averageShown} unit="/ 5" note={averageNote} />
         </StatRow>
       </section>
     {/if}
   </header>
 
-  <nav class="jump" aria-label="本頁段落">
-    <a href="#ratings">看評價 <span aria-hidden="true">↓</span></a>
-    <a href="#posts">看文章 <span aria-hidden="true">↓</span></a>
-  </nav>
-
 
   {#if !sparse}
   <section class="summary" aria-label="活動摘要">
     <StatRow label="活動統計">
-      <StatTile label="課程評價" value={ratingCount} unit="則" note={ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : undefined} />
-      <StatTile label="發表文章" value={profile.posts.length} unit="篇" note={profile.posts.length >= POST_CAP ? `顯示最近 ${POST_CAP} 篇` : undefined} />
+      <a class="tile-link" href="#ratings" aria-label="課程評價 {ratingCount} 則，跳到評價列表"><StatTile label="課程評價 ↓" value={ratingCount} unit="則" note={ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : averageShown ? `平均給分 ${averageShown} / 5` : undefined} /></a>
+      <a class="tile-link" href="#posts" aria-label="發表文章 {profile.posts.length} 篇，跳到文章列表"><StatTile label="發表文章 ↓" value={profile.posts.length} unit="篇" note={profile.posts.length >= POST_CAP ? `顯示最近 ${POST_CAP} 篇` : undefined} /></a>
       <StatTile label="文章收到的回覆" value={replies} unit="則" />
       {#if topSchool}
         <StatTile label="最常評的學校" value={topSchool.name} note={`${topSchool.count} 則評價`} />
@@ -134,15 +134,14 @@
       {/if}
     </div>
     {#if ratingCount}
-      <p class="rating-context">評過 {ratedSchool ?? `${schoolCounts.length} 所學校`}的課{#if ratingCount === 1}・只有 1 則，還看不出給分習慣{/if}</p>
+      <!-- One muted line: what the ratings cover and, below the threshold, why there is no distribution yet. -->
+      <p class="rating-context">評過{ratedSchool ?? ` ${schoolCounts.length} 所學校`}的課{#if ratingCount < DISTRIBUTION_MIN}<span class="sep" aria-hidden="true">·</span>累積 {DISTRIBUTION_MIN} 則後顯示給分分布與平均{/if}</p>
     {/if}
     {#if ratingCount >= DISTRIBUTION_MIN && average !== null}
       <div class="dist">
-        <h3 class="eyebrow">給分分布・此帳號的平均給分 <span class="num avg">{average.toFixed(1)}</span> / 5</h3>
+        <h3 class="eyebrow">給分分布・平均給分 <span class="num avg">{average.toFixed(1)}</span> / 5</h3>
         <BarList label="給分分布" items={histogram} unit="則" />
       </div>
-    {:else}
-      <p class="distribution-note">給分分布將在累積 {DISTRIBUTION_MIN} 則評價後顯示。</p>
     {/if}
     {#if ratingCount === 0}
       <EmptyState title={isMe ? '你還沒有評價任何課程' : `${name} 還沒有評價任何課程`}
@@ -156,7 +155,7 @@
         <table>
           <caption class="cm-sr">{name} 的課程評價</caption>
           <thead>
-            <tr><th scope="col">課程</th><th scope="col">學校</th><th scope="col" class="n">給分</th><th scope="col">評論</th><th scope="col" class="n">更新</th></tr>
+            <tr><th scope="col">課程</th><th scope="col">學校</th><th scope="col" class="n">給分</th><th scope="col">評論</th><th scope="col" class="n">時間</th></tr>
           </thead>
           <tbody>
             {#each ratings as rating (key(rating))}
@@ -180,7 +179,7 @@
                     {/if}
                   {:else}<span class="none">—</span>{/if}
                 </td>
-                <td data-label="更新" class="n num when"><time datetime={rating.updatedAt}>{slashDate(rating.updatedAt)}</time></td>
+                <td data-label="時間" class="n num when"><time datetime={rating.updatedAt} title={dateTime(rating.updatedAt)}>{shortDateTime(rating.updatedAt)}</time></td>
               </tr>
             {/each}
           </tbody>
@@ -209,8 +208,14 @@
   .identity { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; }
   /* Wide screens: the person on the left, the three activity tiles filling the right. */
   .identity.with-stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr); }
-  .person { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-4); align-items: start; }
+  .person { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--space-4); align-items: center; }
+  .person > .bio, .person > .edit { grid-column: 1 / -1; }
   .edit { justify-self: start; margin-block-start: var(--space-3); }
+  /* A count tile that is also the jump link to its section: same tile, a link's hover and focus. */
+  .tile-link { display: block; min-inline-size: 0; border-radius: var(--radius-panel); color: inherit !important; text-decoration: none; }
+  .tile-link :global(.tile) { block-size: 100%; transition: border-color 0.15s; }
+  .tile-link :global(dt) { color: var(--brand-ink); font-weight: 600; }
+  .tile-link:hover :global(.tile) { border-color: var(--brand); background: var(--brand-wash); }
   .stats-side { min-inline-size: 0; }
   .stats-side :global(.stat-row) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .stats-side :global(.stat-row:has(> :nth-child(2):last-child)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -227,17 +232,14 @@
   }
   .who { min-inline-size: 0; padding-block-start: var(--space-1); }
   .handle { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; }
-  .bio { max-inline-size: 52em; margin-block-start: var(--space-2) !important; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
-  .jump { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); margin-block-start: var(--space-1); font-size: var(--t-base); }
-  .jump a { display: inline-flex; align-items: center; gap: 0.3em; min-block-size: var(--target-min); font-weight: 600; text-decoration: none; }
-  .jump a:hover { text-decoration: underline; }
+  .bio { max-inline-size: 52em; margin-block-start: var(--space-3) !important; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
   .summary { margin-block-start: var(--space-4); }
   .summary :global(.stat-row) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   /* The fourth tile may hold a school name, not a count: keep it readable but smaller than the numbers. */
   .summary :global(.stat-row > :nth-child(4) dd) { font-size: var(--t-xl); line-height: 1.3; min-block-size: 2.1rem; display: flex; align-items: center; }
   .bio.empty { color: var(--muted); font-size: var(--t-sm); }
-  .rating-context, .distribution-note { color: var(--ink-2); font-size: var(--t-base); margin-block-end: var(--space-2) !important; }
-  .dist, .table-frame { max-inline-size: 55rem; }
+  .rating-context { color: var(--muted); font-size: var(--t-base); margin-block-end: var(--space-2) !important; }
+  .dist { max-inline-size: 55rem; }
   .dist { margin-block-end: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; margin-block-end: var(--space-2) !important; color: var(--ink-2) !important; font-size: var(--t-sm) !important; letter-spacing: 0 !important; }
   .eyebrow .avg { margin-inline-start: 0.3em; font-size: var(--t-lg); font-weight: 650; color: var(--ink); }
@@ -261,12 +263,15 @@
 
   .table-frame { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); overflow: hidden; }
   table { inline-size: 100%; border-collapse: collapse; font-size: var(--t-base); line-height: var(--leading-table); }
+  /* Same frame, header and 16 px outer padding as the post list below, so both tables share one width and edge. */
   thead th { padding: var(--space-2) 0.625rem; color: var(--muted); background: var(--table-head); font-size: var(--t-sm); font-weight: 600; text-align: start; border-block-end: 1px solid var(--line); }
   tbody :is(th, td) { padding: 0.5rem 0.625rem; border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; font-weight: 400; }
   tbody tr:last-child :is(th, td) { border-block-end: 0; }
+  :is(thead, tbody) tr > :first-child { padding-inline-start: var(--space-4); }
+  :is(thead, tbody) tr > :last-child { padding-inline-end: var(--space-4); }
   tbody tr:hover { background: var(--hover-row); }
   .n { text-align: end !important; white-space: nowrap; }
-  tbody th { inline-size: 24%; }
+  tbody th { inline-size: 26%; }
   tbody th a { font-weight: 600; text-decoration: none; }
   tbody th a:hover { text-decoration: underline; }
   .code { display: block; color: var(--muted); font-size: var(--t-xs); }
@@ -274,13 +279,12 @@
   .score { display: inline-block; color: var(--ink); font-weight: 650; }
   .stars { display: inline-block; margin-inline-start: var(--space-1); }
   td.n:has(.score) { inline-size: 1%; }
-  .review { inline-size: 32%; }
   .review .text { display: block; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
   .review .clamp { display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; }
   .review .none { color: var(--muted); }
   .more { margin-block-start: 2px; padding: 0; border: 0; background: none; color: var(--brand-ink); font: 600 var(--t-sm) / 1.5 var(--font-sans); cursor: pointer; min-block-size: 1.75rem; }
   .more:hover { text-decoration: underline; }
-  .when { color: var(--ink-2); inline-size: 1%; }
+  .when { color: var(--muted); inline-size: 8rem; }
 
   @media (max-width: 56rem) {
     .identity.with-stats { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
@@ -291,16 +295,17 @@
   @media (max-width: 40rem) {
     .person { gap: var(--space-3); }
     .avatar { inline-size: 3.25rem; block-size: 3.25rem; font-size: 1.375rem; }
-    .stats-side :global(.stat-row) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+    /* Three compact tiles in one row: label, number, then a short note. */
+    .stats-side :global(.stat-row) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
     .stats-side :global(.tile) { padding: var(--space-2) var(--space-3); }
-    .stats-side :global(.tile:nth-child(3)) { grid-column: 1 / -1; }
     .stats-side :global(.tile dd) { font-size: var(--t-2xl); }
+    .stats-side :global(.tile p) { font-size: var(--t-sm); line-height: 1.4; }
     /* Stack: each rating becomes a short card-like row; column names come from data-label. */
     thead { display: none; }
     table, tbody, tr, tbody :is(th, td) { display: block; }
     tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-3); padding: var(--space-3); border-block-end: 1px solid var(--line); }
     tbody tr:last-child { border-block-end: 0; }
-    tbody :is(th, td) { padding: 0; border: 0 !important; inline-size: auto; }
+    tbody tr > :is(th, td):nth-child(n) { padding: 0; border: 0 !important; inline-size: auto; }
     tbody th { grid-column: 1; }
     tbody td[data-label='給分'] { grid-column: 2; grid-row: 1; }
     /* The date stays at the row's end as on desktop: right of the school line. */
