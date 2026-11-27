@@ -74,6 +74,8 @@
   // The empty query lists 不顯示學校 first; a typed query lists schools only.
   let options = $derived<SchoolRow[]>(schoolQuery.trim() ? hits.slice(0, SHOWN) : [NO_SCHOOL, ...hits.slice(0, SHOWN - 1)]);
   let selectedName = $derived(current.school ? (schoolNames[current.school] ?? current.school) : '');
+  // The tick and × show only while the box still reads the chosen school's name.
+  let showsChoice = $derived(Boolean(current.school) && schoolQuery === selectedName);
   // The box shows the chosen school until the visitor starts typing again.
   onMount(() => {
     schoolQuery = selectedName;
@@ -99,17 +101,20 @@
   function onComboInput(event: Event) {
     event.stopPropagation();
     openList();
-    // Typing over the chosen name un-chooses it; an empty box means no school.
-    if (current.school && schoolQuery !== selectedName) current = { ...current, school: '' };
-    savedVisible = false;
+    // Typing only searches; the chosen school stays until a new one is picked or the box is emptied.
+    if (current.school && !schoolQuery.trim()) {
+      current = { ...current, school: '' };
+      savedVisible = false;
+    }
   }
   function onComboBlur(event: FocusEvent) {
     const next = event.relatedTarget as HTMLElement | null;
     if (next?.closest('.school-list')) return;
     closeList();
-    // Leaving without picking: keep the choice that is actually stored, not the half-typed text.
+    // Leaving without picking: the box goes back to what is actually chosen (or stays empty).
     if (!schoolQuery.trim()) {
       if (current.school) current = { ...current, school: '' };
+      schoolQuery = '';
     } else if (schoolQuery !== selectedName) {
       schoolQuery = selectedName;
     }
@@ -207,13 +212,13 @@
         <div class="cm-field">
           <div class="cm-label"><label for="school">所屬學校</label><span class="cm-hint">選填</span></div>
           {#if hydrated}
-            <div class="combo" class:chosen={Boolean(current.school)}>
+            <div class="combo" class:chosen={showsChoice}>
               <input bind:this={combo} id="school" class="cm-input" type="text" role="combobox" autocomplete="off" spellcheck="false"
                 placeholder="輸入校名或簡稱，例如 清大" aria-expanded={listOpen} aria-controls="school-list" aria-autocomplete="list"
                 aria-activedescendant={listOpen && activeIndex >= 0 ? `school-opt-${activeIndex}` : undefined}
                 aria-describedby="school-hint" bind:value={schoolQuery}
                 onfocus={openList} onclick={openList} oninput={onComboInput} onblur={onComboBlur} onkeydown={onComboKey} />
-              {#if current.school}
+              {#if showsChoice}
                 <span class="tick" aria-hidden="true">✓</span>
                 <button type="button" class="clear" aria-label="清除學校，改為不顯示" onclick={clearSchool}><span aria-hidden="true">×</span></button>
               {/if}
@@ -236,7 +241,7 @@
               </ul>
             </div>
             <p id="school-hint" class="cm-hint" aria-live="polite">
-              {#if current.school}已選 {selectedName}；按 × 可改為不顯示。{:else}從清單選一所才會儲存；留空則不顯示學校。{/if}
+              {#if showsChoice}已選 {selectedName}；按 × 可改為不顯示。{:else if current.school}目前仍是 {selectedName}；從清單選另一所才會更換，清空則不顯示。{:else}從清單選一所才會儲存；留空則不顯示學校。{/if}
             </p>
           {:else}
             <!-- `selected` on options keeps a choice made before hydration; `value` on the select would reset it. -->
