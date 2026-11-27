@@ -3,7 +3,8 @@ import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { ExternalReviewSnapshot, HttpClient, type ExternalReviewPost } from '@unicourse/crawler-kit';
 import { BOARDS, REVIEW_TAGS, type Board } from './boards.ts';
-import { PTT_ORIGIN, cleanExcerpt, parseArticle, parseListPage, parseReviewTitle, type Article, type ListEntry } from './parse.ts';
+import { EXCERPT_VERSION } from './excerpt.ts';
+import { PTT_ORIGIN, parseArticle, parseListPage, parseReviewTitle, type Article, type ListEntry } from './parse.ts';
 
 // docs/external-reviews.md: PTT's robots.txt allows search indexing (Content-Signal: search=yes). One request
 // per second per host, identified as UniCourseBot.
@@ -34,8 +35,12 @@ http.cookies.set('over18', '1');
 interface Cache {
   /** Parsed list pages by page number; the newest two pages are always refetched. */
   pages: Record<string, ListEntry[]>;
-  /** Parsed article fields by URL; `null` means the article is gone (404). */
-  articles: Record<string, Article | null>;
+  /**
+   * Parsed article fields by URL; `null` means the article is gone (404). Articles parsed by an older excerpt
+   * selection (`excerptVersion` below `EXCERPT_VERSION`) are refetched when wanted; until then they are used
+   * without their excerpt.
+   */
+  articles: Record<string, (Article & { excerptVersion?: number }) | null>;
 }
 
 async function loadCache(path: string): Promise<Cache> {
@@ -97,13 +102,14 @@ async function crawlBoard(board: Board) {
     const parsed = parseReviewTitle(entry.title);
     let article = cache.articles[entry.url];
     const wanted = !values['no-articles'] && parsed.tag != null && REVIEW_TAGS.has(parsed.tag);
-    if (article === undefined && wanted && articleBudget > 0) {
+    const stale = article != null && article.excerptVersion !== EXCERPT_VERSION;
+    if ((article === undefined || stale) && wanted && articleBudget > 0) {
       articleBudget -= 1;
       const response = await http.fetch(entry.url);
       if (response.status === 404) {
         article = null;
       } else if (response.ok) {
-        article = parseArticle(await response.text());
+        article = { ...parseArticle(await response.text()), excerptVersion: EXCERPT_VERSION };
       }
       if (article !== undefined) cache.articles[entry.url] = article;
       fetchedArticles += 1;
@@ -119,7 +125,7 @@ async function crawlBoard(board: Board) {
       author: article?.author ?? entry.author,
       postedAt: article?.postedAt ?? entry.postedAt,
       pushScore: article ? article.pushScore : entry.pushScore,
-      excerpt: cleanExcerpt(article?.excerpt),
+      excerpt: article?.excerptVersion === EXCERPT_VERSION ? article.excerpt : undefined,
       ...parsed
     });
   }
