@@ -11,10 +11,9 @@
       id: 'reviews',
       title: '外部評論索引',
       children: [
-        { id: 'reviews-kept', title: '保存內容' },
         { id: 'reviews-boards', title: '收錄看板' },
-        { id: 'reviews-policy', title: '收錄原則' },
-        { id: 'reviews-removal', title: '更新與移除' }
+        { id: 'reviews-kept', title: '保存內容與更新' },
+        { id: 'reviews-policy', title: '收錄原則與原文刪除' }
       ]
     },
     { id: 'removal', title: '聯絡與移除' },
@@ -72,38 +71,31 @@
     <div class="h2-row"><h2 id="reviews">外部評論索引</h2></div>
     <!-- One paragraph answers the two questions readers come with; the lists below hold the detail. -->
     <p class="lead"><strong>收什麼：</strong>PTT 四個課程板 2016 年起的公開文章。本站只做搜尋索引、不轉載全文，課程頁顯示標題、日期與開頭摘要，點標題回到原網站。<strong>怎麼移除：</strong>到<a href="#removal">聯絡與移除</a>私密告訴維護者即可，不必公開提出。</p>
+    <!-- The facts readers check (which boards, what is kept, how fresh) are open; only the long rules fold. -->
+    <h3 id="reviews-boards">收錄的 4 個看板</h3>
+    <p>只收錄 PTT（批踢踢實業坊）上專門討論課程的四個看板，從 2016 年起的文章。</p>
+    <table role="table" class="boards stacked">
+      <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">看板</th><th role="columnheader" scope="col">對應學校</th><th role="columnheader" scope="col">備註</th></tr></thead>
+      <tbody role="rowgroup">
+        <tr role="row"><td role="cell" data-label="看板">NTUcourse</td><td role="cell" data-label="對應學校">國立臺灣大學</td><td role="cell" data-label="備註" title="作者在評價範本中選「否」（不同意轉載）的文章不存摘要，只列標題。">不同意轉載的文章只列標題</td></tr>
+        <tr role="row"><td role="cell" data-label="看板">NTHU_Course</td><td role="cell" data-label="對應學校">國立清華大學</td><td role="cell" data-label="備註" title="2017 年看板搬遷時轉錄的舊文，日期是轉錄日。">2017 年轉錄的舊文以轉錄日為準</td></tr>
+        <tr role="row"><td role="cell" data-label="看板">NCTU-Teacher</td><td role="cell" data-label="對應學校">國立陽明交通大學</td><td role="cell" data-label="備註" title="2016 年看板搬遷時轉錄的舊文，日期是轉錄日。">2016 年轉錄的舊文以轉錄日為準</td></tr>
+        <tr role="row"><td role="cell" data-label="看板">NCHU-Courses</td><td role="cell" data-label="對應學校">國立中興大學</td><td role="cell" data-label="備註">文章較少</td></tr>
+      </tbody>
+    </table>
+    <h3 id="reviews-kept">保存什麼、多久更新</h3>
+    <ul>
+      <li><strong>會保存：</strong>連結、標題、發文日期、作者帳號（PTT ID，不含暱稱）、看板、推文數、內文開頭不超過 120 字的摘要，以及從標題比對出的學期、課程與教師。</li>
+      <li><strong>不會保存：</strong>全文、推文內容與圖片。索引只用於搜尋與連結，不用於訓練模型，也不提供給第三方。</li>
+      <li><strong>更新：</strong>維護者定期重新抓取並匯入，不是每晚自動更新，新文章會晚一段時間才出現。</li>
+    </ul>
     <details class="doc-fold">
-      <summary id="reviews-kept">會保存、不會保存什麼</summary>
+      <summary id="reviews-policy">收錄原則、摘要怎麼取、原文刪除後怎麼辦</summary>
       <ul>
-        <li><strong>會保存：</strong>連結、標題、發文日期、作者帳號（PTT ID，不含暱稱）、看板、推文數、內文開頭不超過 120 字的摘要，以及從標題比對出的學期、課程與教師。</li>
-        <li><strong>不會保存：</strong>全文、推文內容與圖片。索引只用於搜尋與連結，不用於訓練模型，也不提供給第三方。</li>
+        <li>只索引 robots 檔以 <code>Content-Signal: search=yes</code> 明確允許搜尋的網站。PTT 同時標明 <code>ai-train=no</code>；歐趴糖、Dcard、想鑑你 NTU Rating 等網站只提供搜尋連結，處理方式列在<a href="/landscape#third-party">課程網站總覽</a>。</li>
         <li>顯示摘要時會去掉評價範本的欄位提示（例如「哪一學年度修課」），只留作者寫的內容；剩下的太少時只顯示標題。比對以標題中的課名與教師名為準，可能有錯配或漏配；課程頁會把本班教師的文章排在前面並標示出來。</li>
       </ul>
-    </details>
-    <details class="doc-fold">
-      <summary id="reviews-boards">查看目前收錄的 4 個看板</summary>
-      <p>只收錄 PTT（批踢踢實業坊）上專門討論課程的四個看板，從 2016 年起的文章。</p>
-      <table role="table" class="boards stacked">
-        <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">看板</th><th role="columnheader" scope="col">對應學校</th><th role="columnheader" scope="col">備註</th></tr></thead>
-        <tbody role="rowgroup">
-          <tr role="row"><td role="cell" data-label="看板">NTUcourse</td><td role="cell" data-label="對應學校">國立臺灣大學</td><td role="cell" data-label="備註" title="作者在評價範本中選「否」（不同意轉載）的文章不存摘要，只列標題。">不同意轉載的文章只列標題</td></tr>
-          <tr role="row"><td role="cell" data-label="看板">NTHU_Course</td><td role="cell" data-label="對應學校">國立清華大學</td><td role="cell" data-label="備註" title="2017 年看板搬遷時轉錄的舊文，日期是轉錄日。">2017 年轉錄的舊文以轉錄日為準</td></tr>
-          <tr role="row"><td role="cell" data-label="看板">NCTU-Teacher</td><td role="cell" data-label="對應學校">國立陽明交通大學</td><td role="cell" data-label="備註" title="2016 年看板搬遷時轉錄的舊文，日期是轉錄日。">2016 年轉錄的舊文以轉錄日為準</td></tr>
-          <tr role="row"><td role="cell" data-label="看板">NCHU-Courses</td><td role="cell" data-label="對應學校">國立中興大學</td><td role="cell" data-label="備註">文章較少</td></tr>
-        </tbody>
-      </table>
-    </details>
-    <details class="doc-fold">
-      <summary id="reviews-policy">哪些網站可以收錄？</summary>
-      <p>PTT 明確允許建立搜尋索引，其他課程評論網站目前只提供搜尋連結。</p>
-      <ul>
-        <li>只索引 robots 檔以 <code>Content-Signal: search=yes</code> 明確允許搜尋的網站。PTT 同時標明 <code>ai-train=no</code>。</li>
-        <li>歐趴糖、Dcard、想鑑你 NTU Rating 等網站的處理方式列在<a href="/landscape#third-party">課程網站總覽</a>。</li>
-      </ul>
-    </details>
-    <details class="doc-fold">
-      <summary id="reviews-removal">更新與移除</summary>
-      <p class="update-note">索引由維護者定期重新抓取並匯入，不是每晚自動更新，新文章會晚一段時間才出現。原文在 PTT 刪除後，本站不會自動得知；<a class="private" href={PRIVATE_REPORT_URL} rel="noopener external">私密聯絡維護者<span aria-hidden="true"> ↗</span></a>或用下方<a href="#removal">聯絡與移除</a>的任一管道告訴我們，該筆索引會被移除。</p>
+      <p class="update-note">原文在 PTT 刪除後，本站不會自動得知；<a class="private" href={PRIVATE_REPORT_URL} rel="noopener external">私密聯絡維護者<span aria-hidden="true"> ↗</span></a>或用下方<a href="#removal">聯絡與移除</a>的任一管道告訴我們，該筆索引會被移除。</p>
     </details>
   </section>
 
@@ -115,16 +107,16 @@
         <p class="route-kind">私密聯絡</p>
         <h3>含個資或不想公開的請求</h3>
         <p>移除與你有關的索引或處理帳號問題。文章作者、被提及的教師或當事人都可以提出。</p>
-        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">在 GitHub 私密回報 <span aria-hidden="true">↗</span></a>
         <p class="route-access">需 GitHub 帳號 · 僅維護者可見</p>
+        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">在 GitHub 私密回報 <span aria-hidden="true">↗</span></a>
         <ul class="route-meta"><li>附上相關頁面連結</li><li>通常七天內在同一則回報回覆</li></ul>
       </div>
       <div>
         <p class="route-kind">公開回報</p>
         <h3>可公開的資料錯誤</h3>
         <p>回報錯配的外部文章或其他資料錯誤。請勿附上個資。</p>
-        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 公開回報 <span aria-hidden="true">↗</span></a>
         <p class="route-access">需 GitHub 帳號 · 所有人可見</p>
+        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 公開回報 <span aria-hidden="true">↗</span></a>
         <ul class="route-meta"><li>附上相關頁面連結</li><li>通常七天內在同一則 issue 回覆</li></ul>
       </div>
     </div>

@@ -25,8 +25,9 @@
       const courseCode = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9_-]{2,32}$/.test(tail) ? tail : '';
       return {
         title: '找不到這個開課班次',
-        description: '這個連結可能已失效。可以用課號、課名或教師姓名搜尋其他學期。課號可在舊課表或校方課程頁查到。',
-        context: offeringId ? `網址中的班次編號 ${offeringId}` : undefined,
+        description: '這個連結可能已失效。用課名、課號或教師搜尋其他學期的開課。',
+        hint: '課號可在舊課表或校方課程頁查到；課名或教師姓名也可以。',
+        context: offeringId ? `失效連結的班次編號：${offeringId}（不是課號）` : undefined,
         // The data routes lead (coverage first), the forum stays a site-wide way out.
         secondary: SCHOOLS,
         also: [{ href: '/', label: '回首頁' }, FORUM],

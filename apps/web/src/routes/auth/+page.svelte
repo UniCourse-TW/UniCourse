@@ -145,6 +145,22 @@
     input.focus();
   }
 
+  /** Wrong pair: put the caret in the kept username, selected, so it can be retyped. */
+  function editUsername() {
+    const input = document.getElementById('username') as HTMLInputElement | null;
+    input?.focus();
+    input?.select();
+  }
+
+  /** Locked name: clear it so another account can sign in at once (the lock is per name). */
+  function switchAccount() {
+    const input = document.getElementById('username') as HTMLInputElement | null;
+    if (!input) return;
+    input.value = '';
+    typedUsername = '';
+    input.focus();
+  }
+
   function stopWaiting() {
     activeRequest?.abort();
     activeRequest = undefined;
@@ -207,8 +223,8 @@
 </svelte:head>
 
 {#snippet passwordToggle()}
-  {#if hydrated}
-    <button type="button" class="toggle" aria-pressed={showPassword} aria-controls="password" disabled={submitting}
+  {#if hydrated && !submitting}
+    <button type="button" class="toggle" aria-pressed={showPassword} aria-controls="password"
       onclick={() => (showPassword = !showPassword)}>
       <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" />
@@ -238,24 +254,27 @@
 {#snippet exitLine(label: string)}
   <div class="after">
     {#if submitting}
-      <a href={browseHref} onclick={stopWaiting} title="離開後，已收到的請求仍可能完成">停止等待並繼續查課 <span aria-hidden="true">→</span></a>
+      <a href={browseHref} onclick={stopWaiting}>取消，繼續查課 <span aria-hidden="true">→</span></a>
     {:else}
       <a href={browseHref}>{label} <span aria-hidden="true">→</span></a>
     {/if}
   </div>
-  {#if submitting && slow}<p class="request-note">若伺服器已收到請求，離開後仍可能完成。</p>{/if}
+  {#if submitting && slow}<p class="request-note">若伺服器已收到請求，取消後仍可能完成{mode === 'login' ? '登入' : '建立'}。</p>{/if}
 {/snippet}
 
-<!-- Where the visitor lands afterwards, said once under the title (not in small print under the button). -->
+<!-- Where the visitor lands afterwards, said once under the title when another page sent them here; the
+     home page needs no line of its own (the exit link under the button already says 繼續查課). -->
 {#snippet returnLine(verb: string)}
-  <p class="return">{verb}後會回到：{returnTo}{#if returnTo === '論壇發文'}（需登入）{/if}</p>
+  {#if hasDestination}
+    <p class="return">{#if returnTo === '論壇發文'}{verb}後繼續發文{:else}{verb}後回到{returnTo}{/if}</p>
+  {/if}
 {/snippet}
 
 <div class="cm auth">
   <div class="card">
     <div class="auth-heading">
       <img class="logo" src="/unicourse.png" alt="" width="36" height="36" />
-      <h1>{data.signedIn ? '你已登入' : mode === 'register' ? '加入 UniCourse 社群' : '登入 UniCourse'}</h1>
+      <h1>{data.signedIn ? '你已登入' : mode === 'register' ? '建立 UniCourse 帳號' : '登入 UniCourse'}</h1>
     </div>
 
     {#if data.signedIn}
@@ -264,17 +283,17 @@
            the rest text links; signing out sits last under its own heading. -->
       <p class="identity">{#if data.signedIn.displayName}<strong>{data.signedIn.displayName}</strong>{/if}<span class="mono handle">@{data.signedIn.username}</span></p>
       <p class="why">現在可以評分、發文與回覆。</p>
-      <a class="cm-btn block go-on" href={data.next}>{hasDestination ? `回到${returnTo}` : '回首頁，繼續查課'} <span aria-hidden="true">→</span></a>
+      <a class="cm-btn block go-on" href={data.next}>{hasDestination ? `回到${returnTo}` : '回首頁查課'} <span aria-hidden="true">→</span></a>
+      <!-- Two account actions, one full-width row each; the activity counts are the profile row's sub-line. -->
       <nav class="signed-in" aria-label="帳號快捷操作">
-        <a class="activity" href={profile}>查看公開個人頁{#if data.activity} <span class="num">（{data.activity.ratings} 則評價、{data.activity.posts} 篇文章）</span>{/if}</a>
-        <a href="/settings">編輯個人資料</a>
+        <a href={profile}><span class="row-title">查看公開個人頁</span><span class="row-sub">{#if data.activity}<span class="num">{data.activity.ratings}</span> 則評價・<span class="num">{data.activity.posts}</span> 篇文章{:else}別人看到的評價與文章{/if}</span><span class="row-go" aria-hidden="true">→</span></a>
+        <a href="/settings"><span class="row-title">編輯個人資料</span><span class="row-sub">顯示名稱與自我介紹</span><span class="row-go" aria-hidden="true">→</span></a>
       </nav>
       <form method="POST" action="?/logout" class="switch">
         <!-- Back to this form afterwards, so the other account can sign in right away. -->
         <input type="hidden" name="next" value={tabHref('login')} />
-        <p class="switch-title">登出</p>
-        <p>只登出這個瀏覽器。回到登入頁後可改用其他帳號。</p>
-        <button class="cm-btn leave">登出並返回登入頁</button>
+        <button class="cm-btn leave-quiet">登出</button>
+        <p>只登出這個瀏覽器，之後可在登入頁改用其他帳號。</p>
       </form>
     {:else}
       <p class="why">查課不用登入。評分、發文與回覆才需要帳號。</p>
@@ -299,21 +318,25 @@
                 {#if tooMany}<span class="cm-sr">約一分鐘後可再試。</span>{/if}
               </p>
               {#if credentialError}
-                <p class="alert-note">已保留帳號。<a href="#username" onclick={(event) => { event.preventDefault(); document.getElementById('username')?.focus(); }}>確認帳號名稱</a>後，再輸入密碼。</p>
+                <p class="alert-note">帳號已保留，請再輸入一次密碼；帳號有大小寫之分，打錯可在下方修改。</p>
                 {#if hydrated && attemptsLeft <= WARN_FROM}<p class="alert-note count">還可再試 <b class="num">{attemptsLeft}</b> 次，之後會暫停登入一分鐘。</p>{/if}
               {:else if tooMany}
                 <p class="alert-wait">
                   {#if unlocked}現在可以再按「登入」了。
                   {:else if locked || !hydrated}
-                    約 <strong class="num">{locked ? remaining : retryAfter}</strong> 秒後可在這裡重試。可先輸入密碼，或改用其他帳號登入。
+                    <strong class="num">{locked ? remaining : retryAfter}</strong> 秒後可在這裡重試，按鈕會自動恢復。可先輸入密碼。
                   {:else}可改用其他帳號登入。{/if}
+                </p>
+                <p class="alert-ways">
+                  {#if hydrated && locked}<button type="button" class="alert-link" onclick={switchAccount}>改用其他帳號</button>{/if}
+                  <a href={PRIVATE_REPORT_URL} rel="noopener external">忘記密碼？聯絡維護者重設 <span aria-hidden="true">↗</span></a>
                 </p>
               {:else if unavailable}<p class="alert-note">不是帳號或密碼的問題，稍後再按一次「登入」即可；查課不受影響。</p>{/if}
             </div>
             <p class="cm-sr" role="status">{unlocked ? '現在可以再按「登入」了。' : ''}</p>
           {/if}
           <div class="cm-field">
-            <div class="cm-label"><label for="username">帳號</label></div>
+            <div class="cm-label"><label for="username">帳號</label>{#if credentialError && hydrated}<button type="button" class="field-action" onclick={editUsername}>修改帳號</button>{/if}</div>
             <!-- The server cannot tell which half of a wrong pair is wrong, so neither field is marked invalid;
                  the alert above carries the message and the password (cleared) takes the focus. -->
             <input id="username" class="cm-input" name="username" autocomplete="username" required maxlength="32"
@@ -333,15 +356,19 @@
               {@render passwordToggle()}
             </div>
             {@render capsNote()}
-            <a class="recover" href={PRIVATE_REPORT_URL} rel="noopener external">
-              聯絡維護者重設密碼 <span aria-hidden="true">↗</span>
-            </a>
-            <p class="recover-note">以 GitHub 帳號私密聯絡，填寫帳號名稱即可。</p>
           </div>
           <button class="cm-btn block" aria-busy={submitting} disabled={submitting || locked}>
-            {#if submitting}{slow ? '連線較慢，仍在嘗試…' : '登入中…'}{:else if locked}等待重試{:else if credentialError}重新登入{:else}登入{/if}
+            {#if submitting}{slow ? '連線較慢，仍在嘗試…' : '登入中…'}{:else if locked}<span>等待重試（<span class="num">{remaining}</span> 秒）</span>{:else if credentialError}重新登入{:else}登入{/if}
           </button>
+          {#if submitting && slow}<button type="button" class="cm-btn quiet block" onclick={stopWaiting}>取消，回到表單重試</button>{/if}
           {@render exitLine('不登入，繼續查課')}
+          <!-- Secondary rescue under the exit, so a filled-in form goes straight to the button. -->
+          {#if !tooMany}
+            <p class="recover" class:quiet={submitting}>
+              <a href={PRIVATE_REPORT_URL} rel="noopener external">忘記密碼？聯絡維護者重設 <span aria-hidden="true">↗</span></a>
+              <span class="recover-note">以 GitHub 帳號私密聯絡</span>
+            </p>
+          {/if}
         </form>
       {:else}
         <form method="POST" action="?/register" class="cm-form" use:enhance={submit} novalidate={hydrated || undefined} aria-busy={submitting}>
@@ -369,22 +396,21 @@
               aria-invalid={usernameError || Boolean(checked.username) || undefined}
               aria-describedby={describedBy(!usernameError && 'username-rule', (usernameError || checked.username) && 'username-error')} />
             {#if usernameError && form?.message}
-              <div class="name-error">
-                <p id="username-error" class="field-error" role="alert">{@render alertIcon('error')}{form.message}</p>
-                {#if takenName}
-                  <a class="use-login" href={tabHref('login', takenName)}>這是你的帳號？用它登入 <span aria-hidden="true">→</span></a>
-                {/if}
-              </div>
+              <!-- The error, then the fixes in order: pick another name (fills the box), or sign in with this one. -->
+              <p id="username-error" class="field-error" role="alert">{@render alertIcon('error')}{form.message}</p>
               {#if takenName && hydrated && suggestions.length}
                 <div class="taken-ways">
-                  <span class="suggest-label">試用其他帳號</span>
-                  <span class="suggest-row">{#each suggestions as name (name)}<button type="button" class="suggest-chip" onclick={() => useSuggestion(name)}>{name}</button>{/each}</span>
+                  <span class="suggest-label" id="suggest-label">點一個填入帳號欄：</span>
+                  <span class="suggest-row">{#each suggestions as name (name)}<button type="button" class="suggest-chip" aria-label={`以 ${name} 填入帳號欄`} onclick={() => useSuggestion(name)}>{name}</button>{/each}</span>
                 </div>
+              {/if}
+              {#if takenName}
+                <a class="use-login" href={tabHref('login', takenName)}>這是你的帳號？改用它登入 <span aria-hidden="true">→</span></a>
               {/if}
             {:else if checked.username}<p id="username-error" class="field-error" role="alert">{@render alertIcon('error')}{checked.username}</p>{/if}
             {#if !usernameError}
               <p id="username-rule" class="rule">3–32 個字元，可用英文字母、數字和底線。{#if checked.username === null && !chosenName}<span class="ok"><span aria-hidden="true">✓</span> 格式符合</span>{/if}</p>
-              {#if chosenName}<p class="rule" role="status">已填入 {chosenName}，送出時確認能否使用。</p>{/if}
+              {#if chosenName}<p class="rule" role="status">已填入 <b>{chosenName}</b>，按「建立帳號」時才會確認能否使用。</p>{/if}
             {/if}
           </div>
           <div class="cm-field">
@@ -405,7 +431,7 @@
                 aria-describedby={describedBy('password-rule', 'password-state', passwordInvalid && 'password-error')} />
               {@render passwordToggle()}
             </div>
-            <p id="password-rule" class="rule">{#if passwordLength === 0}<span aria-hidden="true">○ </span>{/if}8–128 個字元，可用空格，區分大小寫。</p>
+            <p id="password-rule" class="rule">8–128 個字元，可用空格，區分大小寫。</p>
             <!-- Live feedback under the box (never beside the rule, where it wrapped onto the next line on phones). -->
             <div class="under">
               {@render capsNote()}
@@ -443,7 +469,11 @@
 
 <style>
   /* Desktop: the card sits in the upper middle of the column, not against the top with 250 px of floor below. */
-  .auth { display: grid; place-items: center; min-block-size: min(62vh, 36rem); padding-block: clamp(0rem, 3vh, 1.5rem); }
+  /* Desktop: the card hangs a short way under the nav (not centred in a tall empty band). */
+  .auth { display: grid; place-items: start center; padding-block: var(--space-2) var(--space-6); }
+  /* The site nav's「登入」 duplicates this page's own form: on /auth it reads as the current place
+     (brand text, no button frame) instead of a second call to action. */
+  :global(body:has(.cm.auth) .site-header a.login[aria-label='登入／註冊']) { border-color: transparent; background: transparent; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 0.4em; pointer-events: none; }
   .card {
     inline-size: min(100%, 27rem);
     padding: var(--space-6) var(--space-6) var(--space-5);
@@ -462,10 +492,15 @@
   .identity strong { font-weight: 700; }
   .identity .handle { color: var(--ink-2); }
   .go-on { margin-block-start: var(--space-4); }
-  .signed-in { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); margin-block-start: var(--space-2); }
-  .signed-in a { display: inline-flex; flex-wrap: wrap; align-content: center; min-block-size: var(--target-min); font-weight: 600; }
-  .signed-in .activity { display: block; padding-block: var(--space-3) var(--space-2); }
-  .signed-in .activity .num { font-size: 0.8125rem; }
+  .signed-in { display: grid; margin-block-start: var(--space-3); border-block: 1px solid var(--line); }
+  .signed-in a { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-3); align-items: center; min-block-size: 3.5rem; padding: var(--space-2) var(--space-1); color: var(--ink); text-decoration: none; }
+  .signed-in a + a { border-block-start: 1px solid var(--line); }
+  .signed-in a:hover { background: var(--hover-row); }
+  .signed-in a:hover .row-title { color: var(--brand-ink); text-decoration: underline; text-underline-offset: 0.15em; }
+  .signed-in a:focus-visible { outline: var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-control); }
+  .row-title { grid-column: 1; font-size: var(--t-base); font-weight: 650; }
+  .row-sub { grid-column: 1; color: var(--ink-2); font-size: 0.8125rem; }
+  .row-go { grid-column: 2; grid-row: 1 / span 2; color: var(--muted); }
 
   /* Two tabs under a hairline; the current one carries the brand underline, the same mark as the site nav. */
   .tabs {
@@ -514,9 +549,13 @@
   .toggle:hover { background: var(--brand-wash); }
   .toggle[aria-pressed='true'] { color: var(--ink-2); }
   .toggle:focus-visible { outline: var(--focus-ring); outline-offset: 0; }
-  .toggle:disabled { color: var(--muted); background: transparent; cursor: not-allowed; }
-  /* Fields in flight keep their text but read as settled, not editable. */
-  .cm-input:read-only:not(select) { color: var(--ink-2); background: var(--panel); border-color: var(--line); }
+  /* Fields in flight keep their text at full contrast; a dashed edge says they are held, not editable. */
+  .cm-input:read-only:not(select) { color: var(--ink); background: var(--panel); border-style: dashed; border-color: var(--control-line); }
+  .cm-input::placeholder { color: var(--muted); opacity: 1; }
+  .auth .cm-hint { font-size: 0.8125rem; }
+  /* A small text action at the end of a label row (修改帳號). */
+  .field-action { min-block-size: 2rem; padding: 0 var(--space-1); border: 0; background: none; color: var(--brand-ink); font: 600 0.8125rem / 1 var(--font-sans); text-decoration: underline; text-underline-offset: 0.15em; cursor: pointer; }
+  .field-action:focus-visible { outline: var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
 
   /* Register hints sit right after their label, not at the far edge; they wrap under it when tight. */
   .cm-label.near { justify-content: flex-start; gap: 0 var(--space-3); }
@@ -539,8 +578,9 @@
     font-weight: 600;
     line-height: 1.5;
   }
-  .name-error { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; }
-  .auth .cm-input[aria-invalid='true']:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  /* An invalid field keeps one ring only: red, focused or not. */
+  .auth .cm-input[aria-invalid='true'] { border-color: var(--down); }
+  .auth .cm-input[aria-invalid='true']:focus-visible { outline: 2px solid var(--down); outline-offset: 1px; box-shadow: none; }
   .field-error:has(.alert-icon) { display: flex; gap: var(--space-1); align-items: flex-start; padding: 0; border: 0; background: transparent; color: var(--down); }
   .taken-ways { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; font-size: 0.8125rem; color: var(--ink-2); }
   .suggest-label { font-weight: 600; }
@@ -560,13 +600,17 @@
   }
   .suggest-chip:hover { background: var(--brand-wash); border-color: var(--brand); }
   .suggest-chip:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .use-login { display: inline-flex; gap: 0.3em; align-items: center; justify-self: start; min-block-size: var(--target-min); font-size: 0.8125rem; font-weight: 600; }
+  .use-login { display: inline-flex; gap: 0.3em; align-items: center; justify-self: start; min-block-size: var(--target-min); font-size: var(--t-base); font-weight: 600; }
   .form-alert { display: grid; gap: 2px; background: color-mix(in srgb, var(--down) 12%, var(--panel-raised)); }
   /* A wait (locked name, busy API) is not the visitor's mistake: amber and a clock, not red and a cross. */
   .form-alert.wait { border-color: var(--warn); background: var(--warn-wash); }
   .alert-title { display: flex; gap: var(--space-2); align-items: flex-start; font-size: var(--t-md); font-weight: 650; line-height: 1.45; }
   .alert-icon { flex: none; margin-block-start: 0.2em; color: var(--down); }
   .wait .alert-title, .wait .alert-icon { color: var(--warn); }
+  /* The ways out of a lockout sit inside the warning: another account, or a password reset. */
+  .alert-ways { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); align-items: center; margin-block-start: var(--space-1) !important; }
+  .alert-ways a, .alert-link { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); padding: 0; border: 0; background: none; color: var(--ink) !important; font: 650 var(--t-base) / 1.3 var(--font-sans); text-decoration: underline; text-underline-offset: 0.15em; cursor: pointer; }
+  .alert-link:focus-visible { outline: var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
   .alert-note, .alert-wait { margin-block-start: 2px !important; color: var(--ink-2); font-size: var(--t-base); line-height: 1.55; }
   .alert-note b { color: var(--ink); font-weight: 700; }
   .alert-wait { color: var(--ink); }
@@ -579,33 +623,38 @@
   .after { display: flex; justify-content: center; margin-block-start: calc(-1 * var(--space-1)); text-align: center; color: var(--ink-2); font-size: 0.8125rem; }
   .after a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-weight: 600; }
   .after a:hover { color: var(--brand-ink); }
-  .request-note { margin-block-start: calc(-1 * var(--space-2)) !important; text-align: center; color: var(--ink-2); font-size: var(--t-sm); }
-  .recover { display: inline-flex; gap: var(--space-1); align-items: center; justify-self: start; min-block-size: var(--target-min); margin-block-end: calc(-1 * var(--space-2)); font-weight: 600; font-size: var(--t-base); }
-  .recover-note { color: var(--muted); font-size: var(--t-sm); }
-  .auth .cm-btn[aria-busy='true'] { color: var(--brand-ink) !important; background: var(--brand-wash); border-color: var(--brand); }
-  .auth .cm-btn[aria-busy='true']::before { border-color: var(--control-line); border-block-start-color: var(--brand-ink); }
+  .request-note { margin-block-start: calc(-1 * var(--space-2)) !important; text-align: center; color: var(--ink-2); font-size: 0.8125rem; }
+  /* Password rescue: one centred line under the exit, below the main path. */
+  .recover { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; justify-content: center; margin-block-start: calc(-1 * var(--space-3)) !important; padding-block-start: var(--space-2); border-block-start: 1px solid var(--line); text-align: center; }
+  .recover a { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); font-size: var(--t-base); font-weight: 600; }
+  .recover-note { color: var(--ink-2); font-size: 0.8125rem; }
+  .recover.quiet a { color: var(--ink-2); }
+  /* Busy keeps the solid brand fill (it is still the main action, not disabled): spinner + label in on-brand. */
+  .auth .cm-btn[aria-busy='true'] { color: var(--on-brand) !important; background: var(--brand); border-color: var(--brand); }
+  .auth .cm-btn.quiet { margin-block-start: calc(-1 * var(--space-2)); color: var(--brand-ink) !important; }
   .ok { margin-inline-start: 0.4em; color: var(--up); font-weight: 700; }
   .rule.state .ok { margin-inline-start: 0; }
   /* The optional block is a text disclosure under the password field; opened, the field follows. */
-  .optional summary { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; min-block-size: var(--target-min); margin-inline-start: calc(-1 * var(--space-2)); padding: 0 var(--space-2); border-radius: var(--radius-control); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
-  .optional summary:hover { background: var(--hover-row); }
+  .optional summary { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: center; min-block-size: var(--target-min); padding: 0; border-radius: var(--radius-control); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
+  .optional summary:hover .optional-label { text-decoration: underline; text-underline-offset: 0.15em; }
+  .optional summary .cm-hint { color: var(--ink-2); }
   .optional summary::-webkit-details-marker { display: none; }
   .optional .plus { display: inline-grid; place-items: center; inline-size: 1rem; margin-inline-end: 0.1rem; }
   .optional .plus::before { content: '＋'; }
   .optional[open] .plus::before { content: '－'; }
   .optional[open] summary .optional-label { color: var(--ink); }
   .optional summary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .optional { margin-block-end: calc(-1 * var(--space-3)); }
+  .optional { margin-block: calc(-1 * var(--space-2)) calc(-1 * var(--space-3)); }
   .optional .cm-field { padding-block: var(--space-2) var(--space-1); }
 
-  /* Signing out ends the session: its own small heading and explanation, then the quiet red button. */
-  .switch { display: grid; gap: var(--space-1); justify-items: start; margin-block-start: var(--space-4); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
-  .switch-title { color: var(--ink-2); font-size: var(--t-base); font-weight: 650; }
-  .switch p:not(.switch-title) { color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
-  .switch .cm-btn { margin-block-start: var(--space-1); border-color: var(--down); }
+  /* Signing out: a neutral secondary button with its one-line scope right beside it. */
+  .switch { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; margin-block-start: var(--space-4); }
+  .switch p { flex: 1 1 12rem; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; }
+  .cm-btn.leave-quiet { color: var(--ink) !important; background: var(--panel-raised); border-color: var(--control-line); }
+  .cm-btn.leave-quiet:hover { background: var(--hover-row); filter: none; }
 
   @media (max-width: 40rem) {
-    .auth { min-block-size: 0; padding-block: 0; }
+    .auth { padding-block: 0; }
     /* On phones the card is the page: no frame, but the same mark and heading as the desktop card. */
     .card { padding: 0; border: 0; background: transparent; }
     .cm-form:has(.optional) { gap: var(--space-2); }

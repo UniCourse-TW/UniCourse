@@ -61,10 +61,13 @@ test('the legal documents have a table of contents and the review-index sections
   if (!(await toc.getByRole('link', { name: '外部評論索引' }).isVisible())) await toc.getByText('目錄').click();
   await expect(toc.getByRole('link', { name: '外部評論索引' })).toHaveAttribute('href', '#reviews');
   await expect(page.locator('#reviews')).toHaveText('外部評論索引');
-  const storedFields = page.locator('details', { has: page.locator('#reviews-kept') });
-  await expect(storedFields.getByText('不超過 120 字的摘要')).toBeHidden();
-  await page.locator('#reviews-kept').click();
-  await expect(storedFields.getByText('不超過 120 字的摘要')).toBeVisible();
+  // What is kept is open text; only the long rules fold.
+  await expect(page.locator('#reviews-kept')).toBeVisible();
+  await expect(page.getByText('不超過 120 字的摘要', { exact: false })).toBeVisible();
+  const rules = page.locator('details', { has: page.locator('#reviews-policy') });
+  await expect(rules.getByText('評價範本的欄位提示', { exact: false })).toBeHidden();
+  await page.locator('#reviews-policy').click();
+  await expect(rules.getByText('評價範本的欄位提示', { exact: false })).toBeVisible();
   await expect(page.getByRole('link', { name: /在 GitHub 公開回報/ })).toHaveAttribute('href', /github\.com/);
 
   await page.goto('/privacy');

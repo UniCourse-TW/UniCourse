@@ -62,6 +62,13 @@
   });
   let titleEn = $derived(englishTitle(course.titleEn));
   let externalTotal = $derived(data.externalReviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0);
+  /** Indexed posts naming this offering's teacher, when every post is listed (same rule as the section). */
+  let externalMine = $derived.by(() => {
+    const posts = data.externalReviews?.posts ?? [];
+    if (!course.instructors.length || posts.length !== externalTotal) return undefined;
+    const own = new Set(course.instructors);
+    return posts.filter((post) => (post.match?.instructor && own.has(post.match.instructor)) || post.teachers.some((name) => own.has(name))).length;
+  });
   // Indexed posts move above the site's own sections while those are both still empty, so the page's
   // most useful signal is not below two empty states.
   let communityEmpty = $derived(stats != null && ratingCount === 0 && data.posts?.total === 0);
@@ -193,8 +200,8 @@
     </div>
     {#if termTotal}
       <div class="tile" class:partial={termTotal.partial}>
-        <!-- Short label; that only some sections were collected is said once, under the chart and in the table. -->
-        <dt>{termTotal.term}・已收錄班次合計</dt>
+        <!-- Short label (one line on phones); the term and how many sections it covers go in the sub-line. -->
+        <dt>同學期各班合計</dt>
         {#if termTotal.enrolled == null && termTotal.capacity != null}
           <dd><span class="value num">{displayValue(termTotal.capacity)}</span><small>名額</small></dd>
         {:else if termTotal.enrolled != null}
@@ -202,7 +209,7 @@
         {:else}
           <dd><span class="value">—</span><small>人數未公布</small></dd>
         {/if}
-        <dd class="note"><a href="#history">{displayValue(termTotal.offeringCount)} 班・各班與歷年 ↓</a></dd>
+        <dd class="note"><a href="#history"><span class="mono">{termTotal.term}</span>・{#if termTotal.partial}<span title={termTotal.usualSections ? `其他學期通常約 ${displayValue(termTotal.usualSections)} 班` : undefined}>只收錄 {displayValue(termTotal.offeringCount)} 班</span>{:else}{displayValue(termTotal.offeringCount)} 班{/if}&nbsp;↓</a></dd>
       </div>
     {/if}
     <div class="tile">
@@ -214,7 +221,7 @@
         <!-- No published enrolment: the running total is of 名額, said in the label. -->
         <dt>歷年名額合計</dt>
         <dd><span class="value num">{displayValue(totals.capacityTotal)}</span><small>名額</small></dd>
-        <dd class="note"><a href="#history">{displayValue(totals.terms)} 期・{displayValue(totals.offerings)} 班・僅計已公布&nbsp;↓</a></dd>
+        <dd class="note"><a href="#history">{displayValue(totals.terms)} 期・{displayValue(totals.offerings)} 班&nbsp;↓</a></dd>
       {:else if totals}
         <dt>歷年開課</dt>
         <dd><span class="value num">{displayValue(totals.terms)}</span><small>期</small></dd>
@@ -245,10 +252,20 @@
     </div>
   </dl></div>
 
+  <!-- Jump links in page order; indexed posts lead (with their count) when they come first on the page. -->
+  {#snippet externalLink()}
+    <a href="#external-reviews" class:lead={externalFirst}>外站討論{#if externalTotal} <span class="num">{displayValue(externalTotal)}</span> 篇{#if externalMine != null && externalMine < externalTotal}<span class="sub-count">（本班教師 <span class="num">{displayValue(externalMine)}</span>）</span>{/if}{/if} ↓</a>
+  {/snippet}
   <nav class="section-links" aria-label="本頁段落">
-    <a href="#ratings">站內評價{#if stats} <span class="num">{displayValue(ratingCount)}</span>{/if} ↓</a>
-    <a href="#forum-title">站內討論{#if data.posts} <span class="num">{displayValue(data.posts.total)}</span>{/if} ↓</a>
-    <a href="#external-reviews">外站討論 ↓</a>
+    {#if externalFirst}{@render externalLink()}{/if}
+    {#if communityEmpty}
+      <a href="#ratings">站內評價與討論 <span class="num">0</span> ↓</a>
+    {:else}
+      <a href="#ratings">站內評價{#if stats} <span class="num">{displayValue(ratingCount)}</span>{/if} ↓</a>
+      <a href="#forum-title">站內討論{#if data.posts} <span class="num">{displayValue(data.posts.total)}</span>{/if} ↓</a>
+    {/if}
+    {#if !externalFirst}{@render externalLink()}{/if}
+    {#if hasAbout}<a href="#about-title">課程說明 ↓</a>{/if}
   </nav>
 
   <section class="history" aria-labelledby="history">
@@ -404,7 +421,7 @@
   .tile .note { color: var(--ink-2); font-size: 0.8125rem; }
   .tile .note a { color: var(--ink-2); text-decoration: none; }
   .tile .value.small-value { font-size: var(--t-xl); }
-  .tile .thin .value { color: var(--muted); font-size: var(--t-xl); }
+  .tile .thin .value { font-size: var(--t-2xl); }
   .tile.partial .value { color: var(--ink-2); }
   .tile .note a:hover { color: var(--brand-ink); text-decoration: underline; }
   .tile .sample { margin-inline-start: var(--space-1); color: var(--ink-2); font-weight: 600; white-space: nowrap; }
@@ -424,9 +441,13 @@
   .section-head.row { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); align-items: end; justify-content: space-between; }
   .sub { color: var(--muted); font-size: var(--t-base); overflow-wrap: anywhere; }
 
-  .section-links { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); margin-block: calc(-1 * var(--space-3)); font-size: var(--t-base); }
+  .section-links { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: center; margin-block: calc(-1 * var(--space-3)); font-size: var(--t-base); }
   .section-links a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
-  .course-page :is(#history, #forum-title), .course-page :global(:is(#ratings, #external-reviews)) { scroll-margin-block-start: 7.5rem; }
+  .section-links .sub-count { color: var(--ink-2); font-weight: 500; }
+  /* When indexed posts come before the site's (empty) sections, their link is the outlined lead. */
+  .section-links a.lead { padding-inline: var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 55%, var(--line)); border-radius: var(--radius-control); background: var(--brand-wash); text-decoration: none; }
+  .section-links a.lead:hover { border-color: var(--brand); }
+  .course-page :is(#history, #forum-title, #about-title), .course-page :global(:is(#ratings, #external-reviews)) { scroll-margin-block-start: 7.5rem; }
   .community { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); align-items: start; }
   .community.combined { grid-template-columns: minmax(0, 1fr); }
 

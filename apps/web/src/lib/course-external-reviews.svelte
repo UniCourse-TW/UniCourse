@@ -30,8 +30,8 @@
 
   let { school, courseCode, instructors = [], title, reviews }: Props = $props();
 
-  /** Posts listed before「再顯示」. */
-  const initialPosts = 5;
+  /** Posts listed before「再顯示」: eight on wide screens, five on phones (set after hydration). */
+  let initialPosts = $state(8);
   /** Posts each「再顯示」adds. */
   const stepPosts = 5;
   /** Teachers listed in the summary before「其他 N 位」. */
@@ -114,7 +114,10 @@
 
   // Filters work after hydration; without JavaScript the default order and「顯示全部」still do.
   let ready = $state(false);
-  onMount(() => (ready = true));
+  onMount(() => {
+    if (window.matchMedia('(max-width: 40rem)').matches) initialPosts = 5;
+    ready = true;
+  });
   let filtersOpen = $state(false);
   let teacher = $state<string>('');
   /** Only posts naming this offering's teachers (`mine`), or only everyone else's (`others`). */
@@ -174,9 +177,10 @@
     return own.has(name) ? `${name}（本班）` : name;
   }
 
-  /** Two-digit year for the column chart axis (16); the caption carries the full range. */
-  function shortYear(year: number) {
-    return String(year).slice(-2);
+  /** Axis label: the first and last year in full (2016), the ones between as two digits in the muted axis
+      colour, so they are not read as post counts (those sit bold on the bars). */
+  function shortYear(year: number, index: number) {
+    return index === 0 || index === perYear.length - 1 ? String(year) : String(year).slice(-2);
   }
 </script>
 
@@ -334,7 +338,7 @@
 
         {#if perYear.length > 1}
           <figure class="block years">
-            <figcaption>每年發文數 <span class="cap-range num">{perYear[0].year}–{perYear.at(-1)?.year}</span></figcaption>
+            <figcaption>每年發文數（篇） <span class="cap-range num">{perYear[0].year}–{perYear.at(-1)?.year} 年</span></figcaption>
             <div class="columns" role="img" aria-label={`每年發文數：${perYear.map((entry) => `${entry.year} 年 ${entry.count} 篇`).join('、')}`}>
               {#each perYear as entry (entry.year)}
                 <!-- A year without posts is left blank above its axis label (no zero-height bar, no 0). -->
@@ -346,7 +350,7 @@
                 </span>
               {/each}
             </div>
-            <div class="axis num" aria-hidden="true">{#each perYear as entry (entry.year)}<span>{shortYear(entry.year)}</span>{/each}</div>
+            <div class="axis num" aria-hidden="true">{#each perYear as entry, index (entry.year)}<span>{shortYear(entry.year, index)}</span>{/each}</div>
           </figure>
         {/if}
       </aside>
@@ -362,7 +366,7 @@
             {:else if total > rows.length}
               此處列出最近 {displayValue(rows.length)} 篇
             {:else}
-              本班教師優先・同組心得在前
+              全部教師、全部學期・{sortLabels[sort]}
             {/if}
           </p>
           <button
@@ -458,11 +462,11 @@
   .head { grid-area: head; display: grid; min-inline-size: 0; }
   .head-text { display: grid; gap: var(--space-1); min-inline-size: 0; }
   .elsewhere { grid-area: elsewhere; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
-  .elsewhere-label { color: var(--ink-2); font-size: var(--t-sm); }
+  .elsewhere-label { color: var(--ink-2); font-size: 0.8125rem; }
   .layout { grid-area: layout; }
   .teacher-select { display: none !important; }
   .head-count { margin-inline-start: var(--space-2); color: var(--muted); font-size: var(--t-md); font-weight: 600; }
-  .dek { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: baseline; color: var(--muted); font-size: var(--t-sm); overflow-wrap: anywhere; }
+  .dek { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: baseline; color: var(--ink-2); font-size: 0.8125rem; overflow-wrap: anywhere; }
   .how summary { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: 1.75rem; color: var(--ink-2); font-weight: 600; list-style: none; cursor: pointer; }
   .how summary::-webkit-details-marker { display: none; }
   .how summary:hover { color: var(--brand-ink); }
@@ -503,14 +507,16 @@
   .more-teachers summary, .more summary { display: flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; list-style: none; cursor: pointer; }
   .more-teachers summary::-webkit-details-marker, .more summary::-webkit-details-marker { display: none; }
   :is(.more-teachers, .more)[open] .closed, :is(.more-teachers, .more):not([open]) .opened { display: none; }
-  .note { color: var(--muted); font-size: var(--t-xs); }
+  .note { color: var(--muted); font-size: var(--t-sm); }
 
-  .years figcaption { color: var(--ink-2); font-size: var(--t-sm); font-weight: 650; }
+  .years figcaption { color: var(--ink-2); font-size: 0.8125rem; font-weight: 650; }
   .columns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; align-items: end; block-size: 4.5rem; padding-block-start: 1rem; border-block-end: 1px solid var(--control-line); }
   .column { position: relative; display: flex; flex-direction: column; justify-content: end; align-items: stretch; block-size: 100%; }
   .column .fill { display: block; min-block-size: 2px; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--brand) 70%, var(--panel)); }
-  .column .value { position: absolute; inset-inline: 0; color: var(--ink-2); font-size: 0.8125rem; line-height: 1rem; text-align: center; }
-  .axis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin-block-start: 2px; color: var(--ink-2); font-size: var(--t-sm); text-align: center; }
+  .column .value { position: absolute; inset-inline: 0; color: var(--ink); font-size: 0.8125rem; font-weight: 600; line-height: 1rem; text-align: center; }
+  .axis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin-block-start: 2px; color: var(--muted); font-size: var(--t-sm); text-align: center; white-space: nowrap; }
+  .axis span:first-child { text-align: start; }
+  .axis span:last-child { text-align: end; }
   .cap-range { margin-inline-start: var(--space-1); color: var(--muted); font-weight: 500; }
 
   .posts { display: grid; gap: var(--space-2); min-inline-size: 0; }
@@ -524,25 +530,25 @@
   .chip[aria-pressed='true'] { border-color: var(--brand); background: var(--brand); color: var(--on-brand); }
   .chip[aria-pressed='true'] .num { color: var(--on-brand); }
   .selects { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-  .selects label { display: grid; gap: 2px; color: var(--muted); font-size: var(--t-xs); font-weight: 600; }
+  .selects label { display: grid; gap: 2px; color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; }
   select { min-block-size: 2.25rem; max-inline-size: 13rem; padding: 0 var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font: 500 var(--t-sm) / 1.2 var(--font-sans); }
   .list-bar { display: flex; gap: var(--space-2); align-items: center; justify-content: space-between; }
-  .status { min-block-size: 1.5rem; color: var(--muted); font-size: var(--t-sm); }
+  .status { min-block-size: 1.5rem; color: var(--ink-2); font-size: 0.8125rem; }
   .filter-toggle { display: none; flex: none; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font-size: var(--t-sm); font-weight: 600; }
   .filter-toggle[aria-expanded='true'] { border-color: var(--brand); }
   .filter-toggle .active { display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 4px; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); }
-  .group-head { color: var(--ink-2); font-size: var(--t-sm); font-weight: 650; }
+  .group-head { color: var(--ink-2); font-size: 0.8125rem; font-weight: 650; }
   .group-head.others { margin-block-start: var(--space-3); }
   .mine-box { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--brand) 5%, var(--panel-raised)); }
   .mine-box .group-head { color: var(--ink); font-size: var(--t-base); }
-  .mine-empty { color: var(--ink-2); font-size: var(--t-sm); }
+  .mine-empty { color: var(--ink-2); font-size: 0.8125rem; }
   .mine-box .list { border-block-start: 1px solid var(--line); }
   .mine-box .list li:last-child { border-block-end: 0; }
   .grow { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: center; justify-content: center; color: var(--muted); font-size: var(--t-sm); }
   .grow-btn { min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; }
   .grow-btn:hover { background: var(--hover-row); }
   .grow .clear { min-block-size: var(--target-min); margin: 0; }
-  .meta .title-only { padding: 0 6px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--muted); font-size: var(--t-xs); line-height: 1.5; }
+  .meta .title-only { padding: 0 6px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--muted); font-size: var(--t-sm); line-height: 1.5; }
   .status b { color: var(--ink); }
   .clear { margin-inline-start: var(--space-2); padding: 0; border: 0; background: none; color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
   .none { padding: var(--space-4) 0; color: var(--ink-2); }
@@ -560,11 +566,11 @@
   .title a:focus-visible { outline: none; }
   article:has(a:focus-visible) { outline: var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-control); }
   .out { margin-inline-start: 0.25em; color: var(--muted); font-size: 0.85em; font-weight: 500; }
-  .meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; color: var(--ink-2); font-size: var(--t-sm); }
+  .meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; color: var(--ink-2); font-size: 0.8125rem; }
   .meta .author { color: var(--muted); }
   .meta .push { color: var(--up); font-weight: 650; }
   .meta .push.down { color: var(--down); }
-  .excerpt { display: -webkit-box; color: var(--ink-2); font-size: var(--t-sm); line-height: 1.6; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
+  .excerpt { display: -webkit-box; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
   .excerpt .label { margin-inline-end: 0.35em; padding: 0 4px; border-radius: 3px; background: var(--chip); color: var(--muted); font-size: var(--t-xs); font-weight: 650; }
   .excerpt .sep { color: var(--muted); }
   .more { border-block-start: 0; }

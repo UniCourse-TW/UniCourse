@@ -34,7 +34,8 @@
   let schoolNames = $derived(Object.fromEntries(data.schools.map((school) => [school.slug, school.name])));
   let previewName = $derived(current.displayName.trim() || data.profile.username);
   let previewSchool = $derived(current.school ? (schoolNames[current.school] ?? '') : '');
-  let version = $derived(dirty ? '未儲存草稿' : '目前公開版本');
+  // One label for what the preview shows: the draft being typed, the version just saved, or the stored one.
+  let version = $derived(dirty ? '含未儲存的變更' : savedVisible ? '已更新為剛儲存的內容' : '目前公開的內容');
   let joined = $derived(slashDate(data.profile.createdAt));
   let profile = $derived(profileHref(data.profile.username));
 
@@ -76,7 +77,8 @@
   <header class="cm-head">
     <h1>設定</h1>
     <p class="cm-dek">
-      <span class="who-line mono">@{data.profile.username}</span><span class="sep dek-sep">·</span><a class="dek-link" href={profile}>查看公開個人頁 <span aria-hidden="true">→</span></a>
+      <span class="who-line mono">@{data.profile.username}</span>
+      {#if !savedVisible}<span class="sep dek-sep">·</span><a class="dek-link" href={profile}>查看公開個人頁 <span aria-hidden="true">→</span></a>{/if}
       <!-- Phones stack the panels; this in-page jump (muted, unlike the link beside it) goes to the account panel. -->
       <a class="dek-link jump-link" href="#account">帳號與登出 <span aria-hidden="true">↓</span></a>
     </p>
@@ -121,28 +123,31 @@
           <p id="school-hint" class="cm-hint">只顯示在個人頁，不會出現在評價或文章旁。</p>
         </div>
         {#if form && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
+        <!-- Button and its state on one line: why it is greyed out, what is unsaved, or the saved result with
+             the one link to the updated profile (the header link steps aside meanwhile). -->
         <div class="save-row">
           <button class="cm-btn" aria-busy={saving} disabled={saving || (hydrated && !dirty)}>{saving ? '儲存中…' : '儲存'}</button>
-          <details class="preview-fold">
-            <summary>預覽個人頁 <span class="version" class:draft={dirty}>{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
-            {@render previewCard()}
-          </details>
           <div class="status" role="status">
             {#if saving}<span class="cm-sr">儲存中…</span>
             {:else if savedVisible}
               <span class="ok"><span aria-hidden="true">✓</span> 已儲存，個人頁已更新</span>
-              <a class="status-link" href={profile}>查看公開個人頁 <span aria-hidden="true">→</span></a>
+              <a class="status-link" href={profile}>查看更新後的個人頁 <span aria-hidden="true">→</span></a>
             {:else if hydrated && dirty}<span class="pending">有 {changes} 項變更尚未儲存</span>
             {:else if hydrated}<span class="idle">尚未變更，修改後才能儲存</span>{/if}
           </div>
         </div>
+        <!-- Phones: the preview folds under the save line, its summary saying which version it shows. -->
+        <details class="preview-fold">
+          <summary>預覽個人頁 <span class="version" class:draft={dirty} class:fresh={savedVisible && !dirty}>{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
+          {@render previewCard()}
+        </details>
       </form>
     </section>
 
-    <aside class="preview" aria-labelledby="preview-title">
+    <aside class="preview" class:fresh={savedVisible && !dirty} aria-labelledby="preview-title">
       <div class="preview-heading">
         <h2 id="preview-title">個人頁預覽</h2>
-        <span class="version" class:draft={dirty}>{version}</span>
+        <span class="version" class:draft={dirty} class:fresh={savedVisible && !dirty}>{#if savedVisible && !dirty}<span aria-hidden="true">✓ </span>{/if}{version}</span>
       </div>
       {@render previewCard()}
     </aside>
@@ -163,7 +168,7 @@
           </dd>
         </div>
         <div class="account-action">
-          <dt>登入狀態</dt>
+          <dt>登出</dt>
           <dd>
             <p class="cm-hint">只登出這個瀏覽器。</p>
             <form method="POST" action="/auth?/logout"><button class="cm-btn leave">登出</button></form>
@@ -182,7 +187,8 @@
   .cm-panel:focus { outline: none; }
   .cm-panel:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .preview-fold { display: none; }
-  .preview-fold summary { display: inline-flex; gap: 0 var(--space-1); flex-wrap: wrap; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
+  .preview-fold summary { display: flex; gap: var(--space-1) var(--space-2); flex-wrap: wrap; align-items: center; min-block-size: var(--target-min); padding-block: var(--space-1); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
+  .preview-fold .chev { margin-inline-start: auto; }
   .preview-fold summary::-webkit-details-marker { display: none; }
   .preview-fold[open] .chev { rotate: 180deg; }
   .preview-fold .preview-card { margin-block: var(--space-1) var(--space-2); }
@@ -196,14 +202,14 @@
   .select-wrap { position: relative; display: block; }
   .select-wrap select { appearance: none; padding-inline-end: 2.5rem; cursor: pointer; }
   .select-wrap .chev { position: absolute; inset-block-start: 50%; inset-inline-end: var(--space-3); translate: 0 -50%; color: var(--ink-2); pointer-events: none; }
-  .save-row { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2); align-items: start; }
-  /* The open mobile preview spans both columns below its summary. Keep the save button above that grid item. */
-  .save-row .cm-btn { grid-column: 1; grid-row: 1; z-index: 1; min-inline-size: 6rem; }
-  .status { grid-column: 1 / -1; min-block-size: 4rem; display: grid; justify-items: start; align-content: start; gap: 2px; font-size: var(--t-sm); }
-  .ok { display: inline-flex; gap: 0.3em; align-items: center; padding: 0 var(--space-2); border-radius: var(--radius-pill); color: var(--up); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); font-weight: 600; line-height: 1.9; }
-  .status-link { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-weight: 600; }
+  .save-row { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
+  .save-row .cm-btn { min-inline-size: 6rem; }
+  .status { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; min-block-size: var(--target-min); font-size: 0.8125rem; }
+  .ok { display: inline-flex; gap: 0.3em; align-items: center; padding: 0 var(--space-2); border-radius: var(--radius-pill); color: var(--up); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); font-size: var(--t-base); font-weight: 650; line-height: 1.9; }
+  .status-link { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-size: var(--t-base); font-weight: 600; }
   .pending { color: var(--warn); font-weight: 600; }
-  .idle { color: var(--muted); }
+  .idle { color: var(--ink-2); }
+  .settings .cm-count { color: var(--ink-2); }
   .facts { display: grid; margin: 0; border-block-start: 1px solid var(--line); }
   .facts div { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: var(--space-3); padding-block: var(--space-2); border-block-end: 1px solid var(--line); font-size: var(--t-base); }
   dt { color: var(--muted); }
@@ -217,6 +223,11 @@
   .preview-heading { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
   .version { display: inline-block; padding: 0 6px; border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
   .version.draft { color: var(--warn); background: var(--warn-wash); }
+  .version.fresh { color: var(--up); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); }
+  /* Just saved: the preview frame lights up once, so the change is seen where it lands. */
+  .preview.fresh { border-color: color-mix(in srgb, var(--up) 55%, var(--line)); animation: fresh 1.6s ease-out; }
+  @keyframes fresh { from { box-shadow: 0 0 0 4px color-mix(in srgb, var(--up) 30%, transparent); } to { box-shadow: 0 0 0 0 transparent; } }
+  @media (prefers-reduced-motion: reduce) { .preview.fresh { animation: none; } }
   .preview-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .avatar { display: grid; place-items: center; inline-size: 3rem; block-size: 3rem; border-radius: 50%; color: var(--brand-ink); background: var(--brand-wash); font-size: 1.25rem; font-weight: 650; }
   .who { min-inline-size: 0; }
@@ -229,9 +240,7 @@
     .layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
     #public, #account { grid-column: 1; grid-row: auto; }
     .preview { display: none; }
-    .preview-fold { display: block; grid-column: 2; grid-row: 1; min-inline-size: 0; }
-    .preview-fold[open] { grid-column: 1 / -1; }
-    .preview-fold[open] summary { margin-inline-start: calc(6rem + var(--space-2)); }
+    .preview-fold { display: block; min-inline-size: 0; margin-block-start: calc(-1 * var(--space-2)); border-block-start: 1px solid var(--line); }
     .jump-link { display: inline-flex; }
     .cm-panel { scroll-margin-block-start: 5rem; }
   }

@@ -54,7 +54,7 @@
 
 <section class="ratings" class:combined={firstDiscussionHref} id="ratings" aria-labelledby="ratings-title">
   <header class="head">
-    <h2 id="ratings-title">課程評價</h2>
+    <h2 id="ratings-title">{firstDiscussionHref ? '站內評價與討論' : '課程評價'}</h2>
     {#if !firstDiscussionHref}<p class="scope">以課號 <span class="mono">{courseCode}</span> 跨學期累計，不分班次。</p>{/if}
   </header>
 
@@ -62,10 +62,13 @@
     <p class="error" role="alert">評價暫時無法載入，請稍後再試。課程資料不受影響。</p>
   {:else}
     {#if firstDiscussionHref}
-      <div class="first-actions" id="forum-title">
-        <p>還沒有站內評價或討論<span class="counts">・0 則評價，0 篇討論</span></p>
-        {#if !user}<a class="cta" href={loginHref(`${page.url.pathname}#ratings`)}>登入後成為第一個評分</a>{/if}
-        <a class="cta" href={firstDiscussionHref}>發表第一篇文章</a>
+      <!-- Both empty: one sentence and two separate, full-size actions (rate, write), never two empty cards. -->
+      <div class="first-actions">
+        <p id="forum-title">還沒有同學在 UniCourse 評價或討論這門課<span class="counts">（0 則評價・0 篇討論）</span></p>
+        <div class="first-buttons">
+          {#if !user}<a class="cta-button" href={loginHref(`${page.url.pathname}#ratings`)}>登入後評分</a>{:else if !ratings.mine}<a class="cta-button" href="#rate-form">給這門課評分 ↓</a>{/if}
+          <a class="cta-button" href={firstDiscussionHref}>發表第一篇文章</a>
+        </div>
       </div>
     {:else}
       <!-- One or two ratings get the average and the count in one line, not a five-row histogram of zeros. -->
@@ -177,10 +180,16 @@
 
 <style>
   .ratings { display: grid; align-content: start; gap: var(--space-4); min-inline-size: 0; padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
-  .ratings.combined { gap: var(--space-2); padding-block: var(--space-3); }
-  .first-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-4); scroll-margin-block-start: 7.5rem; }
-  .first-actions .counts { color: var(--ink-2); font-size: var(--t-base); }
-  .first-actions a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
+  /* Both sections empty: heading and sentence on the left, two actions on the right (stacked on phones). */
+  .ratings.combined { grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-4); align-items: center; padding-block: var(--space-3); }
+  .ratings.combined > .head { grid-column: 1; }
+  .ratings.combined > .first-actions { display: contents; }
+  .ratings.combined > :not(.head, .first-actions) { grid-column: 1 / -1; }
+  .first-actions > p { scroll-margin-block-start: 7.5rem; grid-column: 1; color: var(--ink-2); font-size: var(--t-base); }
+  .first-actions .counts { color: var(--muted); }
+  .first-buttons { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .cta-button { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-base); font-weight: 650; text-decoration: none; white-space: nowrap; }
+  .cta-button:hover { background: var(--hover-row); }
   .ratings :is(h2, p) { margin: 0; }
   .ratings a { color: var(--brand-ink); text-underline-offset: 0.15em; }
   .ratings :is(a, button, input, textarea, summary):focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
@@ -258,6 +267,8 @@
 
   @media (max-width: 40rem) {
     .ratings { padding: var(--space-4); }
+    .ratings.combined { grid-template-columns: minmax(0, 1fr); }
+    .first-buttons { grid-column: 1; grid-row: auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); margin-block-start: var(--space-2); }
     .summary { gap: var(--space-4); }
     .average strong { font-size: 2rem; }
   }
