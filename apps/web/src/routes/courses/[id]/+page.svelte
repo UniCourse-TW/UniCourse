@@ -8,7 +8,6 @@
   import { fillRatio, nearlyFull, publishedCapacity } from '$lib/course-history';
   import { averageScore, courseKey } from '$lib/community-format';
   import { labelledExtra } from '$lib/course-extra';
-  import { postKind, postKindLabels } from '$lib/course-external-text';
   import { englishTitle } from '$lib/course-title';
   import { shortDateTime } from '$lib/community-format';
   import { importedAt, isHttpUrl, meeting, requirement } from '$lib/format';
@@ -64,19 +63,14 @@
   let titleEn = $derived(englishTitle(course.titleEn));
   let externalTotal = $derived(data.externalReviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0);
   /** Indexed posts naming this offering's teacher, when every post is listed (same rule as the section). */
-  let externalMinePosts = $derived.by(() => {
+  let externalMine = $derived.by(() => {
     const posts = data.externalReviews?.posts ?? [];
     if (!course.instructors.length || posts.length !== externalTotal) return undefined;
     const own = new Set(course.instructors);
-    return posts.filter((post) => (post.match?.instructor && own.has(post.match.instructor)) || post.teachers.some((name) => own.has(name)));
+    return posts.filter((post) => (post.match?.instructor && own.has(post.match.instructor)) || post.teachers.some((name) => own.has(name))).length;
   });
-  let externalMine = $derived(externalMinePosts?.length);
-  /** What this teacher's posts are (「提問」), when they are all one kind, so the jump link says it up front. */
-  let externalMineKind = $derived.by(() => {
-    const kinds = new Set(externalMinePosts?.map((post) => postKind(post.tag)));
-    const [only] = kinds;
-    return kinds.size === 1 && only !== 'other' ? postKindLabels[only] : undefined;
-  });
+  let hasTeacherGroup = $derived(externalMine != null && externalMine > 0 && externalMine < externalTotal);
+  let externalSection: ReturnType<typeof CourseExternalReviews> | undefined = $state();
   // Indexed posts move above the site's own sections while those are both still empty, so the page's
   // most useful signal is not below two empty states.
   let communityEmpty = $derived(stats != null && ratingCount === 0 && data.posts?.total === 0);
@@ -90,12 +84,12 @@
     data.externalReviews?.sources.length === 1 ? data.externalReviews.sources[0].sourceLabel.replace(/\s*批踢踢$/u, '') : '外站'
   );
   let aboutOpen = $state(true);
-  let notesPeek = $derived(course.notes?.trim().replace(/\s+/gu, ' ') || undefined);
+  let notesOpen = $state(true);
   /** Sections in page order, for the jump chips (sticky on phones, the one in view highlighted). */
   let sections = $derived.by(() => {
     // `short` is the phone label, so the sticky row fits 390 px; the full label stays the accessible name.
-    const list: { id: string; label: string; short: string; count?: number; lead?: boolean }[] = [{ id: 'history', label: '歷年開課', short: '歷年' }];
-    const external = { id: 'external-reviews', label: '外站討論', short: '外站', count: externalTotal || undefined, lead: externalFirst };
+    const list: { id: string; label: string; short: string; count?: number }[] = [{ id: 'history', label: '歷年開課', short: '歷年' }];
+    const external = { id: 'external-reviews', label: '外站討論', short: '外站', count: externalTotal || undefined };
     if (externalFirst) list.push(external);
     if (communityEmpty) list.push({ id: 'ratings', label: '站內評價與討論', short: '評價與討論', count: 0 });
     else {
@@ -141,7 +135,10 @@
     return () => window.removeEventListener('scroll', update);
   });
   onMount(() => {
-    if (window.matchMedia('(max-width: 40rem)').matches) aboutOpen = false;
+    if (window.matchMedia('(max-width: 40rem)').matches) {
+      aboutOpen = false;
+      notesOpen = location.hash === '#notes';
+    }
   });
 
 
@@ -190,22 +187,17 @@
         {#if course.language}<span class="item">{course.language}授課</span>{/if}
         {#if course.campus}<span class="item">{course.campus}</span>{/if}
         {#if course.grade}<span class="item">{course.grade}</span>{/if}
+        <span class="schedule" role="group" aria-label="上課時間地點、學分與必選修">
+          {#each slots as slot, index (index)}
+            <span class="item slot"><span class="when">{meeting(slot)}</span>{#if slot.location}<span class="room">{slot.location}</span>{/if}</span>
+          {:else}
+            {#if scheduleText}<span class="item slot"><span class="when">{scheduleText}</span></span>{:else}<span class="item slot muted">校方未公布上課時間</span>{/if}
+          {/each}
+          <span class="item slot fact">{#if course.credits != null}<span class="num">{credits(course.credits)}</span> 學分{:else}學分未公布{/if}</span>
+          <span class="item slot fact">{#if requirementLabel}{requirementLabel}{#if requirementDetail}<a class="detail" href="#requirement-detail" title={`校方原文：「${requirementDetail}」`} aria-label="必選修的校方原文">ⓘ</a>{/if}{:else}必選修未公布{/if}</span>
+        </span>
+        {#if course.notes}<a class="item notes-jump" href="#notes" onclick={() => (notesOpen = true)}>查看校方備註&nbsp;↓</a>{/if}
       </p>
-      <!-- When, where, credits and 必選修 on one meta line under the identity line (separators sit in the gaps,
-           so a wrapped line never starts with one). -->
-      <p class="when-line" aria-label="上課時間地點、學分與必選修">
-        {#each slots as slot, index (index)}
-          <span class="slot"><span class="when">{meeting(slot)}</span>{#if slot.location}<span class="room">{slot.location}</span>{/if}</span>
-        {:else}
-          {#if scheduleText}<span class="slot"><span class="when">{scheduleText}</span></span>{:else}<span class="slot muted">校方未公布上課時間</span>{/if}
-        {/each}
-        <span class="slot fact">{#if course.credits != null}<span class="num">{credits(course.credits)}</span> 學分{:else}學分未公布{/if}</span>
-        <span class="slot fact">{#if requirementLabel}{requirementLabel}{#if requirementDetail}<a class="detail" href="#requirement-detail" title={`校方原文：「${requirementDetail}」`} aria-label="必選修的校方原文">ⓘ</a>{/if}{:else}必選修未公布{/if}</span>
-      </p>
-      {#if notesPeek}
-        <!-- The school's notes (優先、限修、加簽) affect enrolment, so phones see their start in the head; the full text stays below. -->
-        <p class="notes-peek"><span class="peek-key">校方備註</span><span class="peek-text">{notesPeek}</span><a href="#notes" onclick={() => (aboutOpen = true)}>全文 ↓</a></p>
-      {/if}
     </div>
     <div class="actions">
       {#if isHttpUrl(course.sourceUrl)}
@@ -253,7 +245,7 @@
             <dd class="note" title="UniCourse 匯入校方資料當時的快照，即時名額以校方為準">{course.term} {ratio > 1 ? `超額，名額的 ${share}%` : `已選 ${share}%`}{#if full && ratio <= 1}，接近額滿{/if}・<span class="nowrap">{importDay} 匯入</span></dd>
           {:else}
             <!-- A finished class: its final result, said as history so it is not read as today's seats. -->
-            <dd class="note">{ratio > 1 ? `最終超額，名額的 ${share}%` : `最終選課 ${share}%`}</dd>
+            <dd class="note">{ratio > 1 ? `最終超額，名額的 ${share}%` : `修課人數占名額 ${share}%`}</dd>
           {/if}
         {:else}
           <dd class="note">{capacity == null && course.enrolled != null ? '校方未公布名額' : '人數與名額未公布'}</dd>
@@ -300,8 +292,10 @@
         <!-- The total is this course code across every teacher; the line under it says how many name this class's teacher. -->
         <dt>外站討論（{externalLabel}）</dt>
         <dd><span class="value num">{displayValue(externalTotal)}</span><small>篇・各教師合計</small></dd>
-        {#if externalMine != null && externalMine < externalTotal}
-          <dd class="note mine-note"><a href={externalMine ? '#external-mine' : '#external-reviews'}>{#if externalMine}本班教師僅 <b class="num">{displayValue(externalMine)}</b> 篇{#if externalMineKind}・{externalMineKind}{/if}{:else}本班教師 0 篇，都是其他教師{/if}&nbsp;↓</a></dd>
+        {#if externalMine != null}
+          <dd class="note mine-note"><a href={hasTeacherGroup ? '#external-mine' : '#external-reviews'}
+            onclick={hasTeacherGroup ? () => externalSection?.jumpToTeacher() : undefined}>{#if externalMine}看本班教師 <b class="num">{displayValue(externalMine)}</b> 篇{:else}本班教師 0 篇{/if}&nbsp;↓</a></dd>
+          {#if externalMine < externalTotal}<dd class="note">其他教師或未確認 {displayValue(externalTotal - externalMine)} 篇</dd>{/if}
         {:else}
           <dd class="note"><a href="#external-reviews">看文章與來源&nbsp;↓</a></dd>
         {/if}
@@ -325,7 +319,7 @@
        header, with the section in view highlighted (the same row on every long page). -->
   <nav class="section-links" aria-label="本頁段落" bind:this={chipRow} class:fade-end={chipsCut.end} class:fade-start={chipsCut.start} onscroll={readChips}>
     {#each sections as section (section.id)}
-      <a href={`#${section.id}`} data-section={section.id} class:lead={section.lead} class:here={inView === section.id} aria-current={inView === section.id ? 'location' : undefined} data-short={section.short}><span class="long">{section.label}</span>{#if section.count != null} <span class="num">{displayValue(section.count)}</span>{/if}</a>
+      <a href={`#${section.id}`} data-section={section.id} class:here={inView === section.id} aria-current={inView === section.id ? 'location' : undefined} data-short={section.short}><span class="long">{section.label}</span>{#if section.count != null} <span class="num">{displayValue(section.count)}</span>{/if}</a>
     {/each}
   </nav>
 
@@ -344,7 +338,7 @@
   </section>
 
   {#if externalFirst}
-    <CourseExternalReviews school={course.school} courseCode={course.courseCode} title={course.title} instructors={course.instructors} reviews={data.externalReviews} />
+    <CourseExternalReviews bind:this={externalSection} school={course.school} courseCode={course.courseCode} title={course.title} instructors={course.instructors} reviews={data.externalReviews} />
   {/if}
 
   <!-- Site ratings and site threads side by side; indexed posts from other sites get the full width below. -->
@@ -379,7 +373,7 @@
   </div>
 
   {#if !externalFirst}
-    <CourseExternalReviews school={course.school} courseCode={course.courseCode} title={course.title} instructors={course.instructors} reviews={data.externalReviews} />
+    <CourseExternalReviews bind:this={externalSection} school={course.school} courseCode={course.courseCode} title={course.title} instructors={course.instructors} reviews={data.externalReviews} />
   {/if}
 
   {#if hasAbout}
@@ -397,8 +391,8 @@
         </details>
       {/if}
       {#if course.notes}
-        <details open={aboutOpen}>
-          <summary><h3 id="notes">備註</h3></summary>
+        <details bind:open={notesOpen}>
+          <summary id="notes"><h3>校方備註</h3></summary>
           <p class="prose">{course.notes}</p>
         </details>
       {/if}
@@ -442,31 +436,21 @@
   .title { flex: 1 1 28rem; display: grid; gap: var(--space-1); min-inline-size: 0; }
   h1 { font-size: var(--t-2xl); overflow-wrap: anywhere; }
   .en { color: var(--ink-2); font-size: var(--t-md); overflow-wrap: anywhere; }
-  /* When and where: a meta line under term, code and teacher (same size), the day and periods in ink. */
-  /* Regular weight in ink (the h1 is the one bold line); each item after the first carries its dot in the gap
-     before it and the row clips past its edge, so a wrapped line never starts with「·」 (item 33). */
-  .when-line { display: flex; flex-wrap: wrap; gap: 0.125rem 1.5em; align-items: baseline; color: var(--ink); font-size: var(--t-md); overflow-x: clip; overflow-clip-margin: 4px; }
-  .when-line .slot { position: relative; display: inline-flex; flex-wrap: wrap; align-items: baseline; }
-  .when-line .slot + .slot::before { content: '·'; position: absolute; inset-inline-start: -1.5em; inline-size: 1.5em; color: var(--muted); text-align: center; }
-  .when-line .when { font-weight: 500; }
-  .when-line .room { color: var(--ink-2); }
-  .when-line .room::before { content: '・'; color: var(--muted); }
-  .when-line .fact { display: block; color: var(--ink-2); }
-  /* ⓘ: a 44 px square target hung on the text without growing the line (negative margins). */
-  .when-line .detail { display: inline-grid; place-items: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); margin-block: -0.875rem; margin-inline: -0.5rem -0.875rem; color: var(--ink-2); font-size: 0.8125rem; text-decoration: none; vertical-align: middle; }
+  .schedule { display: contents; }
+  .meta .slot { display: inline-flex; flex-wrap: wrap; align-items: baseline; white-space: normal; }
+  .meta .fact { display: block; }
+  .meta .room::before { content: '・'; color: var(--muted); }
+  .meta .detail { display: inline-grid; place-items: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); margin-block: -0.875rem; margin-inline: -0.5rem -0.875rem; color: var(--ink-2); font-size: 0.8125rem; text-decoration: none; vertical-align: middle; }
   /* Everything else about the class on one wrapping line: term, code, teachers, credits, 必選修, language. */
   /* Each item carries its dot in the gap before it; the row clips anything left of its edge, so a wrapped
      line never starts with a stray「・」. */
-  .meta { margin-block-start: var(--space-1) !important; display: flex; flex-wrap: wrap; gap: 0.125rem 1.5em; align-items: center; color: var(--ink-2); font-size: var(--t-md); overflow: clip; overflow-clip-margin: 4px; }
+  .meta { margin-block-start: var(--space-1) !important; display: flex; flex-wrap: wrap; gap: 0.125rem 1.5em; align-items: center; color: var(--ink-2); font-size: var(--t-md); overflow-x: clip; }
   .meta .item { position: relative; white-space: nowrap; }
   .meta .item.people { white-space: normal; }
   /* Teacher links: invisible block padding makes a 44 px tall target without changing the line. */
   .meta .people a { padding-block: 0.75rem; }
   .meta .item::before { content: '·'; position: absolute; inset-inline-start: -1.5em; inline-size: 1.5em; color: var(--muted); text-align: center; }
-  .notes-peek { display: -webkit-box; margin-block-start: var(--space-2) !important; max-inline-size: 48rem; color: var(--ink-2); font-size: var(--t-base); line-height: 1.55; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
-  .notes-peek .peek-key { margin-inline-end: var(--space-2); padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink); font-size: 0.8125rem; font-weight: 650; }
-  .notes-peek a { margin-inline-start: var(--space-2); padding-block: 0.75rem; font-weight: 600; white-space: nowrap; }
-  @media (min-width: 40.01rem) { .notes-peek { display: none; } }
+  .notes-jump { display: none; }
   .actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: end; }
   .actions-note { flex-basis: 100%; color: var(--ink-2); font-size: 0.8125rem; text-align: end; }
   .button { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-base); font-weight: 650; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
@@ -530,9 +514,6 @@
   .section-links a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
   .section-links .num { color: var(--ink-2); font-weight: 600; }
   .section-links a.here { text-decoration-thickness: 2px; }
-  /* When indexed posts come before the site's (empty) sections, their link is the outlined lead. */
-  .section-links a.lead { padding-inline: var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 55%, var(--line)); border-radius: var(--radius-control); background: var(--brand-wash); text-decoration: none; }
-  .section-links a.lead:hover { border-color: var(--brand); }
   .course-page :is(#history, #forum-title, #about-title, #notes), .course-page :global(:is(#ratings, #external-reviews, #external-mine)) { scroll-margin-block-start: 7.5rem; }
   .community { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); align-items: start; }
   .community.combined { grid-template-columns: minmax(0, 1fr); }
@@ -565,7 +546,7 @@
     .crumbs { margin-block-end: calc(-1 * var(--space-4)); }
     .actions .button { flex: 1 1 auto; }
     .actions-note { text-align: start; }
-    .when-line { font-size: var(--t-md); }
+    .notes-jump { display: inline-flex; align-items: center; min-block-size: var(--target-min); margin-block: -0.625rem; font-size: var(--t-base); font-weight: 600; }
     .tiles { gap: var(--space-2); }
     .tile { padding: var(--space-3); }
     .tile .value { font-size: var(--t-2xl); }
@@ -581,7 +562,6 @@
     .section-links.fade-start { mask-image: linear-gradient(to right, transparent, #000 2.5rem); }
     .section-links.fade-start.fade-end { mask-image: linear-gradient(to right, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent); }
     .section-links a { flex: none; padding-inline: var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink-2); text-decoration: none; white-space: nowrap; }
-    .section-links a.lead { border-radius: var(--radius-pill); }
     .section-links a.here { border-color: var(--brand); background: var(--brand); color: var(--on-brand); }
     .section-links a.here .num { color: var(--on-brand); }
     .course-page :is(#history, #forum-title, #about-title, #notes), .course-page :global(:is(#ratings, #external-reviews, #external-mine)) { scroll-margin-block-start: 10rem; }

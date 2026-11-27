@@ -34,8 +34,7 @@
   let schoolNames = $derived(Object.fromEntries(data.schools.map((school) => [school.slug, school.name])));
   let previewName = $derived(current.displayName.trim() || data.profile.username);
   let previewSchool = $derived(current.school ? (schoolNames[current.school] ?? '') : '');
-  // One label for what the preview shows: the draft being typed, the version just saved, or the stored one.
-  let version = $derived(dirty ? '編輯中，尚未公開' : savedVisible ? '已更新的公開版本' : '公開版本');
+  let version = $derived(dirty ? '編輯中，尚未公開' : '公開版本');
   let joined = $derived(slashDate(data.profile.createdAt));
   let profile = $derived(profileHref(data.profile.username));
 
@@ -104,11 +103,10 @@
         <div class="cm-field">
           <div class="cm-label">
             <label for="bio">自我介紹</label>
-            <span class="cm-count" class:over={length(current.bio) > 500} aria-live="polite">{length(current.bio)} / 500</span>
+            <span class="cm-count" class:over={length(current.bio) > 500} aria-live="polite">{length(current.bio)} / 500 字</span>
           </div>
           <textarea id="bio" class="cm-input" name="bio" rows="3" maxlength="500" readonly={saving} defaultValue={values.bio}
-            placeholder="例如：資工系大三，喜歡演算法與系統課。" aria-describedby="bio-hint"></textarea>
-          <p id="bio-hint" class="cm-hint">最多 500 字。</p>
+            placeholder="例如：資工系大三，喜歡演算法與系統課。"></textarea>
         </div>
         <div class="cm-field">
           <div class="cm-label"><label for="school">所屬學校</label><span class="cm-hint">選填</span></div>
@@ -123,14 +121,9 @@
             </select>
             <span class="chev" aria-hidden="true">▾</span>
           </span>
-          <p id="school-hint" class="cm-hint">不會出現在評價或文章旁。</p>
+          <p id="school-hint" class="cm-hint">只顯示在公開個人頁。</p>
         </div>
         {#if form && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
-        <!-- Phones: the preview folds right before the save line (check, then save); its summary names the version. -->
-        <details class="preview-fold">
-          <summary>預覽公開個人頁 <span class="version" class:draft={dirty}>{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
-          {@render previewCard()}
-        </details>
         <!-- Button and its state on one line: why it is greyed out, what is unsaved, or the saved result with
              the one link to the updated profile (the header link steps aside meanwhile). -->
         <div class="save-row">
@@ -139,11 +132,16 @@
                public page is the header link (one name for it everywhere). -->
           <div class="status" id="save-status" role="status">
             {#if saving}<span class="cm-sr">儲存中…</span>
-            {:else if savedVisible}<span class="ok"><span class="tick" aria-hidden="true">✓</span><span>已儲存，個人頁已更新</span></span><a class="see" href={profile}>查看 <span aria-hidden="true">→</span></a>
+            {:else if savedVisible}<span class="ok"><span class="tick" aria-hidden="true">✓</span><span>已儲存<span class="saved-long">，個人頁已更新</span></span></span><a class="see" href={profile} aria-label="查看公開個人頁"><span>查看<span class="see-long">公開個人頁</span></span><span aria-hidden="true">→</span></a>
             {:else if hydrated && dirty}<span class="pending">有 {changes} 項變更尚未儲存</span><span class="preview-note">預覽已即時更新</span>
             {:else if hydrated}<span class="idle">沒有待儲存的變更</span>{/if}
           </div>
         </div>
+        <!-- On phones the preview folds after the save line. -->
+        <details class="preview-fold">
+          <summary>預覽公開個人頁 <span class="cm-sr">{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
+          {@render previewCard()}
+        </details>
       </form>
     </section>
 
@@ -182,6 +180,7 @@
 <style>
   .settings .sep { margin-inline: 0.4em; color: var(--muted); }
   .cm-dek { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-3); }
+  .cm-dek :is(.who-line, .dek-link) { font-size: var(--t-base); }
   .dek-link { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); }
   .jump-link { display: none; color: var(--ink-2) !important; font-weight: 600; }
   .cm-panel:focus { outline: none; }
@@ -210,7 +209,7 @@
      updated page one tap away. */
   .ok { display: inline-flex; gap: 0.3em; align-items: center; padding: 0 var(--space-2); border-radius: var(--radius-pill); color: var(--ink); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--up) 45%, transparent); font-size: var(--t-base); font-weight: 650; line-height: 1.9; }
   .ok .tick { color: color-mix(in srgb, var(--up) 80%, var(--ink)); font-weight: 800; }
-  .see { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); padding-inline: var(--space-1); font-weight: 600; }
+  .see { display: inline-flex; min-inline-size: var(--target-min); gap: 0.25em; align-items: center; min-block-size: var(--target-min); padding-inline: var(--space-1); font-weight: 600; }
   .no-school { color: var(--muted); }
   .preview-note { color: var(--ink-2); }
   @media (max-width: 56rem) { .preview-note { display: none; } }
@@ -223,9 +222,10 @@
   .settings .cm-field > .cm-hint { color: var(--ink-2); font-size: 0.8125rem; }
   .facts { display: grid; margin: 0; border-block-start: 1px solid var(--line); }
   .facts div { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: var(--space-3); padding-block: var(--space-2); border-block-end: 1px solid var(--line); font-size: var(--t-base); }
+  .facts div:last-child { border-block-end: 0; padding-block-end: 0; }
   dt { color: var(--ink-2); }
   dd { margin: 0; }
-  dd .cm-hint { display: block; }
+  dd .cm-hint.fixed { display: inline-block; margin-inline-start: var(--space-2); }
   .account-action { align-items: baseline; }
   .account-action dd { display: flex; gap: var(--space-1) var(--space-3); flex-wrap: wrap; align-items: center; justify-content: space-between; }
   .reset-row { grid-template-columns: 5rem minmax(0, 1fr); }
@@ -267,10 +267,9 @@
     .account-action { grid-template-columns: minmax(0, 1fr) !important; gap: var(--space-1) !important; }
     .account-action dd { justify-content: space-between; text-align: start !important; }
     .account-action dd .cm-hint { flex: 1 1 10rem; }
-    /* The status stays beside the button while it fits (「沒有待儲存的變更」 does); longer ones wrap under. */
-    .save-row .status { flex-basis: 12rem; }
-    /* Saved: the message and its 「查看」 link take their own line under the button, together. */
-    .save-row .status:has(.ok) { flex-basis: 100%; flex-wrap: nowrap; }
+    .save-row .cm-btn { min-inline-size: 5rem; }
+    .save-row .status { gap: 0 var(--space-2); }
+    .see-long, .saved-long { display: none; }
     .facts .reset-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
     .facts .reset-row dd { text-align: start; }
   }

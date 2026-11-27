@@ -22,7 +22,7 @@
   const summary: GistPoint[] = [
     { lead: '課程資料', href: '#data', text: '來自各校公開系統，可能比校方晚更新，以校方為準。' },
     { lead: '帳號', href: '#account', text: '查課不用登入；評分與發文需要帳號，內容會公開。' },
-    { lead: '外部評價', href: '#reviews', text: '只索引 PTT 四個課程板的標題、短摘要及日期等索引欄位，不轉載全文：', link: { href: '#reviews-kept', label: '完整欄位' } },
+    { lead: '外部評價', href: '#reviews', text: '只索引 PTT 課程文，不轉載全文：', link: { href: '#reviews-kept', label: '查看收錄欄位' } },
     { lead: '移除', href: '#removal', text: '與你有關的內容，私密聯絡維護者即可，不必公開：', link: { href: PRIVATE_REPORT_URL, label: '私密申請移除（GitHub）', external: true } }
   ];
 </script>
@@ -70,10 +70,10 @@
   <section aria-labelledby="reviews">
     <div class="h2-row"><h2 id="reviews">外部評論索引</h2></div>
     <!-- One paragraph answers the two questions readers come with; the lists below hold the detail. -->
-    <p class="lead"><strong>收什麼：</strong>PTT 四個課程板 2016 年起的公開文章，只存標題、日期與 120 字內的開頭摘要，點標題回到原網站，不轉載全文。<strong>怎麼移除：</strong>原文已刪或不想被索引，到<a href="#removal">聯絡與移除</a>私密告訴維護者，該筆索引就會移除。</p>
+    <p class="lead"><strong>收什麼：</strong>PTT 四個課程板 2016 年起的公開文章，只存標題、日期與 120 字內的開頭摘要，點標題回到原網站，不轉載全文。<strong>怎麼移除：</strong>若要移除索引，請見<a href="#removal">聯絡與移除</a>。</p>
     <!-- The facts readers check (which boards, what is kept, how fresh) are open; only the long rules fold. -->
     <h3 id="reviews-boards">收錄的 4 個看板</h3>
-    <p>只收錄 PTT（批踢踢實業坊）上專門討論課程的四個看板，從 2016 年起的文章。</p>
+    <p>只收錄下列看板自 2016 年起的課程討論。</p>
     <table role="table" class="boards stacked">
       <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">看板</th><th role="columnheader" scope="col">對應學校</th><th role="columnheader" scope="col">備註</th></tr></thead>
       <tbody role="rowgroup">
@@ -103,20 +103,20 @@
     <div class="h2-row"><h2 id="removal">聯絡與移除</h2></div>
     <p>先選管道：<strong>涉及個資、帳號或不想公開的請求走私密聯絡</strong>，一般的資料錯誤可以公開回報。</p>
     <!-- What both routes share is said once, before the cards: GitHub, the page link, the reply time. -->
-    <p class="routes-shared">兩個管道都在 GitHub 送出（免費帳號即可，不需要會寫程式）；請附上相關頁面連結，通常七天內在同一則回報回覆。</p>
+    <p class="routes-shared">請附上相關頁面連結。維護者通常在七天內回覆。</p>
     <div class="contact-routes">
       <div>
         <p class="route-kind private">私密聯絡</p>
         <h3>含個資或不想公開的請求</h3>
         <p>移除與你有關的索引或處理帳號問題。文章作者、被提及的教師或當事人都可以提出。</p>
         <p class="route-needs">請寫明：要處理的頁面或文章、你和它的關係、希望怎麼處理。</p>
-        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external"><span>私密申請移除或帳號協助</span><span class="who-sees">僅維護者可見</span><span aria-hidden="true">↗</span></a>
+        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external"><span>私密申請移除或帳號協助<span aria-hidden="true">&nbsp;↗</span></span><span class="route-access"><span class="who-sees">僅維護者可見</span><span>需 GitHub 帳號</span></span></a>
       </div>
       <div>
         <p class="route-kind public">公開回報</p>
         <h3>可公開的資料錯誤</h3>
         <p>回報錯配的外部文章或其他資料錯誤，請勿附上個資。</p>
-        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external"><span>在 GitHub 公開回報錯誤</span><span class="who-sees">所有人可見</span><span aria-hidden="true">↗</span></a>
+        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external"><span>在 GitHub 公開回報錯誤<span aria-hidden="true">&nbsp;↗</span></span><span class="route-access"><span class="who-sees">所有人可見</span><span>需 GitHub 帳號</span></span></a>
       </div>
     </div>
     <p>移除索引不影響原網站上的文章；要刪除原文請聯絡該網站。</p>

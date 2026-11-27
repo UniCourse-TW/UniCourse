@@ -67,8 +67,10 @@
   onMount(() => {
     hydrated = true;
     readScroll();
+    const resize = new ResizeObserver(readScroll);
+    if (chipRow) resize.observe(chipRow);
     const headings = sections.map((section) => document.getElementById(section.id)).filter((node): node is HTMLElement => Boolean(node));
-    if (!headings.length || !('IntersectionObserver' in window)) return;
+    if (!headings.length || !('IntersectionObserver' in window)) return () => resize.disconnect();
     const visible = new Map<string, number>();
     const observer = new IntersectionObserver(
       (entries) => {
@@ -87,7 +89,7 @@
       { rootMargin: '-96px 0px -60% 0px', threshold: 0 }
     );
     headings.forEach((heading) => observer.observe(heading));
-    return () => observer.disconnect();
+    return () => { observer.disconnect(); resize.disconnect(); };
   });
 </script>
 
@@ -106,7 +108,7 @@
         <h2 id="gist-title">白話重點</h2>
         <ul>
           {#each summary as point, index (index)}
-            <li><strong>{#if point.href}<a class="lead-link" href={point.href}>{point.lead}</a>{:else}{point.lead}{/if}</strong>{point.text}{#if point.link}<a href={point.link.href} rel={point.link.external ? 'noopener external' : undefined}>{point.link.label}{#if point.link.external}<span aria-hidden="true"> ↗</span>{/if}</a>。{/if}{#if point.lines?.length}<span class="gist-lines">{#each point.lines as line (line)}<span>{line}</span>{/each}</span>{/if}</li>
+            <li><strong>{#if point.href}<a class="lead-link" href={point.href}>{point.lead}</a>{:else}{point.lead}{/if}</strong>{point.text}{#if point.link}<a class:external={point.link.external} href={point.link.href} rel={point.link.external ? 'noopener external' : undefined}>{point.link.label}{#if point.link.external}<span aria-hidden="true">&nbsp;↗</span>{/if}</a>。{/if}{#if point.lines?.length}<span class="gist-lines">{#each point.lines as line (line)}<span>{line}</span>{/each}</span>{/if}</li>
           {/each}
         </ul>
       </section>
@@ -144,19 +146,21 @@
 </article>
 
 <style>
-  /* The document is centred at its natural width (contents + 52 em measure) instead of hugging the left edge. */
-  .doc { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); max-inline-size: 66rem; min-inline-size: 0; margin-inline: auto; color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
+  /* Align the heading and contents rail with the shell; cap the reading measure separately. */
+  .doc { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); max-inline-size: 66rem; min-inline-size: 0; color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
   .arrow-link { display: inline-flex; gap: 0.3em; align-items: center; }
   .doc-head { display: grid; gap: var(--space-1); }
   /* The gist shares the prose column: same left edge as the first h2 and the same 52 em measure. */
   .gist { grid-column: 2; max-inline-size: 52em; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-panel); background: var(--panel); }
   .gist h2 { margin: 0 0 var(--space-1); font-size: var(--t-base); font-weight: 650; color: var(--ink-2); }
   .gist ul { display: grid; gap: var(--space-1); margin: 0; padding-inline-start: 1.2em; color: var(--ink); font-size: var(--t-md); line-height: 1.75; }
-  .gist li strong { margin-inline-end: 0.35em; color: var(--ink); font-weight: 650; }
+  .gist li strong { color: var(--ink); font-weight: 650; }
   .gist li strong::after { content: '：'; }
   .gist-lines { display: grid; margin-block-start: 2px; color: var(--ink-2); font-size: var(--t-base); line-height: 1.6; }
   .gist-lines span::before { content: '・'; color: var(--muted); }
   .gist a { font-weight: 600; }
+  .gist a:not(.lead-link) { padding-block: 0.75rem; }
+  .gist a.external { white-space: nowrap; }
   /* The lead words are jump links: invisible padding makes 44 px targets without moving the text. */
   /* Bold leads without an underline (they read as labels); hover and focus show they jump to the section. */
   .gist .lead-link { padding: 0.75rem 0.5rem; margin-inline: -0.5rem; color: var(--ink); text-decoration: none; }
@@ -217,7 +221,7 @@
   .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: 9.5rem; white-space: nowrap; }
   .prose :global(.contact-routes .route-meta) { display: grid; gap: 2px; margin: 0; padding-inline-start: 1.2em; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; }
   .prose :global(.contact-routes .route-meta li) { margin: 0; }
-  .prose :global(p.update-note a.private) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: 2rem; font-weight: 600; }
+  .prose :global(p.update-note a.private) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-weight: 600; }
   .prose :global(.callout) { margin: 0 0 var(--space-3); padding: var(--space-3) var(--space-4); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); }
   .prose :global(.callout .note) { display: block; margin-block-start: var(--space-2); color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
   .prose :global(.contact-routes) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-3); margin: 0 0 var(--space-3); }
@@ -233,14 +237,12 @@
   .prose :global(.contact-routes h3) { margin: 0; font-size: var(--t-md); }
   .prose :global(.contact-routes .route-kind) { justify-self: start; margin: 0; padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-size: 0.8125rem; font-weight: 650; line-height: 1.7; }
   .prose :global(.contact-routes .route-kind.public) { background: var(--chip); color: var(--ink-2); }
-  /* Who will see it sits inside the link, so the button names its purpose and its audience together. */
-  .prose :global(.contact-routes a.route) { flex-wrap: wrap; }
-  .prose :global(.contact-routes .who-sees) { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--chip); color: var(--ink); font-size: 0.8125rem; font-weight: 600; line-height: 1.7; }
+  .prose :global(.contact-routes .who-sees) { justify-self: start; padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--chip); color: var(--ink); font-size: 0.8125rem; font-weight: 600; line-height: 1.5; }
   .prose :global(td .opt) { margin-inline-start: var(--space-2); padding: 0 6px; border-radius: var(--radius-pill); box-shadow: inset 0 0 0 1px var(--control-line); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
   .prose :global(.contact-routes p) { margin: 0; color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
-  .prose :global(.contact-routes a.route) { display: inline-flex; align-items: center; gap: var(--space-1); justify-self: start; min-block-size: var(--target-min); font-weight: 650; }
-  /* Who can read it and what it needs, said before the button. */
-  .prose :global(.contact-routes .route-access) { margin-block-start: var(--space-1) !important; color: var(--ink); font-size: var(--t-base); font-weight: 650; }
+  .prose :global(.contact-routes a.route) { display: grid; align-content: center; min-block-size: var(--target-min); font-weight: 650; line-height: 1.4; text-decoration: none; }
+  .prose :global(.contact-routes a.route > span:first-child) { text-decoration: underline; text-underline-offset: 0.15em; }
+  .prose :global(.contact-routes .route-access) { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; color: var(--ink-2); font-size: var(--t-sm); font-weight: 500; line-height: 1.5; }
   /* Name, then who sees it right beside the name, then what it is for. */
   .prose :global(.account-data th:first-child) { inline-size: 40%; }
   .prose :global(.account-data :is(td, th):nth-child(2)) { inline-size: 1%; white-space: nowrap; }
@@ -259,8 +261,7 @@
   .prose :global(.doc-fold summary) { min-block-size: var(--target-min); padding: var(--space-2) var(--space-3); scroll-margin-block-start: 5rem; color: var(--brand-ink); font-weight: 650; cursor: pointer; }
   .prose :global(.doc-fold summary:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: var(--radius-control); }
   .prose :global(.doc-fold > :not(summary)) { inline-size: calc(100% - 2 * var(--space-3)); margin-inline: var(--space-3); }
-  /* Shared conditions for both contact routes, said once before the two cards. */
-  .prose :global(.routes-shared) { color: var(--ink-2); font-size: var(--t-base); }
+  .prose :global(.cookie-facts li) { margin-block: 0; line-height: 1.55; }
   .prose :global(.contact-routes .route-needs) { color: var(--ink-2); font-size: var(--t-base); }
   .next { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-6) 0 0; padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); font-size: var(--t-base); font-weight: 500; }
   .next a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); }
@@ -280,16 +281,11 @@
     .prose :global(.stacked td[data-label])::before { content: attr(data-label); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; line-height: inherit; }
     .prose :global(.stacked td:first-child) { display: block; padding-block-end: var(--space-1); font-weight: 600; }
     .prose :global(.stacked td:first-child)::before { display: none; }
-    /* Boards read top to bottom: board name, then its school, then the remark. */
-    /* Boards: one line per board (name・school), the remark under it with its short label. */
-    .prose :global(.stacked.boards tr) { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; }
+    /* Board, school and remark each get their own line. */
     .prose :global(.stacked.boards td[data-label]) { display: block; inline-size: auto; padding: 0; white-space: normal; }
-    .prose :global(.stacked.boards td:first-child) { white-space: nowrap; }
-    .prose :global(.stacked.boards td:nth-child(2))::before { display: none; }
+    .prose :global(.stacked.boards td::before) { display: none; }
     .prose :global(.stacked.boards td:nth-child(2)) { color: var(--ink-2); font-size: var(--t-base); }
-    .prose :global(.stacked.boards td:first-child) { padding-block-end: 0; }
-    .prose :global(.stacked.boards td:last-child) { flex-basis: 100%; color: var(--ink-2); font-size: 0.8125rem; }
-    .prose :global(.stacked.boards td:last-child)::before { content: '備註　'; display: inline; color: var(--ink-2); font-weight: 650; }
+    .prose :global(.stacked.boards td:last-child) { color: var(--ink-2); font-size: var(--t-sm); }
     /* Account data: the name with its public status beside it, the purpose on the line below. */
     .prose :global(.stacked.account-data tr) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-2); align-items: baseline; }
     .prose :global(.stacked.account-data td:first-child) { grid-row: 1; grid-column: 1; padding: 0; }
@@ -329,7 +325,7 @@
     .doc-toc ol.fade-start { mask-image: linear-gradient(to right, transparent, #000 2.5rem); }
     .doc-toc ol.fade-start.fade-end { mask-image: linear-gradient(to right, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent); }
     .doc-toc summary { display: none; }
-    .doc-toc ol { display: flex; flex-wrap: nowrap; gap: var(--space-2); padding: var(--space-1) clamp(1rem, 3vw, 2.5rem); overflow-x: auto; scrollbar-width: none; }
+    .doc-toc ol { position: relative; display: flex; flex-wrap: nowrap; gap: var(--space-2); padding: var(--space-1) clamp(1rem, 3vw, 2.5rem); overflow-x: auto; scrollbar-width: none; }
     .doc-toc ol::-webkit-scrollbar { display: none; }
     .doc-toc li, .doc-toc .sub { display: contents; }
     .doc-toc li a { flex: none; min-block-size: var(--target-min); padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); font-weight: 650; white-space: nowrap; }

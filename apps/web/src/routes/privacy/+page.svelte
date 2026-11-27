@@ -30,12 +30,12 @@
   <section aria-labelledby="browse">
     <div class="h2-row"><h2 id="browse">查課與登入</h2></div>
     <p>查詢各校公開課程不需要帳號，本站不會要求你提供學號、姓名或電子郵件。課程資料可能未即時更新，請以校方公開系統為準。</p>
-    <p>只有評分、發文、回覆與投票需要登入。登入後瀏覽器會儲存一個用於維持登入狀態的 Cookie；登出即結束目前的登入。</p>
+    <p>評分、發文、回覆與投票需要登入。登入狀態以 Cookie 維持。</p>
   </section>
 
   <section aria-labelledby="account">
     <div class="h2-row"><h2 id="account">帳號資料</h2></div>
-    <p>註冊時只儲存你選的帳號名稱與經雜湊處理的密碼；本站不會儲存明文密碼。你可以在<a href="/settings">帳號設定</a>填寫顯示名稱、就讀學校與自我介紹，這些欄位都是選填，也可以隨時清空。</p>
+    <p>註冊時只儲存你選的帳號名稱與經雜湊處理的密碼；本站不會儲存明文密碼。選填資料可隨時在<a href="/settings">帳號設定</a>新增或清空。</p>
     <table role="table" class="account-data stacked">
       <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">資料</th><th role="columnheader" scope="col">是否公開</th><th role="columnheader" scope="col">用途</th></tr></thead>
       <tbody role="rowgroup">
@@ -44,7 +44,7 @@
         <tr role="row"><td role="cell">顯示名稱<span class="opt">選填</span></td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td><td role="cell" data-label="用途">個人頁與社群署名</td></tr>
         <tr role="row"><td role="cell">學校、自我介紹<span class="opt">選填</span></td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td><td role="cell" data-label="用途">個人頁面</td></tr>
         <tr role="row"><td role="cell">評分、心得、文章與回覆</td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td><td role="cell" data-label="用途">社群內容</td></tr>
-        <tr role="row"><td role="cell">個人投票</td><td role="cell" data-label="公開範圍"><span class="scope private">只公開合計</span></td><td role="cell" data-label="用途">計算分數</td></tr>
+        <tr role="row"><td role="cell">個人投票</td><td role="cell" data-label="公開範圍"><span class="scope private">公開總分</span></td><td role="cell" data-label="用途">計算分數</td></tr>
       </tbody>
     </table>
   </section>
@@ -81,9 +81,14 @@
 
   <section aria-labelledby="cookies">
     <div class="h2-row"><h2 id="cookies">Cookie 與記錄</h2></div>
-    <p>登入維持 30 天，主題偏好保存一年；伺服器記錄只保留到排除故障與防止濫用所需為止。本站沒有第三方追蹤或廣告程式碼。</p>
+    <ul class="cookie-facts">
+      <li><strong>登入：</strong>Cookie 維持 30 天，登出時結束。</li>
+      <li><strong>主題偏好：</strong>Cookie 保存一年。</li>
+      <li><strong>伺服器記錄：</strong>保留到排除故障與防止濫用所需為止。</li>
+    </ul>
     <details class="doc-fold">
       <summary>查看 Cookie 名稱與記錄欄位</summary>
+      <p>本站沒有第三方追蹤或廣告程式碼。</p>
       <ul>
         <li>登入 Cookie（<code>uc_session</code>）：維持登入 30 天，登出時結束目前的登入。</li>
         <li>主題 Cookie（<code>uc_theme</code>）：只在你按下深淺色切換時設定，內容只有 light 或 dark，保存一年，讓頁面一開始就用你選的主題。沒有登入也沒有切換主題時，本站不設定任何 Cookie。</li>
@@ -94,21 +99,20 @@
 
   <section aria-labelledby="contact">
     <div class="h2-row"><h2 id="contact">聯絡與移除</h2></div>
-    <p>先選管道：<strong>刪除帳號、涉及個資或不想公開的請求走私密聯絡</strong>，一般的資料處理問題可以公開回報。</p>
-    <p class="routes-shared">兩個管道都在 GitHub 送出（免費帳號即可，不需要會寫程式）；請附上相關頁面連結，通常七天內在同一則回報回覆。</p>
+    <p>先選管道：<strong>刪除帳號、涉及個資或不想公開的請求走私密聯絡</strong>，一般的資料處理問題可以公開回報。請附上相關頁面連結，維護者通常在七天內回覆。</p>
     <div class="contact-routes">
       <div>
         <p class="route-kind private">私密聯絡</p>
         <h3>刪除帳號或移除個資</h3>
-        <p>刪除帳號、移除與你有關的索引，或處理其他私人請求。</p>
+        <p>也可申請移除與你有關的索引。</p>
         <p class="route-needs">請寫明：帳號名稱或相關頁面、希望刪除或移除什麼。不要寫密碼。</p>
-        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external"><span>私密申請刪除帳號或移除個資</span><span class="who-sees">僅維護者可見</span><span aria-hidden="true">↗</span></a>
+        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external"><span>私密申請刪除或移除<span aria-hidden="true">&nbsp;↗</span></span><span class="route-access"><span class="who-sees">僅維護者可見</span><span>需 GitHub 帳號</span></span></a>
       </div>
       <div>
         <p class="route-kind public">公開回報</p>
         <h3>可公開的資料錯誤</h3>
         <p>回報錯配的外部文章或其他資料錯誤，請勿附上個資。</p>
-        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external"><span>在 GitHub 公開回報錯誤</span><span class="who-sees">所有人可見</span><span aria-hidden="true">↗</span></a>
+        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external"><span>在 GitHub 公開回報錯誤<span aria-hidden="true">&nbsp;↗</span></span><span class="route-access"><span class="who-sees">所有人可見</span><span>需 GitHub 帳號</span></span></a>
       </div>
     </div>
   </section>

@@ -153,6 +153,16 @@
   });
 </script>
 
+{#snippet ratioBadge(row: HistoryRow, ratio: number | null, phone = false)}
+  {#if row.partial}
+    <span class="only partial-badge" class:phone title={`其他學期通常約 ${displayValue(row.usualSections)} 班`}>只收錄 {displayValue(row.offeringCount)} 班</span>
+  {:else if ratio != null && ratio > 1}
+    <span class="over" class:phone title={`修課人數是名額的 ${Math.round(ratio * 100)}%，超收 ${displayValue((row.enrolled ?? 0) - (row.capacity ?? 0))} 人`}>超額</span>
+  {:else if hasEnrolled && row.enrolled == null && row.capacity != null}
+    <span class="only" class:phone>只公布名額</span>
+  {/if}
+{/snippet}
+
 <div class="history">
   {#if showChart}
     <figure class="chart">
@@ -220,15 +230,14 @@
                 {/if}
                 {#if row && row.enrolled == null && row.capacity == null}<span class="none">·</span>{/if}
                 {#if row?.partial}
-                  <!-- A partial term sits on a faint textured full-height column (one legend entry, no text in it), so
-                       its short bar (true height) reads as「few sections collected」, not as a collapse. The section
-                       counts are in the hover text, the readout and the note under the chart. -->
+                  <!-- The collection mark follows the measured height. -->
                   <span class="ghost"></span>
                 {/if}
                 {#if row?.current}
                   <!-- 「本班」 sits in a band above the plot, with a dashed leader down to the bar, so even a
                        very short bar keeps its true height and the label never crowds the axis. -->
-                  <span class="here-flag" class:end={slotIndex >= slots.length - 3} class:start={slotIndex <= 1}>本班 {row.term}{#if row.partial}・只收錄 {displayValue(row.offeringCount)} 班{/if}</span>
+                  {@const measured = row.enrolled ?? row.capacity}
+                  <span class="here-flag" class:end={slotIndex >= slots.length - 3} class:start={slotIndex <= 1}>本班 {row.term}{#if row.partial && measured != null}・{displayValue(measured)} 人{/if}</span>
                   <span class="leader" style:bottom={`calc(${percent(Math.max(row.enrolled ?? 0, row.capacity ?? 0))}% + 3px)`}></span>
                 {/if}
               </div>
@@ -263,7 +272,7 @@
       {#if hasBoth && !capacityOnly}
         <!-- One encoding: the grey track is 100% of 名額; only the part above it is orange and runs past the track. -->
         <p class="key-bars">
-          <span><i class="tk fill" aria-hidden="true"></i>滿額率＝修課÷名額，灰底滿格＝100%</span>
+          <span><i class="tk fill" aria-hidden="true"></i>滿額率＝修課人數÷已公布名額，灰底滿格＝100%</span>
           {#if rows.some((row) => (fill(row) ?? 0) > 1)}<span><i class="tk over" aria-hidden="true"></i>橘色＝超過名額的部分{#if rows.some((row) => (fill(row) ?? 0) > 2)}，200% 以上截斷{/if}</span>{/if}
         </p>
       {/if}
@@ -311,7 +320,7 @@
                 {:else if capacityOnly}{displayValue(row.capacity)}
                 {:else}{displayValue(row.enrolled)}<span class="muted">&nbsp;/&nbsp;{displayValue(row.capacity)}</span>{/if}
                 <!-- Without a fill-rate column (only 名額 published) the partial tag follows the number. -->
-                {#if row.partial && !flagColumn}<span class="only partial-badge" title={`其他學期通常約 ${displayValue(row.usualSections)} 班`}>只收錄 {displayValue(row.offeringCount)} 班</span>{/if}
+                {#if row.partial && !flagColumn}{@render ratioBadge(row, ratio)}{/if}
               </td>
               {#if flagColumn}
                 <td class="ratio">
@@ -325,9 +334,7 @@
                     {:else if hasBoth}
                       <span class="track blank" aria-hidden="true"></span><span class="pct muted">—</span>
                     {/if}
-                    {#if row.partial}<span class="only partial-badge" title={`其他學期通常約 ${displayValue(row.usualSections)} 班`}>只收錄 {displayValue(row.offeringCount)} 班</span>
-                    {:else if ratio != null && ratio > 1}<span class="over" title={`修課人數是名額的 ${Math.round(ratio * 100)}%，超收 ${displayValue((row.enrolled ?? 0) - (row.capacity ?? 0))} 人`}>超額</span>
-                    {:else if hasEnrolled && row.enrolled == null && row.capacity != null}<span class="only">只公布名額</span>{/if}
+                    {@render ratioBadge(row, ratio)}
                   </span>
                 </td>
               {/if}
@@ -341,6 +348,7 @@
                 {#if row.withdrawn}<span class="withdrawn">已下架</span>{/if}
               </td>
               <td class="names">
+                {@render ratioBadge(row, ratio, true)}
                 <!-- Desktop links each teacher (last column, so the numbers sit next to the term); on phones the row
                      itself links to the term's sections, so the names are plain text there (no 17 px tall targets). -->
                 <span class="name-links">{#each row.instructors as name, i (name)}<span class="name">{#if i > 0}、{/if}<a href={instructorHref(school, name)}>{name}</a></span>{:else}<span class="muted">未公布</span>{/each}</span><span class="name-text">{row.instructors.join('、') || '教師未公布'}</span>{#if row.instructorCount > row.instructors.length}<span class="count">，<a class="others" href={termSearch(row.term)} title={`${row.term} 全部 ${row.instructorCount} 位教師`}>另 {displayValue(row.instructorCount - row.instructors.length)} 位<span aria-hidden="true">&nbsp;→</span></a><span class="others-text">另 {displayValue(row.instructorCount - row.instructors.length)} 位</span></span>{/if}
@@ -492,6 +500,7 @@
   .over { display: inline-flex; gap: 0.3em; align-items: center; background: var(--chip); color: var(--ink); }
   .over::before { content: ''; inline-size: 0.5rem; block-size: 0.5rem; border-radius: 50%; background: var(--warn); }
   .only { background: var(--chip); color: var(--ink-2); }
+  :is(.only, .over).phone { display: none; }
   .partial-badge { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 45%, transparent); }
   /* One sentence that wraps as text (the key is an inline mark before it), never split into columns. */
   .partial-note { display: block; margin-block-end: 2px; color: var(--ink); }
@@ -557,25 +566,24 @@
     tbody tr > * { padding: 0; border: 0; }
     tbody tr.current > th { box-shadow: none; }
     tbody tr.current { box-shadow: inset 3px 0 0 var(--brand); }
-    /* Line 1: term, fill rate (bar, % and one tag), numbers; line 2: teachers, then the section link right
-       under the numbers, so both right-hand columns line up. */
-    tbody tr { grid-template-columns: auto minmax(0, 1fr) auto; }
+    /* Keep the full rate track on row one; coverage and capacity labels sit beside the teacher. */
     tbody th { grid-row: 1; grid-column: 1; align-self: center; }
     td.ratio { grid-row: 1; grid-column: 2; align-self: center; inline-size: auto; min-inline-size: 0; }
     td.value { grid-row: 1; grid-column: 3; align-self: center; inline-size: auto; text-align: end; }
     tr:not(:has(td.ratio)) td.value { grid-column: 2 / -1; }
     .names { grid-row: 2; grid-column: 1 / 3; align-self: center; }
     .sections { grid-row: 2; grid-column: 3; justify-content: end; min-inline-size: max-content; }
-    /* The tag leads and the percentage ends the cluster, right beside 修課／名額, so a row's rate and its
-       numbers read as one group instead of two columns apart. */
+    /* The percentage sits next to 修課／名額. */
     .ratio .cell-bar { gap: var(--space-1); justify-content: end; }
-    .ratio .cell-bar > :is(.over, .only) { order: -1; }
+    .ratio :is(.over, .only), td.value .partial-badge { display: none; }
+    .names :is(.over, .only).phone { display: inline; margin-inline-end: var(--space-1); }
+    tbody tr { grid-template-columns: minmax(5.35rem, max-content) minmax(0, 1fr) auto; }
     /* The legend stays on one line: the track's full-scale note is in the desktop key only. */
     .key-bars { gap: 2px var(--space-3); font-size: 0.8125rem; }
     .ratio .track { flex: 1 1 3rem; min-inline-size: 2rem; }
     .pct { min-inline-size: 0; }
     .names { min-inline-size: 0; color: var(--ink-2); font-size: 0.8125rem; }
-    .track { max-inline-size: 6rem; }
+    .track { max-inline-size: 5.5rem; }
     .value { min-inline-size: 0; }
     .sections { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; white-space: normal; }
     .sections .more { flex: none; white-space: nowrap; margin-inline-start: auto; padding-inline: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); min-block-size: 2.25rem; display: inline-flex; align-items: center; }

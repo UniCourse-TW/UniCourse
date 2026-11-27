@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { searchExamples } from '$lib/overview-paths';
+  import FilterSelect from '$lib/ui/FilterSelect.svelte';
   import { PUBLIC_REPORT_URL } from '$lib/legal-contact';
 
   /**
@@ -51,7 +52,20 @@
   // and start the box with the same words, so nothing has to be typed twice.
   let back = $state<{ href: string; label: string } | null>(null);
   let searchInput: HTMLInputElement | undefined = $state();
+  const terms = [{ value: 'all', label: '全部學期' }, { value: '', label: '本學期' }];
+  let canCopy = $state(false);
+  let copyStatus = $state<'copied' | 'failed' | ''>('');
+  async function copyAddress() {
+    try {
+      await navigator.clipboard.writeText(location.href);
+      copyStatus = 'copied';
+    } catch {
+      copyStatus = 'failed';
+    }
+  }
+
   onMount(() => {
+    canCopy = Boolean(navigator.clipboard);
     try {
       const from = document.referrer ? new URL(document.referrer) : null;
       if (!from || from.origin !== location.origin || from.href === location.href) return;
@@ -89,23 +103,14 @@
           <input bind:this={searchInput} type="search" name="q" defaultValue={query} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" aria-describedby={hint ? 'search-hint' : undefined} />
         </span>
       </label>
-      <label class="scope-field">
-        <span class="field-label">學期</span>
-        <span class="select-wrap">
-          <select name="term">
-            <option value="all" selected>全部學期</option>
-            <option value="">本學期</option>
-          </select>
-          <span class="chev" aria-hidden="true">▾</span>
-        </span>
-      </label>
+      <div class="scope-field"><FilterSelect name="term" label="學期" options={terms} value="all" allLabel={null} /></div>
       <button type="submit">搜尋課程</button>
     </form>
     <!-- Where to find the clue, as help text under the row (not inside the label, where it became the main text). -->
     {#if hint}<p class="search-hint" id="search-hint">{hint}</p>{/if}
     {#if crossTerm}
       <a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: query })}`}>查「{query}」的其他學期 <span aria-hidden="true">→</span></a>
-    {:else if !query && !back}
+    {:else if !query && !back && !context}
       <nav class="examples" aria-label="熱門搜尋">
         <span class="examples-label">或試試熱門搜尋</span>
         <ul>{#each examples as example (example)}<li><a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: example })}`}>{example}</a></li>{/each}</ul>
@@ -136,8 +141,8 @@
          which says where it goes and what to paste. -->
     <div class="diagnostic">
       <p class="diag-label">你開啟的連結・<span class="ui-tabular">{status}</span> 找不到</p>
-      <p class="diag-path"><code>{context}</code></p>
-      <p class="diag-report"><a href={PUBLIC_REPORT_URL} rel="noopener external">回報這個失效連結 <span aria-hidden="true">↗</span></a><span class="diag-how">開啟 GitHub 公開回報，請貼上上面的連結</span></p>
+      <div class="diag-path"><code>{context}</code>{#if canCopy}<button type="button" class="diag-copy" onclick={copyAddress}>複製網址</button>{/if}</div>
+      <p class="diag-report"><a href={PUBLIC_REPORT_URL} rel="noopener external">回報這個失效連結 <span aria-hidden="true">↗</span></a><span class="diag-how" role="status">{copyStatus === 'copied' ? '已複製，可貼到 GitHub 公開回報' : copyStatus === 'failed' ? '無法複製，請從網址列手動複製' : '將網址貼到 GitHub 公開回報'}</span></p>
     </div>
   {/if}
 </section>
@@ -169,7 +174,10 @@
   .diagnostic { display: grid; gap: 2px; inline-size: 100%; margin: var(--space-1) 0 0; padding: var(--space-2) var(--space-3) var(--space-1); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); font-variant-numeric: tabular-nums; }
   .diagnostic p { margin: 0; }
   .diag-label { font-size: 0.8125rem; font-weight: 600; }
-  .diag-path code { font-family: var(--font-mono); font-size: var(--t-md); color: var(--ink); overflow-wrap: anywhere; word-break: break-all; }
+  .diag-path { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-3); }
+  .diag-copy { min-inline-size: var(--target-min); border-color: var(--control-line); background: var(--panel-raised); color: var(--brand-ink); }
+  .diag-copy:hover { background: var(--hover-row); }
+  .diag-path code { flex: 1 1 auto; min-inline-size: 0; font-family: var(--font-mono); font-size: var(--t-md); color: var(--ink); overflow-wrap: anywhere; word-break: break-all; }
   .diag-report { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; }
   .diag-how { color: var(--ink-2); font-size: 0.8125rem; }
   .diagnostic a { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-weight: 600; text-underline-offset: 0.15em; }
@@ -181,9 +189,9 @@
   .search-field { display: grid; flex: 1 1 14rem; gap: var(--space-1); }
   .scope-field { display: grid; flex: 0 0 auto; gap: var(--space-1); }
   .field-label { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
-  .input-wrap, .select-wrap { position: relative; display: block; }
+  .input-wrap { position: relative; display: block; }
   .input-wrap .icon { position: absolute; inset-block-start: 50%; inset-inline-start: var(--space-3); translate: 0 -50%; color: var(--muted); pointer-events: none; }
-  .search input[type='search'], .search select {
+  .search input[type='search'] {
     inline-size: 100%;
     min-inline-size: 0;
     min-block-size: var(--target-min);
@@ -196,10 +204,8 @@
     font: var(--t-base) / var(--leading-table) var(--font-sans);
   }
   .search input[type='search'] { padding-inline-start: calc(var(--space-3) + 1.6rem); }
-  .search select { min-inline-size: 10rem; appearance: none; padding-inline-end: 2rem; font-weight: 600; cursor: pointer; }
-  .select-wrap .chev { position: absolute; inset-block-start: 50%; inset-inline-end: var(--space-3); translate: 0 -50%; color: var(--muted); pointer-events: none; }
   .search input::placeholder { color: var(--muted); }
-  .search input[type='search']:focus-visible, .search select:focus-visible, button:focus-visible, .actions a:focus-visible, .also a:focus-visible {
+  .search input[type='search']:focus-visible, button:focus-visible, .actions a:focus-visible, .also a:focus-visible {
     outline: var(--focus-ring);
     outline-offset: var(--focus-offset);
   }
@@ -236,8 +242,8 @@
   .also ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
   .also a { display: flex; gap: 0.3em; align-items: center; justify-content: space-between; min-block-size: var(--target-min); padding-inline: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-decoration: none; }
   .also a:hover { border-color: var(--control-line); }
-  /* Every way out has the same weight; order carries priority (各校收錄狀態, then 回首頁). */
   .also a { color: var(--brand-ink); }
+  .also a[href="/"] { background: transparent; color: var(--ink-2); }
 
 
   @media (max-width: 40rem) {
