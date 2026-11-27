@@ -98,14 +98,16 @@
   </header>
 
   {#if sparse}
-    <!-- Little activity: one row of counts; the first two double as links to their sections. -->
+    <!-- Little activity: two link tiles to the sections, the other facts as one line of text. -->
     <section class="summary-line" aria-label="活動摘要">
       <div role="group" aria-label="活動統計">
         <dl class="counts">
-          <div class="link-cell"><dt>課程評價</dt><dd class="num"><a href="#ratings">{ratingCount} 則{#if average !== null}<span class="sub">平均 {average.toFixed(1)}／5</span>{/if}<span class="arrow" aria-hidden="true">↓</span></a></dd></div>
+          <div class="link-cell"><dt>課程評價</dt><dd class="num"><a href="#ratings">{ratingCount} 則{#if average !== null}<span class="sub">平均 {average.toFixed(1)}／5{#if ratingCount < 3}・僅 {ratingCount} 則{/if}</span>{/if}<span class="arrow" aria-hidden="true">↓</span></a></dd></div>
           <div class="link-cell"><dt>發表文章</dt><dd class="num"><a href="#posts">{profile.posts.length} 篇<span class="arrow" aria-hidden="true">↓</span></a></dd></div>
-          <div><dt>文章的回覆數</dt><dd class="num">{replies} 則</dd></div>
-          <div><dt>評過的學校</dt><dd>{schoolSpread}</dd></div>
+        </dl>
+        <dl class="facts">
+          <div><dt>文章收到的回覆</dt><dd><span class="num">{replies}</span> 則（含作者自己的回覆）</dd></div>
+          <div><dt>評價過的學校</dt><dd>{schoolSpread}</dd></div>
         </dl>
       </div>
     </section>
@@ -114,11 +116,11 @@
     <StatRow label="活動統計">
       <StatTile label="課程評價" value={ratingCount} unit="則" note={ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : undefined} />
       <StatTile label="發表文章" value={profile.posts.length} unit="篇" note={profile.posts.length >= POST_CAP ? `顯示最近 ${POST_CAP} 篇` : undefined} />
-      <StatTile label="文章的回覆數" value={replies} unit="則" note="含作者自己的回覆" />
+      <StatTile label="文章收到的回覆" value={replies} unit="則" note="含作者自己的回覆" />
       {#if topSchool}
         <StatTile label="最常評的學校" value={topSchool.name} note={`${topSchool.count} 則評價`} />
       {:else}
-        <StatTile label="評過的學校" value={schoolCounts.length} unit="所" note="沒有特別偏重哪一所" />
+        <StatTile label="評價過的學校" value={schoolCounts.length} unit="所" note="沒有特別偏重哪一所" />
       {/if}
     </StatRow>
     {#if ratingCount && average !== null}
@@ -150,10 +152,10 @@
         {/snippet}
       </EmptyState>
     {:else}
-      {#if sparse && ratingCount >= 2 && average !== null}
-        <!-- A few ratings: the distribution sits with them, small and always visible. -->
+      {#if sparse && average !== null}
+        <!-- A few ratings: the distribution sits with them, small and always visible, with counts. -->
         <div class="dist compact-dist inline-dist">
-          <p class="eyebrow">給分分布<span class="sep">·</span>平均 <span class="num avg">{average.toFixed(1)}</span><span class="cm-hint">（滿分 5）</span></p>
+          <p class="eyebrow">給分分布<span class="sep">·</span>平均 <span class="num avg">{average.toFixed(1)}</span><span class="cm-hint">（滿分 5）<span class="sep">·</span>{ratingCount} 則{#if ratingCount < 3}，還看不出給分習慣{/if}</span></p>
           <BarList label="給分分布" items={histogram} unit="則" showValues={false} />
         </div>
       {/if}
@@ -206,7 +208,7 @@
         {/snippet}
       </EmptyState>
     {:else}
-      <CommunityPostList posts={profile.posts} schoolNames={data.schoolNames} showAuthor={false} label="{name} 發表的文章" />
+      <CommunityPostList posts={profile.posts} schoolNames={data.schoolNames} showAuthor={false} dense label="{name} 發表的文章" />
     {/if}
   </section>
 </div>
@@ -255,11 +257,15 @@
   .counts .link-cell:has(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .counts .arrow { margin-inline-start: auto; color: var(--brand-ink); font-size: var(--t-base); }
   .inline-dist { max-inline-size: 28rem; margin-block-end: var(--space-3); }
+  .facts { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-5); margin: var(--space-2) 0 0; color: var(--ink-2); font-size: var(--t-sm); }
+  .facts div { display: flex; gap: var(--space-2); }
+  .facts dt { color: var(--muted); }
+  .facts dd { margin: 0; }
   .counts div { display: grid; gap: 2px; min-inline-size: 0; }
   .counts dt { color: var(--muted); font-size: var(--t-sm); }
   .counts dd { margin: 0; font-size: var(--t-lg); font-weight: 650; }
   .counts .sub { margin-inline-start: var(--space-2); color: var(--ink-2); font-size: var(--t-sm); font-weight: 500; }
-  .compact-dist :global(.bar-row) { min-block-size: 1.25rem; }
+  .compact-dist :global(.bar-row) { min-block-size: 1.25rem !important; }
   .dist { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; margin-block-end: var(--space-2) !important; color: var(--ink-2) !important; font-size: var(--t-sm) !important; letter-spacing: 0 !important; }
   .eyebrow .avg { margin-inline-start: 0.3em; font-size: var(--t-lg); font-weight: 650; color: var(--ink); }
@@ -323,9 +329,10 @@
     tbody :is(th, td) { padding: 0; border: 0 !important; inline-size: auto; }
     tbody th { grid-column: 1; }
     tbody td[data-label='給分'] { grid-column: 2; grid-row: 1; }
-    .school { grid-column: 1 / -1; inline-size: auto; font-size: var(--t-sm); color: var(--muted); }
+    /* The date stays at the row's end as on desktop: right of the school line. */
+    .school { grid-column: 1; grid-row: 2; inline-size: auto; font-size: var(--t-sm); color: var(--muted); }
+    .when { grid-column: 2; grid-row: 2; font-size: var(--t-sm); }
     .review { grid-column: 1 / -1; inline-size: auto; }
-    .when { grid-column: 1 / -1; text-align: start !important; font-size: var(--t-sm); }
     .code { display: inline; margin-inline-start: var(--space-1); }
   }
 </style>

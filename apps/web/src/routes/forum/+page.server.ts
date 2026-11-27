@@ -52,7 +52,30 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   if (posts.response.status === 400) error(400, apiMessage(posts.error));
   if (!posts.data || !schools.data) error(503, UNAVAILABLE);
   const [all, ...byType] = counts;
+  // A young forum suggests a few well-attended courses to write about (one per school, so the list
+  // is not three sections of the same general course).
+  const young = (all?.total ?? 0) <= 5 && !filters.type && !query.school && !query.q && !query.tag;
+  const ranked = young
+    ? await client
+        .GET('/api/rankings/courses', { params: { query: { limit: 30, academic: true } } })
+        .then((result) => result.data ?? [])
+        .catch(() => [])
+    : [];
+  const seen = new Set<string>();
+  const suggestions = ranked
+    .filter((entry) => !seen.has(entry.school) && seen.add(entry.school))
+    .slice(0, 3)
+    .map((entry) => ({
+      school: entry.school,
+      schoolName: entry.schoolName,
+      courseCode: entry.courseCode,
+      title: entry.title,
+      offeringId: entry.latestActiveOfferingId ?? entry.latestOfferingId ?? null,
+      enrolledTotal: entry.enrolledTotal ?? null,
+      terms: entry.terms
+    }));
   return {
+    suggestions,
     filters,
     compose: url.searchParams.get('compose') === '1',
     posts: posts.data,

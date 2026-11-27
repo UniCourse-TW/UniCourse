@@ -19,11 +19,10 @@ test('course page lists external reviews from the demo index and outbound search
   await expect(section).toContainText('只存標題、日期、作者帳號與開頭摘要');
   await expect(section).toContainText('DEMO_Course 板');
 
-  // Summary first: this offering's teacher count; phones filter by teacher with a select
-  // (desktop uses the per-teacher bars in the summary).
+  // Summary first: this offering's teacher count; phones filter by teacher with a select inside
+  // 篩選與排序 (desktop uses the per-teacher bars in the summary).
   const summary = section.locator('aside', { hasText: '依教師篩選' });
   await expect(summary).toContainText('本班教師');
-  await expect(section.getByRole('combobox', { name: '教師' }).locator('option', { hasText: '王示範（本班）' })).toHaveCount(1);
 
   const post = section.getByRole('listitem').filter({ hasText: '[心得] 114-2 線性代數 王示範' });
   await expect(post).toContainText('本班教師');
@@ -34,7 +33,12 @@ test('course page lists external reviews from the demo index and outbound search
   await expect(link).toHaveAttribute('href', 'https://example.com/demo/ptt/DEMO_Course/1');
   await expect(link).toHaveAttribute('target', '_blank');
 
-  // Filters work after hydration and say what they narrowed to.
+  // Phones fold the filters behind one button; they work after hydration and say what they narrowed to.
+  const toggle = section.getByRole('button', { name: /篩選與排序/ });
+  await expect(toggle).toBeEnabled();
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await expect(section.getByRole('combobox', { name: '教師' }).locator('option', { hasText: '王示範（本班）' })).toHaveCount(1);
   const chips = section.getByRole('group', { name: '文章類型' });
   await expect(chips.getByRole('button', { name: /全部/ })).toHaveAttribute('aria-pressed', 'true');
   const reviews = chips.getByRole('button', { name: /心得評價/ });

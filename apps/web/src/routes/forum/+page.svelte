@@ -5,6 +5,7 @@
   import CommunityPostList from '$lib/community-post-list.svelte';
   import { postTypeLabels, shortDateTime } from '$lib/community-format';
   import { forumHref, loginHref } from '$lib/community-paths';
+  import { displayValue } from '$lib/ui/format';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import FilterSelect from '$lib/ui/FilterSelect.svelte';
   import Pagination from '$lib/ui/Pagination.svelte';
@@ -44,6 +45,10 @@
   /** At most this many posts in the whole forum: the list gets an invitation underneath. */
   const SPARSE_POSTS = 5;
   const articleHref = '/forum?type=article&compose=1';
+  function writeHref(school: string, courseCode: string) {
+    const href = `/forum?${new URLSearchParams({ type: 'article', compose: '1', school, courseCode })}`;
+    return data.user ? href : loginHref(href);
+  }
   const count = (value: number | null) => (value === null ? '' : fmt.format(value));
   const typeChips = [
     { type: '', label: '全部', key: 'all' },
@@ -91,7 +96,7 @@
       <input name="q" type="search" maxlength="100" defaultValue={filters.q} placeholder="搜尋標題或內文" aria-describedby="search-scope" />
     </label>
     <details class="scope" open={scopeCount > 0 || undefined}>
-      <summary>課程範圍<span class="scope-now">：{#if scopeCount}{schoolNames[filters.school] ?? filters.school}{#if filters.courseCode}&nbsp;<span class="mono">{filters.courseCode}</span>{/if}{:else}所有課程{/if}</span></summary>
+      <summary>學校／課號<span class="scope-now">：{#if scopeCount}{schoolNames[filters.school] ?? filters.school}{#if filters.courseCode}&nbsp;<span class="mono">{filters.courseCode}</span>{/if}{:else}不限{/if}</span></summary>
       <div class="scope-fields" role="group" aria-label="課程範圍">
         <FilterSelect name="school" label="學校" options={schoolOptions} value={filters.school} allLabel="全部學校" />
         <label class="code-field">
@@ -112,11 +117,17 @@
     <nav class="cm-chips types" aria-label="文章分類">
       {#each typeChips as chip (chip.key)}
         {@const n = data.counts[chip.key]}
-        <a class="cm-chip" class:zero={n === 0} href={forumHref({ ...filters, type: chip.type, page: 1 })}
-          aria-current={filters.type === chip.type ? 'true' : undefined}>
-          {chip.label}{#if n !== null}<span class="n">{count(n)}</span>{/if}
-        </a>
+        {#if n === 0 && filters.type !== chip.type && chip.key !== 'all'}
+          <!-- Nothing to list: shown for the count, not offered as a destination. -->
+          <span class="cm-chip zero" aria-disabled="true" title={`目前沒有${chip.label}`}>{chip.label}<span class="n">0</span></span>
+        {:else}
+          <a class="cm-chip" href={forumHref({ ...filters, type: chip.type, page: 1 })}
+            aria-current={filters.type === chip.type ? 'true' : undefined}>
+            {chip.label}{#if n !== null}<span class="n">{count(n)}</span>{/if}
+          </a>
+        {/if}
       {/each}
+      <span class="chip-scope">{narrowed || filters.courseCode ? '篇數＝符合目前條件' : '篇數＝全站'}</span>
     </nav>
     {#if narrowed || filters.courseCode}
       <div class="cm-chips" role="group" aria-label="已套用的篩選">
@@ -174,7 +185,7 @@
         </EmptyState>
       {/if}
     {:else}
-      <CommunityPostList posts={data.posts.posts} {schoolNames} label={filtered ? '符合的文章' : '最新文章'} />
+      <CommunityPostList posts={data.posts.posts} {schoolNames} dense label={filtered ? '符合的文章' : '最新文章'} />
       {#if pages > 1}
         <footer class="pager">
           <p class="num">第 {fmt.format(first)}–{fmt.format(last)} 篇<span class="sep">·</span>共 {fmt.format(total)} 篇</p>
@@ -184,11 +195,29 @@
       {#if !filtered && !filters.courseCode && total <= SPARSE_POSTS}
         <!-- A young forum: say so and point at the most useful next post. -->
         <aside class="sparse" aria-labelledby="sparse-title">
-          <h3 id="sparse-title">論壇才剛開始，目前只有 {fmt.format(total)} 篇{#if data.counts.article === 0}，還沒有修課心得{/if}。</h3>
-          <p>從課程頁發文會自動帶上課號，最容易被修同一門課的人找到。</p>
-          <div class="state-actions start">
-            <a class="cm-btn secondary" href="/">查一門修過的課 →</a>
-            {#if data.counts.article === 0}<a class="text-link" href={data.user ? articleHref : loginHref(articleHref)}>或直接寫一篇修課心得</a>{/if}
+          <h3 id="sparse-title">目前只有 {fmt.format(total)} 篇{#if data.counts.article === 0}，還沒有修課心得{/if}</h3>
+          <a class="text-link phone-only" href={data.user ? articleHref : loginHref(articleHref)}>寫一篇修課心得 →</a>
+          <div class="sparse-body">
+            {#if data.suggestions.length}
+              <p>修過下面這些課嗎？發文時會自動帶上課號，修同一門課的人最容易找到。</p>
+              <ol class="suggest" aria-label="修課人數多的課">
+                {#each data.suggestions as entry (entry.school + entry.courseCode)}
+                  <li>
+                    <span class="suggest-name">
+                      {#if entry.offeringId}<a href={`/courses/${entry.offeringId}`}>{entry.title}</a>{:else}{entry.title}{/if}
+                      <span class="muted">{entry.schoolName}・<span class="mono">{entry.courseCode}</span>{#if entry.enrolledTotal != null}・{entry.terms} 學期累計 {displayValue(entry.enrolledTotal)} 人次{/if}</span>
+                    </span>
+                    <a class="cm-btn secondary small" href={writeHref(entry.school, entry.courseCode)}>寫心得</a>
+                  </li>
+                {/each}
+              </ol>
+            {:else}
+              <p>從課程頁發文會自動帶上課號，最容易被修同一門課的人找到。</p>
+            {/if}
+            <div class="state-actions start">
+              <a class="cm-btn secondary" href="/">查一門修過的課 →</a>
+              {#if data.counts.article === 0}<a class="text-link" href={data.user ? articleHref : loginHref(articleHref)}>或直接寫一篇修課心得</a>{/if}
+            </div>
           </div>
         </aside>
       {/if}
@@ -268,8 +297,8 @@
     justify-content: space-between;
     margin-block: var(--space-3) var(--space-4);
   }
-  .cm-chip.zero:not([aria-current]) { color: var(--muted) !important; }
-  .cm-chip.zero:not([aria-current]) .n { opacity: 0.7; }
+  .cm-chip.zero { color: var(--muted) !important; }
+  .cm-chip.zero .n { opacity: 0.7; }
   .results { min-inline-size: 0; }
   .pager {
     display: flex;
@@ -285,14 +314,33 @@
   .state-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }
   .state-actions.start { justify-content: flex-start; }
   .sparse { display: grid; gap: var(--space-2); margin-block-start: var(--space-4); padding: var(--space-4) var(--space-5); border: 1px dashed var(--control-line); border-radius: var(--radius-panel); background: var(--panel); }
-  .sparse h3 { font-size: var(--t-md) !important; }
+  .sparse h3 { font-size: var(--t-md) !important; text-wrap: balance; }
+  .sparse-body { display: grid; gap: var(--space-2); }
+  .sparse .phone-only { display: none; }
+  .suggest { display: grid; margin: 0; padding: 0; list-style: none; border-block: 1px solid var(--line); }
+  .suggest li { display: flex; gap: var(--space-3); align-items: center; justify-content: space-between; padding-block: var(--space-2); }
+  .suggest li + li { border-block-start: 1px solid var(--line); }
+  .suggest-name { display: grid; min-inline-size: 0; font-weight: 600; }
+  .suggest-name .muted { color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
+  .suggest .small { min-block-size: 2.25rem; padding-inline: var(--space-3); font-size: var(--t-sm); }
+  .chip-scope { color: var(--muted); font-size: var(--t-xs); margin-inline-start: var(--space-1); }
+  .cm-chip.zero { border: 1px dashed var(--control-line); background: transparent !important; cursor: default; }
   .sparse p { color: var(--ink-2); font-size: var(--t-base); max-inline-size: 46em; }
   .text-link { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-weight: 600; }
   .scope-now { font-weight: 500; color: var(--ink); }
 
   @media (max-width: 40rem) {
-    .search { flex: 1 1 10rem; }
-    .scope { display: block; }
+    .search { flex: 1 1 100%; }
+    .scope { display: block; flex: 1 1 auto; min-inline-size: 0; }
+    .scope summary { inline-size: 100%; }
+    .scope summary::after { margin-inline-start: auto !important; padding-inline-start: var(--space-2); }
+    .scope-now { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .toolbar > .cm-btn { flex: 0 0 auto; padding-inline: var(--space-5); }
+    /* Phones: one status line and one link, so the post above stays the focus. */
+    .sparse { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; padding: var(--space-2) var(--space-4); }
+    .sparse h3 { font-size: var(--t-base) !important; }
+    .sparse-body { display: none; }
+    .sparse .phone-only { display: inline-flex; }
     .scope::details-content { display: block; content-visibility: auto; }
     .scope:not([open])::details-content { content-visibility: hidden; }
     .scope summary {
@@ -318,7 +366,6 @@
     .scope-fields :global(.field select) { flex: 1; max-inline-size: none; }
     .code-field { flex: 1 1 100%; }
     .code-field input { flex: 1; inline-size: auto; }
-    .toolbar > .cm-btn { flex: 1 1 auto; }
     /* The removable chips below already clear each filter; the text link only adds a wrapped row here. */
     .toolbar > .clear { display: none; }
     .scope-hint { display: none; }

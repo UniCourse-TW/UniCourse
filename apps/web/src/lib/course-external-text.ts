@@ -71,7 +71,8 @@ function stripForwardHeaders(text: string) {
 /** Board instructions some authors leave in the post (NTUcourse's 「若是通識課程評價…刪除這兩行」). */
 const boilerplate = [
   /若是通識課程評價[^)）]*?刪除這兩行[)）]?/gu,
-  /[(（]?是\s*[／/]\s*否\s*[／/]\s*其他條件[)）]?\s*[:：]?/gu
+  /[(（]?是\s*[／/]\s*否\s*[／/]\s*其他條件[)）]?\s*[:：]?/gu,
+  /[(（]滿分[^)）]*(?:[)）]|$)/gu
 ];
 
 /** Score-like fields keep one-character values (`甜度：4`). */
@@ -87,9 +88,39 @@ function tidy(text: string) {
   return text.replace(/\s+/gu, ' ').replace(/^[\s:：,，、;；.。\-–—|/]+|[\s:：,，、;；\-–—|/]+$/gu, '').trim();
 }
 
+/** Labels whose value is a fact the template asks for (class, audience, books); never shown. */
+const factLabels = new Set(['對象', '學分', '先修', '用書']);
+
+/** Outline-like text (「Ch1 緒論、Ch2…」「第1週 9/11 課程概況說明」) describes the syllabus, not the course experience. */
+function isOutline(text: string) {
+  const marks = text.match(/ch\s*\d|第\s*\d+\s*[週周章講單]|\d{1,2}\/\d{1,2}|(?:^|\s)\d{1,2}[.、]\s?\S/giu) ?? [];
+  if (marks.length >= 2) return true;
+  const commas = text.match(/、/gu)?.length ?? 0;
+  return commas >= 3 && !/[，。！？!?]/u.test(text);
+}
+
 /**
- * The parts of an excerpt worth showing, without template prompts and fields that repeat the title.
- * Returns an empty array when nothing the author wrote is left (the list then shows the title only).
+ * Free text a reader can use: at least ten CJK characters or four words with sentence punctuation,
+ * not a syllabus outline (「心理學簡介 The Nature of Psychology 大腦與感覺歷程」 is a topic list).
+ */
+function isSentence(text: string) {
+  const cjk = text.match(/\p{Script=Han}/gu)?.length ?? 0;
+  const words = text.match(/[A-Za-z]{2,}/gu)?.length ?? 0;
+  return (cjk >= 10 || (cjk === 0 && words >= 4)) && /[，。！？；,.!?;]/u.test(text) && !isOutline(text);
+}
+
+/** Up to and including the first sentence end; the whole text when there is none. */
+function firstSentence(text: string) {
+  const end = /[。！？!?](?=\s|$|[^。！？!?」）)])/u.exec(text);
+  return end ? text.slice(0, end.index + 1) : text;
+}
+
+/**
+ * The part of an excerpt worth showing next to the title: the author's opinion fields (心得, 評分,
+ * 甜度…) when the excerpt reaches them, otherwise the first sentence of free text (a post without a
+ * template, or a 內容 field written as prose). Template prompts, fields that repeat the title and
+ * label-value lines such as 對象「兼通識A58*」 or a chapter list are skipped. Returns an empty array
+ * when nothing useful is left; the list then shows the title only.
  */
 export function excerptParts(excerpt: string | null | undefined): ExcerptPart[] {
   if (!excerpt) return [];
@@ -98,6 +129,7 @@ export function excerptParts(excerpt: string | null | undefined): ExcerptPart[] 
   const parts: ExcerptPart[] = [];
   let label: string | null | undefined = null;
   let cursor = 0;
+  let fields = 0;
   const push = (value: string) => {
     const cleaned = tidy(value);
     // Single characters are stray markup (`n 哪一學年度…`) or a value cut off at 120 characters.
@@ -110,14 +142,36 @@ export function excerptParts(excerpt: string | null | undefined): ExcerptPart[] 
     const groups = match.groups ?? {};
     const raw = groups.greek ?? groups.symLabel ?? groups.bracket ?? groups.plain ?? '學年度';
     label = labelFor(raw);
+    fields += 1;
     cursor = (match.index ?? 0) + match[0].length;
   }
   push(text.slice(cursor));
   // The last field is cut at 120 characters; a few letters of it (「第一周：Wha」 is fine, 「Centr」 is not) add nothing.
   const last = parts.at(-1);
   if (parts.length > 1 && last && last.text.length < 6 && !(last.label && scoreLabels.has(last.label))) parts.pop();
-  const length = parts.reduce((sum, part) => sum + part.text.length, 0);
-  return length >= 4 ? parts : [];
+
+  // Opinion fields: scores (甜度 3) and text fields the author filled in; unknown labels (【助教表現】) count too.
+  const opinions = parts.filter(
+    (part) =>
+      part.label !== null &&
+      !factLabels.has(part.label) &&
+      part.label !== '內容' &&
+      (scoreLabels.has(part.label) || part.text.length >= 4)
+  );
+  if (opinions.length) return opinions;
+
+  // Free text: the whole excerpt when there is no template, else a 內容 field written as prose.
+  // Text before the first template field («YES», «（手機排版傷眼抱歉）») is an aside, not content.
+  const prose = fields === 0 ? parts : parts.filter((part) => part.label === '內容');
+  for (const part of prose) {
+    if (isSentence(part.text)) return [{ label: part.label, text: firstSentence(part.text) }];
+  }
+  return [];
+}
+
+/** Whether the shown text ends a sentence (no trailing「…」needed). */
+export function endsSentence(parts: ExcerptPart[]) {
+  return /[。！？!?]$/u.test(parts.at(-1)?.text ?? '');
 }
 
 /** PTT ids are 2–12 ASCII letters/digits starting with a letter; parser leftovers such as `http` are hidden. */

@@ -4,6 +4,7 @@
   import { slashDate } from '$lib/community-format';
   import {
     displayAuthor,
+    endsSentence,
     excerptParts,
     postKind,
     postKindLabels,
@@ -32,7 +33,7 @@
   const initialTeachers = 6;
 
   type Sort = 'relevant' | 'newest' | 'push';
-  const sortLabels: Record<Sort, string> = { relevant: '本班教師與心得優先', newest: '最新發文', push: '推文最多' };
+  const sortLabels: Record<Sort, string> = { relevant: '本班教師在前・心得優先', newest: '最新發文', push: '推文最多' };
   const kinds: PostKind[] = ['review', 'question', 'other'];
   const noTerm = '__none__';
 
@@ -73,6 +74,7 @@
   let firstYear = $derived(years.length ? Math.min(...years) : undefined);
   let lastYear = $derived(years.length ? Math.max(...years) : undefined);
   let mineCount = $derived(rows.filter((row) => row.mine).length);
+  let mineReviews = $derived(rows.filter((row) => row.mine && row.kind === 'review').length);
   let kindCounts = $derived(Object.fromEntries(kinds.map((kind) => [kind, rows.filter((row) => row.kind === kind).length])) as Record<PostKind, number>);
 
   /** Teachers named in the posts, this offering's first, then by post count. */
@@ -107,6 +109,7 @@
   // Filters work after hydration; without JavaScript the default order and「顯示全部」still do.
   let ready = $state(false);
   onMount(() => (ready = true));
+  let filtersOpen = $state(false);
   let teacher = $state<string>('');
   let term = $state<string>('');
   let kind = $state<PostKind | ''>('');
@@ -129,6 +132,21 @@
     })
   );
   let filtering = $derived(Boolean(teacher || term || kind));
+  let activeFilters = $derived([teacher, term, kind].filter(Boolean).length);
+  /**
+   * The default view lists this offering's teacher in a group of its own, so a lone question by that
+   * teacher is not mistaken for the top review; everyone else follows, reviews first.
+   */
+  let grouped = $derived(sort === 'relevant' && !filtering && mineCount > 0 && mineCount < rows.length);
+  let mineRows = $derived(ordered.filter((row) => row.mine));
+  let otherRows = $derived(ordered.filter((row) => !row.mine));
+  let shown = $derived(grouped ? Math.min(mineRows.length, initialPosts) + Math.min(otherRows.length, initialPosts) : Math.min(ordered.length, initialPosts));
+  let mineLine = $derived.by(() => {
+    const names = instructors.join('、');
+    if (mineReviews === mineRows.length) return `本班教師 ${names}・${mineRows.length} 篇心得評價`;
+    if (mineReviews === 0) return `本班教師 ${names} 只有 ${mineRows.length} 篇提問或討論，沒有心得評價`;
+    return `本班教師 ${names}・${mineRows.length} 篇（心得評價 ${mineReviews} 篇在前）`;
+  });
 
   function pickTeacher(name: string) {
     teacher = teacher === name ? '' : name;
@@ -143,7 +161,46 @@
   function teacherLabel(name: string) {
     return own.has(name) ? `${name}（本班）` : name;
   }
+
+  /** Two-digit year for the column chart axis (16); the caption carries the full range. */
+  function shortYear(year: number) {
+    return String(year).slice(-2);
+  }
 </script>
+
+{#snippet postList(items: Row[], labelledby: string | undefined)}
+  <ol class="list" class:collapsible={items.length > initialPosts} aria-label={labelledby ? undefined : '外部文章'} aria-labelledby={labelledby}>
+    {#each items as row, index (row.key)}
+      <li class:extra={index >= initialPosts} class:mine={row.mine}>
+        <article>
+          <h3 class="title">
+            <a href={row.post.url} target="_blank" rel="noopener noreferrer nofollow">{row.post.title}<span class="out" aria-hidden="true">↗</span><span class="sr-only">（開啟 {row.post.sourceLabel} 原文）</span></a>
+          </h3>
+          <p class="meta">
+            {#if row.mine}<span class="badge-mine">本班教師</span>{/if}
+            {#if row.post.isDemo}<Badge label="示範資料" tone="demo" />{/if}
+            {#if row.post.postedAt}<time class="num" datetime={row.post.postedAt}>{slashDate(row.post.postedAt)}</time>{/if}
+            {#if row.post.term}<span class="mono">{row.post.term}</span>{/if}
+            {#if row.teachers.length}<span>{row.teachers.join('、')}</span>{/if}
+            {#if boards.length > 1}<span>{row.post.board}</span>{/if}
+            {#if row.author}<span class="author">{row.author}</span>{/if}
+            {#if row.post.pushScore}<span class="push num" class:down={row.post.pushScore < 0}>推 {pushLabel(row.post.pushScore)}</span>{/if}
+          </p>
+          {#if row.parts.length}
+            <p class="excerpt">
+              {#each row.parts as part, i (i)}{#if part.label}<span class="label">{part.label}</span>{/if}{part.text}{#if i < row.parts.length - 1}<span class="sep" aria-hidden="true"> ・ </span>{/if}{/each}{#if !endsSentence(row.parts)}…{/if}
+            </p>
+          {/if}
+        </article>
+      </li>
+    {/each}
+  </ol>
+  {#if items.length > initialPosts}
+    <details class="more">
+      <summary><span class="closed">顯示全部 {items.length} 篇 ▾</span><span class="opened">收合為前 {initialPosts} 篇 ▴</span></summary>
+    </details>
+  {/if}
+{/snippet}
 
 <section class="external" class:compact={!reviews || total === 0} id="external-reviews" aria-labelledby="external-title" data-school={school} data-course={courseCode}>
   {#if !reviews || total === 0}
@@ -166,7 +223,7 @@
       <div class="head-text">
         <h2 id="external-title">外部評價 <span class="head-count num">{displayValue(total)} 篇</span></h2>
         <p class="dek">
-          來源：{sourceLabels.join('、')}{#if boards.length}（{boards.join('、')} 板）{/if}{#if firstYear !== undefined}・發文 {firstYear}{#if lastYear !== firstYear}–{lastYear}{/if} 年{/if}。UniCourse 只存標題、日期、作者帳號與開頭摘要，全文請點標題到原站。
+          {#if kindCounts.question || kindCounts.other}<span class="mix">心得評價與提問混合，依標題分類。</span>{/if}來源：{sourceLabels.join('、')}{#if boards.length}（{boards.join('、')} 板）{/if}{#if firstYear !== undefined}・發文 {firstYear}{#if lastYear !== firstYear}–{lastYear}{/if} 年{/if}。UniCourse 只存標題、日期、作者帳號與開頭摘要，全文請點標題到原站。
         </p>
       </div>
     </header>
@@ -222,22 +279,43 @@
 
         {#if perYear.length > 1}
           <figure class="block years">
-            <figcaption>每年發文數</figcaption>
+            <figcaption>每年發文數 <span class="cap-range num">{perYear[0].year}–{perYear.at(-1)?.year}</span></figcaption>
             <div class="columns" role="img" aria-label={`每年發文數：${perYear.map((entry) => `${entry.year} 年 ${entry.count} 篇`).join('、')}`}>
               {#each perYear as entry (entry.year)}
                 <span class="column" title={`${entry.year} 年 ${entry.count} 篇`}>
-                  <span class="value num">{entry.count || ''}</span>
+                  <span class="value num" class:zero={entry.count === 0}>{entry.count}</span>
                   <span class="fill" class:zero={entry.count === 0} style:height={`${(entry.count / yearMax) * 100}%`}></span>
                 </span>
               {/each}
             </div>
-            <div class="axis num" aria-hidden="true"><span>{perYear[0].year}</span><span>{perYear.at(-1)?.year}</span></div>
+            <div class="axis num" aria-hidden="true">{#each perYear as entry (entry.year)}<span>{shortYear(entry.year)}</span>{/each}</div>
           </figure>
         {/if}
       </aside>
 
       <div class="posts">
-        <div class="toolbar" role="group" aria-label="篩選與排序外部文章">
+        <div class="list-bar">
+          <p class="status" aria-live="polite">
+            {#if filtering}
+              符合條件 <b class="num">{ordered.length}</b> 篇{#if teacher}・教師 {teacherLabel(teacher)}{/if}{#if term}・{term === noTerm ? '標題沒寫學期' : term}{/if}{#if kind}・{postKindLabels[kind]}{/if}
+              <button type="button" class="clear" onclick={clearFilters}>清除篩選</button>
+            {:else if instructors.length && mineCount === 0}
+              沒有找到本班教師 {instructors.join('、')} 的文章；下面是其他教師開這門課的文章，心得評價在前。
+            {:else}
+              共 <b class="num">{displayValue(rows.length)}</b> 篇{#if shown < rows.length}・先列 {shown} 篇{/if}{#if total > rows.length}（另有 {displayValue(total - rows.length)} 篇較舊的未列出）{/if}<span class="sort-note">・{sortLabels[sort]}</span>
+            {/if}
+          </p>
+          <button
+            type="button"
+            class="filter-toggle"
+            aria-expanded={filtersOpen}
+            aria-controls="external-toolbar"
+            disabled={!ready}
+            onclick={() => (filtersOpen = !filtersOpen)}
+          >篩選與排序{#if activeFilters}<span class="active num">{activeFilters}</span>{/if}<span aria-hidden="true">{filtersOpen ? ' ▴' : ' ▾'}</span></button>
+        </div>
+
+        <div class="toolbar" class:open={filtersOpen} id="external-toolbar" role="group" aria-label="篩選與排序外部文章">
           <div class="kinds" role="group" aria-label="文章類型">
             <button type="button" class="chip" aria-pressed={kind === ''} disabled={!ready} onclick={() => (kind = '')}>全部 <span class="num">{rows.length}</span></button>
             {#each kinds as value (value)}
@@ -273,49 +351,13 @@
           </div>
         </div>
 
-        <p class="status" aria-live="polite">
-          {#if filtering}
-            符合條件 <b class="num">{ordered.length}</b> 篇{#if teacher}・教師 {teacherLabel(teacher)}{/if}{#if term}・{term === noTerm ? '標題沒寫學期' : term}{/if}{#if kind}・{postKindLabels[kind]}{/if}
-            <button type="button" class="clear" onclick={clearFilters}>清除篩選</button>
-          {:else if instructors.length && mineCount === 0}
-            沒有找到本班教師 {instructors.join('、')} 的文章；下面是其他教師開這門課的文章，心得評價在前。
-          {:else}
-            共 <b class="num">{displayValue(rows.length)}</b> 篇{#if total > rows.length}（另有 {displayValue(total - rows.length)} 篇較舊的未列出）{/if}・{sortLabels[sort]}
-          {/if}
-        </p>
-
-        {#if ordered.length}
-          <ol class="list" class:collapsible={ordered.length > initialPosts} aria-label="外部文章">
-            {#each ordered as row, index (row.key)}
-              <li class:extra={index >= initialPosts} class:mine={row.mine}>
-                <article>
-                  <h3 class="title">
-                    <a href={row.post.url} target="_blank" rel="noopener noreferrer nofollow">{row.post.title}<span class="out" aria-hidden="true">↗</span><span class="sr-only">（開啟 {row.post.sourceLabel} 原文）</span></a>
-                  </h3>
-                  <p class="meta">
-                    {#if row.mine}<span class="badge-mine">本班教師</span>{/if}
-                    {#if row.post.isDemo}<Badge label="示範資料" tone="demo" />{/if}
-                    {#if row.post.postedAt}<time class="num" datetime={row.post.postedAt}>{slashDate(row.post.postedAt)}</time>{/if}
-                    {#if row.post.term}<span class="mono">{row.post.term}</span>{/if}
-                    {#if row.teachers.length}<span>{row.teachers.join('、')}</span>{/if}
-                    {#if boards.length > 1}<span>{row.post.board}</span>{/if}
-                    {#if row.author}<span class="author">{row.author}</span>{/if}
-                    {#if row.post.pushScore}<span class="push num" class:down={row.post.pushScore < 0}>推 {pushLabel(row.post.pushScore)}</span>{/if}
-                  </p>
-                  {#if row.parts.length}
-                    <p class="excerpt">
-                      {#each row.parts as part, i (i)}{#if part.label}<span class="label">{part.label}</span>{/if}{part.text}{#if i < row.parts.length - 1}<span class="sep" aria-hidden="true"> ・ </span>{/if}{/each}…
-                    </p>
-                  {/if}
-                </article>
-              </li>
-            {/each}
-          </ol>
-          {#if ordered.length > initialPosts}
-            <details class="more">
-              <summary><span class="closed">顯示全部 {ordered.length} 篇 ▾</span><span class="opened">收合為前 {initialPosts} 篇 ▴</span></summary>
-            </details>
-          {/if}
+        {#if grouped}
+          <h3 class="group-head" id="external-mine">{mineLine}</h3>
+          {@render postList(mineRows, 'external-mine')}
+          <h3 class="group-head" id="external-others">其他教師與標題沒寫教師・<span class="num">{otherRows.length}</span> 篇・心得評價在前</h3>
+          {@render postList(otherRows, 'external-others')}
+        {:else if ordered.length}
+          {@render postList(ordered, undefined)}
         {:else}
           <p class="none">沒有符合條件的文章。<button type="button" class="clear" onclick={clearFilters}>清除篩選</button></p>
         {/if}
@@ -386,11 +428,14 @@
   .columns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; align-items: end; block-size: 4.5rem; padding-block-start: 1rem; border-block-end: 1px solid var(--control-line); }
   .column { position: relative; display: flex; flex-direction: column; justify-content: end; align-items: stretch; block-size: 100%; }
   .column .fill { display: block; min-block-size: 2px; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--brand) 70%, var(--panel)); }
-  .column .fill.zero { min-block-size: 0; }
+  .column .fill.zero { min-block-size: 0; block-size: 0; border-block-start: 2px dashed var(--control-line); border-radius: 0; background: none; }
   .column .value { position: absolute; inset-block-start: -1rem; inset-inline: 0; color: var(--muted); font-size: 0.625rem; line-height: 1rem; text-align: center; }
-  .axis { display: flex; justify-content: space-between; margin-block-start: 2px; color: var(--muted); font-size: var(--t-xs); }
+  .column .value.zero { color: var(--muted); opacity: 0.8; }
+  .axis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin-block-start: 2px; color: var(--muted); font-size: 0.625rem; text-align: center; }
+  .cap-range { margin-inline-start: var(--space-1); color: var(--muted); font-weight: 500; }
 
   .posts { display: grid; gap: var(--space-2); min-inline-size: 0; }
+  .posts > .toolbar { order: -1; }
   .toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: end; justify-content: space-between; }
   .kinds { display: flex; flex-wrap: wrap; gap: var(--space-1); }
   .chip { display: inline-flex; gap: 0.35em; align-items: center; min-block-size: 2.25rem; padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; }
@@ -401,7 +446,13 @@
   .selects { display: flex; flex-wrap: wrap; gap: var(--space-2); }
   .selects label { display: grid; gap: 2px; color: var(--muted); font-size: var(--t-xs); font-weight: 600; }
   select { min-block-size: 2.25rem; max-inline-size: 13rem; padding: 0 var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font: 500 var(--t-sm) / 1.2 var(--font-sans); }
+  .list-bar { display: flex; gap: var(--space-2); align-items: center; justify-content: space-between; }
   .status { min-block-size: 1.5rem; color: var(--muted); font-size: var(--t-sm); }
+  .filter-toggle { display: none; flex: none; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font-size: var(--t-sm); font-weight: 600; }
+  .filter-toggle[aria-expanded='true'] { border-color: var(--brand); }
+  .filter-toggle .active { display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 4px; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); }
+  .group-head { margin-block-start: var(--space-2); color: var(--ink-2); font-size: var(--t-sm); font-weight: 650; }
+  .group-head:first-of-type { margin-block-start: 0; }
   .status b { color: var(--ink); }
   .clear { margin-inline-start: var(--space-2); padding: 0; border: 0; background: none; color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
   .none { padding: var(--space-4) 0; color: var(--ink-2); }
@@ -440,6 +491,18 @@
     .external { padding: var(--space-4); }
     .summary { grid-template-columns: minmax(0, 1fr); }
     .years, .by-teacher { display: none; }
+    /* Phones: the three figures become one line and the filters fold behind one button, so the first
+       posts follow the heading directly. */
+    .figures { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); }
+    .figures div { display: flex; gap: var(--space-1); align-items: baseline; padding: 0; border: 0; background: none; }
+    .figures dt { font-size: var(--t-sm); color: var(--ink-2); }
+    .figures b { font-size: var(--t-md); }
+    .posts > .toolbar { order: 0; }
+    .toolbar:not(.open) { display: none; }
+    .toolbar { padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); }
+    .filter-toggle { display: inline-flex; }
+    .sort-note { display: none; }
+    .selects label:last-child { grid-column: 1 / -1; }
     .teacher-select { display: grid !important; }
     .selects { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); }
     .chip { padding-inline: var(--space-2); }

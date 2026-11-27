@@ -54,6 +54,9 @@
     return shown.join('；') + (slots.length > 2 ? `；另 ${slots.length - 2} 個時段` : '');
   });
   let externalTotal = $derived(data.externalReviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0);
+  // Indexed posts move above the site's own sections while those are both still empty, so the page's
+  // most useful signal is not below two empty states.
+  let externalFirst = $derived(externalTotal > 0 && ratingCount === 0 && data.posts?.total === 0);
   let externalLabel = $derived(
     data.externalReviews?.sources.length === 1 ? data.externalReviews.sources[0].sourceLabel.replace(/\s*批踢踢$/u, '') : '外站'
   );
@@ -139,7 +142,7 @@
       {/if}
       {#if ratio != null}
         <dd class="meter" aria-hidden="true"><span style:width={`${Math.min(100, ratio * 100)}%`}></span></dd>
-        <dd class="note">{ratio > 1 ? `超過名額 ${Math.round((ratio - 1) * 100)}%` : `已選 ${Math.round(ratio * 100)}%`}{#if full && ratio <= 1}，接近額滿{/if}</dd>
+        <dd class="note">{ratio > 1 ? `超額：名額的 ${Math.round(ratio * 100)}%` : `已選 ${Math.round(ratio * 100)}%`}{#if full && ratio <= 1}，接近額滿{/if}・匯入時</dd>
       {:else}
         <dd class="note">{course.enrolled == null && capacity != null ? '未公布修課人數' : capacity == null && course.enrolled != null ? '校方未公布名額' : '人數與名額未公布'}</dd>
       {/if}
@@ -152,17 +155,17 @@
         {:else}
           <dd><span class="value">—</span><small>人數未公布</small></dd>
         {/if}
-        <dd class="note"><a href="#history">{displayValue(termTotal.offeringCount)} 個班次合計 ↓</a></dd>
+        <dd class="note"><a href="#history">{displayValue(termTotal.offeringCount)} 個班次合計{#if termTotal.partial}（只收錄部分班次）{/if}&nbsp;↓</a></dd>
       </div>
     {/if}
     <div class="tile">
       <dt>歷年累計</dt>
       {#if totals?.enrolledTotal != null}
         <dd><span class="value num">{displayValue(totals.enrolledTotal)}</span><small>人次</small></dd>
-        <dd class="note"><a href="#history">{displayValue(totals.terms)} 個學期 · {displayValue(totals.offerings)} 班 ↓</a></dd>
+        <dd class="note"><a href="#history">{displayValue(totals.terms)} 個學期 · {displayValue(totals.offerings)} 班&nbsp;↓</a></dd>
       {:else if totals}
         <dd><span class="value num">{displayValue(totals.terms)}</span><small>個學期</small></dd>
-        <dd class="note"><a href="#history">未公布人數 · {displayValue(totals.offerings)} 班 ↓</a></dd>
+        <dd class="note"><a href="#history">未公布人數 · {displayValue(totals.offerings)} 班&nbsp;↓</a></dd>
       {:else}
         <dd><span class="value">—</span></dd>
         <dd class="note">暫時無法取得</dd>
@@ -172,10 +175,10 @@
       <dt>同學評價</dt>
       {#if stats && ratingCount > 0}
         <dd><span class="value num">{averageScore(stats.average)}</span><small class="stars" aria-hidden="true">{stars(Math.round(stats.average ?? 0))}</small></dd>
-        <dd class="note" class:sparse={ratingCount < 3}><a href="#ratings">{ratingCount < 3 ? `目前僅 ${ratingCount} 則評價，僅供參考 ↓` : `${displayValue(ratingCount)} 則評價 ↓`}</a></dd>
+        <dd class="note" class:sparse={ratingCount < 3}><a href="#ratings">{ratingCount < 3 ? `目前僅 ${ratingCount} 則評價，僅供參考\u00a0↓` : `${displayValue(ratingCount)} 則評價\u00a0↓`}</a></dd>
       {:else if stats}
         <dd><span class="value small-value">尚無評價</span></dd>
-        <dd class="note"><a href="#ratings">修過這門課？成為第一個評分 ↓</a></dd>
+        <dd class="note"><a href="#ratings">修過這門課？成為第一個評分&nbsp;↓</a></dd>
       {:else}
         <dd><span class="value">—</span></dd>
         <dd class="note">暫時無法取得</dd>
@@ -227,6 +230,10 @@
     </section>
   </div>
 
+  {#if externalFirst}
+    <CourseExternalReviews school={course.school} courseCode={course.courseCode} instructors={course.instructors} reviews={data.externalReviews} />
+  {/if}
+
   <!-- Site ratings and site threads side by side; indexed posts from other sites get the full width below. -->
   <div class="community">
     <CommunityRatings ratings={data.ratings} user={data.user} {form} courseCode={course.courseCode} />
@@ -255,7 +262,9 @@
     </section>
   </div>
 
-  <CourseExternalReviews school={course.school} courseCode={course.courseCode} instructors={course.instructors} reviews={data.externalReviews} />
+  {#if !externalFirst}
+    <CourseExternalReviews school={course.school} courseCode={course.courseCode} instructors={course.instructors} reviews={data.externalReviews} />
+  {/if}
 
   {#if hasAbout}
     <section class="about" aria-labelledby="about-title">

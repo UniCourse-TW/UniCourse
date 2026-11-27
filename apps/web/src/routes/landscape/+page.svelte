@@ -78,8 +78,11 @@
   }
   let form: HTMLFormElement | undefined = $state();
   let debounce: ReturnType<typeof setTimeout> | undefined;
+  // Phones open on the directory: the two summary charts start folded behind one summary line.
+  let vizOpen = $state(true);
   onMount(() => {
     hydrated = true;
+    if (window.matchMedia('(max-width: 40rem)').matches) vizOpen = false;
     return () => clearTimeout(debounce);
   });
   function submitSoon(delay = 0) {
@@ -108,7 +111,7 @@
   }
 
   const allThirdColumns: TableColumn<Site>[] = [
-    { id: 'site', label: '網站', value: (site) => site.name, sortable: true, width: '15rem' },
+    { id: 'site', label: '網站', value: (site) => site.name, sortable: true, width: '18rem' },
     { id: 'schools', label: '學校', value: schoolsOf, sortable: true, width: '11rem' },
     { id: 'category', label: '功能', value: (site) => site.category.map((c) => categoryLabels[c]).join('、') },
     { id: 'operator', label: '營運者', value: (site) => operatorLabels[site.operator], sortable: true, width: '5rem' },
@@ -164,7 +167,7 @@
           <div class="finder">
             <label class="jump-field">
               <span>找我的學校</span>
-              <input type="search" role="combobox" placeholder="輸入校名，例如 清大" autocomplete="off"
+              <input type="search" role="combobox" aria-describedby="finder-hint" placeholder="輸入校名，例如 清大" autocomplete="off"
                 aria-autocomplete="list" aria-expanded={finderOpen && finderMatches.length > 0} aria-controls="school-finder"
                 aria-activedescendant={finderOpen && finderMatches.length ? `finder-${finderMatches[finderActive]?.id}` : undefined}
                 bind:value={finderQuery} oninput={() => { finderOpen = true; finderActive = 0; }} onkeydown={finderKey}
@@ -184,6 +187,7 @@
               </ul>
             {/if}
           </div>
+          <span class="route-hint" id="finder-hint">選一所學校，直接跳到它的段落</span>
         {:else}
           <label class="jump-field">
             <span>找我的學校</span>
@@ -221,7 +225,7 @@
           type="search"
           name="q"
           value={filters.q}
-          placeholder="校名、網站或功能"
+          placeholder="篩選：校名、網站或功能"
           maxlength="100"
           autocomplete="off"
           oninput={() => submitSoon(350)}
@@ -243,12 +247,11 @@
       </details>
       <!-- Without JavaScript 套用 submits; with it, every change applies itself, so the button goes away. -->
       {#if !hydrated}<button type="submit" class="apply">套用</button>{/if}
-      {#if filtered}<a class="clear" href="/landscape">清除</a>{/if}
     </form>
     <p class="result" role="status" aria-live="polite">
       {#if updating}<span class="dot" aria-hidden="true"></span>更新中…
-      {:else if filtered}符合 <strong class="ui-tabular">{number.format(data.shownSites)}</strong> / {number.format(data.totalSites)} 個系統{#if hydrated} · 條件已即時套用{/if}{#if data.schools.length} · <a class="action" href="#schools-title">跳到 {number.format(data.schools.length)} 所學校的結果 ↓</a>{/if}
-      {:else}已盤點 {number.format(data.totalSites)} 個系統{#if hydrated} · 輸入或選擇條件會即時篩選{/if}{/if}
+      {:else if filtered}符合 <strong class="ui-tabular">{number.format(data.shownSites)}</strong> / {number.format(data.totalSites)} 個系統{#if data.schools.length} · <a class="action" href="#schools-title">跳到 {number.format(data.schools.length)} 所學校的結果 ↓</a>{/if}<a class="clear inline-clear" href="/landscape">清除全部條件</a>
+      {:else}已盤點 {number.format(data.totalSites)} 個系統 · 這裡的條件會篩選下方的統計、圖表與清單{#if hydrated}，輸入即套用{/if}{/if}
     </p>
     {#if filtered}
       <div class="chips" role="group" aria-label="已套用的篩選">
@@ -276,6 +279,8 @@
       {#snippet action()}<a class="action" href="/landscape">清除篩選</a>{/snippet}
     </EmptyState>
   {:else}
+    <details class="viz-wrap" open={vizOpen}>
+      <summary>圖表：各體系網站狀態、第三方工具最多的學校</summary>
     <div class="viz">
       <section class="panel" aria-labelledby="by-system">
         <SectionHeader id="by-system" level={2} title="各體系網站狀態" description="條長是該體系的網站數（以最多的體系為滿格），條內依狀態分段；跨校平台計入每個涵蓋的學校體系。" />
@@ -289,7 +294,7 @@
               {@const share = total / largestSystem}
               <li>
                 <span class="stack-label">{row.label} <small class="ui-tabular">{number.format(total)} 個</small></span>
-                <span class="track" role="img" style:inline-size={`${Math.max(6, (total / largestSystem) * 100)}%`}
+                <span class="track" role="img" style:inline-size={`${(total / largestSystem) * 100}%`}
                   aria-label={`${row.label}：運作中 ${row.active}、停止 ${row.inactive}、不明 ${row.unknown}，共 ${total} 個`}>
                   <span class="seg active" style:inline-size={`${pct(row.active, total)}%`}>{#if pct(row.active, total) * share >= 14}{pctLabel(row.active, total)}{/if}</span>
                   <span class="seg inactive" style:inline-size={`${pct(row.inactive, total)}%`}>{#if pct(row.inactive, total) * share >= 14}{pctLabel(row.inactive, total)}{/if}</span>
@@ -314,6 +319,7 @@
           items={data.topThird.map((row) => ({ label: row.name, value: row.count, href: `#${row.id}` }))} />
       </section>
     </div>
+    </details>
 
     <section aria-labelledby="third-party" class="third">
       <div class="third-head">
@@ -559,12 +565,13 @@
   .stack li { display: grid; grid-template-columns: 7.5rem 1fr 13rem; gap: var(--space-2); align-items: center; }
   .stack-label { color: var(--ink-2); font-size: var(--t-sm); }
   .stack-label small { color: var(--muted); font-size: var(--t-xs); }
-  .track { display: flex; block-size: 18px; overflow: hidden; border-radius: 3px; background: var(--chip); }
-  .seg { display: flex; align-items: center; justify-content: center; block-size: 100%; overflow: hidden; color: #fff; font-size: var(--t-xs); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .seg.active, .legend i.active, .v.active i { background: var(--up); }
-  .seg.inactive, .legend i.inactive, .v.inactive i { background: var(--down); }
+  .track { display: flex; min-inline-size: 3rem; block-size: 18px; overflow: hidden; border-radius: 3px; background: var(--chip); }
+  .seg { display: flex; align-items: center; justify-content: center; block-size: 100%; overflow: hidden; color: var(--ink); font-size: var(--t-xs); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  /* Segments are softened (70%) so the large blocks are calm in dark mode; labels stay full ink. */
+  .seg.active, .legend i.active, .v.active i { background: color-mix(in srgb, var(--up) 70%, var(--panel)); }
+  .seg.inactive, .legend i.inactive, .v.inactive i { background: color-mix(in srgb, var(--down) 70%, var(--panel)); }
   /* Unknown is a pale hatched fill, so it neither dominates nor competes with the red. */
-  .seg.unknown, .legend i.unknown, .v.unknown i { color: var(--ink-2); background: repeating-linear-gradient(135deg, var(--axis) 0 3px, var(--chip) 3px 7px); }
+  .seg.unknown, .legend i.unknown, .v.unknown i { color: var(--ink-2); background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--muted) 75%, transparent) 0 2px, var(--chip) 2px 6px); }
   .stack-values { display: flex; gap: var(--space-3); justify-content: flex-end; color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
   .v { display: inline-flex; align-items: center; gap: 4px; }
   .v i { display: inline-block; inline-size: 8px; block-size: 8px; border-radius: 2px; }
@@ -583,9 +590,14 @@
 
   section { display: grid; gap: var(--space-3); min-inline-size: 0; }
   .action { display: inline-flex; align-items: center; min-block-size: 2rem; padding: 0 var(--space-1); border-radius: var(--radius-control); font-size: var(--t-base); font-weight: 600; }
-  .site-cell { display: block; overflow-wrap: anywhere; }
+  .site-cell { display: block; overflow-wrap: anywhere; min-inline-size: 13rem; }
   .site-cell .ext { color: var(--muted); font-weight: 400; white-space: nowrap; }
-  .site-cell small { display: block; color: var(--muted); font-size: var(--t-xs); font-weight: 400; }
+  /* Inline-block stops the row link's underline from reaching the operator line. */
+  .site-cell small { display: inline-block; inline-size: 100%; color: var(--muted); font-size: var(--t-xs); font-weight: 400; text-decoration: none; }
+  .route-hint { color: var(--muted); font-size: var(--t-xs); }
+  .inline-clear { min-block-size: 0 !important; margin-inline-start: var(--space-2); padding: 0 !important; background: none !important; text-decoration: underline; }
+  .viz-wrap > summary { display: none; }
+  .viz-wrap::details-content { display: contents; content-visibility: visible; }
   .nowrap { white-space: nowrap; }
   .cats { display: flex; flex-wrap: wrap; gap: 2px var(--space-1); }
   .cat { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: 0.75rem; font-weight: 500; line-height: 1.6; white-space: nowrap; }
@@ -656,8 +668,16 @@
     .jump-field { flex: 1 1 100%; }
     .finder { flex: 1 1 100%; }
     .finder .jump-field input { inline-size: auto; flex: 1; min-inline-size: 0; }
+    .finder .jump-field { inline-size: 100%; }
     .routes { min-inline-size: 0; }
-    .route-links { flex: 1 1 100%; flex-wrap: nowrap; min-inline-size: 0; overflow-x: auto; scrollbar-width: none; }
+    .route-links { flex: 1 1 100%; flex-wrap: wrap; min-inline-size: 0; }
+    .viz-wrap > summary { display: flex; align-items: center; justify-content: space-between; min-block-size: var(--target-min); padding: 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
+    .viz-wrap > summary::-webkit-details-marker { display: none; }
+    .viz-wrap > summary::after { content: '▾'; color: var(--muted); }
+    .viz-wrap[open] > summary { margin-block-end: var(--space-3); }
+    .viz-wrap[open] > summary::after { content: '▴'; }
+    .viz-wrap::details-content { display: block; content-visibility: auto; }
+    .viz-wrap:not([open])::details-content { content-visibility: hidden; }
     .jump-field select { flex: 1; max-inline-size: none; }
     .school { scroll-margin-block-start: 8rem; }
   }

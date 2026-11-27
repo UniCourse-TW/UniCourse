@@ -21,6 +21,13 @@ export interface HistoryRow {
   /** Every offering of the term was withdrawn by the school. */
   withdrawn: boolean;
   current: boolean;
+  /**
+   * Far fewer sections than the course usually has (2 of a usual ~38): most likely an import still in
+   * progress, so the term's total is not comparable with the others. Set by `markPartialTerms`.
+   */
+  partial: boolean;
+  /** The usual number of sections a term (median over the other terms), for the partial note. */
+  usualSections: number | null;
 }
 
 /** A chart slot: a term with offerings, or an empty gap between imported terms. */
@@ -79,18 +86,44 @@ export function historyRows(history: CourseHistory | null | undefined, current: 
         term: entry.term,
         enrolled: entry.enrolled ?? sumOrNull(offerings.map((offering) => offering.enrolled)),
         capacity: publishedCapacity(entry.capacity ?? sumOrNull(offerings.map((offering) => publishedCapacity(offering.capacity)))),
-        offerings: offerings.slice(0, maxListed).map((offering) => ({
-          id: offering.id,
-          label: (distinctCodes ? offering.classCode : undefined) || (several ? offering.instructors[0] : undefined) || offering.classCode || '查看',
-          active: offering.active
-        })),
+        // Sections are listed by class code only; teacher names already fill the teacher column, so a
+        // term without unique codes links its own section (if any) and「全部 N 班」.
+        offerings: offerings
+          .filter((offering) => !several || (distinctCodes && offering.classCode) || offering.id === current.id)
+          .slice(0, maxListed)
+          .map((offering) => ({
+            id: offering.id,
+            label: (distinctCodes ? offering.classCode : undefined) || (several ? '本班' : offering.classCode || '查看'),
+            active: offering.active
+          })),
         offeringCount: offerings.length,
         instructors: instructors.slice(0, maxListed),
         instructorCount: instructors.length,
         withdrawn: offerings.length > 0 && offerings.every((offering) => !offering.active),
-        current: offerings.some((offering) => offering.id === current.id)
+        current: offerings.some((offering) => offering.id === current.id),
+        partial: false,
+        usualSections: null
       };
-    });
+    })
+    .map((row, _, all) => markPartial(row, all));
+}
+
+function median(values: number[]) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+/**
+ * A term is partial when it has at most a quarter of the sections the course usually has a term
+ * (median of the other terms, at least 8 sections), e.g. 2 sections where other terms have ~38.
+ */
+function markPartial(row: HistoryRow, all: HistoryRow[]): HistoryRow {
+  const others = all.filter((other) => other !== row && other.offeringCount > 0).map((other) => other.offeringCount);
+  if (others.length < 2) return row;
+  const usual = median(others);
+  if (usual < 8 || row.offeringCount > usual / 4) return row;
+  return { ...row, partial: true, usualSections: Math.round(usual) };
 }
 
 /**
