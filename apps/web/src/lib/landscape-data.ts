@@ -172,16 +172,28 @@ export function isFiltered(filters: LandscapeFilters) {
 // The MOE list spells 臺; most people type 台.
 const normalize = (value: string) => value.toLowerCase().replaceAll('台', '臺');
 
-function siteMatches(site: Site, filters: LandscapeFilters, schoolNames: string[]) {
+function siteMatches(site: Site, filters: LandscapeFilters, queryMatchesSchool: boolean) {
   if (filters.kind === 'official' && !isOfficial(site)) return false;
   if (filters.kind === 'third' && isOfficial(site)) return false;
   if (filters.status && site.status !== filters.status) return false;
   if (filters.category && !site.category.includes(filters.category)) return false;
-  if (!filters.q) return true;
+  if (!filters.q || queryMatchesSchool) return true;
   const needle = normalize(filters.q);
-  return site.schools.includes(needle) || [site.name, site.url, site.features, site.notes, site.operatorName, ...schoolNames].some(
+  return site.schools.includes(needle) || [site.name, site.url, site.features, site.notes, site.operatorName, ...site.category.map((category) => categoryLabels[category]), ...schoolNames(site)].some(
     (field) => !!field && normalize(field).includes(needle)
   );
+}
+
+/** Match both official school names and familiar abbreviations such as 清大 or 北科. */
+export function matchesSchoolName(name: string, query: string) {
+  const needle = normalize(query).replace(/\s+/g, '');
+  if (!needle) return false;
+  let index = 0;
+  for (const char of normalize(name)) {
+    if (char === needle[index]) index += 1;
+    if (index === needle.length) return true;
+  }
+  return false;
 }
 
 export interface SchoolSection {
@@ -252,9 +264,14 @@ const inSystem = (site: Site, system: EducationSystem) =>
   site.schools.some((code) => institutionsByCode.get(code)?.system === system);
 
 export function buildLandscape(filters: LandscapeFilters): Landscape {
-  const kept = sites.filter(
-    (site) => siteMatches(site, filters, schoolNames(site)) && (!filters.system || inSystem(site, filters.system))
-  );
+  const normalizedQuery = normalize(filters.q);
+  const matchingSchoolCodes = new Set(institutions.filter((school) => normalizedQuery && (
+    school.code === normalizedQuery || school.slug === normalizedQuery || matchesSchoolName(school.name, normalizedQuery)
+  )).map(({ code }) => code));
+  const kept = sites.filter((site) => (
+    siteMatches(site, filters, site.schools.some((code) => matchingSchoolCodes.has(code)))
+    && (!filters.system || inSystem(site, filters.system))
+  ));
   const cross = kept
     .filter((site) => !isSchoolSite(site))
     .sort((a, b) => Number(a.scope !== 'national') - Number(b.scope !== 'national') || byStatusThenName(a, b));
@@ -289,6 +306,10 @@ export function buildLandscape(filters: LandscapeFilters): Landscape {
         unknown: own.filter((site) => site.status === 'unknown').length
       }
     });
+  }
+
+  if (matchingSchoolCodes.size) {
+    schools.sort((left, right) => Number(matchingSchoolCodes.has(right.code)) - Number(matchingSchoolCodes.has(left.code)));
   }
 
   const count = (predicate: (site: Site) => boolean) => kept.filter(predicate).length;
@@ -342,8 +363,7 @@ export function buildLandscape(filters: LandscapeFilters): Landscape {
     bySystem,
     systemTally,
     topThird,
-    // By name: the status column then actually varies; 「只看運作中」 is a filter of its own.
-    thirdParty: kept.filter((site) => !isOfficial(site)).sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant')),
+    thirdParty: kept.filter((site) => !isOfficial(site)).sort(byStatusThenName),
     cross,
     schools
   };
