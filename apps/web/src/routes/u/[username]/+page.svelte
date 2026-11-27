@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import '$lib/community-ui.css';
   import CommunityPostList from '$lib/community-post-list.svelte';
-  import { dateTime, initial, oneLine, shortDateTime, slashDate } from '$lib/community-format';
+  import { dateTime, initial, oneLine, slashDate } from '$lib/community-format';
   import Stars from '$lib/community-stars.svelte';
   import { courseSearchHref } from '$lib/community-paths';
   import EmptyState from '$lib/ui/EmptyState.svelte';
@@ -48,7 +48,7 @@
   const DISTRIBUTION_MIN = 3;
   let sparse = $derived(ratingCount < SPARSE && profile.posts.length < SPARSE);
   let limitedRatings = $derived(ratingCount > 0 && ratingCount < DISTRIBUTION_MIN);
-  const ratingThreshold = `滿 ${DISTRIBUTION_MIN} 則顯示平均與分布`;
+  const ratingThreshold = `未滿 ${DISTRIBUTION_MIN} 則，暫無平均與分布`;
   let averageShown = $derived(average !== null && ratingCount >= DISTRIBUTION_MIN ? average.toFixed(1) : null);
   /** Which schools the ratings cover, said next to the rating count (not as the person's own school). */
   let coverage = $derived(
@@ -132,7 +132,10 @@
 
   <section class="block" aria-labelledby="ratings">
     <div class="block-head">
-      <h2 id="ratings">課程評價（{ratingCount}）</h2>
+      <div class="rating-heading">
+        <h2 id="ratings">課程評價（{ratingCount}）</h2>
+        {#if limitedRatings && coverage}<p class="rating-context">{coverage}</p>{/if}
+      </div>
       {#if hydrated && ratingCount > 1}
         <div class="sort-tools" role="group" aria-labelledby="rating-sort">
           <span id="rating-sort">評價排序</span>
@@ -143,7 +146,6 @@
         </div>
       {/if}
     </div>
-    {#if limitedRatings && coverage}<p class="rating-context">{coverage}</p>{/if}
     {#if ratingCount >= DISTRIBUTION_MIN && average !== null}
       <div class="dist">
         <h3 class="eyebrow">給分分布・平均給分 <span class="num avg">{average.toFixed(1)}</span> / 5</h3>
@@ -173,16 +175,16 @@
               {@const id = key(rating)}
               {@const long = (rating.review?.length ?? 0) > LONG_REVIEW}
               <tr>
-                <th scope="row" data-label="課程">
+                <th scope="row">
                   <a class="row-link" href={courseHref(rating)}>{rating.title ?? rating.courseCode}</a>
                   <span class="course-meta"><span>{data.schoolNames[rating.school] ?? rating.school}</span><span class="mono">{rating.courseCode}</span></span>
                 </th>
-                <td data-label="給分" class="score-cell">
+                <td class="score-cell">
+                  <span class="stars"><Stars score={rating.score} size="sm" decorative /></span>
                   <span class="num score">{rating.score} / 5</span>
-                  {#if !limitedRatings}<span class="stars"><Stars score={rating.score} decorative /></span>{/if}
                 </td>
-                <td data-label="時間" class="num when"><time datetime={rating.updatedAt} title={dateTime(rating.updatedAt)}>{shortDateTime(rating.updatedAt)}</time></td>
-                <td data-label="評論" class="review">
+                <td class="num when"><time datetime={rating.updatedAt} title={dateTime(rating.updatedAt)}>{slashDate(rating.updatedAt)}</time></td>
+                <td class="review">
                   {#if rating.review}
                     <span class="text" class:clamp={long && !expanded.includes(id)} title={long && !expanded.includes(id) ? rating.review : undefined}>{expanded.includes(id) ? rating.review : oneLine(rating.review)}</span>
                     {#if hydrated && long}
@@ -221,11 +223,12 @@
   .person > .bio, .person > .edit { grid-column: 1 / -1; }
   .edit { justify-self: start; margin-block-start: var(--space-3); }
   /* The full tile is a jump link with a visible hover and focus treatment. */
-  .tile-link { display: block; min-inline-size: 0; border-radius: var(--radius-panel); color: inherit !important; text-decoration: none; }
+  .tile-link { display: block; min-inline-size: var(--target-min); min-block-size: var(--target-min); border-radius: var(--radius-panel); color: inherit !important; text-decoration: none; }
   .tile-link :global(.tile) { block-size: 100%; transition: border-color 0.15s, background-color 0.15s; }
   .tile-link :global(dt) { color: var(--brand-ink); font-weight: 650; }
   .tile-link :global(dt)::after { content: '↓' / ''; margin-inline-start: 0.35em; }
   .tile-link:is(:hover, :focus-visible) :global(.tile) { border-color: var(--brand); background: var(--brand-wash); }
+  .tile-link:hover :global(dt) { text-decoration: underline; }
   .stats-side { min-inline-size: 0; }
   .stats-side :global(.stat-row) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .stats-side :global(.stat-row:has(> :nth-child(2):last-child)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -248,7 +251,8 @@
   /* The fourth tile may hold a school name, not a count: keep it readable but smaller than the numbers. */
   .summary :global(.stat-row > :nth-child(4) dd) { font-size: var(--t-xl); line-height: 1.3; min-block-size: 2.1rem; display: flex; align-items: center; }
   .bio.empty { color: var(--muted); font-size: var(--t-sm); }
-  .rating-context { color: var(--muted); font-size: var(--t-base); margin-block-end: var(--space-2) !important; }
+  .rating-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
+  .rating-context { color: var(--muted); font-size: var(--t-base); }
   .dist { max-inline-size: 55rem; }
   .dist { margin-block-end: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; margin-block-end: var(--space-2) !important; color: var(--ink-2) !important; font-size: max(0.8125rem, var(--t-sm)) !important; letter-spacing: 0 !important; }
@@ -289,7 +293,7 @@
   tbody tr:hover { background: var(--hover-row); }
   /* Fixed column shares, so the review gets the remaining width and the date sits right next to the score. */
   .c-course { inline-size: 25%; }
-  .c-score { inline-size: 12%; }
+  .c-score { inline-size: 9rem; }
   .c-when { inline-size: 7.5rem; }
   tbody th a { font-weight: 600; text-decoration: none; }
   tbody th a:hover { text-decoration: underline; }
@@ -299,7 +303,7 @@
   .row-link:focus-visible::after { outline: var(--focus-ring); outline-offset: -3px; border-radius: var(--radius-control); }
   .course-meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--ink-2); font-size: var(--t-sm); overflow-wrap: anywhere; }
   .score { display: inline-block; color: var(--ink); font-weight: 650; }
-  .stars { display: inline-block; margin-inline-start: var(--space-1); }
+  .stars { display: inline-block; margin-inline-end: var(--space-1); }
   .review .text { display: block; color: var(--ink-2); white-space: pre-wrap; overflow-wrap: anywhere; }
   .review .clamp { display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; white-space: normal; }
   .review .none { color: var(--muted); }
@@ -308,24 +312,24 @@
   .score-cell { white-space: nowrap; }
   .when { color: var(--muted); white-space: nowrap; }
 
-  /* A small sample reads as a list: course, review and score share one compact row. */
+  /* A small sample reads as cards with score and date beside the course and the review below. */
   @media (min-width: 40.001rem) {
     .compact thead { display: none; }
     .compact :is(table, tbody) { display: block; }
     .compact tr {
       display: grid;
-      grid-template-columns: minmax(10rem, 24%) minmax(0, 1fr) auto;
-      grid-template-areas: 'course review score' 'course review when';
+      grid-template-columns: fit-content(18rem) auto minmax(0, 1fr);
+      grid-template-areas: 'course score when' 'review review review';
       gap: 0 var(--space-3);
       padding: var(--space-2) var(--space-4);
-      align-items: start;
+      align-items: baseline;
     }
     .compact tr + tr { border-block-start: 1px solid var(--line); }
     .compact tr > :is(th, td):nth-child(n) { padding: 0; border: 0; }
     .compact th { grid-area: course; }
-    .compact .review { grid-area: review; }
-    .compact .score-cell { grid-area: score; text-align: end; }
-    .compact .when { grid-area: when; text-align: end; }
+    .compact .review { grid-area: review; max-inline-size: 52ic; }
+    .compact .score-cell { grid-area: score; }
+    .compact .when { grid-area: when; }
   }
   @media (max-width: 56rem) {
     .identity.with-stats { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
@@ -340,19 +344,17 @@
     .stats-side :global(.stat-row) { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
     .stats-side :global(.tile) { padding: var(--space-2) var(--space-3); }
     .stats-side :global(.tile dd) { font-size: var(--t-2xl); }
-    .stats-side :global(.tile p) { line-height: 1.4; }
-    /* Stack: each rating becomes a short card-like row; column names come from data-label. */
+    .stats-side :global(.tile p) { line-height: 1.4; text-wrap: balance; }
+    /* Stack the review below the course and score. */
     thead { display: none; }
     table, tbody, tr, tbody :is(th, td) { display: block; }
     tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-3); padding: var(--space-3); border-block-end: 1px solid var(--line); }
     tbody tr:last-child { border-block-end: 0; }
     tbody tr > :is(th, td):nth-child(n) { padding: 0; border: 0 !important; inline-size: auto; }
-    tbody th { grid-column: 1; }
-    tbody th { grid-row: 1 / span 2; }
-    tbody td[data-label='給分'] { grid-column: 2; grid-row: 1; text-align: end; }
-    .when { grid-column: 2; grid-row: 2; align-self: center; color: var(--ink-2); font-size: var(--t-sm); }
+    tbody th { grid-column: 1; grid-row: 1 / span 2; }
+    .score-cell { grid-column: 2; grid-row: 1; text-align: end; }
+    .when { grid-column: 2; grid-row: 2; align-self: center; text-align: end; color: var(--ink-2); font-size: var(--t-sm); }
     .review { grid-column: 1 / -1; grid-row: 3; inline-size: auto; }
     .sort button, .more { min-block-size: var(--target-min); }
-    .stars { display: none; }
   }
 </style>

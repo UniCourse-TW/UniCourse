@@ -30,7 +30,7 @@
   Category, course, author and tags follow the title and excerpt. The stretched title link sits behind
   the other links.
 -->
-<div class="post-list" class:dense class:with-context={showCourse}>
+<div class="post-list" class:dense class:with-context={showCourse} class:with-author={showAuthor}>
   <div class="cols" aria-hidden="true">
     <span>文章</span><span>回覆</span><span>分數</span><span>時間</span>
   </div>
@@ -58,12 +58,11 @@
               <span class="tags">{#if !(post.school && showCourse)}<span class="cm-type tag-type" data-type={post.type}>{postTypeLabels[post.type]}</span>{/if}{#each (showCourse ? post.tags.slice(0, 2) : post.tags) as tag (tag)}<a class="over tag" href={forumHref({ tag })}>#{tag}</a>{/each}</span>
             {/if}
           </div>
-          <!-- Time first in the markup, so the phone line reads「11/27 13:04 … 回覆 0　分數 0」; desktop
-               places each value in its own column. -->
+          <!-- Time leads on phones. Desktop places each value under its column heading. -->
           <dl class="stats">
             <div class="when"><dt>發表於</dt><dd class="num"><time datetime={post.createdAt} title={dateTime(post.createdAt)}>{shortDateTime(post.createdAt)}</time></dd></div>
-            <div class="replies"><dt>回覆</dt><dd class="num">{post.replyCount}</dd></div>
-            <div class="score"><dt>分數</dt><dd class="cm-score" data-sign={scoreSign(post.score)}>{signed(post.score)}</dd></div>
+            <div class="replies"><dt>回覆</dt><dd class="num">{post.replyCount}{#if showCourse}<span class="mobile-unit" aria-hidden="true"> 則回覆</span>{/if}</dd></div>
+            <div class="score"><dt>分數</dt><dd class="cm-score" data-sign={scoreSign(post.score)}>{signed(post.score)}{#if showCourse}<span class="mobile-unit" aria-hidden="true"> 分</span>{/if}</dd></div>
           </dl>
         </article>
       </li>
@@ -95,6 +94,7 @@
   .cols span:not(:first-child) { text-align: end; }
   ol { margin: 0; padding: 0; list-style: none; }
   li + li { border-block-start: 1px solid color-mix(in srgb, var(--control-line) 46%, var(--line)); }
+  .with-context li + li { border-block-start-color: var(--line); }
   article { position: relative; align-items: center; padding-block: var(--space-2); }
   article:hover, article:focus-within { background: var(--hover-row); }
   /* Title and summary each take a row. Context, author and tags share the remaining space. */
@@ -159,6 +159,7 @@
   dt { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   dd { margin: 0; color: var(--ink-2); font-size: var(--t-base); font-variant-numeric: tabular-nums; }
   .when dd { color: var(--ink-2); }
+  .mobile-unit { display: none; color: var(--muted); }
   /* Replies and score in one weight; only the sign carries colour (green up, red down, grey zero). */
   dd.cm-score { font-weight: 400; }
   dd.cm-score[data-sign='zero'] { color: var(--muted); }
@@ -188,6 +189,18 @@
     dt { position: static; inline-size: auto; block-size: auto; overflow: visible; clip: auto; color: var(--muted); }
     :is(dt, dd) { font-size: max(0.8125rem, var(--t-sm)); }
     .when dt { display: none; }
+
+    /* Keep the author next to the course; when there's no author, put the tags beside the course. */
+    .with-context article { padding-block: var(--space-1); }
+    .with-context .kicker { gap: 0 var(--space-2); }
+    .with-context .kicker .ctx { padding-inline: var(--space-1); }
+    .with-context .who { order: 2; max-inline-size: 38%; }
+    .with-context.with-author .tags { order: 4; }
+    .with-context .stats { column-gap: var(--space-2); }
+    .with-context .stats .when { margin-inline-end: auto; }
+    .with-context .stats .replies { margin-inline-start: 0; }
+    .with-context dt { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .mobile-unit { display: inline; }
 
     /* On the course page, the author and tags can share one touch-height row. */
     .post-list:not(.with-context) article { padding-block: 0.375rem; }
