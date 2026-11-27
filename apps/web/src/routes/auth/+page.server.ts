@@ -8,7 +8,7 @@ import type { Actions, PageServerLoad } from './$types';
 /** The API refuses a username after 10 failed attempts in a minute; it does not say how long is left. */
 const LOCKOUT_SECONDS = 60;
 
-export const load: PageServerLoad = ({ locals, url }) => {
+export const load: PageServerLoad = async ({ fetch, locals, url }) => {
   const next = safeNext(url.searchParams.get('next'));
   const mode = url.searchParams.get('mode') === 'register' ? 'register' : 'login';
   // A name handed over from the register tab (the name was taken, so sign in with it instead).
@@ -18,8 +18,18 @@ export const load: PageServerLoad = ({ locals, url }) => {
   // hand: say who is signed in and offer the ways on, instead of a silent bounce to the home page.
   if (locals.user && url.searchParams.has('next')) redirect(303, next);
   const signedIn = locals.user ? { username: locals.user.username, displayName: locals.user.displayName } : null;
-  return { mode, next, prefill, signedIn } as const;
+  // The signed-in card shows what the account has done so far (counts only; the profile has the list).
+  const activity = signedIn ? await activityOf(fetch, signedIn.username) : null;
+  return { mode, next, prefill, signedIn, activity } as const;
 };
+
+async function activityOf(fetch: typeof globalThis.fetch, username: string) {
+  const profile = await catalog(fetch)
+    .GET('/api/users/{username}', { params: { path: { username } } })
+    .catch(() => undefined);
+  if (!profile?.data) return null;
+  return { ratings: profile.data.ratings.length, posts: profile.data.posts.length };
+}
 
 export const actions: Actions = {
   login: async ({ fetch, request }) => {

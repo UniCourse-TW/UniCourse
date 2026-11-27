@@ -46,6 +46,19 @@
   const share = (enrolled: number | null | undefined, capacity: number | null | undefined) =>
     enrolled != null && capacity ? Math.round((enrolled / capacity) * 100) : null;
 
+  // The folded phone row keeps two numbers from the card: the latest term's enrolment (or the term
+  // count when the school publishes none) and the rating (or the term count when there is none).
+  let summary = $derived(course?.summary ?? null);
+  let ratingText = $derived(course?.rating && course.rating.count > 0 ? `★ ${course.rating.average?.toFixed(1)}` : '');
+  let termsText = $derived(summary ? `${summary.terms} 個學期` : '');
+  let keyFacts = $derived.by(() => {
+    if (!summary) return [];
+    const enrolment = summary.latestEnrolled != null ? `${summary.latestTerm} 修課 ${fmt.format(summary.latestEnrolled)}${summary.latestCapacity != null ? ` / ${fmt.format(summary.latestCapacity)}` : ''}` : '';
+    const first = enrolment || termsText;
+    const second = ratingText || (first === termsText ? '尚無評價' : termsText);
+    return [first, second];
+  });
+
   const keepValues = () => async ({ update }: { update: (options?: { reset?: boolean }) => Promise<void> }) =>
     update({ reset: false });
 
@@ -94,15 +107,15 @@
   {@const compact = kind === '回覆'}
   <div class="controls">
     {#if user}
-      <!-- Replies get the compact pair (▲ 0 ▼); the thread itself keeps the worded buttons. -->
+      <!-- The same worded pair (▲ 推 · 分數 · ▼ 噓) on the thread and on every reply; replies only sit tighter. -->
       <form method="POST" action="?/vote" class="vote" class:compact use:enhance={voting(item.id)} aria-busy={pending}>
         <input type="hidden" name="target" value={item.id} />
-        <button name="value" value={item.myVote === 1 ? 0 : 1} aria-pressed={item.myVote === 1} disabled={pending} aria-label={compact ? '推' : undefined}>
-          <span aria-hidden="true">▲</span>{#if !compact} 推{/if}
+        <button name="value" value={item.myVote === 1 ? 0 : 1} aria-pressed={item.myVote === 1} disabled={pending}>
+          <span aria-hidden="true">▲</span> 推
         </button>
         <span class="cm-score" data-sign={scoreSign(item.score)} aria-label="{kind}分數" aria-live="polite">{signed(item.score)}</span>
-        <button name="value" value={item.myVote === -1 ? 0 : -1} aria-pressed={item.myVote === -1} disabled={pending} aria-label={compact ? '噓' : undefined}>
-          <span aria-hidden="true">▼</span>{#if !compact} 噓{/if}
+        <button name="value" value={item.myVote === -1 ? 0 : -1} aria-pressed={item.myVote === -1} disabled={pending}>
+          <span aria-hidden="true">▼</span> 噓
         </button>
       </form>
     {:else}
@@ -112,20 +125,21 @@
       </p>
     {/if}
     {#if kind === '文章'}
-      <a class="action reply-link" href="#reply-form">回覆</a>
+      <!-- The reply box is further down the same page: a text link with a down arrow, not a second button. -->
+      <a class="action reply-link" href="#reply-form">回覆 <span aria-hidden="true">↓</span></a>
     {/if}
     {#if isAuthor || user?.isAdmin}
-      <!-- Author tools: desktop shows them as quiet text at the row's end; phones fold them behind one
-           ⋯ button on the same row, so 編輯／刪除 never outweigh 推／噓 or take a line of their own. -->
+      <!-- Author tools: quiet text at the row's end on desktop; phones fold them behind one ⋯ button on the
+           same row, so 編輯／刪除 never outweigh 推／噓 or take a line of their own. -->
       <details class="more">
-        <summary class="action more-btn" aria-label="更多操作：編輯或刪除"><span aria-hidden="true">⋯</span></summary>
-        <div class="manage" role="group" aria-label="作者操作">
+        <summary class="action more-btn" aria-label="更多操作：編輯或刪除這則{kind}"><span aria-hidden="true">⋯</span></summary>
+        <div class="manage" role="group" aria-label="這則{kind}的作者操作">
         <!-- Re-created after each save so the panels close again. -->
         {#key `${item.updatedAt}|${item.title}|${item.content}`}
           {#if isAuthor}
             {@const draft = editDraft(item)}
             <details class="panel" open={form?.action === 'edit' && form.target === item.id && 'message' in form}>
-              <summary class="action">編輯</summary>
+              <summary class="action">編輯<span class="cm-sr">這則{kind}</span></summary>
               <form method="POST" action="?/edit" class="cm-form" use:enhance={keepValues}>
                 <input type="hidden" name="target" value={item.id} />
                 {#if item.title !== undefined}
@@ -143,7 +157,7 @@
             </details>
           {/if}
           <details class="panel danger">
-            <summary class="action">刪除…</summary>
+            <summary class="action">刪除…<span class="cm-sr">這則{kind}</span></summary>
             <form method="POST" action="?/delete" class="confirm" use:enhance>
               <input type="hidden" name="target" value={item.id} />
               <p>{kind === '文章' ? '刪除後整串討論（含所有回覆）都會隱藏，無法復原。' : '刪除這則回覆後無法復原。'}</p>
@@ -159,7 +173,7 @@
 {/snippet}
 
 <div class="cm thread-page">
-  <!-- Same trail on every device: 論壇 / 學校的討論 / 課號（課程頁或這門課的討論）. -->
+  <!-- Same trail on every device: 論壇 / 學校的討論 / 課號（課程頁或這門課的討論）. All three are links. -->
   <nav class="crumbs" aria-label="麵包屑">
     <a href="/forum">論壇</a>
     {#if post.school}
@@ -195,22 +209,22 @@
     </article>
 
     {#if course}
-      <!-- Desktop: a sticky card beside the thread. Phones: one row (course name + 查看課程) under the
-           thread that unfolds the numbers, so the first reply follows the question. -->
+      <!-- Desktop: a sticky card beside the thread. Phones: a short card under the thread (name, two key
+           numbers, 查看課程) whose details unfold from a separate 44 px toggle, so the first reply follows soon. -->
       <aside class="course" aria-labelledby="course-card-title">
+        <div class="course-head">
+          <h2 id="course-card-title" class="eyebrow">這門課</h2>
+          {#if summary}
+            <p class="head-title"><a href="/courses/{summary.id}">{summary.title}</a> <span class="mono code">{summary.courseCode}</span></p>
+            <p class="head-facts num">{#each keyFacts as fact, index (fact)}{#if index}<span class="sep">·</span>{/if}{fact}{/each}{#if summary.partial}<span class="sep">·</span><span class="partial" title="其他學期通常約 {summary.usualSections} 班">僅收錄 {summary.latestSections} 班</span>{/if}</p>
+          {:else}
+            <p class="head-title"><span class="mono">{post.courseCode}</span></p>
+          {/if}
+        </div>
         <details class="course-fold">
-          <summary class="course-head">
-            <h2 id="course-card-title" class="eyebrow">這門課</h2>
-            {#if course.summary}
-              <span class="head-title">{course.summary.title} <span class="mono code">{course.summary.courseCode}</span></span>
-            {:else}
-              <span class="head-title"><span class="mono">{post.courseCode}</span></span>
-            {/if}
-            <span class="chev" aria-hidden="true">▾</span>
-          </summary>
+          <summary class="fold-toggle"><span class="fold-open">更多數據與討論</span><span class="fold-close">收合</span> <span class="chev" aria-hidden="true">▾</span></summary>
           <div class="course-body">
-        {#if course.summary}
-          {@const summary = course.summary}
+        {#if summary}
           {@const taken = share(summary.latestEnrolled, summary.latestCapacity)}
           <p class="course-title">
             <a href="/courses/{summary.id}">{summary.title}</a>
@@ -228,15 +242,15 @@
               <dd class="num">{#if summary.enrolledTotal != null}{fmt.format(summary.enrolledTotal)} <small>人次</small>{:else}<span title="校方未公布修課人數">—</span>{/if}</dd>
             </div>
             <div class="latest">
-              <dt>最近公布期 <span class="num">{summary.latestTerm}</span> 修課／名額</dt>
+              <dt>最近公布期 <span class="num">{summary.latestTerm}</span> 修課／名額{#if summary.partial}<span class="partial" title="其他學期通常約 {summary.usualSections} 班">僅收錄 {summary.latestSections} 班</span>{/if}</dt>
               <dd class="num">
                 <span class="nowrap">{#if summary.latestEnrolled != null}{fmt.format(summary.latestEnrolled)}{:else}<span title="校方未公布修課人數">—</span>{/if}
                 / {#if summary.latestCapacity != null}{fmt.format(summary.latestCapacity)}{:else}<span title="校方未公布名額">—</span>{/if}</span>
-                <small>{summary.latestSections > 1 ? `${summary.latestSections} 個班次合計` : '1 個班次'}{#if taken != null}・{taken}%{/if}</small>
+                <small>{summary.partial ? `只有 ${summary.latestSections} 個班次的合計` : summary.latestSections > 1 ? `${summary.latestSections} 個班次合計` : '1 個班次'}{#if taken != null}・{taken}%{/if}</small>
               </dd>
               {#if taken != null}
                 <!-- The share of the capacity taken, to scale; the numbers above are the source of truth. -->
-                <span class="ratio" class:over={taken > 100} aria-hidden="true"><span style:inline-size="{Math.min(100, taken)}%"></span></span>
+                <span class="ratio" class:over={taken > 100} class:partial-bar={summary.partial} aria-hidden="true"><span style:inline-size="{Math.min(100, taken)}%"></span></span>
               {/if}
             </div>
             <div>
@@ -283,9 +297,9 @@
         {/if}
           </div>
         </details>
-        {#if course.summary}
-          <!-- Phones: the course link stays on the folded row; desktop uses the block button above. -->
-          <a class="go" href="/courses/{course.summary.id}">查看課程 <span aria-hidden="true">→</span></a>
+        {#if summary}
+          <!-- Phones: the course link is its own 44 px target on the card's last row, apart from the toggle. -->
+          <a class="go" href="/courses/{summary.id}">查看課程 <span aria-hidden="true">→</span></a>
         {/if}
       </aside>
     {/if}
@@ -301,7 +315,7 @@
         {/if}
       </div>
       {#if post.replies.length === 0}
-        <p class="empty">還沒有回覆，說點什麼？</p>
+        <p class="empty">還沒有回覆，{#if user}說點什麼？{:else}登入後可以第一個回答。{/if}</p>
       {:else}
         <ol>
           {#each replies as reply (reply.id)}
@@ -309,9 +323,10 @@
               <article class="reply" aria-label="{authorName(reply.author)} 的回覆">
                 <p class="meta">
                   <a href={profileHref(reply.author.username)}>{authorName(reply.author)}</a>
+                  {#if reply.author.displayName}<span class="handle">@{reply.author.username}</span>{/if}
                   {#if reply.author.username === post.author.username}<span class="op">原 PO</span>{/if}
                   <span class="sep">·</span><time class="num" datetime={reply.createdAt}>{shortDateTime(reply.createdAt)}</time>
-                  {#if edited(reply)}<span class="sep">·</span>已編輯{/if}
+                  {#if edited(reply)}<span class="sep">·</span><span title="最後編輯 {dateTime(reply.updatedAt)}">已編輯</span>{/if}
                 </p>
                 <div class="content">{#each paragraphs(reply.content) as paragraph, index (index)}<p>{paragraph}</p>{/each}</div>
                 {@render controls(reply, '回覆')}
@@ -323,7 +338,7 @@
       {#if user}
         <form method="POST" action="?/reply" class="reply-form cm-form" id="reply-form" use:enhance={submitReply}>
           <div class="cm-field">
-            <div class="cm-label"><label for="reply-content">我要回覆</label></div>
+            <div class="cm-label"><label for="reply-content">我要回覆</label><span class="cm-hint">以 {user.displayName || `@${user.username}`} 的身分</span></div>
             <textarea id="reply-content" class="cm-input" name="content" required rows="4" maxlength="20000" defaultValue={replyDraft}
               placeholder="分享你的經驗或回答問題。" aria-describedby="reply-hint"
               oninput={(event) => (replyLength = [...event.currentTarget.value].length)}></textarea>
@@ -342,7 +357,7 @@
         </form>
       {:else}
         <div class="login" id="reply-form">
-          <p>登入後即可回覆與投票。</p>
+          <p>登入後即可回覆與投票；查課不用登入。</p>
           <a class="cm-btn" href={loginHref(here)}>登入</a>
           <a class="cm-btn quiet" href={loginHref(here, 'register')}>建立帳號</a>
         </div>
@@ -354,9 +369,8 @@
 <style>
   .thread-page .sep { margin-inline: 0.4em; color: var(--axis); }
   .crumbs { display: flex; flex-wrap: wrap; align-items: center; margin-block-end: var(--space-3); color: var(--muted); font-size: var(--t-base); }
-  .crumbs a { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); text-decoration: none; font-weight: 600; }
-  .crumbs a:hover { color: var(--brand-ink); text-decoration: underline; }
-  .crumbs a.mono { color: var(--brand-ink); }
+  .crumbs a { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand-ink) 45%, transparent); }
+  .crumbs a:hover { text-decoration-color: currentColor; }
 
   .layout { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1fr); }
   .layout.with-aside { grid-template-columns: minmax(0, 1fr) 18.5rem; column-gap: var(--space-8); }
@@ -385,16 +399,14 @@
   .content p + p { margin-block-start: 0.75em; }
 
   .controls { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-1); align-items: center; margin-block-start: var(--space-4); }
-  /* Author tools at the far end. Desktop: the ⋯ is hidden and the quiet group is always shown. */
+  /* Author tools at the far end. Desktop: the ⋯ is hidden and the quiet pair is always shown, no frame. */
   .more { position: relative; display: flex; align-items: center; margin-inline-start: auto; }
   .more > summary { list-style: none; }
   .more > summary::-webkit-details-marker { display: none; }
   .more > .more-btn { display: none; min-inline-size: var(--target-min); justify-content: center; font-size: 1.25rem; letter-spacing: 0.05em; }
   .more::details-content { display: block; content-visibility: visible; }
-  .manage { display: inline-flex; gap: 2px; align-items: center; padding: 2px; border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); }
-  .manage .action { min-block-size: calc(var(--target-min) - 6px); border-radius: calc(var(--radius-control) - 2px); }
-  .reply-link { padding-inline: var(--space-3) !important; border: 1px solid var(--control-line); color: var(--brand-ink) !important; background: var(--panel-raised); }
-  .reply-link:hover { background: var(--brand-wash) !important; }
+  .manage { display: inline-flex; gap: var(--space-1); align-items: center; }
+  .reply-link { gap: 0.3em; }
   .vote {
     display: inline-flex;
     align-items: center;
@@ -429,9 +441,9 @@
   /* The score is its own segment, so ▲ 推 · 0 · ▼ 噓 read as three parts even before a vote. */
   .vote .cm-score { min-inline-size: 2.75rem; padding-inline: var(--space-1); border-inline: 1px solid var(--line); text-align: center; font-size: var(--t-base); line-height: calc(var(--target-min) - 2px); }
   .vote .cm-score[data-sign='zero'] { color: var(--ink-2); }
-  /* Replies: a one-line answer should not carry a control bar taller than itself. */
-  .vote.compact button { min-block-size: 2.5rem; min-inline-size: 2.5rem; padding-inline: var(--space-2); }
-  .vote.compact .cm-score { min-inline-size: 2.25rem; line-height: calc(2.5rem - 2px); }
+  /* Replies: the same words, a little tighter, so a one-line answer does not carry a wide control bar. */
+  .vote.compact button { padding-inline: var(--space-2); font-size: var(--t-sm); }
+  .vote.compact .cm-score { min-inline-size: 2.25rem; font-size: var(--t-sm); }
   .vote.static { gap: var(--space-1); padding: 0 var(--space-2) 0 0; min-block-size: var(--target-min); border-color: transparent; background: transparent; }
   .vote.static .label { color: var(--muted); font-size: var(--t-sm); }
   .vote.static .cm-score { min-inline-size: 0; }
@@ -451,10 +463,11 @@
   }
   .action::-webkit-details-marker { display: none; }
   .action:hover { color: var(--brand-ink) !important; background: var(--hover-row); }
+  .reply-link { color: var(--brand-ink) !important; }
   .danger > .action:hover, .danger > .action:focus-visible { color: var(--down) !important; background: color-mix(in srgb, var(--down) var(--status-tint), var(--panel-raised)); }
   /* An open panel takes the full row right under the controls; the other tool follows it as a line. */
   .more:has(.panel[open]) { flex-basis: 100%; order: 10; margin-inline-start: 0; }
-  .manage:has(.panel[open]) { display: grid; gap: var(--space-1); inline-size: 100%; padding: 0; border: 0; background: transparent; }
+  .manage:has(.panel[open]) { display: grid; gap: var(--space-1); inline-size: 100%; }
   .panel[open] { padding: var(--space-3) var(--space-4) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .panel[open] > .action { margin-inline-start: calc(-1 * var(--space-2)); color: var(--ink) !important; }
   .panel.danger[open] > .action { color: var(--down) !important; }
@@ -478,11 +491,11 @@
     font-size: var(--t-base);
   }
   .eyebrow { color: var(--muted) !important; font-size: var(--t-sm) !important; font-weight: 600 !important; letter-spacing: 0 !important; }
-  /* Desktop: the fold is just a header; the body is always open and the phone-only parts are hidden. */
+  /* Desktop: the head is just the eyebrow; the body is always open and the phone-only parts are hidden. */
   .course-fold > summary { list-style: none; pointer-events: none; }
   .course-fold > summary::-webkit-details-marker { display: none; }
   .course-fold::details-content { display: block; content-visibility: visible; }
-  .course-head .head-title, .course-head .chev, .go { display: none; }
+  .course-head .head-title, .course-head .head-facts, .fold-toggle, .go { display: none; }
   .course-title { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: baseline; margin-block-start: var(--space-2) !important; }
   .course-title a { font-size: var(--t-lg); font-weight: 650; }
   .code { color: var(--muted); }
@@ -498,9 +511,12 @@
   .facts dd { margin: 0; font-weight: 600; text-align: end; }
   .facts dd small { display: block; color: var(--muted); font-weight: 400; font-size: var(--t-xs); }
   .facts .latest dd { flex: 1 1 auto; }
+  /* The same 「只收錄 N 班」 mark as the course page, so a partial term is never read as a whole one. */
+  .partial { display: inline-block; margin-inline-start: 0.4em; padding: 0 6px; border: 1px solid var(--brand); border-radius: var(--radius-pill); color: var(--brand-ink); background: var(--panel-raised); font-size: var(--t-xs); font-weight: 600; line-height: 1.6; white-space: nowrap; vertical-align: 0.1em; }
   .ratio { display: block; flex-basis: 100%; block-size: 4px; margin-block-start: var(--space-1); border-radius: 2px; background: var(--chip); overflow: hidden; }
   .ratio > span { display: block; block-size: 100%; border-radius: 2px; background: var(--brand); }
   .ratio.over > span { background: var(--warn); }
+  .ratio.partial-bar > span { background: repeating-linear-gradient(135deg, var(--brand) 0 3px, color-mix(in srgb, var(--brand) 35%, transparent) 3px 6px); }
   .teachers { margin-block-end: var(--space-3) !important; }
   .nowrap { white-space: nowrap; }
   .others-empty { display: grid; margin-block-start: var(--space-3); padding-block-start: var(--space-2); border-block-start: 1px solid var(--line); }
@@ -534,20 +550,29 @@
     /* The desktop sticky offset must not survive as a relative shift on phones. */
     .with-aside .course { position: relative; inset-block-start: auto; }
     .layout { gap: var(--space-4); }
-    /* Phone card: one row with the course name, 查看課程 and a chevron; everything else unfolds. */
-    .course { padding: 0 var(--space-3); }
-    .course-fold > summary { pointer-events: auto; cursor: pointer; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 var(--space-2); align-items: center; min-block-size: var(--target-min); padding-block: var(--space-2); }
-    /* Row: 這門課 · course name … [查看課程 →] [▾]; the name leaves room for the link laid over it. */
-    .course-head .head-title { display: block; min-inline-size: 0; padding-inline-end: 6.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-size: var(--t-base); font-weight: 650; }
-    .course-head .chev { display: inline-block; color: var(--muted); }
+    /* Phone card: eyebrow + course name, the two key numbers, then one row with 查看課程 and the toggle. */
+    .course { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding: var(--space-3) var(--space-3) 0; }
+    .course-head { grid-column: 1 / -1; display: grid; gap: 2px; }
+    .course-head .head-title { display: block; margin: 0; min-inline-size: 0; color: var(--ink); font-size: var(--t-base); font-weight: 650; line-height: 1.4; overflow-wrap: anywhere; }
+    .course-head .head-title a { color: var(--ink); text-decoration: none; }
+    .course-head .head-title a:hover { color: var(--brand-ink); text-decoration: underline; }
+    .course-head .head-facts { display: block; margin: 0; color: var(--ink-2); font-size: var(--t-sm); line-height: 1.5; }
+    .course-head .head-facts .sep { margin-inline: 0.35em; }
+    .course-fold { grid-column: 1 / -1; grid-row: 3; }
+    .course-fold > summary { pointer-events: auto; cursor: pointer; }
+    .fold-toggle { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); margin-inline-start: calc(-1 * var(--space-2)); padding: 0 var(--space-2); border-radius: var(--radius-control); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; }
+    .fold-toggle:hover { background: var(--hover-row); }
+    .fold-toggle .fold-close, .course-fold[open] .fold-toggle .fold-open { display: none; }
+    .course-fold[open] .fold-toggle .fold-close { display: inline; }
     .course-fold[open] .chev { rotate: 180deg; }
     .course-fold::details-content { content-visibility: auto; }
     .course-fold:not([open])::details-content { content-visibility: hidden; }
     .course-body { padding-block: var(--space-1) var(--space-3); border-block-start: 1px solid var(--line); }
-    /* The folded row already names the course; the body starts with school and department. */
+    /* The head already names the course; the body starts with school and department. */
     .course-title, .course .course-link { display: none; }
     .course-body > .sub:first-of-type { margin-block-start: var(--space-2) !important; }
-    .go { position: absolute; inset-block-start: var(--space-1); inset-inline-end: calc(var(--space-3) + 1.25rem); display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); padding-inline: var(--space-2); font-size: var(--t-base); font-weight: 650; text-decoration: none; }
+    /* 查看課程 and the toggle share the card's last row, each its own 44 px target. */
+    .go { grid-column: 2; grid-row: 3; display: inline-flex; gap: 0.3em; align-items: center; align-self: start; min-block-size: var(--target-min); padding-inline: var(--space-2); font-size: var(--t-base); font-weight: 650; text-decoration: none; }
     .go:hover { text-decoration: underline; }
     .facts { margin-block: var(--space-2) var(--space-1); }
     .teachers { margin-block-end: var(--space-2) !important; }
@@ -555,12 +580,11 @@
   @media (max-width: 40rem) {
     .crumbs { margin-block-end: var(--space-1); }
     .vote button { min-block-size: var(--target-min); }
-    .vote.compact button { min-block-size: 2.5rem; }
     /* Phones: one ⋯ button on the row; the two tools drop down from it. */
     .more > .more-btn { display: inline-flex; }
     /* No content-visibility here: its paint containment would clip the dropdown to a zero-size box. */
     .more:not([open])::details-content { display: none; }
-    .manage { position: absolute; inset-block-start: calc(100% + 4px); inset-inline-end: 0; z-index: 5; display: grid; gap: 0; min-inline-size: 10rem; padding: var(--space-1); border-color: var(--control-line); background: var(--panel-raised); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 18%, transparent); }
+    .manage { position: absolute; inset-block-start: calc(100% + 4px); inset-inline-end: 0; z-index: 5; display: grid; gap: 0; min-inline-size: 10rem; padding: var(--space-1); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 18%, transparent); }
     .manage .action { min-block-size: var(--target-min); padding-inline: var(--space-3); color: var(--ink) !important; }
     .more:has(.panel[open]) .manage { position: static; inline-size: 100%; border: 0; padding: 0; background: transparent; box-shadow: none; }
     .more:has(.panel[open]) > .more-btn { display: none; }

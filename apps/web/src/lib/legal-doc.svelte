@@ -1,10 +1,19 @@
-<script lang="ts">
-  import { onMount, type Snippet } from 'svelte';
-
+<script module lang="ts">
   export interface DocSection {
     id: string;
     title: string;
   }
+
+  /** One plain-language point: a bold lead, the sentence, and optionally a link that ends it. */
+  export interface GistPoint {
+    lead: string;
+    text: string;
+    link?: { href: string; label: string; external?: boolean };
+  }
+</script>
+
+<script lang="ts">
+  import { onMount, type Snippet } from 'svelte';
 
   interface Props {
     title: string;
@@ -14,7 +23,7 @@
     /** The sibling document (terms ↔ privacy). */
     sibling: { href: string; label: string };
     /** Plain-language points shown under the title, so readers get the gist before the full text. */
-    summary?: readonly string[];
+    summary?: readonly GistPoint[];
     children: Snippet;
   }
 
@@ -37,6 +46,17 @@
     });
     observer.observe(toc);
     return () => observer.disconnect();
+  });
+
+  // Phones: every h2 carries a 「目錄 ↑」 link (the pages mark them `.to-toc`); they open the contents too.
+  onMount(() => {
+    const prose = document.querySelector('.prose');
+    if (!prose) return;
+    const onClick = (event: Event) => {
+      if ((event.target as HTMLElement).closest('a.to-toc')) toToc(event as MouseEvent);
+    };
+    prose.addEventListener('click', onClick);
+    return () => prose.removeEventListener('click', onClick);
   });
 
   /** Opens the collapsed phone contents and moves focus there, not just the scroll position. */
@@ -87,7 +107,11 @@
     {#if summary.length}
       <section class="gist" aria-labelledby="gist-title">
         <h2 id="gist-title">白話重點</h2>
-        <ul>{#each summary as point, index (index)}<li>{point}</li>{/each}</ul>
+        <ul>
+          {#each summary as point, index (index)}
+            <li><strong>{point.lead}</strong>{point.text}{#if point.link}<a href={point.link.href} rel={point.link.external ? 'noopener external' : undefined}>{point.link.label}{#if point.link.external}<span aria-hidden="true"> ↗</span>{/if}</a>。{/if}</li>
+          {/each}
+        </ul>
       </section>
     {/if}
     <nav class="doc-toc" id="toc" aria-label="目錄">
@@ -122,6 +146,9 @@
   .gist { grid-column: 2; max-inline-size: 52em; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-panel); background: var(--panel); }
   .gist h2 { margin: 0 0 var(--space-1); font-size: var(--t-base); font-weight: 650; color: var(--ink-2); }
   .gist ul { display: grid; gap: var(--space-1); margin: 0; padding-inline-start: 1.2em; color: var(--ink); font-size: var(--t-md); line-height: 1.75; }
+  .gist li strong { margin-inline-end: 0.35em; color: var(--ink); font-weight: 650; }
+  .gist li strong::after { content: '：'; }
+  .gist a { font-weight: 600; }
   .toc-hint { display: none; font-weight: 500; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .meta { margin: 0; color: var(--muted); font-size: var(--t-base); }
@@ -130,8 +157,6 @@
   :is(.meta, .doc-toc, .next, .prose) :global(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: 2px; }
 
   .doc-layout { display: grid; grid-template-columns: 13.5rem minmax(0, 1fr); gap: var(--space-5) var(--space-8); align-items: start; }
-  /* The gist is its own block: the first section starts a full block gap below it, like every later h2. */
-  .has-gist .prose :global(section:first-of-type h2) { margin-block-start: var(--space-6); }
   .doc-toc { grid-column: 1; grid-row: 1; position: sticky; inset-block-start: 5rem; font-size: var(--t-md); }
   .has-gist .doc-toc { grid-row: 1 / span 2; }
   .prose { grid-column: 2; }
@@ -151,7 +176,6 @@
   .prose :global(section) { max-inline-size: 52em; }
   .prose { min-inline-size: 0; font-size: var(--t-md); line-height: 1.85; overflow-wrap: anywhere; hanging-punctuation: none; }
   .prose :global(h2) { margin: var(--space-8) 0 var(--space-2); font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); scroll-margin-block-start: var(--space-4); }
-  .prose :global(section:first-of-type h2) { margin-block-start: 0; }
   .prose :global(h3) { margin: var(--space-5) 0 var(--space-1); font-size: var(--t-lg); font-weight: 650; line-height: var(--leading-tight); }
   .prose :global(p), .prose :global(ul), .prose :global(ol) { margin: 0 0 var(--space-3); }
   .prose :global(ul), .prose :global(ol) { padding-inline-start: 1.4em; }
@@ -166,21 +190,27 @@
   /* Identifier columns (board names) never break mid-word; the remarks column takes the wrapping. */
   .prose :global(table.boards td:first-child), .prose :global(table.boards th:first-child) { white-space: nowrap; font-family: var(--font-mono); font-size: 0.92em; }
   .prose :global(table.boards td:nth-child(2)) { white-space: nowrap; }
+  /* The data-kind column of the sources table reads as one unit (課程與修課人數 never breaks before its last word). */
+  .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: 9.5rem; white-space: nowrap; }
   /* Desktop shows a folded block open; phones get a real disclosure (summary styled below). */
   .prose :global(details.phone-fold > summary) { list-style: none; pointer-events: none; color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .prose :global(details.phone-fold > summary::-webkit-details-marker) { display: none; }
   .prose :global(details.phone-fold::details-content) { display: block; content-visibility: visible; }
   .prose :global(details.phone-fold > summary .fold-count) { display: none; }
+  .prose :global(p.update-note a.private) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: 2rem; font-weight: 600; }
   .prose :global(.callout) { margin: 0 0 var(--space-3); padding: var(--space-3) var(--space-4); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); }
   .prose :global(.callout .note) { display: block; margin-block-start: var(--space-2); color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
   .prose :global(.contact-routes) { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-3); margin: 0 0 var(--space-3); }
   .prose :global(.contact-routes .route-row) { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
   .prose :global(.contact-routes .route-tag) { display: inline-block; padding: 0 7px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; line-height: 1.7; }
   .prose :global(.contact-routes .route-tag.private) { background: var(--brand-wash); color: var(--brand-ink); }
-  /* A subsection heading with a shortcut at its end (e.g. 更新與移除 · 私密聯絡 ↗). */
-  .prose :global(.h3-row) { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: baseline; justify-content: space-between; margin: var(--space-5) 0 var(--space-1); }
-  .prose :global(.h3-row h3) { margin: 0; }
-  .prose :global(.h3-row .shortcut) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: 2rem; font-size: var(--t-base); font-weight: 600; }
+  /* A section heading row: the h2, an optional status badge beside it, and (phones only) 「目錄 ↑」. */
+  .prose :global(.h2-row) { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); align-items: baseline; margin: var(--space-8) 0 var(--space-2); }
+  .prose :global(section:first-of-type .h2-row) { margin-block-start: 0; }
+  .has-gist .prose :global(section:first-of-type .h2-row) { margin-block-start: var(--space-6); }
+  .prose :global(.h2-row h2) { margin: 0; }
+  .prose :global(.h2-row .status) { margin: 0; align-self: center; }
+  .prose :global(.h2-row .to-toc) { display: none; }
   /* A section's one-paragraph answer before the detail: what, and what to do. */
   .prose :global(p.lead) { padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); line-height: 1.7; }
   .prose :global(p.lead strong) { color: var(--ink); }
@@ -205,9 +235,12 @@
     .prose :global(tr) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); }
     .prose :global(tr:last-child) { border-block-end: 0; }
     .prose :global(td) { padding: 2px 0; border: 0; }
-    .prose :global(td[data-label])::before { content: attr(data-label); display: block; color: var(--muted); font-size: var(--t-xs); font-weight: 600; }
-    .prose :global(td:first-child) { font-weight: 600; }
+    /* Each cell is one row: the column name in a 5.5 rem label column, the value beside it. */
+    .prose :global(td[data-label]) { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: var(--space-2); }
+    .prose :global(td[data-label])::before { content: attr(data-label); color: var(--muted); font-size: var(--t-sm); font-weight: 600; line-height: inherit; }
+    .prose :global(td:first-child) { display: block; padding-block-end: var(--space-1); font-weight: 600; }
     .prose :global(td:first-child)::before { display: none; }
+    .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: auto; white-space: normal; }
   }
   @media (max-width: 56rem) {
     .doc-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
@@ -231,7 +264,7 @@
     .toc-fab { position: fixed; inset-block-end: calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); inset-inline-end: var(--space-4); z-index: 20; display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 18%, transparent); color: var(--ink); font-size: var(--t-base); font-weight: 650; text-decoration: none; opacity: 0; pointer-events: none; transition: opacity 150ms; }
     .toc-fab.shown { opacity: 1; pointer-events: auto; }
     .prose :global(details.phone-fold) { margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
-    .prose :global(details.phone-fold > summary) { display: flex; align-items: center; gap: var(--space-2); min-block-size: var(--target-min); padding-inline: var(--space-3); color: var(--brand-ink); font-size: var(--t-base); cursor: pointer; pointer-events: auto; }
+    .prose :global(details.phone-fold > summary) { display: flex; align-items: center; gap: 0; min-block-size: var(--target-min); padding-inline: var(--space-3); color: var(--brand-ink); font-size: var(--t-base); cursor: pointer; pointer-events: auto; }
     .prose :global(details.phone-fold > summary .fold-count) { display: inline; color: var(--muted); font-weight: 500; }
     .prose :global(details.phone-fold > summary::after) { content: '▾'; margin-inline-start: auto; color: var(--muted); }
     .prose :global(details.phone-fold[open] > summary::after) { content: '▴'; }
@@ -239,5 +272,9 @@
     .prose :global(details.phone-fold:not([open])::details-content) { content-visibility: hidden; }
     .prose :global(details.phone-fold table) { margin: 0; border: 0; border-radius: 0; border-block-start: 1px solid var(--line); }
     .toc-fab:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+    /* Phones: a way back to the contents at every section heading, not only at the end of the text. */
+    .prose :global(.h2-row) { align-items: center; justify-content: space-between; }
+    .prose :global(.h2-row .to-toc) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); margin-inline-end: calc(-1 * var(--space-2)); padding-inline: var(--space-2); border-radius: var(--radius-control); color: var(--muted); font-size: var(--t-sm); font-weight: 600; text-decoration: none; }
+    .prose :global(.h2-row .to-toc:hover) { color: var(--brand-ink); background: var(--hover-row); }
   }
 </style>

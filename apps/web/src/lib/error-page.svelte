@@ -30,7 +30,7 @@
 
   let { status, message, title, description, primary, secondary, also = [], search = false, query = '', retryHref }: Props = $props();
 
-  /** Searches that find courses at most schools, as a starting point when the address gave no clue. */
+  /** Searches that find courses at most schools, offered when the address gave no clue about the course. */
   const examples = ['微積分', '普通心理學', '經濟學原理', '計算機概論'];
 
   let notFound = $derived(status === 404);
@@ -68,6 +68,7 @@
   <meta name="robots" content="noindex" />
 </svelte:head>
 
+<div class="error-wrap">
 <section class="error-page" class:outage={!notFound} aria-labelledby="error-title">
   <p class="eyebrow"><span class="ui-tabular code">{status}</span>{#if !notFound}暫時無法取得{#if message && message !== detail} · {message}{/if}{/if}</p>
   <h1 id="error-title">{heading}</h1>
@@ -77,7 +78,7 @@
          follows them on screen. -->
     <form class="search" method="GET" action="/" role="search" aria-label="搜尋課程">
       <label class="scope-field">
-        <span class="field-label">搜尋範圍</span>
+        <span class="field-label">學期</span>
         <span class="select-wrap">
           <select name="term">
             <option value="all" selected>全部學期</option>
@@ -87,7 +88,7 @@
         </span>
       </label>
       <label class="search-field">
-        <span class="field-label">課名、課號或教師</span>
+        <span class="field-label">原課號、課名或教師</span>
         <span class="input-wrap">
           <svg class="icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
           <input bind:this={searchInput} type="search" name="q" defaultValue={query} placeholder="例如 微積分、CS2001" maxlength="100" autocomplete="off" />
@@ -95,8 +96,9 @@
       </label>
       <button type="submit">搜尋課程</button>
     </form>
-    <nav class="examples" aria-label="常見搜尋">
-      <span class="examples-label">常見搜尋</span>
+    <!-- The address names no course, so these are what other visitors search, not this course's school. -->
+    <nav class="examples" aria-label="其他人常搜">
+      <span class="examples-label">其他人常搜</span>
       <ul>{#each examples as example (example)}<li><a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: example })}`}>{example}</a></li>{/each}</ul>
     </nav>
   {/if}
@@ -120,8 +122,11 @@
     </nav>
   {/if}
 </section>
+</div>
 
 <style>
+  /* Desktop: the card sits in the upper middle of the main column instead of hugging the top. */
+  .error-wrap { display: grid; align-content: center; min-block-size: min(60vh, 36rem); }
   .error-page {
     display: grid;
     gap: var(--space-2);
@@ -162,7 +167,7 @@
     font: var(--t-base) / var(--leading-table) var(--font-sans);
   }
   .search input[type='search'] { padding-inline-start: calc(var(--space-3) + 1.6rem); }
-  .search select { appearance: none; padding-inline-end: 2rem; font-weight: 600; cursor: pointer; }
+  .search select { min-inline-size: 10rem; appearance: none; padding-inline-end: 2rem; font-weight: 600; cursor: pointer; }
   .select-wrap .chev { position: absolute; inset-block-start: 50%; inset-inline-end: var(--space-3); translate: 0 -50%; color: var(--muted); pointer-events: none; }
   .search input::placeholder { color: var(--muted); }
   .search input[type='search']:focus-visible, .search select:focus-visible, button:focus-visible, .actions a:focus-visible, .also a:focus-visible {
@@ -193,7 +198,7 @@
   .examples { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: 0; }
   .examples-label { color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-  .chip { display: inline-flex; align-items: center; justify-content: center; min-block-size: 2.25rem; padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: var(--t-sm); font-weight: 600; text-decoration: none; touch-action: manipulation; }
+  .chip { display: inline-flex; align-items: center; justify-content: center; min-block-size: 2.25rem; padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: var(--t-sm); font-weight: 600; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
   .chip:hover { color: var(--brand-ink); background: var(--brand-wash); }
   .chip:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .also { display: grid; gap: var(--space-1); inline-size: 100%; margin-block-start: var(--space-4); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
@@ -205,6 +210,7 @@
   .also a:hover { color: var(--brand-ink); }
 
   @media (max-width: 40rem) {
+    .error-wrap { min-block-size: 0; }
     .error-page { padding: var(--space-5) var(--space-4); margin-block-start: 0; }
     /* Words first and full width; scope and the button share the next row. */
     .search-field { flex-basis: 100%; }
@@ -213,11 +219,12 @@
     .actions { inline-size: 100%; }
     .actions .primary { flex: 1 1 100%; }
     .actions .secondary { flex: 1 1 10rem; }
-    /* Two columns of equal chips, so four examples never leave one alone on a row. */
+    /* The label on its own line, then one wrapping row of 40 px chips (no grid, so no ragged columns). */
     .examples { display: grid; gap: var(--space-2); inline-size: 100%; }
-    .examples ul { display: grid; grid-template-columns: 1fr 1fr; }
-    .chip { min-block-size: var(--target-min); }
-    /* The ways out share one wrapping row of links instead of a stack of separated rows. */
-    .also ul { gap: 0 var(--space-4); }
+    .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .chip { min-block-size: 2.5rem; }
+    /* Each way out is its own 44 px row; the data route (各校收錄狀態) leads. */
+    .also ul { display: grid; gap: 0; }
+    .also a { inline-size: 100%; }
   }
 </style>
