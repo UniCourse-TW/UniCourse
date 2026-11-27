@@ -31,6 +31,7 @@
   let enrollmentMax = $derived(Math.max(1, ...courses.flatMap((course) =>
     [course.enrolled ?? 0, reportedCapacity(course) ?? 0])));
   let hasEnrollment = $derived(courses.some((course) => course.enrolled != null));
+  let hasUnknownEnrollment = $derived(courses.some((course) => course.enrolled == null));
   let hasCapacity = $derived(courses.some((course) => reportedCapacity(course) != null));
   let hasOverCapacity = $derived(courses.some((course) => {
     const capacity = reportedCapacity(course);
@@ -75,8 +76,6 @@
   let jumpNav = $state<HTMLElement>();
   let pagination = $state<HTMLElement>();
   let atPagination = $state(false);
-  let canScrollLeft = $state(false);
-  let canScrollRight = $state(false);
   let hasSchedule = $derived(courses.some((course) => schedule(course).text));
   const nycuPeriods: Readonly<Record<string, string>> = { y: '06:00–06:50', z: '07:00–07:50', n: '12:20–13:10', a: '18:30–19:20', b: '19:30–20:20', c: '20:30–21:20', d: '21:30–22:20' };
 
@@ -95,26 +94,6 @@
     const navBottom = jumpNav.getBoundingClientRect().bottom;
     const atEnd = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
     atPagination = footer.top <= navBottom + 24 || (atEnd && footer.top < window.innerHeight);
-  }
-
-  function trackFacetScroll(node: HTMLElement, scrollable: boolean) {
-    if (!scrollable) return;
-
-    function updateEdges() {
-      canScrollLeft = node.scrollLeft > 1;
-      canScrollRight = node.scrollWidth - node.clientWidth - node.scrollLeft > 1;
-    }
-
-    const resize = new ResizeObserver(updateEdges);
-    resize.observe(node);
-    node.addEventListener('scroll', updateEdges, { passive: true });
-    updateEdges();
-    return {
-      destroy() {
-        resize.disconnect();
-        node.removeEventListener('scroll', updateEdges);
-      }
-    };
   }
 
   const allColumns: TableColumn<Offering>[] = [
@@ -168,7 +147,7 @@
 <svelte:window onscroll={updateJump} onresize={updateJump} />
 
 <header class="search-header" id="search-top" tabindex="-1">
-  <h1>{isEmpty ? '找不到符合條件的課程'
+  <h1>{isEmpty ? filters.query ? `查無「${filters.query}」` : '找不到符合條件的課程'
     : filters.query ? `搜尋「${filters.query}」` : '搜尋課程'}</h1>
   <p class="dek">
     {#if isEmpty}<strong class="ui-tabular" role="status">0 班次</strong>{/if}
@@ -197,8 +176,8 @@
   {/if}
 {/snippet}
 
-{#snippet facets(scrollable = false)}
-  <nav class="quick-filters" aria-label={`依${facetLabel}縮小範圍`} use:trackFacetScroll={scrollable}>
+{#snippet facets()}
+  <nav class="quick-filters" aria-label={`依${facetLabel}縮小範圍`}>
     {#each facetEntries as [key, count] (key)}
       <a class="quick-chip" aria-current={facetKind === 'term' && filters.term === key ? 'true' : undefined}
         href={overviewSearchHref(facetKind === 'school' ? { ...filters, school: key, department: '' } : { ...filters, term: key })}>
@@ -217,8 +196,8 @@
   {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}
 {/snippet}
 
-{#snippet code(course: Offering)}
-  <span class="code" title={course.courseCode.endsWith('*') ? '星號為校方公布課號的一部分' : undefined}>{@render markMatch(course.courseCode)}{#if course.classCode}<span>{'\u00a0· '}班次 {course.classCode}</span>{:else if course.sourceId && course.sourceId !== course.courseCode}<span>{'\u00a0· '}選課代碼 {course.sourceId}</span>{/if}</span>
+{#snippet code(course: Offering, sourceId = true)}
+  <span class="code" title={course.courseCode.endsWith('*') ? '星號為校方公布課號的一部分' : undefined}>{@render markMatch(course.courseCode)}{#if course.classCode}<span>{'\u00a0· '}班次 {course.classCode}</span>{:else if sourceId && course.sourceId && course.sourceId !== course.courseCode}<span>{'\u00a0· '}選課代碼 {course.sourceId}</span>{/if}</span>
 {/snippet}
 
 {#snippet unit(course: Offering)}
@@ -240,11 +219,13 @@
 
 {#snippet meterKey()}
   <p class="meter-key">
-    {#if hasEnrollment || hasCapacity}<span>本頁尺度：0–{displayValue(enrollmentMax)} 人</span>{/if}
+    {#if hasEnrollment || hasCapacity}<span>每頁尺度不同（本頁 0–{displayValue(enrollmentMax)} 人）</span>{/if}
     {#if hasCapacity}<span><i class="key-tick" aria-hidden="true"></i>刻線＝名額</span>{/if}
     {#if hasOverCapacity}<span><i class="key-over" aria-hidden="true"></i>橘＝超額</span>{/if}
-    {#if hasUnknownCapacity}<span>無刻線＝未公布名額</span>{/if}
-    {#if hasNoMeasures}<span>—＝修課人數／名額未公布</span>{/if}
+    {#if hasUnknownCapacity}<span class="desktop-key">無刻線＝未公布名額</span>{/if}
+    {#if hasUnknownCapacity || hasUnknownEnrollment}
+      <span class:mobile-key={!hasNoMeasures}>—＝未公布</span>
+    {/if}
   </p>
 {/snippet}
 
@@ -264,10 +245,10 @@
         {#if capacity != null}<span class="capacity-marker" style:left={`${100 * capacity / enrollmentMax}%`}></span>{/if}
       </span>
     {/if}
-    {#if mobile && (enrolled != null || capacity != null)}
+    {#if mobile}
       <span class="measure">
-        {#if enrolled != null}<span><small>修課</small> {displayValue(enrolled)}</span>{:else}<span class="sr-only">修課人數未公布</span>{/if}
-        {#if capacity != null}<span><small>名額</small> {displayValue(capacity)}</span>{:else}<span class="sr-only">名額未公布</span>{/if}
+        <span><small>修課</small> {displayValue(enrolled)}</span>
+        <span><small>名額</small> {displayValue(capacity)}</span>
       </span>
     {:else if enrolled != null && capacity != null}
       <span class="measure" title={enrolled > capacity ? '修課人數超過校方公布名額；兩欄可能採不同口徑' : undefined}>
@@ -294,6 +275,7 @@
         <div class="empty-actions">
           {#if filters.term !== 'all'}<a class="text-action" href={allTerms}>查全部學期</a>{/if}
           {#if filters.school && allSchools !== relaxed}<a class="text-action" href={allSchools}>改搜所有學校</a>{/if}
+          {#if filters.department}<FilterChip {url} name="department" label={filters.department} />{/if}
           <a class="text-action" href={relaxed}>{filters.query ? '保留關鍵字，清除篩選' : '清除篩選'}</a>
         </div>
       {/if}
@@ -328,18 +310,9 @@
       </div>
       <FilterSelect name="sort" form="course-search" label={groupMode === 'none' ? '排序' : '組內排序'} options={sortOptions} allLabel={null} value={filters.sort}
         onchange={(event) => event.currentTarget.form?.requestSubmit()} />
-      <details bind:this={displayMenu}>
-        <summary>
-          <span class="desktop-menu-label">班次分組</span>
-          <span class="mobile-menu-label">{facetEntries.length > 1 ? `${facetLabel}分布與分組` : '班次分組'}</span>
-        </summary>
+      <details name="result-display" bind:this={displayMenu}>
+        <summary>班次分組</summary>
         <div class="display-options">
-          {#if facetEntries.length > 1}
-            <div class="mobile-facets">
-              <p>班次數只計本頁。選取{facetLabel}後篩選全部結果。</p>
-              {@render facets()}
-            </div>
-          {/if}
           <label class="result-sort">分組方式 <select form="course-search" name="group" onchange={(event) => event.currentTarget.form?.requestSubmit()}>
             <option value="" selected={groupMode === 'none'}>不分組</option>
             <option value="title" selected={filters.group === 'title'}>依課名分組</option>
@@ -348,15 +321,18 @@
           <noscript><button class="button secondary" form="course-search">套用分組</button></noscript>
         </div>
       </details>
-    </div>
-    {#if facetEntries.length > 1}
-      <div class="facets">
-        <p>本頁{facetLabel}<small>班次數只計本頁</small></p>
+      {#if facetEntries.length > 1}
         {#key `${href}|${result.offset}`}
-          <div class="facet-scroll" class:can-scroll-left={canScrollLeft} class:can-scroll-right={canScrollRight}>{@render facets(true)}</div>
+          <details class="facet-menu" name="result-display">
+            <summary>本頁{facetLabel} <span class="ui-tabular">{facetEntries.length} {facetKind === 'school' ? '校' : '期'}</span></summary>
+            <div class="display-options">
+              <p>班次數只計本頁。選取{facetLabel}可篩選全部結果。</p>
+              {@render facets()}
+            </div>
+          </details>
         {/key}
-      </div>
-    {/if}
+      {/if}
+    </div>
     <div class="result-guide" class:with-jump={totalPages > 1} bind:this={jumpNav}>
       {@render meterKey()}
       {#if totalPages > 1}
@@ -385,8 +361,11 @@
           {:else if column.id === 'term'}<span class="code">{course.term}</span>
           {:else if column.id === 'instructors'}
             {@const time = schedule(course)}
-            {#if course.instructors.length || !time.text}{@render teachers(course)}{/if}
-            {#if time.text}<span class="schedule-preview" title={time.raw ?? time.text}>{time.text}</span>{/if}
+            {@const slots = time.text.split('；')}
+            {@render teachers(course)}
+            {#if hasSchedule}
+              <span class="schedule-preview" title={time.raw || time.text || '時間地點未公布'}>{slots[0] || '—'}{#if slots.length > 1} 等 {slots.length} 時段{/if}</span>
+            {/if}
           {:else if column.id === 'credits'}{displayValue(course.credits)}
           {:else if column.id === 'requirement'}{@render category(course)}
           {:else if column.id === 'enrollment'}{@render enrollment(course)}{/if}
@@ -411,33 +390,36 @@
     </div>
     {#snippet card(course: Offering, grouped = false)}
       {@const meetingTime = schedule(course)}
-      {@const [firstSlot, ...otherSlots] = meetingTime.text.split('；')}
+      {@const sourceId = course.sourceId !== course.courseCode ? course.sourceId : null}
+      {@const info = course.department || course.credits != null || requirement(course) || meetingTime.text || sourceId}
       <article>
-        <h2 class="card-heading"><a href={courseHref(course)} aria-label={grouped ? `${course.title} · ${course.schoolName} · ${course.courseCode}` : undefined}>
-            {#if grouped}{@render code(course)}{:else}{@render title(course)}{/if}
-          </a>{#if !grouped} <span class="card-code">{@render code(course)}</span>{/if}</h2>
+        <h2 class="card-heading" class:with-info={Boolean(info)}><a href={courseHref(course)} aria-label={grouped ? `${course.title} · ${course.schoolName} · ${course.courseCode}` : undefined}>
+            {#if grouped}{@render code(course, false)}{:else}{@render title(course)}{/if}
+          </a>{#if !grouped} <span class="card-code">{@render code(course, false)}</span>{/if}</h2>
+        <div class="card-meta">
+          <strong>{course.schoolName}</strong>
+          <span class="term">{course.term}</span>
+          {#if grouped && course.isDemo}<Badge label="示範" tone="demo" />{/if}
+        </div>
         <div class="card-facts">
-          <div class="card-meta">
-            <strong>{course.schoolName}</strong>
-            <span class="term">{course.term}</span>
-            {#if course.credits != null || requirement(course)}
-              <span class="credit-category">{#if course.credits != null}{credits(course.credits)}{/if}{#if requirement(course)}{course.credits != null ? ' ' : ''}{@render category(course)}{/if}</span>
-            {/if}
-            {#if grouped && course.isDemo}<Badge label="示範" tone="demo" />{/if}
-          </div>
+          <span class="teachers">{@render teachers(course)}</span>
           {@render enrollment(course, true)}
         </div>
-        <div class="card-notes">
-          {#if course.department}<span class="card-unit">{@render unit(course)}</span>{/if}
-          {#if course.instructors.length}<span class="teachers">{@render teachers(course)}</span>{/if}
-          {#if firstSlot}<p class="schedule-text" title={meetingTime.raw}>{firstSlot}</p>{/if}
-          {#if otherSlots.length}
-            <details class="card-schedule">
-              <summary>另 {otherSlots.length} 個時段</summary>
-              <ul>{#each otherSlots as line}<li>{line}</li>{/each}</ul>
-            </details>
-          {/if}
-        </div>
+        {#if info}
+          <details class="card-info">
+            <summary>班次資訊</summary>
+            <div class="card-notes">
+              {@render unit(course)}
+              {#if course.credits != null || requirement(course)}
+                <span class="credit-category">{#if course.credits != null}{credits(course.credits)}{/if}{#if requirement(course)}{course.credits != null ? ' ' : ''}{@render category(course)}{/if}</span>
+              {/if}
+              {#if sourceId}<span>選課代碼 <code>{sourceId}</code></span>{/if}
+              {#if meetingTime.text}
+                <ul title={meetingTime.raw}>{#each meetingTime.text.split('；') as line}<li>{line}</li>{/each}</ul>
+              {/if}
+            </div>
+          </details>
+        {/if}
       </article>
     {/snippet}
     <div class="result-footer" class:paged={totalPages > 1} id="search-pagination" tabindex="-1" bind:this={pagination}>
@@ -462,27 +444,12 @@
   .active-chip, .clear, .quick-chip { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--target-min); padding-inline: var(--space-3); border-radius: var(--radius-pill); font-weight: 600; }
   .active-chip { background: var(--brand-wash); color: var(--brand-ink); text-decoration: none; }
   .clear:hover, .active-chip:hover { text-decoration: underline; }
-  .result-top { position: relative; }
+  .result-top { position: relative; z-index: 5; }
   .result-top summary { min-height: var(--target-min); padding-inline: var(--space-1); align-content: center; cursor: pointer; color: var(--brand-ink); font-size: var(--t-sm); font-weight: 650; }
   .result-top details[open] summary { color: var(--ink); }
   .display-options { display: grid; gap: var(--space-2); position: absolute; inset: 100% 0 auto auto; z-index: 3; width: min(24rem, 100%); max-block-size: min(26rem, 45vh); overflow: auto; padding: var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-card); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-sm); }
-  .facets { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: var(--space-3); min-width: 0; margin-block: var(--space-1); }
-  .facets p, .mobile-facets p { margin: 0; color: var(--ink-2); font-size: var(--t-sm); text-wrap: pretty; }
-  .facets p { font-weight: 650; }
-  .facets p small { display: block; color: var(--muted); font: inherit; font-weight: 450; }
-  .facet-scroll { position: relative; min-inline-size: 0; }
-  .facet-scroll::before, .facet-scroll::after {
-    position: absolute;
-    inset-block: 0 .3rem;
-    inline-size: 2rem;
-    pointer-events: none;
-    z-index: 1;
-  }
-  .facet-scroll.can-scroll-left::before { content: ''; inset-inline-start: 0; background: linear-gradient(to right, var(--bg), transparent); }
-  .facet-scroll.can-scroll-right::after { content: ''; inset-inline-end: 0; background: linear-gradient(to left, var(--bg), transparent); }
-  .mobile-menu-label, .mobile-facets { display: none; }
-  .facets .quick-filters { flex-wrap: nowrap; overflow-x: auto; padding: var(--space-1); margin-inline: calc(-1 * var(--space-1)); scrollbar-width: thin; }
-  .facets .quick-chip { flex: none; white-space: nowrap; }
+  .display-options p { margin: 0; text-wrap: pretty; }
+  .facet-menu summary span { padding-inline: .35rem; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); }
   .quick-chip[aria-current] { background: var(--brand-wash); color: var(--brand-ink); }
   .quick-filters { display: flex; flex-wrap: wrap; min-width: 0; align-items: center; gap: var(--space-1); margin: 0; font-size: var(--t-sm); }
   .quick-chip { max-width: 100%; padding-inline: var(--space-2); border: 1px solid var(--line); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-sm); overflow-wrap: anywhere; text-decoration: none; }
@@ -496,6 +463,7 @@
   .sort-link { display: inline-block; padding-block: var(--space-1); }
   .meter-key { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); margin: 0; color: var(--muted); font-size: var(--t-sm); font-weight: 450; }
   .meter-key > span { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+  .meter-key .mobile-key { display: none; }
   .meter-key i { block-size: 4px; inline-size: .65rem; border-radius: 2px; }
   .meter-key .key-tick { inline-size: 1px; block-size: .65rem; background: var(--ink); }
   .key-over { background: var(--warn); }
@@ -520,6 +488,7 @@
   .unit a { font-weight: 450; }
   .unit { color: var(--muted); font-size: var(--t-sm); }
   .code-line, .schedule-preview { display: block; color: var(--muted); font-size: var(--t-sm); font-weight: 450; }
+  .schedule-preview { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; line-clamp: 1; min-block-size: 1lh; overflow: hidden; }
   .enrollment { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 6.5rem); align-items: center; gap: var(--space-2); }
   .measure { text-align: start; grid-area: 1 / 1; line-height: 1.25; }
   .measure.muted { font-size: var(--t-sm); }
@@ -536,18 +505,18 @@
   .result-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin-block-start: var(--space-2); }
   .demo-note { margin: 0; color: var(--muted); font-size: var(--t-base); }
   .demo-note { margin-block-start: var(--space-1); font-size: var(--t-sm); }
-  .empty-actions { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin-block-start: var(--space-1); }
+  .empty-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-3); margin-block-start: var(--space-1); }
   .empty-recovery { margin: var(--space-3) 0 0; padding: clamp(.75rem, 3vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); overflow-wrap: anywhere; }
   .empty-examples { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); margin-block-start: var(--space-4); font-size: var(--t-base); }
   .empty-examples .button { border-radius: var(--radius-pill); }
   .empty-browse { margin-block-start: var(--section-content-gap); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
   .empty-browse h2 { margin: 0 0 var(--space-2); color: var(--ink); font-size: var(--t-base); }
-  .empty-browse .quick-chip { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; width: 100%; gap: var(--space-2); border-radius: var(--radius-control); border-color: var(--control-line); color: var(--brand-ink); }
+  .empty-browse .quick-chip { display: inline-flex; gap: var(--space-2); padding-inline: 0; border-color: transparent; background: transparent; color: var(--brand-ink); }
   .empty-browse .quick-chip .ui-tabular { color: var(--muted); font-weight: 450; }
   .empty-browse .quick-chip span { background: transparent; min-width: 0; }
   .empty-browse .browse-name { text-align: start; font-size: var(--t-base); }
 
-  .empty-browse ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1); list-style: none; padding: 0; margin: 0; }
+  .empty-browse ul { display: grid; grid-template-columns: repeat(2, minmax(0, max-content)); column-gap: var(--space-5); list-style: none; padding: 0; margin: 0; }
   .text-action { display: inline-flex; align-items: center; gap: var(--space-1); min-block-size: var(--target-min); }
   .button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target-min); padding-inline: var(--space-3); border: 1px solid transparent; border-radius: var(--radius-control); text-decoration: none; font: inherit; font-weight: 650; cursor: pointer; }
   .button:hover { text-decoration: underline; }
@@ -556,10 +525,8 @@
     .desktop-results { --table-pad-block: .125rem; }
   }
   @media (max-width: 56rem) {
-    .desktop-results, .facets, .desktop-menu-label { display: none; }
-    .mobile-menu-label { display: inline; }
-    .mobile-facets { display: block; }
-    .mobile-facets p { margin-block-end: var(--space-1); }
+    .desktop-results, .meter-key .desktop-key { display: none; }
+    .meter-key .mobile-key { display: inline-flex; }
     .result-top summary { white-space: nowrap; }
     .result-summary { gap: 0 var(--space-2); }
     .result-guide.with-jump { position: sticky; top: var(--shell-height); z-index: 4; display: flex; align-items: center; gap: var(--space-2); background: var(--bg); }
@@ -571,8 +538,9 @@
     .result-footer.paged .back-to-top { justify-content: center; flex-basis: 100%; }
     .result-footer :global(.compact details form) { position: static; border: 0; padding-inline: 0; }
     article { position: relative; min-width: 0; padding: 0 var(--space-2) var(--space-1); border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel-raised); font-size: var(--t-base); line-height: 1.35; overflow-wrap: anywhere; }
-    article h2.card-heading { margin: 0; padding-block-start: var(--space-1); font-size: var(--t-md); line-height: var(--leading-tight); }
-    .card-facts { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--space-2); align-items: center; }
+    article h2.card-heading { margin: 0; padding-block-start: var(--space-2); font-size: var(--t-md); line-height: var(--leading-tight); }
+    article:has(.with-info) :is(.card-heading, .card-meta) { padding-inline-end: 4.75rem; }
+    .card-facts { display: grid; grid-template-columns: minmax(0, 1fr) minmax(9rem, 42%); column-gap: var(--space-2); align-items: center; min-block-size: var(--target-min); }
     .card-heading a { display: inline; }
     .card-heading a::after { content: ''; position: absolute; inset: 0; border-radius: var(--radius-card); }
     .card-heading a:focus-visible { outline: none; }
@@ -582,20 +550,18 @@
 
     .term { flex: none; color: var(--ink-2); }
     .card-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: .125rem var(--space-2); color: var(--ink-2); font-size: var(--t-sm); }
-    .card-unit { min-width: 0; }
     .card-meta strong { color: var(--ink); }
-    .credit-category { max-inline-size: 100%; }
     .card-meta > span:not(.code, :global(.badge)) { padding-inline: .25rem; border-radius: var(--radius-pill); background: var(--chip); }
-    .card-notes { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-4); color: var(--muted); font-size: var(--t-sm); }
-    .card-notes p { margin: 0; }
-    .card-notes a, .card-schedule summary { position: relative; }
-    .card-notes a { display: inline-flex; align-items: center; justify-content: center; min-width: var(--target-min); min-height: var(--target-min); }
-    .card-schedule { flex-basis: 100%; }
-    .card-schedule summary { width: fit-content; min-height: var(--target-min); align-content: center; color: var(--brand-ink); font-weight: 650; cursor: pointer; }
-    .card-schedule ul { margin-block: 0 var(--space-2); padding-inline-start: var(--space-5); }
-    .card-facts .enrollment { grid-template-columns: minmax(0, 1fr); justify-items: end; gap: .125rem; font-size: var(--t-sm); }
-    .card-facts .meter { grid-area: 2 / 1; width: min(100%, 4.5rem); height: 4px; }
-    .card-facts .measure { grid-area: 1 / 1; display: flex; gap: var(--space-1); white-space: nowrap; }
+    .teachers, .card-info { color: var(--muted); font-size: var(--t-sm); }
+    .card-facts a, .card-notes a { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: var(--target-min); min-height: var(--target-min); }
+    .card-info summary { position: absolute; inset: 0 var(--space-2) auto auto; min-block-size: var(--target-min); align-content: center; cursor: pointer; }
+    .card-info summary:hover, .card-info[open] summary { color: var(--brand-ink); text-decoration: underline; }
+    .card-notes { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-3); border-block-start: 1px solid var(--line); }
+    .card-notes .credit-category { padding: .15rem .35rem; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); }
+    .card-notes ul { flex-basis: 100%; margin: 0; padding-inline-start: var(--space-5); }
+    .card-facts .enrollment { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 4px; gap: .25rem; font-size: var(--t-sm); }
+    .card-facts .meter { grid-area: 2 / 1; height: 4px; margin-inline-start: var(--space-1); }
+    .card-facts .measure { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1); text-align: end; white-space: nowrap; }
     .card-facts .measure small { display: inline; color: var(--muted); }
     .result-summary { flex-basis: 100%; }
     .result-top > :global(.field) { max-inline-size: min(13.5rem, 67%); }
@@ -607,7 +573,8 @@
     .result-top { gap: 0 var(--space-1); }
     .result-top summary { padding-inline: 0; }
     .active-filters > span:first-child { display: none; }
-    .empty-browse .quick-chip { grid-template-columns: minmax(0, 1fr) auto; align-content: center; gap: 0 var(--space-1); line-height: var(--leading-tight); }
+    .empty-browse ul { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: var(--space-2); }
+    .empty-browse .quick-chip { display: grid; grid-template-columns: minmax(0, 1fr) auto; width: 100%; align-content: center; gap: 0 var(--space-1); line-height: var(--leading-tight); }
     .empty-browse .quick-chip :is(.browse-name, .ui-tabular) { grid-column: 1; text-align: start; }
     .empty-browse .quick-chip span:last-child { grid-area: 1 / 2 / 3; align-self: center; }
     .empty-recovery, .empty-examples, .empty-browse { margin-block-start: var(--space-2); }

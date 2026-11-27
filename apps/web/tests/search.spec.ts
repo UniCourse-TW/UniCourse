@@ -9,15 +9,16 @@ test('searches Chinese titles, filters by school and opens the mobile details pa
   await page.waitForURL(/[?&]q=/);
   await expect(page.getByRole('link', { name: '資料結構' })).toHaveCount(2);
   await expect(page.getByText('共 2 班次', { exact: true })).toBeVisible();
-  await expect(page.getByRole('article').first().getByText('修課人數／名額未公布')).toBeVisible();
-  await expect(page.getByText('—＝修課人數／名額未公布', { exact: true })).toBeVisible();
+  await expect(page.getByRole('article').first().getByText('修課 —', { exact: true })).toBeVisible();
+  await expect(page.getByRole('article').first().getByText('名額 —', { exact: true })).toBeVisible();
+  await expect(page.getByText('—＝未公布', { exact: true })).toBeVisible();
   await expect(page.getByRole('article')).toHaveCount(2);
   await expect(page.getByRole('combobox', { name: '排序' })).toHaveValue('relevance');
   await page.waitForLoadState('networkidle');
-  const distribution = page.getByText('學校分布與分組', { exact: true });
+  const distribution = page.getByText('本頁學校 2 校', { exact: true });
   const schoolChips = page.getByRole('navigation', { name: '依學校縮小範圍' });
   await expect(schoolChips).toHaveCount(0);
-  await distribution.click();
+  await page.getByText('班次分組', { exact: true }).click();
   await page.getByRole('combobox', { name: '分組方式' }).selectOption('title');
   await expect(page).toHaveURL(/[?&]group=title(?:&|$)/);
   const grouped = page.getByRole('region', { name: '資料結構' });
@@ -46,6 +47,7 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
   await expect(term).toHaveValue('115-1');
   await expect(page.getByRole('link', { name: '線性代數' })).toHaveCount(1);
   const card = page.getByRole('article');
+  await card.getByText('班次資訊', { exact: true }).click();
   for (const detail of ['示範數學系', '3 學分 必修', '王示範', '國立清華大學', '115-1']) {
     await expect(card.getByText(detail, { exact: true })).toBeVisible();
   }
@@ -54,7 +56,7 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
   await expect(card.getByText('修課 58', { exact: true })).toBeVisible();
   await expect(card.getByText('名額 60', { exact: true })).toBeVisible();
   await expect(card.locator('.meter .capacity-marker')).toHaveCount(1);
-  await expect(page.getByText('本頁尺度：0–60 人', { exact: true })).toBeVisible();
+  await expect(page.getByText('每頁尺度不同（本頁 0–60 人）', { exact: true })).toBeVisible();
   await expect(page.getByText('刻線＝名額', { exact: true }).filter({ visible: true })).toBeVisible();
 
   // fixtures/nthu-114-2.json has a 線性代數 offering too, so each term filter shows a different set.
@@ -152,7 +154,7 @@ test('keeps global filters on pagination redirects and offers applicable empty-s
   await page.goto('/?q=zzzz-no-such-course&term=all');
   await expect(page.getByRole('status')).toContainText('0 班次');
   const results = page.getByRole('region', { name: '搜尋結果' });
-  await expect(page.getByRole('heading', { level: 1, name: '找不到符合條件的課程' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '查無「zzzz-no-such-course」' })).toBeVisible();
   await expect(page.getByRole('searchbox')).toHaveCount(1);
   await expect(results.getByRole('link', { name: '查全部學期' })).toHaveCount(0);
   await expect(results.getByRole('searchbox', { name: '關鍵字' })).toHaveValue('zzzz-no-such-course');
@@ -184,7 +186,7 @@ test('submits a search and persists the SSR theme without JavaScript', async ({ 
   const page = await context.newPage();
   try {
     await page.goto('/');
-    const ranking = page.getByRole('region', { name: '歷史累計修課人數排行' });
+    const ranking = page.getByRole('region', { name: /^累計修課人數排行/ });
     await ranking.getByLabel('排行範圍').selectOption('nthu');
     await ranking.getByRole('button', { name: '套用', exact: true }).click();
     await expect(page).toHaveURL(/rank_school=nthu/);

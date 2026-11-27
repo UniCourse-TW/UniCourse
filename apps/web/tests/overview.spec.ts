@@ -36,7 +36,7 @@ test('keeps sign-in and error pages neutral and shows progress during client nav
 test('shows historical enrollment, filters the ranking and browses a school and its department', async ({ page }) => {
   await page.goto('/', { waitUntil: 'networkidle' });
 
-  const ranking = page.getByRole('region', { name: '歷史累計修課人數排行' });
+  const ranking = page.getByRole('region', { name: /^累計修課人數排行/ });
   const rankingViews = ranking.getByRole('navigation', { name: '排行檢視' });
   await expect(rankingViews.getByRole('link', { name: '跨校排行' })).toHaveAttribute('aria-current', 'true');
   const linearAlgebra = ranking.getByRole('listitem').filter({ hasText: 'DEMO201' });
@@ -45,18 +45,14 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(linearAlgebra.getByText(/國立清華大學\s*DEMO201/)).toBeVisible();
   await expect(linearAlgebra.getByText('示範', { exact: true })).toBeVisible();
   await expect(linearAlgebra.getByText(/2 學期/)).toBeVisible();
-  await expect(linearAlgebra.getByText('2 期有數值')).toBeVisible();
-  await expect(linearAlgebra.getByText('114-2 55 人')).toBeVisible();
-  await expect(linearAlgebra.getByText('最近開課 115-1')).toBeVisible();
-  await expect(linearAlgebra.getByText('較 114-2')).toBeVisible();
-  await expect(linearAlgebra.getByText('+3', { exact: true })).toBeVisible();
+  await expect(linearAlgebra.getByText('115-1 58 人')).toBeVisible();
+  await expect(linearAlgebra.getByText('較 114-2 +3')).toBeVisible();
   await expect(linearAlgebra.locator('svg')).toHaveCount(0);
   const singleTerm = ranking.getByRole('listitem').filter({ hasText: 'DEMO202' });
   await expect(singleTerm).toHaveCount(0);
   await rankingViews.getByRole('link', { name: '整體排行' }).click();
   await expect(rankingViews.getByRole('link', { name: '整體排行' })).toHaveAttribute('aria-current', 'true');
-  await expect(singleTerm.getByText('72 人', { exact: true })).toBeVisible();
-  await expect(singleTerm.getByText('最近開課 115-1')).toBeVisible();
+  await expect(singleTerm.getByText('115-1 72 人', { exact: true })).toBeVisible();
   await expect(singleTerm.locator('svg')).toHaveCount(0);
   expect((await linearAlgebra.boundingBox())?.height).toBeLessThan(100);
   await ranking.getByText('計算方式', { exact: true }).click();
@@ -75,7 +71,7 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   const snapshot = page.getByRole('region', { name: '目前收錄' });
   await expect(snapshot.getByText('開課班次')).toBeVisible();
   await expect(snapshot.getByText('114-2 至 115-1')).toBeVisible();
-  await expect(page.getByRole('region', { name: '搜尋課程' }).getByRole('link', { name: '看累計修課排行' })).toHaveAttribute('href', '#ranking');
+  await expect(page.getByRole('region', { name: '目前收錄' }).getByRole('link', { name: '看累計修課排行' })).toHaveAttribute('href', '#ranking');
   const coverage = page.getByRole('region', { name: '各校收錄摘要' });
   await expect(coverage.getByText(/涵蓋 4 個學期以上/)).toBeVisible();
   await coverage.getByRole('link', { name: /查看全部 \d+ 所學校/ }).click();

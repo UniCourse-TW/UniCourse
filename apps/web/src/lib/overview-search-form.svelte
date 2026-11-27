@@ -70,16 +70,14 @@
   <form id="course-search" action="/" method="GET" role="search" aria-label="課程搜尋" class:result-filters={filters && !empty} class:has-department={filters && selectedSchool && !empty} class:empty class:compact>
     <div class="keyword">
       <label for="course-keyword" class="keyword-label">關鍵字</label>
-      <div class="search-input">
-        <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.75" /><path d="m15 15 4 4" /></svg>
-        {#key filters?.query ?? ''}
-          <input id="course-keyword" name="q" type="search" bind:this={keyword} defaultValue={filters?.query ?? ''} maxlength="100" placeholder="課名、教師或課號" aria-describedby={keywordHint ? hintId : undefined} />
-        {/key}
-        {#if empty && ready && filters?.query}
-          <button type="button" class="clear-keyword" onclick={clearKeyword} aria-label="清除關鍵字" title="清除關鍵字">
-            清除
-          </button>
-        {/if}
+      <div class="keyword-controls">
+        <div class="search-input">
+          <svg class="search-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.75" /><path d="m15 15 4 4" /></svg>
+          {#key filters?.query ?? ''}
+            <input id="course-keyword" name="q" type="search" bind:this={keyword} defaultValue={filters?.query ?? ''} maxlength="100" placeholder="課名、教師或課號" aria-describedby={keywordHint ? hintId : undefined} />
+          {/key}
+        </div>
+        {#if empty && ready && filters?.query}<button type="button" class="clear-keyword" onclick={clearKeyword}>清除關鍵字</button>{/if}
       </div>
     </div>
     <div class="school-field"><FilterSelect name="school" label="學校" allLabel="所有學校" options={schoolOptions} value={selectedSchool} onchange={changeFilter} /></div>
@@ -117,14 +115,14 @@
   input::placeholder { color: var(--muted); }
   .keyword { min-width: 0; display: grid; gap: var(--space-1); }
   .keyword-hint { grid-column: 1 / -1; margin: 0; color: var(--ink-2); font-size: var(--t-sm); text-wrap: pretty; }
-  .search-input { position: relative; display: flex; }
+  .keyword-controls { display: flex; gap: var(--space-1); }
+  .search-input { position: relative; display: flex; flex: 1; min-width: 0; }
   .school-field, .term-field { display: grid; min-width: 0; }
-  .empty input::-webkit-search-cancel-button { display: none; }
-  .search-input .clear-keyword { position: absolute; inset: 0 1px 0 auto; display: grid; place-items: center; width: var(--target-min); padding: 0; border-color: transparent; background: transparent; color: var(--brand-ink); font-size: var(--t-sm); }
+  .keyword-controls:has(.clear-keyword) input::-webkit-search-cancel-button { display: none; }
+  .clear-keyword { width: auto; padding-inline: var(--space-2); border-color: var(--control-line); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-sm); white-space: nowrap; }
   .clear-keyword:hover { text-decoration: underline; }
   .search-icon { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
   .search-input input { padding-inline: 2.35rem var(--space-2); font-size: 1rem; }
-  .search-input:has(.clear-keyword) input { padding-inline-end: var(--target-min); }
   button { padding-inline: var(--space-4); border-color: transparent; background: var(--brand); color: var(--on-brand); font-weight: 650; cursor: pointer; }
   button:hover { text-decoration: underline; }
   .advanced { grid-column: 1 / -1; min-width: 0; }
