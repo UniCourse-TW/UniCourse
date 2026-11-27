@@ -21,16 +21,17 @@
   const courseHref = (row: Offering) => `/courses/${row.id}`;
   const termColumn: TableColumn<Offering> = { id: 'term', label: '學期', value: (row) => row.term, sortable: true };
   const gradeColumn: TableColumn<Offering> = { id: 'grade', label: '年級', value: (row) => row.grade, align: 'center', width: '3.5rem' };
-  let showRatings = $derived(mode === 'department' || offerings.some((row) => ratings.get(row.courseCode)?.count !== 0));
+  let showRatings = $derived(offerings.some((row) => (ratings.get(row.courseCode)?.count ?? 0) > 0));
+  let unknownRatings = $derived(offerings.some((row) => ratings.get(row.courseCode) == null));
   const category = (row: Offering) => [row.credits == null ? null : `${row.credits} 學分`, requirement({ ...row, requirementText: null }) ?? requirement(row)].filter(Boolean).join(' · ');
   let columns = $derived<TableColumn<Offering>[]>([
     { id: 'course', label: '課程', value: (row) => row.title, sortable: true, width: '14rem' },
     ...(showTerm ? [termColumn] : []),
     mode === 'department' ? { id: 'teachers', label: '授課教師', width: '8rem' } : { id: 'unit', label: '開課單位' },
     ...(mode === 'department' && offerings.some(({ grade }) => grade) ? [gradeColumn] : []),
-    { id: 'category', label: '學分／類別', value: category, width: '7rem' },
-    { id: 'enrollment', label: '人數／名額', sortable: true, sortValue: (row) => row.enrolled, numeric: true, width: '7.5rem' },
-    { id: 'schedule', label: '時間地點' },
+    { id: 'category', label: '學分／類別', value: category, width: '6.5rem' },
+    { id: 'enrollment', label: '人數／名額', sortable: true, sortValue: (row) => row.enrolled, numeric: true, width: '8.25rem' },
+    { id: 'schedule', label: '時間地點', width: mode === 'instructor' ? '24%' : undefined },
     ...(showRatings ? [{ id: 'rating', label: '課程評價', align: 'center' as const, width: '7rem' }] : [])
   ]);
 </script>
@@ -51,7 +52,13 @@
   {@const capacity = reportedCapacity(row)}
   <span class="enrollment">
     {#if row.enrolled != null && capacity != null}
-      <span class="ui-tabular">{displayValue(row.enrolled)} / {displayValue(capacity)}</span>
+      <span class="enrollment-value"><span class="ui-tabular">{displayValue(row.enrolled)} / {displayValue(capacity)}</span>
+        {#if capacity > 0 && row.enrolled >= capacity * .9}
+          <small class="capacity-note" title={row.enrolled >= capacity ? '已達校方公布名額' : `匯入時餘 ${displayValue(capacity - row.enrolled)} 名`}>
+            {row.enrolled > capacity ? '超額' : row.enrolled === capacity ? '額滿' : `餘 ${displayValue(capacity - row.enrolled)}`}
+          </small>
+        {/if}
+      </span>
     {:else if row.enrolled != null}
       <span class="ui-tabular">{displayValue(row.enrolled)} 人</span><small class="publication-note">名額未公布</small>
     {:else if capacity != null}
@@ -62,11 +69,6 @@
     {#if row.enrolled != null && capacity != null && capacity > 0}
       <span class="meter-line">
         <span class="track" aria-hidden="true"><span class="fill" class:exceeded={row.enrolled > capacity} style:inline-size={`${Math.min(100, 100 * row.enrolled / capacity)}%`}></span></span>
-        {#if row.enrolled >= capacity * .9}
-          <small class="capacity-note" title={row.enrolled >= capacity ? '已達校方公布名額' : `匯入時餘 ${displayValue(capacity - row.enrolled)} 名`}>
-            {row.enrolled > capacity ? '超額' : row.enrolled === capacity ? '額滿' : `餘 ${displayValue(capacity - row.enrolled)}`}
-          </small>
-        {/if}
       </span>
     {/if}
   </span>
@@ -83,7 +85,7 @@
   {#each scheduleLines(row) as line, index (index)}<span class="slot">{line}</span>{:else}—{/each}
 {/snippet}
 
-<p class="browse-note offering-legend">條長＝滿額比例；「餘」為匯入時剩餘名額；—＝未公布。{#if !showRatings}本頁課程尚無評價。{/if}</p>
+<p class="browse-note offering-legend">條長＝滿額比例；「餘」為匯入時剩餘名額。名額 —＝校方未公布。{#if !showRatings}{unknownRatings ? '本頁評價資料未能完整取得。' : '本頁課程尚無評價。'}{/if}</p>
 <div class="table-view">
   <DataTable {caption} rows={offerings} {columns} rowKey={(row) => row.id} rowHref={courseHref} clientSort minWidth="47rem" maxHeight="none">
     {#snippet cell(row, column)}
@@ -104,14 +106,15 @@
 </div>
 
 <ul class="card-view" aria-label={caption} role="list">
-  {#each offerings as row (row.id)}
+  {#each offerings as row, index (row.id)}
     {@const time = scheduleLines(row)}
     <li>
+      {#if mode === 'instructor' && row.term !== offerings[index - 1]?.term}<p class="card-term ui-tabular">{row.term} 學期</p>{/if}
       <div class="card-title">
         <a class="card-course" href={courseHref(row)}>{row.title}</a>
-        {#if ratings.get(row.courseCode)?.count !== 0}<div class="card-rating" aria-label="課程評價">{@render rating(row, true)}</div>{:else}<span class="sr-only">尚無評價</span>{/if}
+        {#if showRatings && (ratings.get(row.courseCode)?.count ?? 0) > 0}<div class="card-rating" aria-label="課程評價">{@render rating(row, true)}</div>{/if}
         <div class="card-meta">
-          {#if showTerm}<span class="browse-code">{row.term}</span>{/if}{@render code(row)}
+          {#if showTerm && mode !== 'instructor'}<span class="browse-code">{row.term}</span>{/if}{@render code(row)}
           {#if category(row)}<span title={requirement(row)}>{category(row)}</span>{/if}
           {#if mode === 'department' && row.grade}<span>{row.grade} 年級</span>{/if}
           {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}
@@ -129,12 +132,12 @@
 
 <style>
   .rating-sample { display: block; font-size: var(--t-sm); }
-  .sr-only { position: absolute; clip-path: inset(50%); inline-size: 1px; block-size: 1px; overflow: hidden; }
   .offering-legend { margin-block-end: var(--space-1); }
   .offer-code { white-space: nowrap; }
   .category { display: block; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-view { display: none; }
   .enrollment { display: grid; min-inline-size: 3rem; gap: .25rem; }
+  .enrollment-value { display: flex; align-items: center; justify-content: end; gap: var(--space-1); }
   .meter-line { display: flex; align-items: center; justify-content: end; gap: var(--space-1); min-block-size: 1rem; }
   .track { inline-size: min(100%, 4rem); min-inline-size: 1.5rem; block-size: .375rem; background: var(--line); border-radius: var(--radius-pill); }
   .fill { display: block; block-size: 100%; background: var(--brand); border-radius: inherit; }
@@ -150,6 +153,7 @@
     .card-view li + li { border-block-start: 1px solid var(--line); }
     .card-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; column-gap: var(--space-2); }
     .card-course { grid-column: 1 / -1; display: flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
+    .card-view .card-term { margin-inline: calc(-1 * var(--space-3)); padding: var(--space-1) var(--space-3); background: var(--table-head); color: var(--ink-2); font-size: var(--t-sm); font-weight: 650; }
     .card-rating { grid-column: 1 / -1; }
     .card-meta, .card-rating { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--muted); font-size: var(--t-sm); }
     .secondary-meta { margin-block-start: var(--space-1); }

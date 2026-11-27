@@ -8,13 +8,13 @@
 
   let { periods, rows, trends }: { periods: string[]; rows: MatrixRow[]; trends: TermTrend[] | null } = $props();
   let orderedYears = $derived([...periods].reverse());
-  let compact = $derived(periods.length <= 2);
-  let columns = $derived<TableColumn<MatrixRow>[]>([
-    { id: 'course', label: '課程', width: 'var(--teaching-course-width, 9rem)' },
-    ...orderedYears.map((period) => ({ id: period, label: period, align: 'center' as const, width: compact ? '5rem' : '3.25rem' }))
-  ]);
-  let width = $derived(compact ? '0' : `calc(var(--teaching-course-width, 9rem) + ${3.75 * periods.length}rem)`);
-  let hasPartial = $derived(rows.some((row) => Object.values(row.points).some((point) => point?.partial)));
+  let preview = $derived(rows.slice(0, 5));
+  let previewYears = $derived(orderedYears.filter((year) => preview.some((row) => row.points[year])));
+  let compact = $derived(previewYears.length <= 2);
+  let columns = $derived(yearColumns(previewYears, compact));
+  let fullColumns = $derived(yearColumns(orderedYears, true));
+  let width = $derived(compact ? '0' : `calc(var(--teaching-course-width, 9rem) + ${previewYears.length} * var(--teaching-year-width, 3.75rem))`);
+  let hasPartial = $derived(preview.some((row) => Object.values(row.points).some((point) => point?.partial)));
   let partial = $derived(partialTerms((trends ?? []).map(({ term, offerings }) => [term, offerings])));
   let trendColumns = $derived<TableColumn<TermTrend>[]>([
     { id: 'term', label: '學期', value: (row) => row.term },
@@ -29,6 +29,11 @@
 
   function bin(enrolled: number | null) {
     return enrolled === null ? 'unknown' : enrolled < 50 ? 'small' : enrolled < 100 ? 'medium' : 'large';
+  }
+
+  function yearColumns(years: string[], exact: boolean): TableColumn<MatrixRow>[] {
+    return [{ id: 'course', label: '課程', width: 'var(--teaching-course-width, 9rem)' },
+      ...years.map((year) => ({ id: year, label: year, align: 'center' as const, width: exact ? '5rem' : '3.25rem' }))];
   }
 </script>
 
@@ -61,10 +66,10 @@
         <li><span aria-hidden="true">—</span>未開課</li>
         {#if hasPartial}<li><span class="dot partial" aria-hidden="true"></span>{partialTermLabel}</li>{/if}
       </ul>
-      <p class="browse-note matrix-range">最近開課的 {Math.min(5, rows.length)} 門 · {periods[0]}–{periods.at(-1)} 學年<span class="matrix-scroll"> · 向右滑看更早學年</span></p>
+      <p class="browse-note matrix-range">最近開課的 {preview.length} 門 · 僅列有開課的學年{#if previewYears.length > 3}<span class="matrix-scroll"> · 向右滑看更早學年 →</span>{/if}</p>
     {/if}
-    <div>
-      <DataTable caption={compact ? '課程與學年授課紀錄' : '課程與學年修課人次'} {columns} rows={rows.slice(0, 5)} rowKey={(row) => row.id} minWidth={width} maxHeight="none" scrollHint={false}>
+    <div class="matrix-frame" class:overflow={previewYears.length > 3}>
+      <DataTable caption={compact ? '課程與學年授課紀錄' : '課程與學年修課人次'} {columns} rows={preview} rowKey={(row) => row.id} minWidth={width} maxHeight="none" scrollHint={false}>
         {#snippet cell(row, column)}{@render historyCell(row, column, compact)}{/snippet}
       </DataTable>
     </div>
@@ -73,8 +78,8 @@
 
 <details class="history-values">
   <summary>{rows.length ? `查看全部 ${displayValue(rows.length)} 門課的逐年數值` : '查看各學期授課數值'}</summary>
-  {#if rows.length && (!compact || rows.length > 5)}
-    <div class="desktop-years"><DataTable caption="各課程的學年數值" {columns} {rows} rowKey={(row) => row.id} minWidth={compact ? '0' : `${9 + 6 * periods.length}rem`} maxHeight="none" scrollHint={!compact}>
+  {#if rows.length && (!compact || rows.length > 5 || orderedYears.length !== previewYears.length)}
+    <div class="desktop-years"><DataTable caption="各課程的學年數值" columns={fullColumns} {rows} rowKey={(row) => row.id} minWidth={orderedYears.length <= 2 ? '0' : `${9 + 6 * periods.length}rem`} maxHeight="none" scrollHint={orderedYears.length > 2}>
       {#snippet cell(row, column)}{@render historyCell(row, column, true)}{/snippet}
     </DataTable></div>
     <ul class="phone-years year-lists" aria-label="各課程的學年數值">
@@ -100,23 +105,27 @@
   .matrix-legend { display: flex; flex-wrap: wrap; gap: .25rem .85rem; margin: 0 0 var(--space-2); padding: 0; list-style: none; color: var(--muted); font-size: var(--t-sm); }
   .matrix-range { margin-block-end: var(--space-2); }
   .matrix-legend li, .year-cell { display: flex; align-items: center; gap: .3rem; }
-  .year-cell { min-block-size: var(--target-min); min-inline-size: 2rem; justify-content: center; border-radius: var(--radius-control); padding-inline: .15rem; }
+  .year-cell { position: relative; min-block-size: var(--target-min); min-inline-size: 2rem; justify-content: center; border-radius: var(--radius-control); padding-inline: .15rem; color: var(--ink); }
   .year-cell[href] { text-underline-offset: .17em; }
   .year-cell[href]:hover { box-shadow: inset 0 0 0 1px var(--brand); text-decoration: underline; }
   .count { font-size: var(--t-sm); }
   .dot { display: inline-block; flex: none; inline-size: .85rem; block-size: .65rem; border-radius: 2px; }
-  [data-bin='small'] { background-color: color-mix(in srgb, var(--brand) 10%, var(--panel-raised)); }
-  [data-bin='medium'] { background-color: color-mix(in srgb, var(--brand) 22%, var(--panel-raised)); }
-  [data-bin='large'] { background-color: color-mix(in srgb, var(--brand) 36%, var(--panel-raised)); }
+  [data-bin='small'] { background-color: var(--seq-1); box-shadow: inset 0 0 0 1px var(--brand-ring); }
+  [data-bin='medium'] { background-color: var(--seq-2); }
+  [data-bin='large'] { background-color: color-mix(in srgb, var(--seq-3) 60%, var(--seq-2)); }
   .year-cell[data-bin='unknown'] { color: var(--muted); border: 1px dashed var(--control-line); }
-  .partial { background-image: var(--partial-hatch); }
+  .dot.partial, .year-cell.partial::after { background-image: var(--partial-hatch); }
+  .year-cell.partial::after { content: ''; position: absolute; inset: 2px 2px auto auto; inline-size: 7px; block-size: 7px; border: 1px solid var(--brand-ring); }
   .no-record { color: var(--ink-2); }
   .history-values[open] { display: grid; gap: var(--space-2); }
   summary { min-block-size: var(--target-min); cursor: pointer; align-content: center; width: fit-content; color: var(--brand); font-weight: 650; font-size: var(--t-base); }
   @media (max-width: 40rem) {
-    .teaching-matrix { --teaching-course-width: 8.5rem; }
+    .teaching-matrix { --teaching-course-width: 7.5rem; --teaching-year-width: 3.4rem; }
     .desktop-years { display: none; }
     .phone-years, .matrix-scroll { display: revert; }
+    .matrix-frame.overflow { position: relative; }
+    .matrix-frame.overflow::after { content: ''; pointer-events: none; position: absolute; inset: 1px 1px 1px auto; inline-size: .75rem; background: linear-gradient(to right, transparent, var(--panel-raised)); border-radius: 0 var(--radius-card) var(--radius-card) 0; }
+    .matrix-frame :global(td), .matrix-frame :global(th:not(:first-child)) { padding-inline: .35rem; }
     .matrix-course { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
     .year-lists, .year-lists ul { padding: 0; margin: 0; list-style: none; }
     .year-lists > li { border-block-start: 1px solid var(--line); }

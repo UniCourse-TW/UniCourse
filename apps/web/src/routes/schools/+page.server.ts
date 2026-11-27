@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { coverage, coverageYears, directoryStatus, groupBySystem, matches, parseFilters, schoolSorts, sortInstitutions, statuses, systems } from '$lib/institutions';
+import { coverage, coverageYears, directoryStatus, matches, parseFilters, schoolSorts, sortInstitutions, statuses, systems } from '$lib/institutions';
 import { catalog } from '$lib/server/catalog';
 import type { PageServerLoad } from './$types';
 
@@ -14,8 +14,9 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   const { institutions, updatedAt } = result.data;
   const filters = parseFilters(url.searchParams);
   const shown = institutions.filter((institution) => matches(institution, filters));
-  const sort = schoolSorts.find((value) => value === url.searchParams.get('sort')) ?? 'status';
-  const order = url.searchParams.get('order');
+  const [requestedSort, requestedOrder] = url.searchParams.get('directory_order')?.split(':') ?? [];
+  const sort = schoolSorts.find((value) => value === (url.searchParams.get('sort') ?? requestedSort)) ?? 'status';
+  const order = url.searchParams.get('order') ?? requestedOrder;
   const direction = order === 'asc' || order === 'desc' ? order : sort === 'status' || sort === 'name' ? 'asc' : 'desc';
   const pageSize = 24;
   const totalPages = Math.max(1, Math.ceil(shown.length / pageSize));
@@ -42,6 +43,6 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     })),
     systems: systems.filter((system) => institutions.some((institution) => institution.system === system)),
     shown: shown.length,
-    groups: groupBySystem(sortInstitutions(shown, sort, direction).slice(start, start + pageSize))
+    rows: sortInstitutions(shown, sort, direction).slice(start, start + pageSize)
   };
 };

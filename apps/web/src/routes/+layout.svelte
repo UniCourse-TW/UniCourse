@@ -9,13 +9,14 @@
   let { data, children }: LayoutProps = $props();
   let here = $derived(page.url.pathname + page.url.search);
   let onSearch = $derived(page.url.pathname === '/' && page.data.content?.kind === 'search');
-  let searchTarget = $derived(page.url.pathname !== '/' ? '/#course-keyword' : onSearch && page.data.content?.result?.total === 0 ? '#edit-course-search' : '#course-keyword');
+  let hasPageSearch = $derived(['/', '/schools', '/forum', '/landscape'].includes(page.url.pathname) || page.url.pathname.startsWith('/schools/') || page.status === 404);
+  let searchTarget = $derived(page.url.pathname === '/' ? '#course-keyword' : '/#course-keyword');
   let accountOpen = $state(false);
 
   afterNavigate(() => { accountOpen = false; });
 
   const tabs = [
-    { href: '/', label: '首頁' },
+    { href: '/', label: '查課' },
     { href: '/schools', label: '學校' },
     { href: '/forum', label: '論壇' },
     { href: '/landscape', label: '網站總覽' }
@@ -38,16 +39,16 @@
 
     <div class="tabs">
       {#each tabs as tab (tab.href)}
-        <a href={tab.href} aria-current={(page.url.pathname === tab.href && (tab.href !== '/' || !onSearch)) || page.url.pathname.startsWith(`${tab.href}/`) ? 'page' : undefined}>{tab.label}</a>
+        <a href={tab.href} aria-current={page.url.pathname === tab.href ? 'page' : page.url.pathname.startsWith(`${tab.href}/`) || (tab.href === '/' && page.url.pathname.startsWith('/courses/')) ? 'location' : undefined}>{tab.label}</a>
       {/each}
     </div>
 
     <div class="tools">
-      <form method="GET" action="/" role="search" aria-label="全站查課" class="nav-search">
+      {#if !hasPageSearch}<form method="GET" action="/" role="search" aria-label="全站查課" class="nav-search">
         <input type="search" name="q" maxlength="100" placeholder="課名、教師或課號" aria-label="全站搜尋關鍵字" />
         <button aria-label="全站搜尋">{@render searchIcon()}</button>
-      </form>
-      <a href={searchTarget} class="mobile-search icon-action" aria-label="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}</a>
+      </form>{/if}
+      <a href={searchTarget} class="mobile-search icon-action" class:page-search={hasPageSearch} aria-label="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}</a>
       <form method="POST" action="/?/theme" class="theme-form">
         <input type="hidden" name="returnTo" value={here} />
         {#if data.theme !== 'dark'}
@@ -118,7 +119,7 @@
   .wordmark img { flex: none; }
   .tabs { align-self: stretch; gap: var(--space-2); }
   .tabs a { display: flex; align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-2); border-block-end: 2px solid transparent; color: var(--ink-2); font-weight: 650; white-space: nowrap; text-decoration: none; }
-  .tabs a[aria-current='page'] { border-block-end-color: var(--brand); color: var(--brand-ink); }
+  .tabs a[aria-current] { border-block-end-color: var(--brand); color: var(--brand-ink); }
   .tools { min-width: 0; gap: var(--space-1); margin-inline-start: auto; }
   .nav-search { display: flex; min-width: 0; align-items: center; padding-inline-start: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); }
   .nav-search:focus-within { border-color: var(--brand-ring); }
@@ -127,6 +128,7 @@
   .nav-search button, .icon-action, .account summary { display: inline-grid; place-items: center; min-width: var(--target-min); min-height: var(--target-min); padding: 0; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink-2); cursor: pointer; }
   .nav-search button { min-height: 2.625rem; }
   .mobile-search, .set-light { display: none; }
+  .page-search { display: inline-grid; }
   .mobile-search[aria-current] { background: var(--brand-wash); color: var(--brand-ink); }
   [data-shell-theme='dark'] .set-light { display: inline-grid; }
   @media (prefers-color-scheme: dark) {

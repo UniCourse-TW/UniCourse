@@ -3,12 +3,13 @@
   import type { School } from '@unicourse/api-client';
   import { searchSorts, type OverviewSearchFilters } from './overview-paths';
 
-  let { schools, terms, filters, departments = null, externalSort = false }: {
+  let { schools, terms, filters, departments = null, externalSort = false, empty = false }: {
     schools: School[];
     terms: string[];
     filters?: OverviewSearchFilters;
     departments?: string[] | null;
     externalSort?: boolean;
+    empty?: boolean;
   } = $props();
 
   const departmentOptions = $props.id();
@@ -31,8 +32,10 @@
 {#snippet departmentField(value: string)}
   <label class="department-field">
     <span>開課單位</span>
-    <input name="department" list={departments?.length ? departmentOptions : undefined} {value}
-      placeholder={departments?.length ? '輸入簡稱或選擇單位' : '輸入開課單位名稱'} maxlength="100" />
+    {#key `${selectedSchool}|${value}`}
+      <input name="department" list={departments?.length ? departmentOptions : undefined} defaultValue={value}
+        placeholder={departments?.length ? '輸入簡稱或選擇單位' : '輸入開課單位名稱'} maxlength="100" />
+    {/key}
   </label>
   {#if departments?.length}
     <datalist id={departmentOptions}>
@@ -41,36 +44,49 @@
   {/if}
 {/snippet}
 
-{#key `${filters?.query ?? ''}|${selectedSchool}|${selectedTerm}|${filters?.department ?? ''}|${filters?.sort ?? ''}`}
-  <form id="course-search" action="/" method="GET" role="search" aria-label="課程搜尋" class:result-filters={filters} class:has-department={filters && selectedSchool}>
+{#snippet schoolField()}
+  <label>
+    <span>學校</span>
+    <select name="school" onchange={changeFilter}>
+      <option value="" selected={!selectedSchool}>所有學校</option>
+      {#if selectedSchool && !schools.some((school) => school.slug === selectedSchool)}<option value={selectedSchool} selected>{selectedSchool}</option>{/if}
+      {#each schools as school (school.slug)}<option value={school.slug} selected={school.slug === selectedSchool}>{school.name}</option>{/each}
+    </select>
+  </label>
+{/snippet}
+
+{#snippet termField()}
+  <label>
+    <span>學期</span>
+    <select name="term" onchange={changeFilter}>
+      <option value="all" selected={selectedTerm === 'all'}>全部學期</option>
+      {#each terms as term (term)}<option value={term} selected={term === selectedTerm}>{term}</option>{/each}
+    </select>
+  </label>
+{/snippet}
+
+  <form id="course-search" action="/" method="GET" role="search" aria-label="課程搜尋" class:result-filters={filters && !empty} class:has-department={filters && selectedSchool && !empty} class:empty>
     <label class="keyword">
       <span>關鍵字</span>
       <span class="search-input">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.75" /><path d="m15 15 4 4" /></svg>
-        <input id="course-keyword" name="q" type="search" value={filters?.query ?? ''} maxlength="100" placeholder="課名、教師或課號" />
+        {#key filters?.query ?? ''}
+          <input id="course-keyword" name="q" type="search" defaultValue={filters?.query ?? ''} maxlength="100" placeholder="課名、教師或課號" />
+        {/key}
       </span>
     </label>
-    <label>
-      <span>學校</span>
-      <select name="school" onchange={changeFilter}>
-        <option value="" selected={!selectedSchool}>所有學校</option>
-        {#if selectedSchool && !schools.some((school) => school.slug === selectedSchool)}
-          <option value={selectedSchool} selected>{selectedSchool}</option>
-        {/if}
-        {#each schools as school (school.slug)}
-          <option value={school.slug} selected={school.slug === selectedSchool}>{school.name}</option>
-        {/each}
-      </select>
-    </label>
-    <label>
-      <span>學期</span>
-      <select name="term" onchange={changeFilter}>
-        <option value="all" selected={selectedTerm === 'all'}>全部學期</option>
-        {#each terms as term (term)}<option value={term} selected={term === selectedTerm}>{term}</option>{/each}
-      </select>
-    </label>
-    <button type="submit" aria-busy={loading}>{loading ? '搜尋中…' : '搜尋'}</button>
-    {#if filters}
+    {#if !empty}{@render schoolField()}{@render termField()}{/if}
+    <button type="submit" aria-busy={loading}>{loading ? '搜尋中…' : empty ? '重新搜尋' : '搜尋'}</button>
+    {#if filters && empty}
+      <input type="hidden" name="sort" value={filters.sort} />
+      <details class="advanced">
+        <summary>調整學校、學期等條件</summary>
+        <div class="advanced-fields">
+          {@render schoolField()}{@render termField()}{@render departmentField(filters.department)}
+          <button type="submit" class="advanced-apply">套用篩選</button>
+        </div>
+      </details>
+    {:else if filters}
       {#if selectedSchool}{@render departmentField(filters.department)}{/if}
       {#if !externalSort || !selectedSchool}
       <details class="advanced">
@@ -91,7 +107,6 @@
       {/if}
     {/if}
   </form>
-{/key}
 
 <style>
   form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 12rem) minmax(0, 8.5rem) auto; gap: var(--space-2); align-items: end; }
@@ -111,9 +126,11 @@
   summary span { color: var(--muted); font-weight: 500; }
   .advanced-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 12rem); gap: var(--space-2); max-width: 35rem; padding-block-end: var(--space-2); }
   .advanced-apply { grid-column: 1 / -1; width: fit-content; border: 1px solid var(--control-line); background: var(--panel-raised); color: var(--brand-ink); }
+  .empty { grid-template-columns: minmax(0, 1fr) auto; }
   @media (max-width: 37rem) {
     form, .result-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .keyword, form > button { grid-column: 1 / -1; }
+    .empty > :is(.keyword, button) { grid-column: auto; }
     .result-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .result-filters label { grid-column: span 2; }
     .result-filters .keyword { grid-column: 1 / 4; }

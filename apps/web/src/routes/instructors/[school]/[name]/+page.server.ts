@@ -41,11 +41,15 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
       return { id: row.id, title: row.title, count: reviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0 };
     })) : []
   ]);
+  const ratedCourses = [...new Map(offerings.map((row) => [row.courseCode, row] as const).reverse()).values()].flatMap((row) => {
+    const stats = summaryRatings.get(row.courseCode);
+    return stats?.average != null && stats.count > 0 ? [{ id: row.id, title: row.title, average: stats.average, count: stats.count }] : [];
+  }).sort((left, right) => right.count - left.count);
 
   return {
     instructor, courses: courseOptions, term, courseCode, oldestFirst, rows, matched: matches.length, page, totalPages,
     listedTerms: [...new Set(offerings.map(({ term }) => term))].sort().reverse(), firstRow: (page - 1) * pageSize + 1,
-    matrix: buildTeachingMatrix(offerings, offerings.length === instructor.summary.offerings), trends: trendResult?.data ?? null, summaryRatings,
+    matrix: buildTeachingMatrix(offerings, offerings.length === instructor.summary.offerings), trends: trendResult?.data ?? null, summaryRatings, ratedCourses,
     externalReviews: externalReviews?.data ?? null,
     courseReviews: courseReviews.filter(({ count }) => count > 0),
     listed: offerings.length,

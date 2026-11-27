@@ -18,7 +18,7 @@
   {#if hasScale && valid !== null}
     <span class="track" aria-hidden="true"><span class="fill" class:emphasis style:inline-size={`${barPercent(valid, max)}%`}></span></span>
   {/if}
-  <span class="ui-tabular" title={valid === null ? '未公布' : undefined}>{displayValue(valid)}{#if valid !== null && unit} {unit}{/if}</span>
+  <span class="ui-tabular" title={valid === null ? '未公布' : undefined}>{displayValue(valid)}{#if valid !== null && unit}{` ${unit}`}{/if}</span>
 </span>
 
 <style>
