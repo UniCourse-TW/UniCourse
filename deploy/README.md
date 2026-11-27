@@ -34,3 +34,39 @@ pointing at `http://localhost:80` (same as the other `*.observe.tw` sites); this
 and is done by the operator, not by the deploy scripts.
 
 Rollback: `docker compose ... down` keeps `/srv/unicourse/pg`; re-run `up -d` with the previous `UNICOURSE_TAG`.
+
+## Batch job health and completion
+
+`ingest` and `ingest-tvc` share the API image but run only `unicourse-ingest`,
+not the HTTP server. Their service-level healthchecks are disabled; the API
+service still inherits the image's `/api/schools` HTTP probe unchanged.
+Disabled healthchecking is not evidence that an import finished.
+
+For each job, retain its exact invocation and foreground `docker compose run`
+exit status (or the exact container's terminal state/exit before removal).
+A nonzero exit is a failed job, a running job is not complete, and an absent
+`--rm` container with no retained terminal result is **unknown**, not success.
+This change does not add durable job-result storage or repair earlier missing
+completion evidence. The existing refresh units deliberately run ingest after
+crawl using `;`; their shell exit covers the final ingest, not aggregate crawl
+success, which must be checked separately.
+
+Daemon-free deployment regression (Compose CLI required; no Docker daemon,
+actual ingest, database, live school website, or real env file):
+
+```sh
+# BASELINE is an immutable code-only checkout before this patch.
+# TMPDIR, HOME and DOCKER_CONFIG should point to task-local fixture/cache paths.
+COMPOSE_BIN=/absolute/path/to/verified/docker-compose \
+UNICOURSE_BASELINE_ROOT="$BASELINE" \
+UNICOURSE_TEST_ROOT="$PWD" \
+GOMAXPROCS=1 GOMEMLIMIT=128MiB PYTHONDONTWRITEBYTECODE=1 \
+/usr/bin/python3 deploy/tests/test_ingest_healthcheck.py
+```
+
+The test renders real effective Compose with synthetic substitutions and models
+its override of the Dockerfile healthcheck. It executes the original probe
+against a synthetic loopback HTTP fixture (only its URL is remapped), and runs
+the refresh shell commands with a task-local fake Docker executable to check
+successful, failed, missing and still-running job outcomes. This is not a live
+Docker inheritance/ingest integration test, and is not part of `just check` yet.

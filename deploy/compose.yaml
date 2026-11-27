@@ -61,6 +61,8 @@ services:
 
   ingest:
     image: unicourse-api:${UNICOURSE_TAG:-latest}
+    # Batch CLI shares the API image but has no HTTP server; use its exit status.
+    healthcheck: { disable: true }
     profiles: [jobs]
     depends_on: { db: { condition: service_healthy } }
     environment:
@@ -80,6 +82,8 @@ services:
 
   ingest-tvc:
     image: unicourse-api:${UNICOURSE_TAG:-latest}
+    # Same batch-only entrypoint as ingest; never inherit the API HTTP probe.
+    healthcheck: { disable: true }
     profiles: [jobs]
     depends_on: { db: { condition: service_healthy } }
     environment:
