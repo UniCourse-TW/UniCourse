@@ -7,18 +7,32 @@
   const FORUM = { href: '/forum', label: '逛逛論壇' };
   const SCHOOLS = { href: '/schools', label: '看各校收錄狀態' };
 
+  function decodeSegment(segment = '') {
+    try {
+      return decodeURIComponent(segment);
+    } catch {
+      return '';
+    }
+  }
+
   /** 404 copy per route (states.md §4); the route id is set when a load threw, the path otherwise. */
   function notFoundCopy(routeId: string | null, pathname: string): Partial<Copy> {
     const segments = pathname.split('/').filter(Boolean);
     const route = routeId ?? `/${segments.map((segment, index) => (index === 0 ? segment : '[x]')).join('/')}`;
     if (route.startsWith('/courses/')) {
+      const tail = decodeSegment(segments.at(-1));
+      const offeringId = /^\d{1,18}$/.test(tail) ? tail : '';
+      const courseCode = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z0-9_-]{2,32}$/.test(tail) ? tail : '';
       return {
         title: '找不到這個開課班次',
-        description: '這個班次可能已下架，或連結已失效。輸入課號或課名，可以找到同一門課的其他學期。',
+        description: '這個連結可能已失效。可以用課號或課名搜尋其他學期。',
+        context: offeringId ? `網址中的班次編號 ${offeringId}` : undefined,
         // The data routes lead (coverage first), the forum stays a site-wide way out.
         secondary: SCHOOLS,
         also: [{ href: '/', label: '回首頁' }, FORUM],
-        search: true
+        search: true,
+        query: courseCode,
+        crossTerm: Boolean(courseCode)
       };
     }
     if (route.includes('/departments/')) {
@@ -40,7 +54,7 @@
       };
     }
     if (route.startsWith('/instructors/')) {
-      const name = decodeURIComponent(segments[2] ?? '');
+      const name = decodeSegment(segments[2]);
       return {
         title: '找不到這位教師',
         description: '姓名可能寫法不同，或這位教師的課程尚未收錄。',
@@ -66,7 +80,7 @@
       };
     }
     // A last segment that looks like a course code or a name is worth a search.
-    const tail = decodeURIComponent(segments.at(-1) ?? '');
+    const tail = decodeSegment(segments.at(-1));
     return {
       title: '找不到這個頁面',
       description: '網址可能有誤，或這個頁面已被移除。',

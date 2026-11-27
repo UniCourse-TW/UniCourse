@@ -7,6 +7,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 /** The API refuses a username after 10 failed attempts in a minute; it does not say how long is left. */
 const LOCKOUT_SECONDS = 60;
+const LOGIN_TIMEOUT_MS = 15_000;
 
 export const load: PageServerLoad = async ({ fetch, locals, url }) => {
   const next = safeNext(url.searchParams.get('next'));
@@ -14,9 +15,6 @@ export const load: PageServerLoad = async ({ fetch, locals, url }) => {
   // A name handed over from the register tab (the name was taken, so sign in with it instead).
   const handed = url.searchParams.get('username') ?? '';
   const prefill = /^[A-Za-z0-9_]{3,32}$/.test(handed) ? handed : '';
-  // Signed in and sent here by an action (`next` given): straight on. Signed in and here by
-  // hand: say who is signed in and offer the ways on, instead of a silent bounce to the home page.
-  if (locals.user && url.searchParams.has('next')) redirect(303, next);
   const signedIn = locals.user ? { username: locals.user.username, displayName: locals.user.displayName } : null;
   // The signed-in card shows what the account has done so far (counts only; the profile has the list).
   const activity = signedIn ? await activityOf(fetch, signedIn.username) : null;
@@ -40,7 +38,7 @@ export const actions: Actions = {
     if (!username || !password) return fail(400, { mode: 'login', username, message: '請輸入帳號與密碼。' });
 
     const result = await catalog(fetch)
-      .POST('/api/auth/login', { body: { username, password } })
+      .POST('/api/auth/login', { body: { username, password }, signal: AbortSignal.timeout(LOGIN_TIMEOUT_MS) })
       .catch(() => undefined);
     if (!result) return fail(503, { mode: 'login', username, message: apiMessage(undefined) });
     if (!result.data) {

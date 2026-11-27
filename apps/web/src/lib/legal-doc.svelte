@@ -37,7 +37,7 @@
   let currentId = $state('');
   // Before the observer has spoken (and without JavaScript) the first section is the current one.
   let shownId = $derived(currentId || sections[0]?.id);
-  // Phones: one floating「目錄」button once the contents have scrolled away (replaces a link per section).
+  // Phones also get a floating shortcut once the contents have scrolled away.
   let tocAway = $state(false);
   let tocDetails = $state<HTMLDetailsElement>();
   onMount(() => {
@@ -104,6 +104,9 @@
       {#if contact}<span class="sep" aria-hidden="true">·</span><a href={`#${contact.id}`}>{contact.title}</a>{/if}
       <span class="sep" aria-hidden="true">·</span><a class="arrow-link" href={sibling.href}><span>{sibling.label}</span><span aria-hidden="true">→</span></a>
     </p>
+    {#if sections.some((section) => section.id === 'reviews')}
+      <a class="reviews-jump" href="#reviews">外部評論索引 <span aria-hidden="true">↓</span></a>
+    {/if}
   </header>
   <div class="doc-layout" class:has-gist={summary.length > 0}>
     {#if summary.length}
@@ -148,9 +151,10 @@
 
 <style>
   /* The document is centred at its natural width (contents + 52 em measure) instead of hugging the left edge. */
-  .doc { display: grid; gap: var(--space-5); max-inline-size: 66rem; min-inline-size: 0; margin-inline: auto; color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
+  .doc { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); max-inline-size: 66rem; min-inline-size: 0; margin-inline: auto; color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
   .arrow-link { display: inline-flex; gap: 0.3em; align-items: center; }
   .doc-head { display: grid; gap: var(--space-1); }
+  .reviews-jump { display: none; }
   /* The gist shares the prose column: same left edge as the first h2 and the same 52 em measure. */
   .gist { grid-column: 2; max-inline-size: 52em; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-panel); background: var(--panel); }
   .gist h2 { margin: 0 0 var(--space-1); font-size: var(--t-base); font-weight: 650; color: var(--ink-2); }
@@ -163,10 +167,10 @@
   .meta { margin: 0; color: var(--muted); font-size: var(--t-base); }
   .meta .sep { margin-inline: 0.4em; color: var(--axis); }
   .meta a, .doc-toc a, .next a, .prose :global(a) { color: var(--brand-ink); text-underline-offset: 0.15em; }
-  :is(.meta, .doc-toc, .next, .prose) :global(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: 2px; }
+  .reviews-jump:focus-visible, :is(.meta, .doc-toc, .next, .prose) :global(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: 2px; }
 
   .doc-layout { display: grid; grid-template-columns: 13.5rem minmax(0, 1fr); gap: var(--space-5) var(--space-8); align-items: start; }
-  .doc-toc { grid-column: 1; grid-row: 1; position: sticky; inset-block-start: 5rem; font-size: var(--t-md); }
+  .doc-toc { grid-column: 1; grid-row: 1; align-self: start; position: sticky; inset-block-start: 4.75rem; font-size: var(--t-md); }
   .has-gist .doc-toc { grid-row: 1 / span 2; }
   .prose { grid-column: 2; }
   .doc-toc details { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
@@ -186,8 +190,8 @@
      52 em at the prose size and tables fill it. */
   .prose :global(section) { max-inline-size: 52em; }
   .prose { min-inline-size: 0; font-size: var(--t-md); line-height: 1.85; overflow-wrap: anywhere; hanging-punctuation: none; }
-  .prose :global(h2) { margin: var(--space-8) 0 var(--space-2); font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); scroll-margin-block-start: var(--space-4); }
-  .prose :global(h3) { margin: var(--space-6) 0 var(--space-1); font-size: var(--t-lg); font-weight: 650; line-height: var(--leading-tight); scroll-margin-block-start: var(--space-4); }
+  .prose :global(h2) { margin: var(--space-8) 0 var(--space-2); font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); scroll-margin-block-start: 4.75rem; }
+  .prose :global(h3) { margin: var(--space-6) 0 var(--space-1); font-size: var(--t-lg); font-weight: 650; line-height: var(--leading-tight); scroll-margin-block-start: 4.75rem; }
   .prose :global(p), .prose :global(ul), .prose :global(ol) { margin: 0 0 var(--space-3); }
   .prose :global(ul), .prose :global(ol) { padding-inline-start: 1.4em; }
   .prose :global(li) { margin-block-end: 6px; }
@@ -203,15 +207,8 @@
   .prose :global(table.boards td:nth-child(2)) { white-space: nowrap; }
   /* The data-kind column of the sources table reads as one unit (課程與修課人數 never breaks before its last word). */
   .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: 9.5rem; white-space: nowrap; }
-  /* Desktop shows a folded block open; phones get a real disclosure (summary styled below). */
-  /* Desktop: the fold is always open and its h3 already names it, so the summary line is not drawn. */
-  .prose :global(details.phone-fold > summary) { display: none; list-style: none; pointer-events: none; color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
-  .prose :global(details.phone-fold > summary::-webkit-details-marker) { display: none; }
-  .prose :global(details.phone-fold::details-content) { display: block; content-visibility: visible; }
-  .prose :global(details.phone-fold > summary .fold-count) { display: none; }
-  /* The cards say up front what each route needs and how long it takes, before anyone clicks out. */
-  .prose :global(.contact-routes .route-meta) { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--muted); font-size: var(--t-sm); line-height: 1.6; }
-  .prose :global(.contact-routes .route-meta span + span)::before { content: '·'; margin-inline-end: var(--space-2); color: var(--axis); }
+  .prose :global(.contact-routes .route-meta) { display: grid; gap: 2px; margin: 0; color: var(--muted); font-size: var(--t-sm); line-height: 1.6; }
+  .prose :global(.contact-routes .route-meta li) { margin: 0; }
   .prose :global(p.update-note a.private) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: 2rem; font-weight: 600; }
   .prose :global(.callout) { margin: 0 0 var(--space-3); padding: var(--space-3) var(--space-4); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); }
   .prose :global(.callout .note) { display: block; margin-block-start: var(--space-2); color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
@@ -244,17 +241,17 @@
 
   /* Two- and three-column text tables stack on phones; the column name comes from data-label. */
   @media (max-width: 40rem) {
-    .prose :global(table), .prose :global(tbody), .prose :global(tr), .prose :global(td) { display: block; }
+    .prose :global(table.stacked), .prose :global(.stacked tbody), .prose :global(.stacked tr), .prose :global(.stacked td) { display: block; }
     /* The header row stays in the accessibility tree; only its pixels go. */
-    .prose :global(thead) { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-    .prose :global(tr) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); }
-    .prose :global(tr:last-child) { border-block-end: 0; }
-    .prose :global(td) { padding: 2px 0; border: 0; }
+    .prose :global(.stacked thead) { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .prose :global(.stacked tr) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); }
+    .prose :global(.stacked tr:last-child) { border-block-end: 0; }
+    .prose :global(.stacked td) { padding: 2px 0; border: 0; }
     /* Each cell is one row: the column name in a 5.5 rem label column, the value beside it. */
-    .prose :global(td[data-label]) { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: var(--space-2); }
-    .prose :global(td[data-label])::before { content: attr(data-label); color: var(--muted); font-size: var(--t-sm); font-weight: 600; line-height: inherit; }
-    .prose :global(td:first-child) { display: block; padding-block-end: var(--space-1); font-weight: 600; }
-    .prose :global(td:first-child)::before { display: none; }
+    .prose :global(.stacked td[data-label]) { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: var(--space-2); }
+    .prose :global(.stacked td[data-label])::before { content: attr(data-label); color: var(--muted); font-size: var(--t-sm); font-weight: 600; line-height: inherit; }
+    .prose :global(.stacked td:first-child) { display: block; padding-block-end: var(--space-1); font-weight: 600; }
+    .prose :global(.stacked td:first-child)::before { display: none; }
     .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: auto; white-space: normal; }
   }
   @media (max-width: 56rem) {
@@ -264,7 +261,8 @@
     .doc-toc { order: 0; }
     .gist { order: 1; }
     .prose { order: 2; }
-    .doc-toc { position: static; }
+    .doc-toc { position: static; scroll-margin-block-start: 4.75rem; }
+    .reviews-jump { display: inline-flex; justify-self: start; align-items: center; gap: 0.3em; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); }
     .doc-toc details::details-content { content-visibility: auto; }
     .doc-toc details:not([open])::details-content { content-visibility: hidden; }
     .doc-toc summary { display: flex; align-items: center; justify-content: space-between; min-block-size: var(--target-min); padding-inline: var(--space-3); color: var(--ink-2); font-size: var(--t-base); cursor: pointer; pointer-events: auto; }
@@ -278,19 +276,10 @@
     /* Phones: one floating way back to the contents once it has scrolled out of view. */
     .toc-fab { position: fixed; inset-block-end: calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); inset-inline-end: var(--space-4); z-index: 20; display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 18%, transparent); color: var(--ink); font-size: var(--t-base); font-weight: 650; text-decoration: none; opacity: 0; pointer-events: none; transition: opacity 150ms; }
     .toc-fab.shown { opacity: 1; pointer-events: auto; }
-    .prose :global(details.phone-fold) { margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
-    /* The summary is a two-column grid: the title (label never breaks; the note wraps under it) and the chevron. */
-    .prose :global(details.phone-fold > summary) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2); align-items: center; min-block-size: var(--target-min); padding: var(--space-2) var(--space-3); color: var(--brand-ink); font-size: var(--t-base); line-height: 1.5; cursor: pointer; pointer-events: auto; }
-    .prose :global(details.phone-fold > summary .fold-label) { white-space: nowrap; }
-    .prose :global(details.phone-fold > summary .fold-count) { display: inline; color: var(--muted); font-weight: 500; }
-    .prose :global(details.phone-fold > summary::after) { content: '▾'; color: var(--muted); }
-    .prose :global(details.phone-fold[open] > summary::after) { content: '▴'; }
-    .prose :global(details.phone-fold::details-content) { content-visibility: auto; }
-    .prose :global(details.phone-fold:not([open])::details-content) { content-visibility: hidden; }
-    .prose :global(details.phone-fold table) { margin: 0; border: 0; border-radius: 0; border-block-start: 1px solid var(--line); }
     .toc-fab:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
     /* Phones: a way back to the contents at every section heading, not only at the end of the text. */
     .prose :global(.h2-row) { align-items: center; justify-content: space-between; }
+    .prose :global(section + section .h2-row) { margin-block-start: var(--space-5); }
     .prose :global(.h2-row .to-toc) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); margin-inline-end: calc(-1 * var(--space-2)); padding-inline: var(--space-2); border-radius: var(--radius-control); color: var(--muted); font-size: var(--t-sm); font-weight: 600; text-decoration: none; }
     .prose :global(.h2-row .to-toc:hover) { color: var(--brand-ink); background: var(--hover-row); }
   }
