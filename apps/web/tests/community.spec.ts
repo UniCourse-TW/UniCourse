@@ -251,7 +251,7 @@ test('saves a profile while the phone preview is open', async ({ page }) => {
   const bio = page.getByLabel('自我介紹', { exact: true });
   await bio.fill('這是草稿。');
   const preview = page.locator('.preview-fold summary');
-  await expect(preview).toContainText('編輯預覽');
+  await expect(preview).toContainText('預覽公開個人頁');
   await expect(preview).toContainText('編輯中，尚未公開');
   await preview.click();
   await expect(page.locator('.preview-fold .bio')).toHaveText('這是草稿。');

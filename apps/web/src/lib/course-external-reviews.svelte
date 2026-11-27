@@ -30,8 +30,8 @@
 
   let { school, courseCode, instructors = [], title, reviews }: Props = $props();
 
-  /** Posts listed before「再顯示」: eight on wide screens, five on phones (set after hydration). */
-  let initialPosts = $state(8);
+  /** Posts listed before「再顯示」: six on wide screens (about the height of the filter column), four on phones. */
+  let initialPosts = $state(6);
   /** Posts each「再顯示」adds. */
   const stepPosts = 5;
   /** Teachers listed in the summary before「其他 N 位」. */
@@ -118,7 +118,7 @@
   let ready = $state(false);
   onMount(() => {
     if (window.matchMedia('(max-width: 40rem)').matches) {
-      initialPosts = 5;
+      initialPosts = 4;
       yearsOpen = false;
     }
     ready = true;
@@ -282,16 +282,6 @@
         </div>
       </div>
     </header>
-    {#if links.length}
-      <div class="elsewhere">
-        <p class="elsewhere-label">沒有收錄的網站，可以直接到站上搜尋這門課：</p>
-        <ul class="links" aria-label="到其他網站搜尋">
-          {#each links as link (link.source)}
-            <li><a href={link.url} target="_blank" rel="noopener noreferrer nofollow">{@render linkText(link)}</a></li>
-          {/each}
-        </ul>
-      </div>
-    {/if}
 
     <div class="layout">
       <aside class="summary" aria-label="外部文章摘要">
@@ -349,6 +339,18 @@
           {/if}
           {#if untagged}<p class="note">另有 {untagged} 篇標題沒有寫教師。</p>{/if}
         </div>
+        <!-- Sites UniCourse does not index: the search links close the filter column on wide screens (so it ends
+             level with the list) and come after the list on phones. -->
+        {#if links.length}
+          <div class="elsewhere">
+            <p class="elsewhere-label">沒有收錄的網站，可以直接到站上搜尋這門課：</p>
+            <ul class="links" aria-label="到其他網站搜尋">
+              {#each links as link (link.source)}
+                <li><a href={link.url} target="_blank" rel="noopener noreferrer nofollow">{@render linkText(link)}</a></li>
+              {/each}
+            </ul>
+          </div>
+        {/if}
 
       </aside>
 
@@ -408,9 +410,9 @@
         {#if perYear.length > 1}
           <!-- Posts per year: a short strip above the list on wide screens; phones fold it after the list. -->
           <details class="years-box" bind:open={yearsOpen}>
-            <summary>每年發文數 <span class="cap-range num">{perYear[0].year}–{perYear.at(-1)?.year}・最多 {peakYear?.count} 篇</span></summary>
+            <summary>依發文年份 <span class="cap-range num">{perYear[0].year}–{perYear.at(-1)?.year}・最多 {peakYear?.count} 篇</span></summary>
             <figure class="years">
-              <figcaption>每年發文數（篇）{#if peakYear}<span class="cap-range num">最多 {peakYear.count} 篇（{peakYear.year}）</span>{/if}</figcaption>
+              <figcaption>依發文年份（篇）{#if peakYear}<span class="cap-range num">最多 {peakYear.count} 篇（{peakYear.year}）</span>{/if}</figcaption>
               <div class="columns" role="img" aria-label={`每年發文數：${perYear.map((entry) => `${entry.year} 年 ${entry.count} 篇`).join('、')}`}>
                 {#each perYear as entry (entry.year)}
                   <!-- A year without indexed posts says 0 on the baseline, so it is not read as missing data. -->
@@ -422,7 +424,7 @@
                   </span>
                 {/each}
               </div>
-              <div class="axis num" aria-hidden="true">{#each perYear as entry, index (entry.year)}<span>{shortYear(entry.year, index)}</span>{/each}</div>
+              <div class="axis num" aria-hidden="true">{#each perYear as entry, index (entry.year)}<span><span class="y-full">{entry.year}</span><span class="y-short">{shortYear(entry.year, index)}</span></span>{/each}</div>
             </figure>
           </details>
         {/if}
@@ -478,10 +480,14 @@
 
   /* Desktop: text and search links side by side above the summary and list; phones put the links last. */
   /* Indexed posts first; the search links for sites UniCourse does not index form their own strip last. */
-  .external:not(.compact) { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'layout' 'elsewhere'; }
+  .external:not(.compact) { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'layout'; }
   .head { grid-area: head; display: grid; min-inline-size: 0; }
   .head-text { display: grid; gap: var(--space-1); min-inline-size: 0; }
-  .elsewhere { grid-area: elsewhere; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
+  .elsewhere { display: grid; gap: var(--space-2); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
+  /* In the filter column every site is one full-width row: label left, ↗ at the right edge. */
+  .elsewhere .links { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .elsewhere .links a { display: flex; justify-content: space-between; text-align: start; }
+  .elsewhere .links .out { margin-inline-start: auto; padding-inline-start: var(--space-2); }
   .elsewhere-label { color: var(--ink-2); font-size: 0.8125rem; }
   .layout { grid-area: layout; }
   .teacher-select { display: none !important; }
@@ -549,8 +555,10 @@
   .column .value { position: absolute; inset-inline: 0; color: var(--ink); font-size: 0.8125rem; font-weight: 600; line-height: 1rem; text-align: center; }
   .column.zero .value { inset-block-end: 2px; color: var(--muted); font-weight: 500; }
   .axis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin-block-start: 2px; color: var(--ink-2); font-size: var(--t-sm); text-align: center; white-space: nowrap; }
-  .axis span:first-child { text-align: start; }
-  .axis span:last-child { text-align: end; }
+  .axis > span:first-child { text-align: start; }
+  .axis > span:last-child { text-align: end; }
+  /* Years in full where there is room; phones shorten the middle ones (first and last stay full). */
+  .axis .y-short { display: none; }
   .cap-range { margin-inline-start: var(--space-1); color: var(--ink-2); font-weight: 500; }
 
   .posts { display: grid; gap: var(--space-2); min-inline-size: 0; }
@@ -618,7 +626,9 @@
   .more summary:hover { background: var(--hover-row); }
 
   @media (max-width: 64rem) {
-    .external:not(.compact) { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'layout' 'elsewhere'; }
+    .external:not(.compact) { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'layout'; }
+    .summary > .elsewhere { grid-column: 1 / -1; }
+    .elsewhere .links { grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
     .layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
     .layout > .summary { position: static; }
     .layout > .posts { padding-inline-start: 0; border-inline-start: 0; }
@@ -640,7 +650,8 @@
     .columns { block-size: 3.5rem; }
     /* Phones: the per-year chart folds after the list behind a named summary. */
     .posts > .years-box { order: 3; }
-    .elsewhere .links { flex: 1 1 100%; }
+    /* After the list (the summary is display: contents here). */
+    .elsewhere { order: 2; }
     .years-box { padding-block: 0; border-block: 1px solid var(--line); }
     .years-box > summary { display: flex; gap: var(--space-2); align-items: center; justify-content: space-between; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
     .years-box > summary::-webkit-details-marker { display: none; }
@@ -675,10 +686,15 @@
     select { inline-size: 100%; max-inline-size: none; min-block-size: var(--target-min); }
     .chip { min-block-size: var(--target-min); }
     .teacher { min-block-size: var(--target-min); }
-    /* The other sites as one compact row of equal buttons (site name only; the query is in the link). */
-    .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); }
-    .links a { justify-content: center; max-inline-size: 100%; padding-inline: var(--space-2); text-align: center; }
+    /* The other sites as whole buttons that share a row while they fit and wrap whole when they do not, so
+       no label ever breaks across lines (item 34); site name left, ↗ at the right edge; the query is in the link. */
+    .links, .elsewhere .links { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .links li { flex: 1 1 auto; }
+    .links a { display: flex; flex-wrap: nowrap; justify-content: space-between; inline-size: 100%; padding-inline: var(--space-3); text-align: start; white-space: nowrap; }
+    .links .out { margin-inline-start: auto; padding-inline-start: var(--space-2); }
     .links .query { display: none; }
+    .axis .y-full { display: none; }
+    .axis .y-short { display: inline; }
     /* 「在」 stays in the accessible name; only its pixels go on phones. */
     .links .site-in { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     .strip .links { flex: 1 1 100%; }

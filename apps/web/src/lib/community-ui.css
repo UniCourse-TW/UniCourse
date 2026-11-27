@@ -102,9 +102,9 @@
 @keyframes cm-spin { to { rotate: 360deg; } }
 /* Not available yet (nothing changed, a lockout, an empty reply): a solid low-contrast border on a muted
    fill, the standard disabled look (dashed edges are reserved for chart data-quality marks). The label is
-   --muted on --chip: about 5.4:1 light and 5.8:1 dark (WCAG AA). */
+   --ink-2 on --chip, well above AA in both themes, so the label stays readable while it waits. */
 .cm-btn:disabled:not([aria-busy='true']) {
-  color: var(--muted) !important;
+  color: var(--ink-2) !important;
   background: var(--chip);
   border: 1px solid color-mix(in srgb, var(--control-line) 45%, var(--line));
   cursor: not-allowed;

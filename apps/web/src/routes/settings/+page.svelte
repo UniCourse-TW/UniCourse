@@ -35,23 +35,17 @@
   let previewName = $derived(current.displayName.trim() || data.profile.username);
   let previewSchool = $derived(current.school ? (schoolNames[current.school] ?? '') : '');
   // One label for what the preview shows: the draft being typed, the version just saved, or the stored one.
-  let version = $derived(dirty ? '編輯中，尚未公開' : '公開版本');
+  let version = $derived(dirty ? '編輯中，尚未公開' : savedVisible ? '已更新的公開版本' : '公開版本');
   let joined = $derived(slashDate(data.profile.createdAt));
   let profile = $derived(profileHref(data.profile.username));
 
-  // Right after a save the button itself says 「已儲存 ✓」 for three seconds, then rests disabled.
-  let savedFlash = $state(false);
-  let flashTimer: ReturnType<typeof setTimeout> | undefined;
+  // After a save the button keeps its own name (resting disabled: nothing left to save); the one success
+  // message is the status beside it.
   const save: SubmitFunction = () => {
     saving = true;
-    return async ({ result, update }) => {
+    return async ({ update }) => {
       await update({ reset: false });
       saving = false;
-      if (result.type === 'success') {
-        savedFlash = true;
-        clearTimeout(flashTimer);
-        flashTimer = setTimeout(() => (savedFlash = false), 3000);
-      }
     };
   };
 
@@ -59,7 +53,6 @@
     const target = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
     if (target.name in current) current = { ...current, [target.name]: target.value };
     savedVisible = false;
-    savedFlash = false;
   }
 
   const length = (text: string) => [...text].length;
@@ -75,7 +68,7 @@
     <span class="avatar" aria-hidden="true">{initial(previewName)}</span>
     <div class="who">
       <p class="name">{previewName}</p>
-      <p class="handle"><span class="mono">@{data.profile.username}</span>{#if previewSchool}<span class="sep">·</span>{previewSchool}{/if}</p>
+      <p class="handle"><span class="mono">@{data.profile.username}</span><span class="sep">·</span>{#if previewSchool}{previewSchool}{:else}<span class="no-school">未顯示學校</span>{/if}</p>
       {#if current.bio.trim()}<p class="bio">{current.bio.trim()}</p>{:else}<p class="bio empty">（沒有自我介紹）</p>{/if}
     </div>
   </div>
@@ -135,18 +128,18 @@
         {#if form && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
         <!-- Phones: the preview folds right before the save line (check, then save); its summary names the version. -->
         <details class="preview-fold">
-          <summary>編輯預覽 <span class="version" class:draft={dirty}>{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
+          <summary>預覽公開個人頁 <span class="version" class:draft={dirty}>{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
           {@render previewCard()}
         </details>
         <!-- Button and its state on one line: why it is greyed out, what is unsaved, or the saved result with
              the one link to the updated profile (the header link steps aside meanwhile). -->
         <div class="save-row">
-          <button class="cm-btn" class:just-saved={savedFlash} aria-busy={saving} disabled={saving || (hydrated && !dirty)}>{saving ? '儲存中…' : savedFlash ? '已儲存 ✓' : '儲存'}</button>
+          <button class="cm-btn" aria-busy={saving} disabled={saving || (hydrated && !dirty)} aria-describedby="save-status">{saving ? '儲存中…' : '儲存'}</button>
           <!-- A fixed message line: the same height idle, unsaved and saved, so nothing below moves. The
                public page is the header link (one name for it everywhere). -->
-          <div class="status" role="status">
+          <div class="status" id="save-status" role="status">
             {#if saving}<span class="cm-sr">儲存中…</span>
-            {:else if savedVisible}<span class="ok"><span aria-hidden="true">✓</span><span>已儲存，個人頁已更新</span></span>
+            {:else if savedVisible}<span class="ok"><span class="tick" aria-hidden="true">✓</span><span>已儲存，個人頁已更新</span></span><a class="see" href={profile}>查看 <span aria-hidden="true">→</span></a>
             {:else if hydrated && dirty}<span class="pending">有 {changes} 項變更尚未儲存</span><span class="preview-note">預覽已即時更新</span>
             {:else if hydrated}<span class="idle">沒有待儲存的變更</span>{/if}
           </div>
@@ -171,7 +164,7 @@
         <div><dt>加入於</dt><dd class="num">{joined}</dd></div>
         {#if data.profile.isAdmin}<div><dt>權限</dt><dd>管理員</dd></div>{/if}
         <div class="account-action">
-          <dt>此瀏覽器的登入</dt>
+          <dt>登入狀態</dt>
           <dd>
             <p class="cm-hint">只登出這個瀏覽器，其他裝置不變。</p>
             <form method="POST" action="/auth?/logout"><button class="cm-btn leave">登出</button></form>
@@ -179,7 +172,7 @@
         </div>
         <div class="reset-row">
           <dt>密碼</dt>
-          <dd><ResetHelp note="由維護者手動重設" summary="怎麼重設" id="settings-reset" align="start" /></dd>
+          <dd><ResetHelp note="向維護者申請重設" summary="申請步驟" id="settings-reset" align="start" /></dd>
         </div>
       </dl>
     </section>
@@ -213,8 +206,12 @@
   .save-row .cm-btn { min-inline-size: 6rem; }
   /* The status takes the rest of the button's row; a second item (the profile link) wraps inside it. */
   .status { display: flex; flex: 1 1 10rem; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; min-block-size: var(--target-min); font-size: var(--t-base); }
-  .cm-btn.just-saved:disabled { color: var(--up) !important; border-color: color-mix(in srgb, var(--up) 55%, var(--line)); }
-  .ok { display: inline-flex; gap: 0.3em; align-items: center; padding: 0 var(--space-2); border-radius: var(--radius-pill); color: var(--up); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); font-size: var(--t-base); font-weight: 650; line-height: 1.9; }
+  /* Saved: ink text on a green tint with a green tick (green text on the dark tint was too faint), and the
+     updated page one tap away. */
+  .ok { display: inline-flex; gap: 0.3em; align-items: center; padding: 0 var(--space-2); border-radius: var(--radius-pill); color: var(--ink); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--up) 45%, transparent); font-size: var(--t-base); font-weight: 650; line-height: 1.9; }
+  .ok .tick { color: color-mix(in srgb, var(--up) 80%, var(--ink)); font-weight: 800; }
+  .see { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); padding-inline: var(--space-1); font-weight: 600; }
+  .no-school { color: var(--muted); }
   .preview-note { color: var(--ink-2); }
   @media (max-width: 56rem) { .preview-note { display: none; } }
   .pending { color: var(--warn); font-weight: 600; }
@@ -270,7 +267,10 @@
     .account-action { grid-template-columns: minmax(0, 1fr) !important; gap: var(--space-1) !important; }
     .account-action dd { justify-content: space-between; text-align: start !important; }
     .account-action dd .cm-hint { flex: 1 1 10rem; }
-    .save-row .status { flex-basis: 100%; }
+    /* The status stays beside the button while it fits (「沒有待儲存的變更」 does); longer ones wrap under. */
+    .save-row .status { flex-basis: 12rem; }
+    /* Saved: the message and its 「查看」 link take their own line under the button, together. */
+    .save-row .status:has(.ok) { flex-basis: 100%; flex-wrap: nowrap; }
     .facts .reset-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
     .facts .reset-row dd { text-align: start; }
   }

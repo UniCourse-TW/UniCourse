@@ -228,7 +228,7 @@
                 {#if row?.current}
                   <!-- 「本班」 sits in a band above the plot, with a dashed leader down to the bar, so even a
                        very short bar keeps its true height and the label never crowds the axis. -->
-                  <span class="here-flag" class:end={slotIndex >= slots.length - 3} class:start={slotIndex <= 1}>本班 {row.term}</span>
+                  <span class="here-flag" class:end={slotIndex >= slots.length - 3} class:start={slotIndex <= 1}>本班 {row.term}{#if row.partial}・只收錄 {displayValue(row.offeringCount)} 班{/if}</span>
                   <span class="leader" style:bottom={`calc(${percent(Math.max(row.enrolled ?? 0, row.capacity ?? 0))}% + 3px)`}></span>
                 {/if}
               </div>
@@ -279,10 +279,10 @@
         <thead>
           <tr>
             <th scope="col">學期</th>
-            <th scope="col">授課教師</th>
             <th scope="col" class="num">{capacityOnly ? '名額' : '修課／名額'}</th>
             {#if flagColumn}<th scope="col" class="ratio">滿額率</th>{/if}
             <th scope="col">班次</th>
+            <th scope="col">授課教師</th>
           </tr>
         </thead>
         <tbody>
@@ -305,11 +305,6 @@
               onfocusout={() => (active = undefined)}
             >
               <th scope="row" class="ui-mono">{row.term}{#if row.current}<span class="here" aria-current="page">本頁</span>{/if}</th>
-              <td class="names">
-                <!-- Desktop links each teacher; on phones the row itself links to the term's sections, so the
-                     names are plain text there (no 17 px tall targets). -->
-                <span class="name-links">{#each row.instructors as name, i (name)}<span class="name">{#if i > 0}、{/if}<a href={instructorHref(school, name)}>{name}</a></span>{:else}<span class="muted">未公布</span>{/each}</span><span class="name-text">{row.instructors.join('、') || '教師未公布'}</span>{#if row.instructorCount > row.instructors.length}<span class="count">，另 {displayValue(row.instructorCount - row.instructors.length)} 位</span>{/if}
-              </td>
               <!-- Numbers and the fill rate are separate aligned columns: 修課／名額, then bar, percentage and one tag. -->
               <td class="num ui-tabular value">
                 {#if row.enrolled == null && row.capacity == null}<span class="muted">未公布</span>
@@ -345,6 +340,11 @@
                 {/if}
                 {#if row.withdrawn}<span class="withdrawn">已下架</span>{/if}
               </td>
+              <td class="names">
+                <!-- Desktop links each teacher (last column, so the numbers sit next to the term); on phones the row
+                     itself links to the term's sections, so the names are plain text there (no 17 px tall targets). -->
+                <span class="name-links">{#each row.instructors as name, i (name)}<span class="name">{#if i > 0}、{/if}<a href={instructorHref(school, name)}>{name}</a></span>{:else}<span class="muted">未公布</span>{/each}</span><span class="name-text">{row.instructors.join('、') || '教師未公布'}</span>{#if row.instructorCount > row.instructors.length}<span class="count">，<a class="others" href={termSearch(row.term)} title={`${row.term} 全部 ${row.instructorCount} 位教師`}>另 {displayValue(row.instructorCount - row.instructors.length)} 位<span aria-hidden="true">&nbsp;→</span></a><span class="others-text">另 {displayValue(row.instructorCount - row.instructors.length)} 位</span></span>{/if}
+              </td>
             </tr>
           {/each}
           {#if phoneHidden}
@@ -365,7 +365,7 @@
 
   .chart { margin: 0; padding: var(--space-3) var(--space-4) var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
   figcaption { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: baseline; justify-content: space-between; margin-block-end: var(--space-3); font-size: 0.8125rem; color: var(--ink-2); }
-  .phone-n, .name-text, .gap-row.phone { display: none; }
+  .phone-n, .name-text, .others-text, .gap-row.phone { display: none; }
   .readout { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: baseline; min-block-size: 1.5rem; color: var(--ink-2); }
   .readout strong { color: var(--ink); font-size: var(--t-base); }
   .readout b { color: var(--ink); font-size: var(--t-base); font-weight: 600; }
@@ -466,6 +466,10 @@
   .num { text-align: end; }
   .names { min-inline-size: 6rem; overflow-wrap: anywhere; }
   .names .count { margin-inline-start: 0.15em; color: var(--ink-2); font-size: 0.8125rem; white-space: nowrap; }
+  .names .others { color: var(--ink-2); font-weight: 600; }
+  .names .others:hover { color: var(--brand-ink); }
+  /* The term column takes its content width; the teachers (last) take the rest, so 修課／名額 sits by the term. */
+  td.names, thead th:last-child { inline-size: 100%; }
   td.value .muted { color: var(--ink-2); }
   .cell-bar { display: flex; gap: var(--space-2); align-items: center; }
   td.ratio { inline-size: 1%; white-space: nowrap; }
@@ -483,7 +487,10 @@
   .track.scaled .fill { border-radius: var(--radius-pill) 0 0 var(--radius-pill); }
   .track.scaled { overflow: visible; }
   .over, .only { flex: none; padding: 0 6px; border-radius: var(--radius-pill); font-size: 0.8125rem; font-weight: 650; white-space: nowrap; }
-  .over { background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent); }
+  /* 超額 is a neutral chip with a small orange dot (the colour of the bar segment); amber fills are kept for
+     thin rating samples. */
+  .over { display: inline-flex; gap: 0.3em; align-items: center; background: var(--chip); color: var(--ink); }
+  .over::before { content: ''; inline-size: 0.5rem; block-size: 0.5rem; border-radius: 50%; background: var(--warn); }
   .only { background: var(--chip); color: var(--ink-2); }
   .partial-badge { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 45%, transparent); }
   /* One sentence that wraps as text (the key is an inline mark before it), never split into columns. */
@@ -529,8 +536,8 @@
     .collapsible:not(:has(.expand:checked)) tr.phone-extra { display: none; }
     .collapsible:has(.expand:checked) .gap-row.phone { display: none; }
     /* The row is the link to the term's sections; the teacher names are text on phones. */
-    .name-links { display: none; }
-    .name-text { display: inline; }
+    .name-links, .names .others { display: none; }
+    .name-text, .names .others-text { display: inline; }
     tbody tr { position: relative; }
     .sections .more::after { content: ''; position: absolute; inset: 0; }
     tbody tr:has(.more:hover) { background: var(--hover-row); }

@@ -23,7 +23,7 @@
     { lead: '課程資料', href: '#data', text: '來自各校公開系統，可能比校方晚更新，以校方為準。' },
     { lead: '帳號', href: '#account', text: '查課不用登入；評分與發文需要帳號，內容會公開。' },
     { lead: '外部評價', href: '#reviews', text: '只索引 PTT 四個課程板的標題、短摘要及日期等索引欄位，不轉載全文：', link: { href: '#reviews-kept', label: '完整欄位' } },
-    { lead: '移除', href: '#removal', text: '與你有關的內容，私密聯絡維護者即可，不必公開：', link: { href: PRIVATE_REPORT_URL, label: '私密申請移除', external: true } }
+    { lead: '移除', href: '#removal', text: '與你有關的內容，私密聯絡維護者即可，不必公開：', link: { href: PRIVATE_REPORT_URL, label: '私密申請移除（GitHub）', external: true } }
   ];
 </script>
 
@@ -32,7 +32,7 @@
   <meta name="description" content="UniCourse 的使用條款：課程資料的來源與限制、帳號與社群規範、PTT 課程板外部評論索引的收錄範圍、儲存欄位與移除方式。" />
 </svelte:head>
 
-<LegalDoc title="使用條款" updated={UPDATED} {sections} {summary} contactLabel="申請移除" sibling={{ href: '/privacy', label: '隱私權政策' }}>
+<LegalDoc title="使用條款" updated={UPDATED} {sections} {summary} contactLabel="怎麼申請移除" sibling={{ href: '/privacy', label: '隱私權政策' }}>
   <section aria-labelledby="data">
     <div class="h2-row"><h2 id="data">課程資料</h2></div>
     <p>UniCourse 彙整各校公開系統的課程資料，方便跨校查詢與比較歷年修課人數。資料可能晚於校方更新，實際選課、上課時間、名額與成績規定請以校方系統為準。</p>

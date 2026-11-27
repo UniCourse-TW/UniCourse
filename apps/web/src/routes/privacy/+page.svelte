@@ -16,8 +16,8 @@
     { lead: '查課與註冊', href: '#browse', text: '查課不用帳號；註冊只要帳號名稱與密碼，密碼以無法還原的形式保存，連維護者也看不到。' },
     { lead: '公開什麼', href: '#account', text: '帳號名稱、評分與文章公開；顯示名稱、學校、自我介紹選填，填了才公開。' },
     { lead: '外部評價', href: '#reviews', text: '只索引 PTT 課程板的標題與短摘要，不存全文。' },
-    { lead: '保存期限', href: '#cookies', text: 'Cookie 最多一年；伺服器記錄只留到排除故障、防止濫用為止。' },
-    { lead: '刪除帳號', href: '#contact', text: '要刪除帳號、移除與你有關的索引或個資，私密聯絡維護者，不必公開：', link: { href: PRIVATE_REPORT_URL, label: '私密申請刪除', external: true } }
+    { lead: '保存期限', href: '#cookies', text: 'Cookie：登入 30 天、主題偏好一年；伺服器記錄只留到排除故障為止。' },
+    { lead: '刪除帳號', href: '#contact', text: '要刪除帳號、移除與你有關的索引或個資，私密聯絡維護者：', link: { href: PRIVATE_REPORT_URL, label: '私密申請刪除（GitHub）', external: true } }
   ];
 </script>
 
@@ -26,7 +26,7 @@
   <meta name="description" content="UniCourse 的隱私權政策：查課不需帳號、帳號儲存的資料、哪些內容會公開、外部評論索引儲存的欄位、Cookie 用途與移除請求方式。" />
 </svelte:head>
 
-<LegalDoc title="隱私權政策" updated={UPDATED} {sections} {summary} contactLabel="申請刪除帳號或移除資料" sibling={{ href: '/terms', label: '使用條款' }}>
+<LegalDoc title="隱私權政策" updated={UPDATED} {sections} {summary} contactLabel="怎麼刪除帳號或移除資料" sibling={{ href: '/terms', label: '使用條款' }}>
   <section aria-labelledby="browse">
     <div class="h2-row"><h2 id="browse">查課與登入</h2></div>
     <p>查詢各校公開課程不需要帳號，本站不會要求你提供學號、姓名或電子郵件。課程資料可能未即時更新，請以校方公開系統為準。</p>
@@ -37,14 +37,14 @@
     <div class="h2-row"><h2 id="account">帳號資料</h2></div>
     <p>註冊時只儲存你選的帳號名稱與經雜湊處理的密碼；本站不會儲存明文密碼。你可以在<a href="/settings">帳號設定</a>填寫顯示名稱、就讀學校與自我介紹，這些欄位都是選填，也可以隨時清空。</p>
     <table role="table" class="account-data stacked">
-      <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">資料</th><th role="columnheader" scope="col">用途</th><th role="columnheader" scope="col">是否公開</th></tr></thead>
+      <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">資料</th><th role="columnheader" scope="col">是否公開</th><th role="columnheader" scope="col">用途</th></tr></thead>
       <tbody role="rowgroup">
-        <tr role="row"><td role="cell">帳號名稱</td><td role="cell" data-label="用途">登入與署名</td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td></tr>
-        <tr role="row"><td role="cell">密碼（無法還原的雜湊）</td><td role="cell" data-label="用途">驗證登入</td><td role="cell" data-label="公開範圍"><span class="scope private">不公開</span></td></tr>
-        <tr role="row"><td role="cell">顯示名稱<span class="opt">選填</span></td><td role="cell" data-label="用途">個人頁與社群署名</td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td></tr>
-        <tr role="row"><td role="cell">學校、自我介紹<span class="opt">選填</span></td><td role="cell" data-label="用途">個人頁面</td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td></tr>
-        <tr role="row"><td role="cell">評分、心得、文章與回覆</td><td role="cell" data-label="用途">社群內容</td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td></tr>
-        <tr role="row"><td role="cell">個人投票</td><td role="cell" data-label="用途">計算分數</td><td role="cell" data-label="公開範圍"><span class="scope private">只公開合計</span></td></tr>
+        <tr role="row"><td role="cell">帳號名稱</td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td><td role="cell" data-label="用途">登入與署名</td></tr>
+        <tr role="row"><td role="cell">密碼（無法還原的雜湊）</td><td role="cell" data-label="公開範圍"><span class="scope private">不公開</span></td><td role="cell" data-label="用途">驗證登入</td></tr>
+        <tr role="row"><td role="cell">顯示名稱<span class="opt">選填</span></td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td><td role="cell" data-label="用途">個人頁與社群署名</td></tr>
+        <tr role="row"><td role="cell">學校、自我介紹<span class="opt">選填</span></td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td><td role="cell" data-label="用途">個人頁面</td></tr>
+        <tr role="row"><td role="cell">評分、心得、文章與回覆</td><td role="cell" data-label="公開範圍"><span class="scope public">公開</span></td><td role="cell" data-label="用途">社群內容</td></tr>
+        <tr role="row"><td role="cell">個人投票</td><td role="cell" data-label="公開範圍"><span class="scope private">只公開合計</span></td><td role="cell" data-label="用途">計算分數</td></tr>
       </tbody>
     </table>
   </section>
