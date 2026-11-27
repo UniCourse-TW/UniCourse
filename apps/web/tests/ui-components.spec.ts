@@ -27,6 +27,9 @@ test('shows chart labels, proportional marks, and the underlying numbers', async
   const sparkline = rankings.getByRole('img', { name: '微積分一近期修課人數走勢' });
   await expect(sparkline).toHaveAttribute('aria-label', '微積分一近期修課人數走勢');
   await expect(sparkline.locator('path[vector-effect]')).toHaveCount(2);
+  const isolated = rankings.getByRole('img', { name: '普通心理學近期修課人數走勢' });
+  await expect(isolated.locator('path[vector-effect]')).toHaveCount(1);
+  await expect(isolated.locator('ellipse, circle')).toHaveCount(0);
 
   const trend = page.getByRole('region', { name: '歷年修課人數' });
   const chart = trend.getByRole('img', { name: /資料結構：歷年修課人數/ });

@@ -1,4 +1,4 @@
-export const partialTermLabel = '只收錄部分班次';
+export const partialTermLabel = '可能只收錄部分班次';
 export const partialShare = 1 / 3;
 const partialMinUsual = 6;
 

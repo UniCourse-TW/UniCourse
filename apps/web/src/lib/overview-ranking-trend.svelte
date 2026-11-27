@@ -1,52 +1,41 @@
 <script module lang="ts">
   import type { CourseRanking } from '@unicourse/api-client';
+  import { displayValue } from './ui/format';
   import { partialTermLabel, partialTerms } from './ui/partial-terms';
 
-  export function rankingTrendCaption(terms: string[], rows: CourseRanking[]) {
+  export function rankingTrendCaption(terms: string[], rows: CourseRanking[], max?: number) {
     if (!terms.length) return '近期未公布修課人數。';
-    const hasPartial = rows.some((course) => [...partialTerms(Object.entries(course.sectionsByTerm))].some((term) => terms.includes(term)));
-    return `各列縱軸依本課最低、最高人數縮放。缺期斷線，差值與前次公布相比。${hasPartial ? '空心點與＊表示部分班次，該期不計差值。' : ''}`;
+    const scale = max === undefined ? '縱軸從 0 起，上限依各課人數調整' : `各列共用 0–${displayValue(max)} 人`;
+    const hasPartial = rows.some((course) => [...partialTerms(Object.entries(course.sectionsByTerm))]
+      .some((term) => terms.includes(term)));
+    return `${scale}。缺期斷線，差值比較前次公布。${hasPartial ? `空心點與＊表示${partialTermLabel}，不連線、不計差值。` : ''}`;
   }
 </script>
 
 <script lang="ts">
-  import { linePath, lineSegments } from './ui/chart-scale';
-  import { displayValue } from './ui/format';
+  import Sparkline from './ui/Sparkline.svelte';
 
-  let { course, terms }: { course: CourseRanking; terms: string[] } = $props();
+  let { course, terms, recentTerms, max }: {
+    course: CourseRanking; terms: string[]; recentTerms?: string[]; max?: number;
+  } = $props();
   let byTerm = $derived(new Map(course.trend.map(({ term, enrolled }) => [term, enrolled])));
   let samples = $derived(terms.map((term) => byTerm.get(term) ?? null));
-  let values = $derived(samples.filter((value): value is number => value !== null));
-  let low = $derived(Math.min(...values));
-  let high = $derived(Math.max(...values));
   let partial = $derived(partialTerms(Object.entries(course.sectionsByTerm)));
-  let points = $derived(samples.map((value, index) => value === null ? null : ({
-    term: terms[index], value,
-    x: terms.length < 2 ? 48 : 4 + 88 * index / (terms.length - 1),
-    y: low === high ? 16 : 26 - 20 * (value - low) / (high - low)
-  })));
-  let segments = $derived(lineSegments(points));
-  let latest = $derived(points.findLast((point) => point !== null));
-  let previous = $derived(points.slice(0, latest ? terms.indexOf(latest.term) : 0).findLast((point) => point !== null));
+  let recent = $derived((recentTerms ?? terms).flatMap((term) => {
+    const value = byTerm.get(term);
+    return value == null ? [] : [{ term, value }];
+  }));
+  let latest = $derived(recent.at(-1));
+  let previous = $derived(recent.at(-2));
   let delta = $derived(latest && previous && !partial.has(latest.term) && !partial.has(previous.term) ? latest.value - previous.value : null);
-  let breakdown = $derived(terms.map((term, index) => `${term}：${samples[index] === null ? '未公布' : `${displayValue(samples[index])} 人`}${partial.has(term) ? `（${partialTermLabel}）` : ''}`).join('；'));
+  let breakdown = $derived(terms.map((term, index) => `${term}：${samples[index] === null ? '無數值' : `${displayValue(samples[index])} 人`}${partial.has(term) ? `（${partialTermLabel}）` : ''}`).join('；'));
   let lastPublished = $derived(course.trend.filter(({ enrolled }) => enrolled != null).sort((left, right) => left.term.localeCompare(right.term)).at(-1));
 </script>
 
-<span class="trend">
-  <svg viewBox="0 0 96 32" preserveAspectRatio="none" role={latest ? 'img' : undefined} aria-hidden={!latest || undefined} aria-label={latest ? breakdown : undefined}>
-    {#if latest}
-      <title>{breakdown}</title>
-      {#each segments as segment}
-        {#if segment.length > 1}<path class="series" d={linePath(segment)} vector-effect="non-scaling-stroke" />{/if}
-      {/each}
-      {#each points as point, index (terms[index])}
-        {#if point}<circle class:partial-point={partial.has(point.term)} cx={point.x} cy={point.y} r="2.4" />{/if}
-      {/each}
-    {:else}
-      <line x1="43" x2="53" y1="16" y2="16" class="empty-mark" />
-    {/if}
-  </svg>
+<span class="trend" role={lastPublished ? 'img' : undefined} aria-label={lastPublished ? `${latest ? '' : '近期未公布；'}${breakdown}` : undefined}>
+  <span class="chart">
+    <Sparkline values={samples} labels={terms} label="修課人數" min={0} {max} partial={terms.map((term) => partial.has(term))} decorative showArea={false} showSparse={false} />
+  </span>
   <span class="trend-value ui-tabular">
     {#if latest}
       <strong>{displayValue(latest.value)} <small>人</small></strong>
@@ -58,13 +47,9 @@
 </span>
 
 <style>
-  .trend { display: grid; grid-template-columns: var(--ranking-trend-width, 96px) minmax(0, 1fr); align-items: center; gap: .4rem; color: var(--ink); white-space: nowrap; }
-  .trend-value { display: grid; align-content: center; min-block-size: 2.125rem; line-height: 1.15; }
+  .trend { display: grid; grid-template-columns: var(--ranking-trend-width, 96px) minmax(0, 1fr); align-items: center; gap: .3rem; color: var(--ink); white-space: nowrap; }
+  .chart { --sparkline-width: 100%; --sparkline-height: var(--ranking-trend-height, 28px); }
+  .trend-value { display: grid; justify-items: end; align-content: center; min-block-size: 1.75rem; line-height: 1.25; }
   small { color: var(--ink-2); font-size: var(--t-sm); font-weight: 450; }
   abbr { color: var(--warn); text-decoration: none; }
-  svg { display: block; width: 100%; height: 32px; }
-  .series, .empty-mark { fill: none; stroke: var(--brand); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
-  .empty-mark { stroke: var(--control-line); }
-  circle { fill: var(--brand); }
-  .partial-point { fill: var(--panel-raised); stroke: var(--brand); stroke-width: 1.2; }
 </style>

@@ -52,6 +52,8 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await rankingViews.getByRole('link', { name: '整體排行' }).click();
   await expect(rankingViews.getByRole('link', { name: '整體排行' })).toHaveAttribute('aria-current', 'true');
   await expect(singleTerm.getByRole('img', { name: /115-1：72 人/ })).toBeVisible();
+  await expect(singleTerm.locator('svg')).toHaveCount(0);
+  expect((await linearAlgebra.boundingBox())?.height).toBeLessThan(100);
   await ranking.getByText('計算方式', { exact: true }).click();
   await expect(ranking.getByText(/列在有修課人數的課之後/)).toBeVisible();
   await expect(ranking.getByRole('list').getByText('人數與名額未公布').first()).toBeVisible();

@@ -10,8 +10,7 @@
   let pathname = $derived(page.url.pathname);
   let here = $derived(pathname + page.url.search);
   let onSearch = $derived(page.status < 400 && pathname === '/' && page.data.content?.kind === 'search' && (page.data.content.result?.total ?? 0) > 0);
-  let hasPageSearch = $derived(['/', '/schools', '/forum', '/landscape'].includes(pathname) || pathname.startsWith('/schools/') || page.status === 404);
-  let searchTarget = $derived(pathname === '/' ? '#course-keyword' : '/#course-keyword');
+  let searchTarget = $derived(pathname === '/' && page.status < 400 ? '#course-keyword' : '/#course-keyword');
   let accountOpen = $state(false);
 
   afterNavigate(() => { accountOpen = false; });
@@ -52,11 +51,7 @@
     </div>
 
     <div class="tools">
-      {#if !hasPageSearch}<form method="GET" action="/" role="search" aria-label="全站查課" class="nav-search">
-        <input type="search" name="q" maxlength="100" placeholder="課名、教師或課號" aria-label="全站搜尋關鍵字" />
-        <button aria-label="全站搜尋">{@render searchIcon()}</button>
-      </form>{/if}
-      <a href={searchTarget} class="mobile-search icon-action" class:page-search={hasPageSearch} aria-label="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}</a>
+      <a href={searchTarget} class="nav-search icon-action" aria-label="前往查課" title="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}</a>
       <form method="POST" action="/?/theme" class="theme-form">
         <input type="hidden" name="returnTo" value={here} />
         {#if data.theme !== 'dark'}
@@ -88,7 +83,7 @@
   {#if navigating.to && !navigating.willUnload}<div class="progress" aria-hidden="true"></div>{/if}
 </header>
 
-<main class="page" class:empty-search={pathname === '/' && page.data.content?.kind === 'search' && page.data.content.result?.total === 0} id="main-content" tabindex="-1">
+<main class="page" class:course-search-page={pathname === '/' && page.data.content?.kind === 'search'} class:empty-search={pathname === '/' && page.data.content?.kind === 'search' && page.data.content.result?.total === 0} id="main-content" tabindex="-1">
   {@render children()}
 </main>
 
@@ -128,15 +123,9 @@
   .tabs a { display: flex; align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-2); border-block-end: 2px solid transparent; color: var(--ink-2); font-weight: 650; white-space: nowrap; text-decoration: none; }
   .tabs a[aria-current] { border-block-end-color: var(--brand); color: var(--brand-ink); }
   .tools { min-width: 0; gap: var(--space-1); margin-inline-start: auto; }
-  .nav-search { display: flex; min-width: 0; align-items: center; padding-inline-start: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); }
-  .nav-search:focus-within { border-color: var(--brand-ring); }
-  .nav-search input { min-width: 0; width: clamp(7.25rem, 14vw, 11rem); min-height: 2.625rem; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: var(--t-base); }
-  .nav-search input::placeholder { color: var(--muted); }
-  .nav-search button, .icon-action, .account summary { display: inline-grid; place-items: center; min-width: var(--target-min); min-height: var(--target-min); padding: 0; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink-2); cursor: pointer; }
-  .nav-search button { min-height: 2.625rem; }
-  .mobile-search, .set-light { display: none; }
-  .page-search { display: inline-grid; }
-  .mobile-search[aria-current] { background: var(--brand-wash); color: var(--brand-ink); }
+  .icon-action, .account summary { display: inline-grid; place-items: center; min-width: var(--target-min); min-height: var(--target-min); padding: 0; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink-2); cursor: pointer; }
+  .set-light { display: none; }
+  .nav-search[aria-current] { background: var(--brand-wash); color: var(--brand-ink); }
   [data-shell-theme='dark'] .set-light { display: inline-grid; }
   @media (prefers-color-scheme: dark) {
     .site-header:not([data-shell-theme]) .set-dark { display: none; }
@@ -158,6 +147,7 @@
   @keyframes progress { from { transform: translateX(0); } to { transform: translateX(185%); } }
   @media (prefers-reduced-motion: reduce) { .progress { width: 100%; animation: none; } }
   .page { flex: 1; padding-block: clamp(1.5rem, 4vw, 3rem) var(--space-12); }
+  .page.course-search-page { padding-block-start: clamp(1rem, 3vw, 2rem); }
   .page.empty-search { flex: 0; padding-block-end: var(--space-6); }
   .page.empty-search + .site-footer { flex: 1; }
   .site-footer { border-block-start: 1px solid var(--line); color: var(--muted); background: var(--panel); font-size: var(--t-base); }
@@ -168,7 +158,6 @@
   .footer-group { display: grid; grid-template-columns: repeat(2, max-content); column-gap: var(--space-3); }
   .footer-group > span { grid-column: 1 / -1; color: var(--ink); font-weight: 650; }
   .footer-inner nav a { display: grid; align-items: center; min-height: var(--target-min); color: var(--ink-2); }
-  @media (max-width: 55rem) { .nav-search { display: none; } .mobile-search { display: inline-grid; } }
   @media (max-width: 39rem) {
     .account summary .handle { display: none; }
     .account summary .initial { display: grid; }

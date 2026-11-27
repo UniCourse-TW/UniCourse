@@ -84,7 +84,7 @@
         {#key filters?.query ?? ''}
           <input id="course-keyword" name="q" type="search" bind:this={keyword} defaultValue={filters?.query ?? ''} maxlength="100" placeholder="課名、教師或課號" />
         {/key}
-        {#if empty && ready && filters?.query}<button type="button" class="clear-keyword" aria-label="清空關鍵字" onclick={clearKeyword}>×</button>{/if}
+        {#if empty && ready && filters?.query}<button type="button" class="clear-keyword" aria-label="清空關鍵字" title="清空關鍵字，重新輸入課名、教師或課號" onclick={clearKeyword}>×</button>{/if}
       </div>
     </div>
     {#if !empty}{@render schoolField()}{@render termField()}{/if}
@@ -156,7 +156,16 @@
     .compact select { min-inline-size: 0; border: 0; background: transparent; }
     form, .result-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .keyword, form > button { grid-column: 1 / -1; }
-    .empty > :is(.keyword, button) { grid-column: auto; }
+    .empty > .keyword { grid-column: 1 / -1; }
+    .empty { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; }
+    .empty > button { grid-area: 2 / 3; padding-inline: var(--space-2); }
+    .empty-scope { display: contents; }
+    .empty-scope label { grid-row: 2; }
+    .empty > .department-field { grid-column: 1 / -1; }
+    .result-filters .keyword-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+    .result-filters > label:has(select) { display: flex; align-items: center; padding-inline-start: .35rem; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); }
+    .result-filters > label:has(select) span { flex: none; }
+    .result-filters > label > select { min-width: 0; padding-inline: 0 .125rem; border: 0; background: transparent; font-size: .8125rem; }
     .result-filters { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     .result-filters label { grid-column: span 2; }
     .result-filters .keyword { grid-column: 1 / 4; }
