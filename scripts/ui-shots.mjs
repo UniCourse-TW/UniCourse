@@ -107,7 +107,7 @@ function examplePages(f) {
     { id: 'settings', url: '/settings', loggedIn: true },
     { id: 'settings-saved', url: '/settings', loggedIn: true, act: saveSettings },
     { id: 'profile', url: `/u/${ACCOUNT.username}` },
-    { id: 'landscape', url: '/landscape', maxHeight: 3000 },
+    { id: 'landscape', url: '/landscape', maxHeight: 9000 },
     { id: 'legal', url: '/terms' },
     // Extra state shots (not page ids): empty search, 404, auth register tab and the auth states
     // (wrong password, locked username, already signed in, register with a taken name).
@@ -136,12 +136,17 @@ async function failLogin(tab, username) {
  * so there is always a change to save and the profile keeps a natural-looking bio.
  */
 async function saveSettings(tab) {
+  // Every variant must show the same saved text, so judges can compare light and dark. Saving needs a
+  // change, so when the bio already holds the final sentence, save the other one first (not captured).
   const bio = tab.getByLabel('自我介紹');
-  const sentences = ['資工系大三，喜歡演算法與系統課。', '資工系大三，常修跨院的通識與統計課。'];
-  const current = await bio.inputValue();
-  await bio.fill(current === sentences[0] ? sentences[1] : sentences[0]);
-  await tab.getByRole('button', { name: '儲存' }).click();
-  await tab.getByRole('status').getByText('已儲存').waitFor();
+  const [interim, final] = ['資工系大三，常修跨院的通識與統計課。', '資工系大三，喜歡演算法與系統課。'];
+  const save = async (text) => {
+    await bio.fill(text);
+    await tab.getByRole('button', { name: '儲存' }).click();
+    await tab.getByRole('status').getByText('已儲存').waitFor();
+  };
+  if ((await bio.inputValue()) === final) await save(interim);
+  await save(final);
 }
 
 /** Holds the sign-in request for a while and captures the form while it is pending. */
