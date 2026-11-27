@@ -29,6 +29,14 @@
   let hasBoth = $derived(rows.some((row) => row.enrolled != null && row.capacity != null));
   let hasCapacityOnly = $derived(rows.some((row) => row.enrolled == null && row.capacity != null));
   let hasUnpublished = $derived(rows.some((row) => row.enrolled == null && row.capacity == null));
+  let partials = $derived(rows.filter((row) => row.partial));
+  /** Only capacities were published: the chart and the table talk about 名額 alone. */
+  let capacityOnly = $derived(!hasEnrolled && hasCapacityOnly);
+  /**
+   * Table bars share one scale: 100% of capacity sits at a fixed marker and over-capacity terms
+   * extend past it (capped at 200%), so 198% does not look like 98% full.
+   */
+  let ratioMax = $derived(Math.min(2, Math.max(1, ...rows.map((row) => fillRatio(row.enrolled, row.capacity) ?? 0))));
   let gaps = $derived(slots.filter((slot) => !slot.row).length);
   let years = $derived(new Set(slots.map((slot) => slot.term.split('-')[0])).size);
   let chartLabel = $derived.by(() => {
@@ -48,6 +56,10 @@
   /** Table bars show each term's own fill rate (修課／名額), so the bar always agrees with its label. */
   function fill(row: HistoryRow) {
     return fillRatio(row.enrolled, row.capacity);
+  }
+
+  function share(ratio: number) {
+    return `${(Math.min(ratio, ratioMax) / ratioMax) * 100}%`;
   }
 
   function termSearch(term: string) {
@@ -75,15 +87,18 @@
         <span class="readout" aria-hidden="true">
           {#if focus}
             <strong class="ui-mono">{focus.term}</strong>
-            <span>修課 <b class="ui-tabular">{displayValue(focus.enrolled)}</b>{#if focus.enrolled != null} 人{/if}</span>
+            {#if !capacityOnly}<span>修課 <b class="ui-tabular">{displayValue(focus.enrolled)}</b>{#if focus.enrolled != null} 人{/if}</span>{/if}
             <span>名額 <b class="ui-tabular">{displayValue(focus.capacity)}</b></span>
+            {#if focus.offeringCount > 1}<span>{displayValue(focus.offeringCount)} 班</span>{/if}
             {#if focus.current}<span class="tag">本班所在學期</span>{/if}
+            {#if focus.partial}<span class="tag partial-tag">只收錄部分班次</span>{/if}
           {/if}
         </span>
         <span class="legend" aria-hidden="true">
           {#if hasEnrolled}<span><i class="key fill"></i>修課人數</span>{/if}
           {#if hasBoth}<span><i class="key cap"></i>名額</span>{/if}
-          {#if hasCapacityOnly}<span><i class="key dashed"></i>只公布名額</span>{/if}
+          {#if hasCapacityOnly}<span><i class="key dashed"></i>{capacityOnly ? '名額（未公布修課人數）' : '只公布名額'}</span>{/if}
+          {#if partials.length}<span><i class="key part"></i>只收錄部分班次</span>{/if}
           {#if rows.some((row) => row.current)}<span><i class="key mark"></i>本班學期</span>{/if}
         </span>
       </figcaption>
@@ -102,14 +117,19 @@
                 class:active={row && row.term === active}
                 class:current={row?.current}
                 class:withdrawn={row?.withdrawn}
+                class:partial={row?.partial}
                 onpointerenter={() => { if (row) active = row.term; }}
                 onpointerleave={() => (active = undefined)}
               >
-                {#if row && row.capacity != null}
-                  <span class="cap" class:dashed={row.enrolled == null} style:height={`${percent(row.capacity)}%`}></span>
+                {#if row && row.capacity != null && row.enrolled == null}
+                  <span class="cap dashed" style:height={`${percent(row.capacity)}%`}></span>
                 {/if}
                 {#if row && row.enrolled != null}
                   <span class="fill" style:height={`${percent(row.enrolled)}%`}></span>
+                {/if}
+                {#if row && row.capacity != null && row.enrolled != null}
+                  <!-- Capacity is a tick drawn over the bar, so it stays visible when enrolment exceeds it. -->
+                  <span class="tick" style:bottom={`${percent(row.capacity)}%`}></span>
                 {/if}
                 {#if row && row.enrolled == null && row.capacity == null}<span class="none">·</span>{/if}
               </div>
@@ -122,7 +142,7 @@
           </div>
         </div>
       </div>
-      <p class="note">{#if !hasEnrolled}校方沒有公布修課人數，長條是各學期的名額，不是修課人數。{/if}x 軸為學年度，每格一個學期（上、下學期依序排列）{#if gaps}；空格是該學期沒有開課紀錄{/if}{#if hasUnpublished}；「·」表示有開課但未公布人數與名額{/if}。多班次的學期為各班加總。</p>
+      <p class="note">{#each partials as row (row.term)}<b class="partial-note">{row.term} 只收錄到 {displayValue(row.offeringCount)} 班（其他學期通常約 {displayValue(row.usualSections)} 班），可能還沒匯入完整，長條偏低不代表修課人數驟減。</b>{/each}{#if !hasEnrolled}校方沒有公布修課人數，長條是各學期的名額，不是修課人數。{/if}{#if hasBoth}橫線是名額，長條超過橫線即超額。{/if}x 軸為學年度，每格一個學期（上、下學期依序排列）{#if gaps}；空格是該學期沒有開課紀錄{/if}{#if hasUnpublished}；「·」表示有開課但未公布人數與名額{/if}。多班次的學期為各班加總。</p>
     </figure>
   {/if}
 
@@ -137,7 +157,7 @@
           <tr>
             <th scope="col">學期</th>
             <th scope="col">授課教師</th>
-            <th scope="col" class="num">修課人數／名額{#if multiSection}<span class="unit">（全班次合計）</span>{/if}{#if hasBoth}<span class="unit">・條＝滿額率</span>{:else if !hasEnrolled && hasCapacityOnly}<span class="unit">・只公布名額</span>{/if}</th>
+            <th scope="col" class="num">{#if capacityOnly}名額{#if multiSection}<span class="unit">（全班次合計）</span>{/if}<span class="unit">・未公布修課人數</span>{:else}修課人數／名額{#if multiSection}<span class="unit">（全班次合計）</span>{/if}{#if hasBoth}<span class="unit">・條＝修課÷名額，刻線＝100%</span>{/if}{/if}</th>
             <th scope="col">班次</th>
           </tr>
         </thead>
@@ -145,7 +165,7 @@
           {#each rows as row, index (row.term)}
             {@const ratio = fill(row)}
             <tr
-              class:extra={index >= initialRows}
+              class:extra={index >= initialRows && !row.current}
               class:active={row.term === active}
               class:current={row.current}
               onpointerenter={() => (active = row.term)}
@@ -159,32 +179,37 @@
               </td>
               <td class="num">
                 <span class="cell-bar">
+                  {#if row.partial}<span class="only partial-badge" title={`其他學期通常約 ${displayValue(row.usualSections)} 班`}>只收錄 {displayValue(row.offeringCount)} 班</span>{/if}
                   {#if ratio != null}
-                    <span class="track" class:warn={ratio >= nearlyFull} aria-hidden="true"><span class="fill" style:width={`${Math.min(100, ratio * 100)}%`}></span></span>
+                    <span class="track" class:warn={ratio >= nearlyFull && ratio <= 1} class:scaled={ratioMax > 1} style:--full={share(1)} aria-hidden="true">
+                      <span class="fill" style:width={share(Math.min(1, ratio))}></span>
+                      {#if ratio > 1}<span class="over-fill" style:inset-inline-start={share(1)} style:width={`calc(${share(ratio)} - ${share(1)})`}></span>{/if}
+                    </span>
                   {:else if hasBoth}
                     <span class="track blank" aria-hidden="true"></span>
                   {/if}
                   <span class="ui-tabular value">
                     {#if row.enrolled == null && row.capacity == null}<span class="muted">未公布</span>
+                    {:else if capacityOnly}{displayValue(row.capacity)}
                     {:else}{displayValue(row.enrolled)}<span class="muted">&nbsp;/&nbsp;{displayValue(row.capacity)}</span>{/if}
                   </span>
-                  {#if ratio != null && ratio > 1}<span class="over">超額 {Math.round((ratio - 1) * 100)}%</span>
+                  {#if ratio != null && ratio > 1}<span class="over" title={`修課人數是名額的 ${Math.round(ratio * 100)}%，超收 ${displayValue((row.enrolled ?? 0) - (row.capacity ?? 0))} 人`}>{Math.round(ratio * 100)}%・超額</span>
                   {:else if hasEnrolled && row.enrolled == null && row.capacity != null}<span class="only">只公布名額</span>{/if}
                 </span>
               </td>
-              <td class="sections" class:multi={row.offeringCount > 1}>
+              <td class="sections" class:multi={row.offeringCount > 1} class:codes={row.offerings.length > 1}>
                 {#each row.offerings as offering (offering.id)}
                   <span class="section">
                     {#if offering.id === currentId}
                       <span class="here" aria-current="page">本頁</span>
                     {:else}
-                      <a href={`/courses/${offering.id}`} aria-label={`${row.term} ${offering.label}${offering.active ? '' : '（已下架）'}`}>{offering.label} →</a>
+                      <a href={`/courses/${offering.id}`} aria-label={`${row.term} ${offering.label === '本班' ? '本班' : `班次 ${offering.label}`}${offering.active ? '' : '（已下架）'}`}>{offering.label} →</a>
                     {/if}
                     {#if !offering.active}<span class="withdrawn">已下架</span>{/if}
                   </span>
                 {/each}
                 {#if row.offeringCount > 1}
-                  {#if row.offeringCount > row.offerings.length}<a class="more" href={termSearch(row.term)}>全部 {displayValue(row.offeringCount)} 班</a>{/if}
+                  {#if row.offeringCount > row.offerings.length}<a class="more" href={termSearch(row.term)} aria-label={`${row.term} 全部 ${row.offeringCount} 班`}>全部 {displayValue(row.offeringCount)} 班 →</a>{/if}
                 {/if}
               </td>
             </tr>
@@ -216,9 +241,10 @@
   .legend span { display: inline-flex; gap: 0.35rem; align-items: center; }
   .key { display: inline-block; inline-size: 10px; block-size: 10px; border-radius: 2px; }
   .key.fill { background: var(--brand); }
-  .key.cap { background: var(--brand-wash); box-shadow: inset 0 0 0 1px var(--control-line); }
+  .key.cap { block-size: 0; inline-size: 12px; border-block-start: 2px solid var(--ink); border-radius: 0; }
+  .key.part { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand) 55%, transparent) 0 2px, transparent 2px 4px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 60%, transparent); }
   .key.dashed { border: 1.5px dashed color-mix(in srgb, var(--muted) 75%, transparent); }
-  .key.mark { background: color-mix(in srgb, var(--brand) 18%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 35%, transparent); }
+  .key.mark { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--brand) 70%, transparent); }
 
   .plot { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--space-2); }
   .y { position: relative; block-size: 9.5rem; min-inline-size: 1.5rem; color: var(--muted); font-size: var(--t-xs); }
@@ -229,11 +255,14 @@
   .grid.base { border-color: var(--control-line); }
   .slot { position: relative; display: flex; justify-content: center; align-items: end; block-size: 100%; }
   .slot > span { position: absolute; inset-block-end: 0; inline-size: min(70%, 2.25rem); border-radius: 2px 2px 0 0; }
-  .slot .cap { background: var(--brand-wash); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--control-line) 60%, transparent); }
-  .slot .cap.dashed { background: color-mix(in srgb, var(--muted) 8%, transparent); box-shadow: none; border: 1.5px dashed color-mix(in srgb, var(--muted) 75%, transparent); border-block-end: 0; }
+  .slot .cap.dashed { background: color-mix(in srgb, var(--muted) 10%, transparent); border: 1.5px dashed color-mix(in srgb, var(--ink-2) 80%, transparent); border-block-end: 0; }
+  .slot .tick { z-index: 1; inline-size: min(90%, 2.75rem); block-size: 0; border-radius: 0; border-block-start: 2px solid var(--ink); box-shadow: 0 0 0 1px color-mix(in srgb, var(--panel-raised) 70%, transparent); translate: 0 1px; }
   .slot.current .cap.dashed { border-style: solid; border-color: var(--brand); background: var(--brand-wash); }
-  /* The offering's own term gets a faint full-height band, so it is findable among similar bars. */
-  .slot.current::before { content: ''; position: absolute; inset: 0 8%; border-radius: 3px 3px 0 0; background: color-mix(in srgb, var(--brand) 12%, transparent); }
+  /* The offering's own term gets a full-height outline, so it is findable among similar bars without
+     a filled band that reads like a value. */
+  .slot.current::before { content: ''; position: absolute; inset: 0 6%; border-radius: 3px 3px 0 0; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--brand) 55%, transparent); }
+  /* A term with only part of its sections imported: hatched, so its low total reads as incomplete. */
+  .slot.partial .fill, .slot.partial.current .fill { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand) 60%, transparent) 0 3px, color-mix(in srgb, var(--brand) 20%, transparent) 3px 6px); box-shadow: inset 0 0 0 1px var(--brand); }
   .slot .fill { background: color-mix(in srgb, var(--brand) 72%, var(--panel-raised)); }
   .slot.current .fill { background: var(--brand); }
   .slot.withdrawn .fill { background: color-mix(in srgb, var(--muted) 60%, var(--panel-raised)); }
@@ -260,13 +289,21 @@
   .names .count { white-space: nowrap; }
   thead .unit { font-weight: 500; }
   .cell-bar { display: flex; gap: var(--space-2); align-items: center; justify-content: end; }
-  .track { position: relative; flex: 0 0 4.5rem; block-size: 10px; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
+  .track { position: relative; flex: 0 0 5.5rem; block-size: 10px; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .track > span { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: inherit; }
   .track .fill { background: var(--brand); }
   .track.warn .fill { background: var(--warn); }
+  .track .over-fill { background: var(--warn); border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
+  .track.scaled .fill { border-radius: var(--radius-pill) 0 0 var(--radius-pill); }
+  /* 100% of capacity: a marker the over-capacity part runs past. */
+  .track.scaled::after { content: ''; position: absolute; z-index: 1; inset-block: -2px; inset-inline-start: var(--full); inline-size: 2px; margin-inline-start: -1px; background: var(--ink); }
+  .track.scaled { overflow: visible; }
   .over, .only { flex: none; padding: 0 6px; border-radius: var(--radius-pill); font-size: var(--t-xs); font-weight: 650; white-space: nowrap; }
   .over { background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent); }
   .only { background: var(--chip); color: var(--ink-2); }
+  .partial-badge { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 45%, transparent); }
+  .partial-tag { background: var(--chip); color: var(--ink-2); }
+  .partial-note { display: block; margin-block-end: 2px; color: var(--ink-2); font-weight: 600; }
   .track.blank { visibility: hidden; }
   .value { min-inline-size: 5.5rem; white-space: nowrap; }
   .sections { white-space: nowrap; }
@@ -297,8 +334,14 @@
     tbody tr.current { box-shadow: inset 3px 0 0 var(--brand); }
     tbody th { grid-row: 1; grid-column: 1; align-self: center; }
     td.num { grid-row: 1; grid-column: 2; align-self: center; }
-    .names { grid-row: 2; grid-column: 1 / -1; }
-    .sections { grid-row: 3; grid-column: 1 / -1; }
+    /* Teachers and the section links share the second line; the links are short (codes, 本頁, 全部 N 班). */
+    tbody tr { grid-template-columns: auto minmax(0, 1fr) auto; }
+    td.num { grid-column: 2 / -1; }
+    .names { grid-row: 2; grid-column: 1 / 3; align-self: center; }
+    .sections { grid-row: 2; grid-column: 3; justify-content: end; }
+    /* Several section codes need the full width: they get a third line and the teachers keep theirs. */
+    tbody tr:has(.sections.codes) .names { grid-column: 1 / -1; }
+    .sections.codes { grid-row: 3; grid-column: 1 / -1; justify-content: start; }
     .names { min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); }
     .track { flex: 1 1 auto; max-inline-size: 8rem; }
     .value { min-inline-size: 0; }
