@@ -4,6 +4,7 @@
   import { departmentHref, instructorHref, schoolHref } from '$lib/overview-paths';
   import { meanRating, publishedEnrollment } from '$lib/schools-offerings';
   import SchoolsOfferingTable from '$lib/SchoolsOfferingTable.svelte';
+  import SchoolsInstructorDiscussions from '$lib/schools-instructor-discussions.svelte';
   import SchoolsTeachingHistory from '$lib/schools-teaching-history.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import FilterBar from '$lib/ui/FilterBar.svelte';
@@ -25,17 +26,13 @@
   let enrollment = $derived(publishedEnrollment(data.trends));
   let rating = $derived(meanRating(data.summaryRatings));
   let ratedSample = $derived([...data.summaryRatings.values()].filter((value) => value !== null).length);
-  let ratingNote = $derived(rating.count ? `抽查 ${displayValue(ratedSample)} 門 · ${displayValue(rating.count)} 則評價` : ratedSample ? `抽查 ${displayValue(ratedSample)} 門，目前尚無評價` : '暫未取得評價');
+  let ratingNote = $derived(rating.count ? `已查詢 ${displayValue(ratedSample)} 門課，共 ${displayValue(rating.count)} 則` : ratedSample ? `已查詢的 ${displayValue(ratedSample)} 門課尚無評價` : '暫未取得評價');
   let span = $derived(summary.terms.length > 1 ? `${summary.terms.at(-1)} 至 ${summary.terms[0]}` : summary.terms[0]);
-  let externalQuery = $derived(`${instructor.name} ${instructor.schoolName}`);
   let termOptions = $derived([...new Set([...data.listedTerms, ...(data.term ? [data.term] : [])])].map((value) => ({ value, label: value })));
   let courseOptions = $derived(data.courseCode && !data.courses.some(({ value }) => value === data.courseCode)
     ? [...data.courses, { value: data.courseCode, label: data.courseCode }]
     : data.courses);
 
-  function externalSearch(query: string) {
-    return `https://www.google.com/search?${new URLSearchParams({ q: query })}`;
-  }
 </script>
 
 <svelte:head><title>{instructor.name} · {instructor.schoolName}｜UniCourse</title></svelte:head>
@@ -61,7 +58,10 @@
       {/if}
       <p class="browse-note">同校同名教師會合併顯示。評價屬於課程，不代表對單一教師的評價。</p>
     </div>
-    <div class="browse-actions"><a class="browse-button browse-primary" href="#offerings">看開課列表 ↓</a></div>
+    <div class="browse-actions">
+      <a class="browse-button browse-primary" href="#offerings">看開課列表 ↓</a>
+      <a class="browse-button" href="#discussions">看網路討論 ↓</a>
+    </div>
   </header>
 
   <div class="browse-compact-stats"><StatRow label="歷年授課統計">
@@ -69,7 +69,7 @@
     <StatTile label="歷年授課課程" value={summary.courses} unit="門" note={truncated ? `列表含 ${displayValue(data.courses.length)} 門` : undefined} />
     <StatTile label="授課學期" value={summary.terms.length} unit="期" />
     <div class="browse-wide-stat"><StatTile label="累計修課" value={enrollment} unit="人次" note={enrollment !== null ? '只加總已公布人數' : data.trends === null ? '統計暫未取得' : '未公布人數'} /></div>
-    {#if rating.count}<StatTile label="抽查課程評價" value={rating.mean} unit="分" note={ratingNote} />{/if}
+    {#if rating.count}<StatTile label="課程評價" value={rating.mean} unit="分" note={ratingNote} />{/if}
   </StatRow></div>
 
   <section class="browse-stack" aria-labelledby="history">
@@ -100,13 +100,7 @@
     {/if}
   </section>
 
-  <section class="browse-stack" aria-labelledby="discussions">
-    <SectionHeader title="網路上的討論" id="discussions" description="本站尚未建立教師討論索引，因此無法在這裡顯示文章。你仍可用教師姓名和學校到站外搜尋。" />
-    <div class="browse-actions">
-      <a class="browse-button" href={externalSearch(`site:ptt.cc/bbs/ ${externalQuery}`)} rel="external">搜尋 PTT ↗</a>
-      <a class="browse-button" href={externalSearch(`歐趴糖 ${externalQuery}`)} rel="external">搜尋歐趴糖 ↗</a>
-    </div>
-  </section>
+  <SchoolsInstructorDiscussions reviews={data.externalReviews} retryHref={`${page.url.pathname}${page.url.search}#discussions`} />
 </div>
 
 <style>

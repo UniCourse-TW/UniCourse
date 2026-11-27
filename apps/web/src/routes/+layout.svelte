@@ -41,14 +41,10 @@
     </div>
 
     <div class="tools">
-      {#if !onSearch}
-        <form method="GET" action="/" role="search" aria-label="全站查課" class="nav-search">
-          <input type="search" name="q" maxlength="100" placeholder="課名、教師或課號" aria-label="全站搜尋關鍵字" />
-          <button aria-label="全站搜尋">{@render searchIcon()}</button>
-        </form>
-      {:else}
-        <a href="#course-keyword" class="desktop-search" aria-current="location">{@render searchIcon()} 查課</a>
-      {/if}
+      <form method="GET" action="/" role="search" aria-label="全站查課" class="nav-search">
+        <input type="search" name="q" maxlength="100" placeholder="課名、教師或課號" aria-label="全站搜尋關鍵字" />
+        <button aria-label="全站搜尋">{@render searchIcon()}</button>
+      </form>
       <a href={page.url.pathname === '/' ? '#course-keyword' : '/#course-keyword'} class="mobile-search icon-action" aria-label="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}</a>
       <form method="POST" action="/?/theme" class="theme-form">
         <input type="hidden" name="returnTo" value={here} />
@@ -129,7 +125,6 @@
   .nav-search button { min-height: 2.625rem; }
   .mobile-search, .set-light { display: none; }
   .mobile-search[aria-current] { background: var(--brand-wash); color: var(--brand-ink); }
-  .desktop-search { display: flex; align-items: center; gap: var(--space-2); min-height: var(--target-min); padding-inline: var(--space-2); border-radius: var(--radius-control); color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; text-decoration: none; }
   [data-shell-theme='dark'] .set-light { display: inline-grid; }
   @media (prefers-color-scheme: dark) {
     .site-header:not([data-shell-theme]) .set-dark { display: none; }
@@ -156,7 +151,7 @@
   .footer-group { display: grid; grid-template-columns: repeat(2, max-content); column-gap: var(--space-3); }
   .footer-group > span { grid-column: 1 / -1; color: var(--ink); font-weight: 650; }
   .footer-inner nav a { display: grid; align-items: center; min-height: var(--target-min); color: var(--ink-2); }
-  @media (max-width: 55rem) { .nav-search, .desktop-search { display: none; } .mobile-search { display: inline-grid; } }
+  @media (max-width: 55rem) { .nav-search { display: none; } .mobile-search { display: inline-grid; } }
   @media (max-width: 39rem) {
     .bar { flex-wrap: wrap; gap: 0; padding-block-start: var(--space-1); }
     .tabs { order: 1; flex: 1 0 100%; }

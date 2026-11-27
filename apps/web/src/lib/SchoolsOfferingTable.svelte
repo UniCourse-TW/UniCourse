@@ -21,9 +21,9 @@
   const courseHref = (row: Offering) => `/courses/${row.id}`;
   const termColumn: TableColumn<Offering> = { id: 'term', label: '學期', value: (row) => row.term, sortable: true };
   const gradeColumn: TableColumn<Offering> = { id: 'grade', label: '年級', value: (row) => row.grade, align: 'center', width: '3.5rem' };
-  const category = (row: Offering) => [row.credits == null ? null : `${row.credits} 學分`, requirement(row)].filter(Boolean).join(' · ');
+  const category = (row: Offering) => [row.credits == null ? null : `${row.credits} 學分`, requirement({ ...row, requirementText: null }) ?? requirement(row)].filter(Boolean).join(' · ');
   let columns = $derived<TableColumn<Offering>[]>([
-    { id: 'course', label: '課程', value: (row) => row.title, sortable: true, width: '11rem' },
+    { id: 'course', label: '課程', value: (row) => row.title, sortable: true, width: '14rem' },
     ...(showTerm ? [termColumn] : []),
     mode === 'department' ? { id: 'teachers', label: '授課教師' } : { id: 'unit', label: '開課單位' },
     ...(mode === 'department' && offerings.some(({ grade }) => grade) ? [gradeColumn] : []),
@@ -35,7 +35,7 @@
 </script>
 
 {#snippet code(row: Offering)}
-  <span class="browse-code">{row.courseCode}{row.classCode ? ` · ${row.classCode} 班` : ''}{#if mode === 'instructor' && row.school === 'fcu' && row.sourceId} · 選課代碼 {row.sourceId}{/if}</span>
+  <span class="browse-code offer-code" title={mode === 'instructor' && row.school === 'fcu' && row.sourceId ? `選課代碼 ${row.sourceId}` : undefined}>{row.courseCode}{row.classCode ? ` · ${row.classCode} 班` : ''}</span>
 {/snippet}
 
 {#snippet teachers(row: Offering)}
@@ -71,14 +71,9 @@
 
 {#snippet rating(row: Offering)}
   {@const stats = ratings.get(row.courseCode)}
-  {#if stats?.average != null}
-    <span class="ui-tabular">{stats.average.toFixed(1)} 分 · {displayValue(stats.count)} 則</span>
-    {#if stats.count === 1}<small class="rating-note"><a href={`${courseHref(row)}#ratings`}>新增你的評價</a></small>{/if}
-  {:else if stats}
-    <small class="rating-note">尚無評價 · <a href={`${courseHref(row)}#ratings`}>留下首則</a></small>
-  {:else}
-    <a class="rating-note" href={`${courseHref(row)}#ratings`}>查看課程評價</a>
-  {/if}
+  <a class="rating-note" href={`${courseHref(row)}#ratings`}>看課程評價</a>
+  {#if stats?.average != null}<small class="rating-sample ui-tabular">{stats.average.toFixed(1)} 分 · {displayValue(stats.count)} 則</small>
+  {:else if stats}<small class="rating-sample">尚無評價</small>{/if}
 {/snippet}
 
 {#snippet schedule(row: Offering)}
@@ -98,6 +93,7 @@
       {:else if column.id === 'enrollment'}{@render enrollment(row)}
       {:else if column.id === 'rating'}{@render rating(row)}
       {:else if column.id === 'schedule'}{@render schedule(row)}
+      {:else if column.id === 'category'}<span class="category" title={requirement(row)}>{displayValue(category(row) || null)}</span>
       {:else}{displayValue(column.value?.(row))}{/if}
     {/snippet}
   </DataTable>
@@ -105,29 +101,35 @@
 
 <ul class="card-view" aria-label={caption} role="list">
   {#each offerings as row (row.id)}
+    {@const time = scheduleLines(row)}
     <li>
       <div class="card-title">
-        <a href={courseHref(row)}>{row.title}</a>
-        {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}
+        <div class="card-course">
+          <a href={courseHref(row)}>{row.title}</a>
+          <div class="card-meta">
+            {#if showTerm}<span class="browse-code">{row.term}</span>{/if}{@render code(row)}
+            {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}
+          </div>
+        </div>
+        {@render enrollment(row)}
       </div>
-      {@render code(row)}
-      <dl>
-        {#if showTerm}<div><dt>學期</dt><dd>{row.term}</dd></div>{/if}
-        {#if mode === 'department'}
-          <div><dt>教師</dt><dd>{@render teachers(row)}</dd></div>
-          {#if row.grade}<div><dt>年級</dt><dd>{row.grade}</dd></div>{/if}
-        {:else}<div><dt>單位</dt><dd>{@render unit(row)}</dd></div>{/if}
-        <div><dt>類別</dt><dd>{category(row) || '—'}</dd></div>
-        <div><dt>時間</dt><dd>{@render schedule(row)}</dd></div>
-        <div><dt>人數</dt><dd>{@render enrollment(row)}</dd></div>
-        <div><dt>評價</dt><dd>{@render rating(row)}</dd></div>
-      </dl>
+      <div class="card-meta secondary-meta">
+        {#if mode === 'department'}<span class="people">{@render teachers(row)}</span>
+        {:else}<span class="people">{@render unit(row)}</span>{/if}
+        {#if category(row)}<span class="category" title={requirement(row)}>{category(row)}</span>{/if}
+        {#if mode === 'department' && row.grade}<span>{row.grade} 年級</span>{/if}
+      </div>
+      {#if time.length === 1}<p class="meeting">{time[0]}</p>
+      {:else if time.length > 1}<details class="meeting"><summary>{time[0]}、另 {time.length - 1} 個時段</summary>{#each time.slice(1) as slot, index (index)}<p>{slot}</p>{/each}</details>{/if}
+      <div class="card-rating">{@render rating(row)}</div>
     </li>
   {/each}
 </ul>
 
 <style>
-  .rating-note { display: block; color: var(--muted); font-size: var(--t-sm); }
+  .rating-note, .rating-sample { display: block; font-size: var(--t-sm); }
+  .offer-code { white-space: nowrap; }
+  .category { display: block; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .card-view { display: none; }
   .enrollment { display: grid; min-inline-size: 3rem; gap: .25rem; }
   .track { inline-size: 100%; max-inline-size: 5rem; block-size: .375rem; margin-inline-start: auto; background: var(--line); border-radius: var(--radius-pill); }
@@ -139,15 +141,19 @@
   .slot { display: block; overflow-wrap: anywhere; }
   @media (max-width: 40rem) {
     .table-view { display: none; }
-    .card-view { display: grid; gap: var(--space-2); list-style: none; margin: 0; padding: 0; }
-    .card-view li { min-inline-size: 0; padding: .65rem .8rem; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel-raised); overflow-wrap: anywhere; }
-    .card-title { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
-    .card-title a { display: flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-lg); font-weight: 650; }
-    dl { display: grid; gap: .3rem .65rem; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); margin: .55rem 0 0; font-size: var(--t-base); }
-    dl > div { display: grid; grid-template-columns: 2em minmax(0, 1fr); gap: .4rem; }
-    dl > div:has(.slot) { grid-column: 1 / -1; }
-    dt { color: var(--muted); }
-    dd { margin: 0; }
-    .track { margin-inline-start: 0; }
+    .card-view { display: grid; list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--panel-raised); }
+    .card-view li { min-inline-size: 0; padding: 0 var(--space-3) var(--space-1); overflow-wrap: anywhere; }
+    .card-view li + li { border-block-start: 1px solid var(--line); }
+    .card-title { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); }
+    .card-course a { display: flex; align-items: center; width: fit-content; min-block-size: var(--target-min); font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
+    .card-meta, .card-rating { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--space-2); color: var(--muted); font-size: var(--t-sm); }
+    .secondary-meta { margin-block-start: var(--space-1); }
+    .secondary-meta .category { max-inline-size: 9rem; }
+    .people { color: var(--ink-2); }
+    .enrollment { text-align: end; font-size: var(--t-sm); }
+    .meeting { margin: var(--space-1) 0 0; color: var(--muted); font-size: var(--t-sm); }
+    .meeting summary { cursor: pointer; min-block-size: var(--target-min); align-content: center; }
+    .meeting p { margin: 0; }
+    .card-rating a { min-block-size: var(--target-min); align-content: center; }
   }
 </style>

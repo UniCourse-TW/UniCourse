@@ -4,6 +4,7 @@
   import { importedAt, isHttpUrl } from '$lib/format';
   import { coveragePeriod, directoryStatus, directoryStatusLabels, kindLabel } from '$lib/institutions';
   import { departmentHref, overviewSearchHref, rankingHref, schoolHref } from '$lib/overview-paths';
+  import OverviewRankingTrend from '$lib/overview-ranking-trend.svelte';
   import SchoolsTermHistory from '$lib/schools-term-history.svelte';
   import Badge from '$lib/ui/Badge.svelte';
   import BarCell from '$lib/ui/BarCell.svelte';
@@ -14,11 +15,10 @@
   import FilterBar from '$lib/ui/FilterBar.svelte';
   import Pagination from '$lib/ui/Pagination.svelte';
   import SectionHeader from '$lib/ui/SectionHeader.svelte';
-  import Sparkline from '$lib/ui/Sparkline.svelte';
   import StatRow from '$lib/ui/StatRow.svelte';
   import StatTile from '$lib/ui/StatTile.svelte';
   import StatusPill from '$lib/ui/StatusPill.svelte';
-  import { changeQuery, displayValue } from '$lib/ui/format';
+  import { displayValue } from '$lib/ui/format';
   import type { TableColumn } from '$lib/ui/types';
   import '$lib/schools-browse.css';
   import type { PageProps } from './$types';
@@ -31,10 +31,6 @@
   let searchHref = $derived(`/?${new URLSearchParams({ school: school.slug, term: 'all' })}`);
   let coverageTerms = $derived(institution?.terms ?? school.terms);
   let period = $derived(coveragePeriod(coverageTerms));
-  let rankingToggle = $derived(changeQuery(new URL('#ranking', page.url), (params) => {
-    if (data.includeNonAcademic) params.delete('include_non_academic');
-    else params.set('include_non_academic', 'true');
-  }));
   let terms = $derived([...new Set([...coverageTerms, ...(data.trends ?? []).map(({ term }) => term)])].sort());
   let trendsByTerm = $derived(new Map(data.trends?.map((row) => [row.term, row])));
   let enrollmentTerms = $derived((data.trends ?? []).filter(({ enrolled }) => enrolled != null));
@@ -44,6 +40,14 @@
   let trendTerms = $derived(terms.slice(-10));
   let maxEnrolled = $derived(Math.max(1, ...ranked.map((row) => row.enrolledTotal ?? 0)));
   let maxTrend = $derived(Math.max(1, ...ranked.flatMap((row) => row.trend.filter(({ term }) => trendTerms.includes(term)).map(({ enrolled }) => enrolled ?? 0))));
+  const shortDate = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Taipei', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  });
+
+  function shortImportedAt(value: string) {
+    const parts = Object.fromEntries(shortDate.formatToParts(new Date(value)).map(({ type, value }) => [type, value]));
+    return `${parts.month}/${parts.day} ${parts.hour}:${parts.minute}`;
+  }
 
   const unitColumns: TableColumn<(typeof units.rows)[number]>[] = [
     { id: 'unit', label: '開課單位', value: (row) => row.name },
@@ -70,7 +74,8 @@
         {#if school.nameEn}<span lang="en">{school.nameEn}</span>{/if}
         {#if institution?.city}<span>{institution.city} · {kindLabel(institution)}</span>{:else if institution}<span>{kindLabel(institution)}</span>{/if}
         {#if status}<StatusPill status={status === 'pending_import' ? 'planned' : status} label={directoryStatusLabels[status]} />{/if}
-        <span>本站匯入資料{#if institution?.latestImportedAt} · 更新於 <time datetime={institution.latestImportedAt}>{importedAt(institution.latestImportedAt)}</time>（臺北時間）{/if}</span>
+        <span>本站匯入資料</span>
+        {#if institution?.latestImportedAt}<span class="edition">更新於 <time datetime={institution.latestImportedAt} title={`${importedAt(institution.latestImportedAt)}（臺北時間）`}>{shortImportedAt(institution.latestImportedAt)}</time>（臺北時間）</span>{/if}
         {#if institution?.note === '每日更新'}<span>每日更新</span>{/if}
       </p>
       {#if institution?.note && institution.note !== '每日更新'}<p class="browse-note">{institution.note}</p>{/if}
@@ -107,7 +112,7 @@
 
   <div class="browse-columns">
     <section class="browse-stack" aria-labelledby="departments">
-      <SectionHeader title="開課單位（{displayValue(units.total)}）" id="departments" description="依開課班次排序，橫條使用全校同一尺度。" />
+      <SectionHeader title="開課單位（{displayValue(units.total)}）" id="departments" description="依開課班次排序，橫條以全校最多班次的單位為基準。" />
       {#if units.total}
         <FilterBar action={schoolHref(school.slug)} label="搜尋開課單位" clearHref={units.query ? schoolHref(school.slug) : undefined}>
           <label class="browse-field">搜尋系所<input name="unit" type="search" value={units.query} maxlength="100" placeholder="輸入開課單位名稱" /></label>
@@ -118,7 +123,7 @@
         <Pagination url={page.url} page={units.page} totalPages={units.totalPages} label="開課單位上方分頁" />
         <DataTable caption="開課單位與班次" columns={unitColumns} rows={units.rows} rowKey={(row) => row.name} rowHref={(row) => departmentHref(school.slug, row.name)} minWidth="100%" maxHeight="none" scrollHint={false}>
           {#snippet cell(row, column)}
-            {#if column.id === 'offerings'}<BarCell value={row.offerings} max={units.max} />{:else}{displayValue(column.value?.(row))}{/if}
+            {#if column.id === 'offerings'}<BarCell value={row.offerings} max={units.max} emphasis={!units.query && units.start + units.rows.indexOf(row) <= 3} />{:else}{displayValue(column.value?.(row))}{/if}
           {/snippet}
         </DataTable>
         <Pagination url={page.url} page={units.page} totalPages={units.totalPages} label="開課單位分頁" />
@@ -128,13 +133,19 @@
     </section>
 
     <section class="browse-stack" aria-labelledby="ranking">
-      <SectionHeader title="歷年最多人修的課" id="ranking" description={data.includeNonAcademic ? '包含班會、體育等非學術課程；只排名有公布修課人數的課。' : '預設排除班會、體育等非學術課程；只排名有公布修課人數的課。'} />
-      <a class="browse-button rank-toggle" href={rankingToggle}>{data.includeNonAcademic ? '只看學術課程' : '含班會、體育等非學術課程'}</a>
+      <SectionHeader title="歷年最多人修的課" id="ranking" description={`跨學期加總已公布的修課人次；目前${data.includeNonAcademic ? '包含' : '排除'}零學分及班會、導師時間等行政活動。`} />
+      <form method="GET" action={`${schoolHref(school.slug)}#ranking`}>
+        {#if units.query}<input type="hidden" name="unit" value={units.query} />{/if}
+        {#if units.page > 1}<input type="hidden" name="page" value={units.page} />{/if}
+        <label class="rank-toggle"><input type="checkbox" name="include_non_academic" value="true" checked={data.includeNonAcademic} onchange={(event) => event.currentTarget.form?.requestSubmit()} /> 納入零學分及行政活動</label>
+        <noscript><button class="browse-button">套用</button></noscript>
+      </form>
       {#if data.rankings === null}
         <ErrorState title="暫時無法取得校內排行" retryHref={page.url.pathname + page.url.search} />
       {:else}
         {#if ranked.length}
-          <DataTable caption="校內累計修課人次排行" columns={rankColumns} rows={ranked} rowKey={(row) => row.courseCode} rowHref={courseHref} stickyColumn="course" minWidth="20rem" maxHeight="none" scrollHint={false}>
+          {#if trendTerms.length}<p class="browse-note">近期走勢：{coveragePeriod(trendTerms)}，缺期不連線；紀錄較少時列最近有數值的學期。</p>{/if}
+          <div class="desktop-rank"><DataTable caption="校內累計修課人次排行" columns={rankColumns} rows={ranked} rowKey={(row) => row.courseCode} rowHref={courseHref} stickyColumn="course" minWidth="20rem" maxHeight="none" scrollHint={false}>
             {#snippet cell(row, column)}
               {#if column.id === 'course'}
                 <span class="browse-course-cell">
@@ -144,18 +155,22 @@
               {:else if column.id === 'enrolled'}
                 <BarCell value={row.enrolledTotal ?? null} max={maxEnrolled} />
               {:else if column.id === 'trend'}
-                {@const byTerm = new Map(row.trend.map(({ term, enrolled }) => [term, enrolled]))}
-                {@const known = trendTerms.filter((term) => byTerm.get(term) != null)}
-                {@const latest = known.at(-1)}
-                {#if known.length > 2}
-                  <Sparkline values={trendTerms.map((term) => byTerm.get(term) ?? null)} labels={trendTerms} label={`${row.title}各期修課人數；${known.map((term) => `${term}：${displayValue(byTerm.get(term))} 人`).join('；')}`} min={0} max={maxTrend} showArea={false} />
-                  <span class="rank-term ui-tabular">{latest} · {displayValue(byTerm.get(latest ?? ''))} 人</span>
-                {:else if known.length}
-                  {#each known as term (term)}<span class="rank-term ui-tabular">{term} · {displayValue(byTerm.get(term))} 人</span>{/each}
-                {:else}<span class="browse-note">近期無資料</span>{/if}
+                <OverviewRankingTrend course={row} terms={trendTerms} max={maxTrend} />
               {:else}{displayValue(column.value?.(row))}{/if}
             {/snippet}
-          </DataTable>
+          </DataTable></div>
+          <div class="mobile-rank">
+            <p class="browse-note rank-measures"><span>累計人次</span><span>近期人數／走勢</span></p>
+            <ol aria-label="校內累計修課人次排行" role="list">
+              {#each ranked as row, index (row.courseCode)}
+                <li>
+                  <a href={courseHref(row)}>{index + 1}. {row.title}</a>
+                  <p class="browse-note"><span class="browse-code">{row.courseCode}</span> · {row.terms} 學期 {#if row.isDemo}<Badge label="示範" tone="demo" />{/if}</p>
+                  <div class="rank-measures"><BarCell value={row.enrolledTotal ?? null} max={maxEnrolled} /><OverviewRankingTrend course={row} terms={trendTerms} max={maxTrend} /></div>
+                </li>
+              {/each}
+            </ol>
+          </div>
         {:else}
           <EmptyState title="尚無可排名的修課人數" description="未公布的人數不列入排行，也不視為 0。" />
         {/if}
@@ -175,7 +190,21 @@
   .browse-columns { --bar-cell-track-size: 2.4rem; }
   .jump-links a { min-block-size: var(--target-min); align-content: center; }
   .jump-links { margin-block: calc(-1 * var(--space-3)); column-gap: var(--space-4); }
-  .rank-term { display: block; white-space: nowrap; color: var(--muted); font-size: var(--t-sm); }
+  .edition { white-space: nowrap; }
+  .rank-toggle { display: inline-flex; gap: var(--space-2); align-items: center; min-block-size: var(--target-min); cursor: pointer; }
+  .mobile-rank { display: none; }
   h3 { margin: 0; font-size: var(--t-md); }
   .browse-button { justify-self: start; }
+  @media (max-width: 40rem) {
+    .desktop-rank { display: none; }
+    .mobile-rank { display: block; }
+    .mobile-rank ol { list-style: none; padding: 0; margin: 0; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
+    .mobile-rank li { padding: 0 var(--space-3) var(--space-2); }
+    .mobile-rank li + li { border-block-start: 1px solid var(--line); }
+    .mobile-rank li a { display: flex; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
+    .mobile-rank .browse-code { display: inline; }
+    .rank-measures { display: grid; grid-template-columns: minmax(0, 1fr) minmax(6.75rem, .85fr); align-items: center; gap: var(--space-3); }
+    .rank-measures :global(.bar-cell) { width: min(100%, 8rem); --bar-cell-track-size: clamp(2.5rem, 13vw, 4rem); }
+    p.rank-measures { padding: 0 var(--space-3) var(--space-1); }
+  }
 </style>

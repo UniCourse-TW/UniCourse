@@ -13,7 +13,7 @@
   const departmentOptions = $props.id();
   let selectedSchool = $derived(filters?.school ?? '');
   let selectedTerm = $derived(filters?.term ?? terms[0] ?? 'all');
-  let advancedCount = $derived(Number(Boolean(filters?.department)) + Number(Boolean(filters && filters.sort !== 'relevance')));
+  let advancedCount = $derived(Number(Boolean(filters?.department && !selectedSchool)) + Number(Boolean(filters && filters.sort !== 'relevance')));
   let loading = $derived(navigating.to?.url.pathname === '/' && navigating.to.url.searchParams.has('term'));
 
   function changeFilter(event: Event) {
@@ -27,8 +27,21 @@
   }
 </script>
 
+{#snippet departmentField(value: string)}
+  <label class="department-field">
+    <span>開課單位</span>
+    <input name="department" list={departments?.length ? departmentOptions : undefined} {value}
+      placeholder={departments?.length ? '輸入簡稱或選擇單位' : '輸入開課單位名稱'} maxlength="100" />
+  </label>
+  {#if departments?.length}
+    <datalist id={departmentOptions}>
+      {#each departments as unit (unit)}<option value={unit}></option>{/each}
+    </datalist>
+  {/if}
+{/snippet}
+
 {#key `${filters?.query ?? ''}|${selectedSchool}|${selectedTerm}|${filters?.department ?? ''}|${filters?.sort ?? ''}`}
-  <form id="course-search" action="/" method="GET" role="search" aria-label="課程搜尋" class:result-filters={filters}>
+  <form id="course-search" action="/" method="GET" role="search" aria-label="課程搜尋" class:result-filters={filters} class:has-department={filters && selectedSchool}>
     <label class="keyword">
       <span>關鍵字</span>
       <span class="search-input">
@@ -57,19 +70,11 @@
     </label>
     <button type="submit" aria-busy={loading}>{loading ? '搜尋中…' : '搜尋'}</button>
     {#if filters}
+      {#if selectedSchool}{@render departmentField(filters.department)}{/if}
       <details class="advanced">
-        <summary>更多篩選{#if advancedCount} <span>（已套用 {advancedCount} 項）</span>{/if}</summary>
+        <summary>{selectedSchool ? '排序選項' : '更多篩選'}{#if advancedCount} <span>（已套用 {advancedCount} 項）</span>{/if}</summary>
         <div class="advanced-fields">
-          <label>
-            <span>開課單位</span>
-            <input name="department" list={departments?.length ? departmentOptions : undefined} value={filters.department}
-              placeholder={departments?.length ? '輸入簡稱或選擇單位' : '輸入開課單位名稱'} maxlength="100" />
-          </label>
-          {#if departments?.length}
-            <datalist id={departmentOptions}>
-              {#each departments as unit (unit)}<option value={unit}></option>{/each}
-            </datalist>
-          {/if}
+          {#if !selectedSchool}{@render departmentField(filters.department)}{/if}
           <label>
             <span>排序</span>
             <select name="sort" onchange={changeFilter}>
@@ -96,6 +101,8 @@
   button { padding-inline: var(--space-4); border-color: transparent; background: var(--brand); color: var(--on-brand); font-weight: 650; cursor: pointer; }
   button:hover { text-decoration: underline; }
   .advanced { grid-column: 1 / -1; min-width: 0; }
+  .has-department > .department-field { grid-column: 1 / 3; }
+  .has-department > .advanced { grid-column: 3 / -1; }
   summary { width: fit-content; min-height: var(--target-min); padding-inline: var(--space-2); align-content: center; border-radius: var(--radius-control); color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; cursor: pointer; }
   summary:hover { background: var(--brand-wash); }
   summary span { color: var(--muted); font-weight: 500; }

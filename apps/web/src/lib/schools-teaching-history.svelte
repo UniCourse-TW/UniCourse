@@ -9,10 +9,10 @@
   let orderedYears = $derived([...periods].reverse());
   let compact = $derived(periods.length <= 2);
   let columns = $derived<TableColumn<MatrixRow>[]>([
-    { id: 'course', label: '課程', width: '9rem' },
+    { id: 'course', label: '課程', width: 'var(--teaching-course-width, 9rem)' },
     ...orderedYears.map((period) => ({ id: period, label: period, align: 'center' as const, width: compact ? '5rem' : '3.25rem' }))
   ]);
-  let width = $derived(compact ? '0' : `${9 + 3.25 * periods.length}rem`);
+  let width = $derived(compact ? '0' : `calc(var(--teaching-course-width, 9rem) + ${3.25 * periods.length}rem)`);
   const trendColumns: TableColumn<TermTrend>[] = [
     { id: 'term', label: '學期', value: (row) => row.term },
     { id: 'offerings', label: '班次', value: (row) => row.offerings, numeric: true },
@@ -58,7 +58,7 @@
         <li><span class="dot" data-bin="unknown" aria-hidden="true"></span>未公布</li>
         <li><span aria-hidden="true">—</span>未開課</li>
       </ul>
-      <p class="browse-note matrix-range">最近開課的 {Math.min(5, rows.length)} 門 · {periods[0]}–{periods.at(-1)} 學年（新到舊） · 左右滑動看早期學年</p>
+      <p class="browse-note matrix-range">最近開課的 {Math.min(5, rows.length)} 門 · {periods[0]}–{periods.at(-1)} 學年 · 往右滑看早期學年，精確人次見下方數值表</p>
     {/if}
     <DataTable caption={compact ? '課程與學年授課紀錄' : '課程與學年點陣'} {columns} rows={rows.slice(0, 5)} rowKey={(row) => row.id} minWidth={width} maxHeight="none" scrollHint={!compact}>
       {#snippet cell(row, column)}{@render historyCell(row, column, compact)}{/snippet}
@@ -81,7 +81,7 @@
 <style>
   .teaching-matrix { max-inline-size: 62rem; }
   .teaching-matrix.compact { max-inline-size: 34rem; }
-  .teaching-matrix :global(.sticky) { max-inline-size: 9rem; overflow-wrap: anywhere; }
+  .teaching-matrix :global(.sticky) { max-inline-size: var(--teaching-course-width, 9rem); overflow-wrap: anywhere; }
   .matrix-legend { display: flex; flex-wrap: wrap; gap: .25rem .85rem; margin: 0 0 var(--space-2); padding: 0; list-style: none; color: var(--muted); font-size: var(--t-sm); }
   .matrix-range { margin-block-end: var(--space-2); }
   .matrix-legend li, .year-cell { display: flex; align-items: center; gap: .3rem; }
@@ -96,4 +96,5 @@
   .no-record { color: var(--muted); }
   .history-values[open] { display: grid; gap: var(--space-2); }
   summary { min-block-size: var(--target-min); cursor: pointer; align-content: center; width: fit-content; color: var(--brand); font-weight: 650; font-size: var(--t-base); }
+  @media (max-width: 40rem) { .teaching-matrix:not(.compact) { --teaching-course-width: 7.5rem; } }
 </style>
