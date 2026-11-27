@@ -187,7 +187,9 @@ test('the forum lists posts with category counts and an empty state', async ({ p
   await page.goto('/forum');
   const types = page.getByRole('navigation', { name: '文章分類' });
   await expect(types.getByRole('link', { name: /^全部/ })).toHaveAttribute('aria-current', 'true');
-  await types.getByRole('link', { name: /^提問/ }).click();
+  // With no public questions the 提問 chip is shown disabled (not a link), so open the category directly.
+  await expect(types.getByText(/^提問/)).toBeVisible();
+  await page.goto('/forum?type=question');
   await expect(page).toHaveURL(/type=question/);
   await page.goto('/forum?q=zzzz-no-such-post');
   await expect(page.getByText('沒有符合的文章')).toBeVisible();
