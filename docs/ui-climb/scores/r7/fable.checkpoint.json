@@ -1,0 +1,141 @@
+{
+  "judge": "fable",
+  "round": 7,
+  "status": "PARTIAL — host shutdown requested mid-review. Scores below are only for pages whose screenshots were fully viewed. Do NOT fabricate the rest; resume by viewing the remaining images listed in `remaining`.",
+  "crops_dir": "/home/deck/.cache/unicourse-dev/r7crops (tall PNGs split into 1400/1800px segments; thread-* re-split after orchestrator re-capture)",
+  "output_target": "docs/ui-climb/scores/r7/fable.json (not yet written)",
+  "pages_scored": [
+    {
+      "id": "home",
+      "note": "15/16 segments viewed (home-phone-dark p3 = school coverage table/footer not viewed; light version seen).",
+      "scores": {"task": 9, "hierarchy": 9, "density": 8, "viz": 8, "family": 9, "type": 9, "mobile": 8, "theme": 9, "a11y": 8, "states": 8, "copy": 8, "feel": 8},
+      "mean": 8.42,
+      "top_issues": [
+        "排行表「近期走勢」欄（桌機／兩主題）：sparkline 64px 寬擠在「111-1・107 人 ⊠」旁，斜紋與缺值線幾乎看不出差異；把走勢欄加寬到 120px，並把學期與人數改成第二行 12px muted。",
+        "手機排行卡（兩主題）：「最近公布」標籤與 sparkline 的 x 位置逐列漂移（第 1 列約 430px、第 3 列約 440px、第 9 列約 460px），改成固定兩欄 grid 對齊。",
+        "「看累計修課排行 ↓」（桌機／手機）：孤立的錨點連結夾在統計磚與排行標題之間，視覺上像漏排的段落；併入統計磚列右側或刪除。",
+        "排行說明「2 校上榜，以逢甲大學（9 門）最多。各校公布程度不一，未公布不列名次。」：資料偏斜的提醒文字過長且位置與「計算方式」重複；精簡成一句並放進計算方式 details。",
+        "masthead 更新行「更新於 2026年11月27日 上午8:01（臺北時間）・資料來源」在手機上折成兩行並把「資料來源」孤立；改用家族短格式「更新於 11/27 08:01・臺北時間」。"
+      ],
+      "keep": ["搜尋卡：關鍵字＋學校＋學期＋實心按鈕一行完成，熱門搜尋 chips 可用", "累計班次最多的學校表：覆蓋方格＋同尺度條，口徑註在標題下", "深色主題重新選色而非反相，紫色強調在兩主題都可讀"]
+    },
+    {
+      "id": "search",
+      "scores": {"task": 9, "hierarchy": 9, "density": 9, "viz": 8, "family": 9, "type": 9, "mobile": 8, "theme": 9, "a11y": 8, "states": 9, "copy": 8, "feel": 8},
+      "mean": 8.58,
+      "top_issues": [
+        "手機「從本頁選學校重新搜尋」chip 列（兩主題）：第二個 chip「國立陽明交通大學」被右邊緣切掉且沒有捲動提示；改成可換行 flex-wrap 或加右側漸層提示。",
+        "桌機結果表的圖例行「開課班次｜人數條採本頁同一尺度。紫＝名額內・橘＝超額・刻線＝校方公布名額…」11px 擠成一行；改成「排序與圖例」details 內的圖示列，表格 caption 只留一句。",
+        "人數／名額欄：斜紋（名額未公布）與實心紫條在 14px 高度下對比弱，深色更弱；斜紋改 45° 粗線或加 1px 邊框。",
+        "手機卡片的 meta 行「115-1 D511202492 3 學分 必修」用等寬課號與 CJK 混排沒有分隔符，掃讀時課號與學分黏在一起；加「・」或拉大間距。",
+        "桌機工具列「更多篩選 ▸」收起後看不到目前套用了哪些條件（例如必選修、學分）；在計數行加作用中篩選 chip。"
+      ],
+      "keep": ["桌機表格：課程＋課號、學校＋系所兩行堆疊，數字右對齊，sticky 首欄", "計數行「顯示 1–20 筆・共 11,385 筆」與分頁用語一致", "手機改單欄卡片但保留全部欄位（含人數條）"]
+    },
+    {
+      "id": "search-empty",
+      "scores": {"task": 9, "hierarchy": 9, "density": 8, "viz": null, "family": 8, "type": 9, "mobile": 9, "theme": 9, "a11y": 8, "states": 9, "copy": 8, "feel": 8},
+      "mean": 8.55,
+      "top_issues": [
+        "桌機（兩主題）：空狀態卡固定 560px 寬，右側 2/3 版面空白，頁面看起來像壞掉；讓卡片跟工具列同寬或置中。",
+        "提示句「看起來像課號？請核對英數字，或改用學校公布的課名。」用了「請」的校務口吻，且猜測關鍵字是課號不一定成立；改成「換個關鍵字、改選全部學期，或試試課號」（storyboard 文案）。",
+        "缺少 storyboard 的「查全部學期」一鍵動作；目前只有收起的「調整學校、學期等條件 ▸」。",
+        "「試用課名搜尋」只列 3 個固定範例，與首頁熱門搜尋 4 個不一致；統一用同一組 chips。"
+      ],
+      "keep": ["保留關鍵字在輸入框，可直接改字重搜", "「從學校瀏覽 →」提供第二條路", "深淺主題皆對比正常"]
+    },
+    {
+      "id": "schools",
+      "scores": {"task": 9, "hierarchy": 9, "density": 8, "viz": 9, "family": 9, "type": 9, "mobile": 8, "theme": 9, "a11y": 8, "states": 8, "copy": 9, "feel": 8},
+      "mean": 8.58,
+      "top_issues": [
+        "手機體系 chip 列（兩主題）：「空中大學」被右邊緣切掉、無捲動提示；改 flex-wrap。",
+        "桌機表「學年覆蓋 104–115」欄寬約 380px 但方格只佔 190px，「學期」「已匯入班次」被推到中間留大片空白；把覆蓋欄縮到內容寬並讓數字欄靠近。",
+        "分頁只有「下一頁 →」與「第 1 頁，共 7 頁」，150 列分 7 頁卻沒有頁碼或上一頁；加頁碼或改成單頁＋sticky 表頭。",
+        "手機表每列把「最近更新」「資料來源」藏進「▶ 21 期・61,102 班」disclosure，但 disclosure 的三角形看起來像裝飾；改成「詳細 ▾」文字按鈕。",
+        "「待匯入 0 所・尚未開始：國立空中大學、一貫道天皇學院、高雄市立空中大學」在進度卡裡 13px muted 兩行，是本頁唯一的負面資訊卻最不顯眼；改成 badge 列。"
+      ],
+      "keep": ["全國收錄進度條＋「已收錄 147 所／尚未開始 3 所」chip", "覆蓋方格（空框／斜紋／實色）圖例直接放在表頭", "資料來源與統計口徑段落"]
+    },
+    {
+      "id": "school",
+      "scores": {"task": 9, "hierarchy": 8, "density": 8, "viz": 8, "family": 9, "type": 9, "mobile": 9, "theme": 9, "a11y": 8, "states": 8, "copy": 9, "feel": 8},
+      "mean": 8.5,
+      "top_issues": [
+        "桌機兩欄（兩主題）：右欄「歷年收錄」圖表只佔 250px 高，下面 600px 空白，左欄系所表卻要分 15 頁；把圖表移到統計磚下方整寬，系所表改單欄 12→30 列。",
+        "校內排行表（桌機）：「課程」欄寬約 700px 只放課名與課號，學期、累計人次、走勢擠在右側 450px；課程欄限 320px，走勢欄加寬。",
+        "每學期長條圖 y 軸刻度 0/2,000/4,000/6,000 但最大值 4,300，上方 1/3 空；用 nice max 5,000。",
+        "手機排行卡的「GBCP101・13 學期」與「25,615 人次」「111-1・107 人」三段資訊用三種對齊方式；改成兩欄 grid。",
+        "開課單位表的比例條以「全校最多班次的單位」為基準，第 12 名以後條都只剩 1/3；加上百分比數字或改用相對寬度 + 數字。"
+      ],
+      "keep": ["頁首 meta 行（英文名・城市・類型・已收錄・匯入時間）", "5 格統計磚與 3 個跳轉按鈕", "深色主題的青綠／紫色序列色對比"]
+    },
+    {
+      "id": "department",
+      "scores": {"task": 9, "hierarchy": 8, "density": 8, "viz": 8, "family": 9, "type": 9, "mobile": 9, "theme": 9, "a11y": 8, "states": 8, "copy": 8, "feel": 8},
+      "mean": 8.42,
+      "top_issues": [
+        "桌機表「時間地點」欄佔表寬一半（約 560px）但內容 150px；壓到 260px，把人數／名額條加寬到 120px。",
+        "學期 pill 列只顯示「115-1、114-2、所有學期」，其餘 17 個學期藏在「其他學期／篩選課程 ▸」；storyboard 要的是整列可捲動 pill。",
+        "「必選修分布」卡在桌機孤立靠右、左邊 800px 空白；併進「115-1 學期課表」標題行右側。",
+        "圖例行「條長＝滿額比例；「餘」為匯入時剩餘名額。名額 —＝校方未公布。本頁課程尚無評價。」把「尚無評價」混在圖例裡；評價應是獨立欄或獨立註。",
+        "桌機「歷年開課變化 106-1–115-1 〰」sparkline 只有 60px 寬又是 details summary，不像可點；改成小圖表卡或加「▾」。"
+      ],
+      "keep": ["手機卡片：課名／課號班次學分類別／教師時間地點三行＋右側條", "額滿／餘 2 badge 用 warn 色", "麵包屑＋搜尋本系課程＋校方官網的頁首"]
+    },
+    {
+      "id": "forum",
+      "scores": {"task": 9, "hierarchy": 8, "density": 8, "viz": null, "family": 9, "type": 8, "mobile": 9, "theme": 9, "a11y": 8, "states": 8, "copy": 8, "feel": 8},
+      "mean": 8.36,
+      "top_issues": [
+        "chip 列右側說明「數字為全站篇數・關鍵字比對標題與內文・依發文時間新到舊（目前只有這種排序）」（桌機 12px、手機折兩行）：是對自己的辯解不是給讀者的資訊；刪掉括號，排序規則放進 ⓘ。",
+        "文章表「回覆／分數／時間」三欄靠右、與標題欄之間 500px 空白（桌機兩主題）；用固定 90px 數字欄或加摘要欄填滿。",
+        "「目前只有 2 篇。修過「公民參與」嗎？寫心得 →／其他課程（2）▾」的紫邊 callout 位置在表格下方像廣告；改成表格內最後一列或頁首副標。",
+        "手機的「學校與課號篩選 ▼」假 select（展開後才有兩個欄位）沒有顯示目前選了什麼；展開後把已選值寫回 summary。",
+        "桌機導覽列此頁只有放大鏡 icon，thread 頁卻是完整搜尋框；shell 不一致。"
+      ],
+      "keep": ["頁首右側「發文規則」＋實心「發表文章」", "chip 帶數量、分類 badge 色（心得紫、提問藍）", "手機卡片列的 meta 行可掃"]
+    },
+    {
+      "id": "thread-empty",
+      "scores": {"task": 9, "hierarchy": 9, "density": 8, "viz": 8, "family": 9, "type": 9, "mobile": 9, "theme": 9, "a11y": 8, "states": 9, "copy": 9, "feel": 8},
+      "mean": 8.67,
+      "top_issues": [
+        "「送出回覆」按鈕在空表單時是淡紫框＋灰字，桌機與手機都看起來像 disabled 又像 secondary；用實心紫＋disabled 透明度 .5，並在旁邊顯示「輸入內容後才能送出」。",
+        "桌機導覽列此頁有完整搜尋輸入框，其他頁是 icon；shell 不一致（同 forum）。",
+        "推／0／噓 pill 組的中間數字格 40px 寬、與兩側按鈕同高同色，看不出哪個可按；數字改成非按鈕文字。",
+        "右欄課程卡「最近公布期 111-1 修課／名額 107 / 120・只有 2 個班次的合計・89%」三行資訊加斜紋條，資訊密但 11px；人數與百分比合併成一行。",
+        "手機「編輯／刪除」收進「⋯」後沒有 aria-label；確認按鈕有可讀名稱。"
+      ],
+      "keep": ["空回覆的虛線框「還沒有回覆，說點什麼？」直接接表單", "右欄這門課卡＋其他討論（家族標準位置）", "手機「更多數據與討論 ▾」收合課程數據"]
+    }
+  ],
+  "partial_observations_not_scored": {
+    "course-reviewed": "Seen: phone light p3,p4; phone dark p0–p4. Not seen: desktop light/dark (3 segs each), phone light p0–p2. Notes: 外部評價 44 篇 PTT list with 推 count + 只收錄標題 badge + 再顯示 10 篇/全部顯示 + outbound search buttons (NTU Rating/OPT/Dcard) is strong; 歷年開課 bar chart uses dashed-outline bars for 名額 + hatched partial semesters, x-axis labels '1 2 1 2…' over years is dense on 390px; 4 stat tiles incl. '只收錄 2 班' warn badge; 課程評價 empty state with login CTA; 站內討論 (0) empty box; collapsed 備註/其他校方欄位(6).",
+    "thread": "Seen: phone dark p0,p1 (re-captured version, 1 reply, 推 active). Not seen: desktop light/dark, phone light p0,p1.",
+    "thread-signed-out": "Seen: desktop light p0, phone dark p1. Not seen: desktop dark, phone light p0,p1, phone dark p0. Notes: votes shown as '分數 +1' text, reply prompt '登入後即可回覆與投票；查課不用登入。' + 登入/建立帳號 — good copy.",
+    "home": "phone dark p3 not viewed (see note above)."
+  },
+  "remaining": {
+    "course": ["course-desktop-light-p0","course-desktop-light-p1","course-desktop-dark-p0","course-desktop-dark-p1","course-phone-light-p0..p3","course-phone-dark-p0..p3"],
+    "course-reviewed": ["course-reviewed-desktop-light-p0..p2","course-reviewed-desktop-dark-p0..p2","course-reviewed-phone-light-p0..p2"],
+    "instructor": ["instructor-desktop-light-p0,p1","instructor-desktop-dark-p0,p1","instructor-phone-light-p0..p4","instructor-phone-dark-p0..p4"],
+    "thread": ["thread-desktop-light-p0","thread-desktop-dark-p0","thread-phone-light-p0,p1"],
+    "thread-signed-out": ["thread-signed-out-desktop-dark-p0","thread-signed-out-phone-light-p0,p1","thread-signed-out-phone-dark-p0"],
+    "profile": ["profile-desktop-light-p0","profile-desktop-dark-p0","profile-phone-light-p0,p1","profile-phone-dark-p0,p1"],
+    "notfound": ["notfound-{desktop,phone}-{light,dark}-p0"],
+    "auth": ["auth-{desktop,phone}-{light,dark}-p0"],
+    "auth-error": ["auth-error-{desktop,phone}-{light,dark}-p0"],
+    "auth-locked": ["auth-locked-{desktop,phone}-{light,dark}-p0"],
+    "auth-pending": ["auth-pending-{desktop,phone}-{light,dark}-p0"],
+    "auth-register": ["auth-register-{desktop,phone}-{light,dark}-p0"],
+    "auth-register-error": ["auth-register-error-desktop-{light,dark}-p0","auth-register-error-phone-{light,dark}-p0,p1"],
+    "auth-signed-in": ["auth-signed-in-{desktop,phone}-{light,dark}-p0"],
+    "settings": ["settings-desktop-{light,dark}-p0","settings-phone-{light,dark}-p0,p1"],
+    "settings-saved": ["settings-saved-desktop-{light,dark}-p0","settings-saved-phone-{light,dark}-p0,p1"],
+    "landscape": ["landscape-desktop-{light,dark}-p0..p2","landscape-phone-{light,dark}-p0..p3"],
+    "legal": ["legal-desktop-{light,dark}-p0,p1","legal-phone-{light,dark}-p0..p4"],
+    "home": ["home-phone-dark-p3 (optional re-check)"]
+  },
+  "resume_hint": "Read tool drops images with '[media removed: request limit]' when too many are requested in a short window; batches of ≤16 segments per call worked after a pause. Score every page in this file + remaining, then write docs/ui-climb/scores/r7/fable.json in judge-schema.json shape (26 pages)."
+}
