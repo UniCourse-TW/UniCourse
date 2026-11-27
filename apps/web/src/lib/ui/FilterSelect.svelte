@@ -54,5 +54,6 @@
   }
   .field:has(select:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .field:has(select:focus-visible) select { outline: none; }
-  .field:has(select:disabled) { opacity: 0.6; }
+  .field:has(select:disabled) { background: var(--table-head); }
+  select:disabled { color: var(--muted); opacity: 1; cursor: not-allowed; }
 </style>

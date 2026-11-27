@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { catalog } from '$lib/server/catalog';
+import { searchSorts } from '$lib/overview-paths';
 import { browseRatings } from '$lib/schools-offering-ratings';
 import { offeringEdition } from '$lib/schools-offerings';
 import type { PageServerLoad } from './$types';
@@ -31,17 +32,18 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
 
   const { offerings: sample, terms, total, ...department } = result.data;
   const query = (url.searchParams.get('q') ?? '').trim().replace(/[\r\n\0]/g, ' ').slice(0, 100);
+  const sort = searchSorts.find(({ value }) => value === url.searchParams.get('sort'))?.value ?? 'relevance';
   const requestedPage = Number(url.searchParams.get('page'));
   const pageSize = 16;
   const safePage = Number.isSafeInteger(requestedPage) ? Math.max(1, requestedPage) : 1;
   let page = Math.min(safePage, Math.max(1, Math.ceil(total / pageSize)));
   const results = (pageNumber: number) => client.GET('/api/courses/search', {
-    params: { query: { ...path, term: term === 'all' ? undefined : term, q: query || undefined, offset: (pageNumber - 1) * pageSize } }
+    params: { query: { ...path, term: term === 'all' ? undefined : term, q: query || undefined, sort, offset: (pageNumber - 1) * pageSize } }
   }).catch(() => null);
   let offerings = sample;
   let matches = total;
   let resultsError = false;
-  if (query || total > pageSize) {
+  if (query || total > pageSize || sort !== 'relevance') {
     let search = await results(page);
     const finalPage = Math.max(1, Math.ceil((search?.data?.total ?? total) / pageSize));
     if (page > finalPage) {
@@ -55,7 +57,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
 
   const [institution, ratings] = await Promise.all([institutionRequest, browseRatings(client, department.school, offerings)]);
   return {
-    department, trends, terms, term, total, offerings, ratings, query, resultsError, matches, page,
+    department, trends, terms, term, total, offerings, ratings, query, sort, resultsError, matches, page,
     totalPages: Math.max(1, Math.ceil(matches / pageSize)), firstRow: (page - 1) * pageSize + 1,
     updatedAt: offeringEdition(sample),
     complete: sample.length === total,

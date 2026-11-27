@@ -12,6 +12,7 @@
     rowHeaderColumn?: string;
     stickyColumn?: string;
     clientSort?: boolean;
+    order?: { column: string; direction: 'ascending' | 'descending' };
     minWidth?: string;
     maxHeight?: string;
     scrollHint?: boolean;
@@ -20,7 +21,7 @@
   }
 
   let {
-    caption, columns, rows, rowKey, rowHref, rowHeaderColumn, stickyColumn, clientSort = false,
+    caption, columns, rows, rowKey, rowHref, rowHeaderColumn, stickyColumn, clientSort = false, order,
     minWidth = '38rem', maxHeight = '30rem', scrollHint = true, cell, empty
   }: Props = $props();
 
@@ -30,6 +31,7 @@
   let sort = $state<{ column: string; direction: 'ascending' | 'descending' }>();
   let stickyId = $derived(stickyColumn ?? columns[0]?.id);
   let activeColumn = $derived(clientSort && columns.find((column) => column.sortable && column.id === sort?.column));
+  let activeOrder = $derived(activeColumn ? sort : order);
   onMount(() => { ready = true; });
   let shownRows = $derived.by(() => {
     if (!sort || !activeColumn) return rows;
@@ -74,16 +76,17 @@
       <thead>
         <tr>
           {#each columns as column (column.id)}
+            {@const direction = activeOrder?.column === column.id ? activeOrder.direction : undefined}
             <th scope="col" class:numeric={column.numeric} class:sticky={stickyId === column.id}
               class:sortable={clientSort && column.sortable} data-align={column.align} style:inline-size={column.width}
-              aria-sort={activeColumn && activeColumn.id === column.id ? sort?.direction : undefined}>
+              aria-sort={direction}>
               {#if ready && clientSort && column.sortable && (column.value || column.sortValue)}
                 <button type="button" onclick={() => toggleSort(column)}>
                   {column.label}
-                  <span aria-hidden="true">{sort?.column === column.id ? (sort.direction === 'ascending' ? '↑' : '↓') : '↕'}</span>
+                  <span aria-hidden="true">{direction ? (direction === 'ascending' ? '↑' : '↓') : '↕'}</span>
                 </button>
               {:else}
-                {column.label}
+                {column.label}{#if direction} <span aria-hidden="true">{direction === 'ascending' ? '↑' : '↓'}</span>{/if}
               {/if}
             </th>
           {/each}

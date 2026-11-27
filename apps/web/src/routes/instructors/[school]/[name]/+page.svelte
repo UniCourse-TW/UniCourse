@@ -44,7 +44,7 @@
 
 <div class="browse-page instructor-page">
   <nav class="browse-crumbs" aria-label="所在位置">
-    <a href="/">首頁</a><span aria-hidden="true">/</span><a href="/schools">學校</a><span aria-hidden="true">/</span><a href={schoolHref(instructor.school)}>{instructor.schoolName}</a><span aria-hidden="true">/</span><span aria-current="page">{instructor.name}</span>
+    <a href="/">查課</a><span aria-hidden="true">/</span><a href="/schools">學校</a><span aria-hidden="true">/</span><a href={schoolHref(instructor.school)}>{instructor.schoolName}</a><span aria-hidden="true">/</span><span aria-current="page">{instructor.name}</span>
   </nav>
   <header class="browse-head">
     <div class="browse-stack">
@@ -59,7 +59,7 @@
     </div>
     <div class="browse-actions">
       <a class="browse-button browse-primary" href="#offerings">看開課列表 ↓</a>
-      <a class="browse-button" href="#discussions">看網路討論 ↓</a>
+      <a class="browse-button" href="#discussions">{data.externalReviews?.posts.length ? '看網路討論' : '到其他網站搜尋'} ↓</a>
     </div>
   </header>
 
@@ -68,8 +68,16 @@
     <StatTile label="歷年授課課程" value={summary.courses} unit="門" note={truncated ? `列表含 ${displayValue(data.courses.length)} 門` : undefined} />
     <StatTile label="授課學期" value={summary.terms.length} unit="期" />
     <StatTile label="累計修課" value={enrollment} unit="人次" note={enrollment !== null ? '僅計已公布' : data.trends === null ? '暫未取得' : '未公布人數'} />
-    {#if rating.count}<div class="instructor-rating"><StatTile label="課程平均評價（非教師評分）" value={rating.mean} unit={`分 · ${rating.count === 1 ? '僅 1' : displayValue(rating.count)} 則`} note={ratingNote} /></div>{/if}
   </StatRow></div>
+  {#if rating.count}
+    <details class="rating-summary">
+      <summary><strong>{displayValue(rating.count)} 則課程評價</strong> · 非教師評分{#if rating.count < 3} · 樣本少{/if}</summary>
+      <p class="browse-note">{ratingNote}；整體平均 {rating.mean} 分。</p>
+      <ul>{#each data.ratedCourses as course (course.id)}
+        <li><a href={`/courses/${course.id}#ratings`}>{course.title} · {course.average.toFixed(1)} 分／{displayValue(course.count)} 則 →</a></li>
+      {/each}</ul>
+    </details>
+  {/if}
 
   <section class="browse-stack" aria-labelledby="history">
     <SectionHeader title="歷年授課" id="history" description="按學年比較已公布的修課人次，點選數值可查看該學年最新一班。" />
@@ -108,14 +116,16 @@
   .instructor-page .browse-crumbs + .browse-head { margin-block-start: calc(-1 * var(--space-2)); }
   .instructor-units summary { min-block-size: var(--target-min); cursor: pointer; align-content: center; width: fit-content; color: var(--brand-ink); font-size: var(--t-base); }
   .instructor-units a { display: inline-grid; align-items: center; min-block-size: var(--target-min); }
-  .instructor-rating :global(.tile) { height: 100%; }
+  .rating-summary { border-inline-start: 3px solid var(--brand-ring); padding-inline-start: var(--space-2); }
+  .rating-summary summary { min-block-size: var(--target-min); align-content: center; cursor: pointer; color: var(--ink-2); }
+  .rating-summary a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
+  .rating-summary ul { margin-block: 0; padding-inline-start: var(--space-5); }
   .offering-meta { display: flex; align-items: center; justify-content: space-between; gap: 0 var(--space-2); flex-wrap: wrap; }
   .offer-sort { display: inline-flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-sm); }
   .instructor-filters :global(.field) { flex: 0 1 auto; }
   .instructor-filters :global(select[name='course']) { min-inline-size: 0; max-inline-size: min(50vw, 17rem); }
   @media (max-width: 40rem) {
     .instructor-stats :global(.stat-row) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .instructor-rating { grid-column: 1 / -1; }
     .instructor-filters :global(form) { display: grid; grid-template-columns: minmax(5rem, auto) minmax(0, 1fr) auto; align-items: start; }
     .instructor-filters :global(.field) { min-inline-size: 0; }
     .instructor-filters :global(.field select) { min-inline-size: 0; max-inline-size: calc(100% - 2rem); }

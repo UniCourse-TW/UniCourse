@@ -19,7 +19,17 @@
   let filtered = $derived(Boolean(filters.q || filters.status || filters.ownership || filters.system));
   let period = $derived(coveragePeriod(data.coverage.terms));
   let yearsLabel = $derived(data.years.length > 1 ? `${data.years[0]}–${data.years.at(-1)}` : data.years[0]);
-  let recentYears = $derived(data.years.slice(-4));
+  let sampleStatuses = $derived(new Set(data.rows.map(directoryStatus)));
+  let uniformStatus = $derived(sampleStatuses.size === 1 ? directoryStatus(data.rows[0]) : null);
+  const legend = [{ label: '未收錄', value: 0 }, { label: '1 學期', value: 1 }, { label: '2 學期', value: 2 }];
+  const directorySortOptions = [
+    { value: 'status:asc', label: '依收錄狀態' }, { value: 'name:asc', label: '依校名' },
+    { value: 'terms:desc', label: '學期數最多' }, { value: 'offerings:desc', label: '班次最多' },
+    { value: 'updated:desc', label: '最近更新' }
+  ];
+  let directoryOrder = $derived(`${data.sort}:${data.direction}`);
+  let sortOptions = $derived(directorySortOptions.some(({ value }) => value === directoryOrder) ? directorySortOptions
+    : [...directorySortOptions, { value: directoryOrder, label: '沿用目前排序' }]);
   let awaitingImport = $derived(data.counts.find(({ status }) => status === 'pending_import')?.count ?? 0);
   const resourceNetwork = /^資料來源：(大學校院|技職校院)課程資源網（每週更新）(?:；\s*)?/;
   const ownershipOptions = ownerships.map((value) => ({ value, label: ownershipLabels[value] }));
@@ -45,10 +55,19 @@
     });
   }
 
+  function systemHref(system: string) {
+    return changeQuery(new URL('#directory', page.url), (params) => {
+      params.delete('page');
+      if (system) params.set('system', system);
+      else params.delete('system');
+    });
+  }
+
   function sortHref(sort: SchoolSort) {
     return changeQuery(page.url, (params) => {
       const direction = sort === data.sort ? (data.direction === 'asc' ? 'desc' : 'asc') : sort === 'name' || sort === 'status' ? 'asc' : 'desc';
       params.delete('page');
+      params.delete('directory_order');
       params.set('sort', sort);
       params.set('order', direction);
     });
@@ -99,7 +118,7 @@
     <input type="hidden" name="sort" value={data.sort} />
     <input type="hidden" name="order" value={data.direction} />
     <div class="search-row">
-      <label class="browse-field">搜尋學校<input name="q" type="search" maxlength="100" value={filters.q} placeholder="輸入校名或代碼" /></label>
+      <label class="browse-field">搜尋學校{#key filters.q}<input name="q" type="search" maxlength="100" defaultValue={filters.q} placeholder="輸入校名或代碼" />{/key}</label>
       <button class="browse-button browse-primary" type="submit">搜尋</button>
     </div>
     <details class="advanced-filters" open={Boolean(filters.system || filters.ownership || filters.status)}>
@@ -123,7 +142,7 @@
       </div>
     {/if}
     <ul class="status-grid" aria-label="收錄狀態統計">
-      {#each data.counts.filter(({ status, count }) => count > 0 || filters.status === status) as { status, count } (status)}
+      {#each data.counts.filter(({ count }) => count > 0) as { status, count } (status)}
         <li>
           <a href={statusHref(status)} aria-current={filters.status === status ? 'true' : undefined}>
             <StatusPill status={status === 'pending_import' ? 'planned' : status} label={directoryStatusLabels[status]} />
@@ -132,75 +151,82 @@
         </li>
       {/each}
     </ul>
-    {#if !awaitingImport && filters.status !== 'pending_import'}<p class="browse-note"><a href={statusHref('pending_import')}>待匯入 0 所</a>{#if data.notStarted.length && data.notStarted.length <= 3} · 尚未開始：{data.notStarted.join('、')}{/if}</p>{/if}
+    {#if !awaitingImport}<p class="browse-note">待匯入 0 所{#if data.notStarted.length && data.notStarted.length <= 3} · 尚未開始：{data.notStarted.join('、')}{/if}</p>{/if}
   </section>
   </div>
 
   <section class="browse-stack" aria-labelledby="directory">
     <h2 id="directory">學校名錄</h2>
+    <nav class="system-filters" aria-label="依教育體系篩選">
+      <a href={systemHref('')} aria-current={!filters.system ? 'true' : undefined}>所有體系</a>
+      {#each data.systems as system (system)}<a href={systemHref(system)} aria-current={filters.system === system ? 'true' : undefined}>{systemLabels[system]}</a>{/each}
+    </nav>
     {#if filtered}<p class="browse-note">已篩選：{[filters.q, filters.system && systemLabels[filters.system], filters.ownership && ownershipLabels[filters.ownership], filters.status && directoryStatusLabels[filters.status]].filter(Boolean).join(' · ')} · <a href="/schools">清除篩選</a></p>{/if}
 
-    {#if data.groups.length}
+    {#if data.rows.length}
       <div class="table-meta">
-        <p class="browse-note">{filtered ? '符合條件' : '共'} {displayValue(data.shown)} 所 · 顯示 {data.start + 1}–{data.end} 所</p>
-        <div class="browse-note legend"><Heatstrip cells={[{ period: '一', value: 0 }, { period: '二', value: 1 }, { period: '三', value: 2 }]} label="覆蓋圖例" showCounts /> <span>各學年已收錄的學期數</span></div>
+        <p class="browse-note">{filtered ? '符合條件' : '共'} {displayValue(data.shown)} 所 · 顯示 {data.start + 1}–{data.end} 所{#if uniformStatus} · 本頁皆{directoryStatusLabels[uniformStatus]}{/if}</p>
         <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="學校名錄上方分頁" />
       </div>
-      <p class="browse-note swipe-hint" id="directory-hint">往右滑看更新時間與資料來源 <span aria-hidden="true">→</span></p>
+      <form class="mobile-sort" action="/schools#directory" method="GET" onchange={(event) => event.currentTarget.requestSubmit()}>
+        {#each Object.entries(filters).filter(([, value]) => value) as [name, value] (name)}<input type="hidden" {name} {value} />{/each}
+        <FilterSelect name="directory_order" label="名錄排序" allLabel={null} value={directoryOrder} options={sortOptions} />
+        <noscript><button class="browse-button">套用排序</button></noscript>
+      </form>
       <!-- svelte-ignore a11y_no_noninteractive_tabindex (The named table region is horizontally scrollable.) -->
-      <div class="directory-frame" role="region" aria-label="大專校院收錄狀態（表格）" aria-describedby="directory-hint" tabindex="0">
+      <div class="directory-frame" role="region" aria-label="大專校院收錄狀態（表格）" tabindex="0">
         <table>
           <caption>大專校院收錄狀態</caption>
           <thead><tr>
             <th scope="col" class="school-name" aria-sort={sortState('name')}>{@render sortLabel('name', '學校')}</th>
-            <th scope="col" aria-sort={sortState('status')}>{@render sortLabel('status', '收錄狀態')}</th>
-            <th scope="col" class="coverage"><span class="desktop-coverage">學年覆蓋 {yearsLabel ?? ''}</span><span class="mobile-coverage">近 {recentYears.length} 學年{#if recentYears.length}<span class="recent-years">{#each recentYears as year (year)}<span>{year}</span>{/each}</span>{/if}</span></th>
-            <th scope="col" class="numeric term-count" aria-sort={sortState('terms')}>{@render sortLabel('terms', '學期')}</th>
-            <th scope="col" class="numeric" aria-sort={sortState('offerings')}>{@render sortLabel('offerings', '已匯入班次')}</th>
-            <th scope="col" aria-sort={sortState('updated')}>{@render sortLabel('updated', '最近更新')}</th>
-            <th scope="col">資料來源</th>
+            {#if !uniformStatus}<th scope="col" class="wide-column" aria-sort={sortState('status')}>{@render sortLabel('status', '收錄狀態')}</th>{/if}
+            <th scope="col" class="coverage">
+              學年覆蓋 {yearsLabel ?? ''}
+              <span class="browse-note legend">{#each legend as item (item.value)}<span><span aria-hidden="true"><Heatstrip cells={[{ period: '覆蓋', value: item.value }]} hatchPartial /></span>{item.label}</span>{/each}</span>
+              <Heatstrip cells={data.years.map((period) => ({ period, value: null }))} yearTicks="only" />
+            </th>
+            <th scope="col" class="numeric wide-column" aria-sort={sortState('terms')}>{@render sortLabel('terms', '學期')}</th>
+            <th scope="col" class="numeric wide-column" aria-sort={sortState('offerings')}>{@render sortLabel('offerings', '已匯入班次')}</th>
+            <th scope="col" class="wide-column" aria-sort={sortState('updated')}>{@render sortLabel('updated', '最近更新')}</th>
+            <th scope="col" class="wide-column">資料來源</th>
           </tr></thead>
-          {#each data.groups as group (group.system)}
-            <tbody>
-              <tr class="group"><th scope="rowgroup" colspan="7">{group.label} <small>本頁 {group.institutions.length} 所</small></th></tr>
-              {#each group.institutions as school (school.code)}
+          <tbody>
+              {#each data.rows as school (school.code)}
                 {@const cells = yearCoverage(school.terms, data.years)}
                 {@const status = directoryStatus(school)}
                 {@const imported = hasImportedOfferings(school)}
                 <tr class:unimported={!imported}>
                   <th scope="row" class="school-name">
                     {#if hasSchoolPage(school)}<a href={schoolHref(school.slug)}>{school.name}</a>{:else}{school.name}{/if}
-                    <div class="school-meta"><span class="browse-code">{school.code}</span><span class="ownership">{ownershipLabels[school.ownership]}</span>{#if imported}<span class="mobile-coverage">{displayValue(school.offerings)} 班</span>{/if}</div>
+                    <div class="school-meta"><span class="browse-code">{school.code}</span><span class="ownership">{ownershipLabels[school.ownership]}</span>{#if !filters.system}<span>{systemLabels[school.system]}</span>{/if}</div>
+                    {#if !uniformStatus && status !== 'live'}<div class="mobile-coverage"><StatusPill status={status === 'pending_import' ? 'planned' : status} label={directoryStatusLabels[status]} /></div>{/if}
                   </th>
-                  <td class="status-cell">
+                  {#if !uniformStatus}<td class="status-cell wide-column">
                     <StatusPill status={status === 'pending_import' ? 'planned' : status} label={directoryStatusLabels[status]} />
                     {#if status === 'pending_import'}
                       <small>{school.status === 'partial' ? '部分接入' : '爬蟲已接入'}，{school.terms.length ? '目前無可查班次' : '本站尚無匯入'}</small>
                     {/if}
-                  </td>
+                  </td>{/if}
                   <td class="coverage">
                     {#if imported}
-                      <div class="desktop-coverage" title={coveragePeriod(school.terms)}><Heatstrip {cells} label={`${school.name}：${coveragePeriod(school.terms)}；${cells.map(({ period, value }) => `${period} 學年 ${value} 學期`).join('、')}`} /></div>
-                      <div class="mobile-coverage">
-                        <Heatstrip cells={cells.slice(-recentYears.length)} label={school.name} showCounts />
-                        <details class="full-coverage"><summary aria-label={`${school.name}完整學年覆蓋`}>{displayValue(school.terms.length)} 學期</summary>
-                          <small>{yearsLabel} 學年</small><Heatstrip {cells} label={`${school.name}完整學年覆蓋`} showCounts />
-                          {@render source(school)}
-                        </details>
-                      </div>
+                      <Heatstrip {cells} label={school.name} hatchPartial />
                     {:else}<span title="本站尚無可查詢的班次">—</span>{/if}
+                    <details class="full-coverage mobile-coverage"><summary aria-label={`${school.name}的收錄明細`}>{imported ? `${displayValue(school.terms.length)} 期 · ${displayValue(school.offerings)} 班` : '收錄明細'}</summary>
+                      {#if school.latestImportedAt}<small>更新 <time datetime={school.latestImportedAt}>{shortImportedAt(school.latestImportedAt)}</time>（臺北時間）</small>{/if}
+                      {#if status === 'pending_import'}<small>{school.status === 'partial' ? '部分接入' : '爬蟲已接入'}，{school.terms.length ? '目前無可查班次' : '本站尚無匯入'}</small>{/if}
+                      {@render source(school)}
+                    </details>
                   </td>
-                  <td class="numeric term-count" title={imported ? undefined : '本站尚無可查詢的班次'}>{displayValue(imported ? school.terms.length : null)}</td>
-                  <td class="numeric" title={imported ? undefined : '本站尚無可查詢的班次'}>{displayValue(imported ? school.offerings : null)}</td>
-                  <td>{#if school.latestImportedAt}<time datetime={school.latestImportedAt} title={`${importedAt(school.latestImportedAt)}（臺北時間）`}><span aria-hidden="true">{shortImportedAt(school.latestImportedAt)}</span><span class="full-date">{importedAt(school.latestImportedAt)}（臺北時間）</span></time>{:else}<span title="未有匯入紀錄">—</span>{/if}</td>
-                  <td class="note-cell">{@render source(school)}</td>
+                  <td class="numeric wide-column" title={imported ? undefined : '本站尚無可查詢的班次'}>{displayValue(imported ? school.terms.length : null)}</td>
+                  <td class="numeric wide-column" title={imported ? undefined : '本站尚無可查詢的班次'}>{displayValue(imported ? school.offerings : null)}</td>
+                  <td class="wide-column">{#if school.latestImportedAt}<time datetime={school.latestImportedAt} title={`${importedAt(school.latestImportedAt)}（臺北時間）`}><span aria-hidden="true">{shortImportedAt(school.latestImportedAt)}</span><span class="full-date">{importedAt(school.latestImportedAt)}（臺北時間）</span></time>{:else}<span title="未有匯入紀錄">—</span>{/if}</td>
+                  <td class="note-cell wide-column">{@render source(school)}</td>
                 </tr>
               {/each}
             </tbody>
-          {/each}
         </table>
       </div>
-      <p class="browse-note">排序後分頁，同一頁按教育體系分組。班次只計目前可查詢的資料；— 表示該項尚無資料。</p>
+      <p class="browse-note">班次只計目前可查詢的資料；— 表示該項尚無資料。</p>
       <Pagination url={page.url} page={data.page} totalPages={data.totalPages} label="學校名錄分頁" />
     {:else if filtered}
       <EmptyState title="沒有符合條件的學校" description="試試簡稱、學校代碼，或放寬篩選條件。">
@@ -236,35 +262,32 @@
   .status-grid a:hover, .status-grid a[aria-current] { border-color: var(--brand); background: var(--brand-wash); }
   small { color: var(--muted); font-size: var(--t-sm); font-weight: normal; }
   .table-meta { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-2); }
-  .legend { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
-  .swipe-hint { display: none; }
+  .legend, .legend > span { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .5rem; font-size: var(--t-xs); }
+  .legend { margin-block: .18rem .35rem; --heatstrip-cell-size: 10px; }
+  .system-filters { display: flex; align-items: center; gap: var(--space-2); overflow-x: auto; }
+  .system-filters a { display: inline-flex; align-items: center; padding-inline: var(--space-2); min-block-size: var(--target-min); white-space: nowrap; font-size: var(--t-sm); }
+  .system-filters a[aria-current] { background: var(--brand-wash); border-radius: var(--radius-control); font-weight: 650; }
   .directory-frame { position: relative; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); }
   table { width: 100%; min-width: 55rem; text-align: start; border-spacing: 0; font-size: var(--t-base); line-height: var(--leading-table); }
   caption { position: absolute; clip-path: inset(50%); inline-size: 1px; block-size: 1px; overflow: hidden; }
   th, td { text-align: start; padding: .5rem .6rem; border-bottom: 1px solid var(--line); background: var(--panel-raised); }
   th { font-weight: 650; }
-  thead th { padding-block: 0; height: var(--target-min); background: var(--table-head); white-space: nowrap; }
+  thead th { padding-block: var(--space-1); height: var(--target-min); background: var(--table-head); white-space: nowrap; }
   thead a { display: inline-flex; align-items: center; min-block-size: var(--target-min); gap: .25rem; }
   .school-name { position: sticky; left: 0; z-index: 1; inline-size: 9.5rem; min-inline-size: 9.5rem; max-inline-size: 9.5rem; box-shadow: 1px 0 var(--line); overflow-wrap: anywhere; }
   td.status-cell { min-inline-size: 10rem; }
   .status-cell small { display: block; white-space: normal; margin-block-start: .15rem; }
-  .school-meta { display: flex; align-items: baseline; gap: .3rem; color: var(--muted); font-size: var(--t-xs); font-weight: 450; }
+  .school-name a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
+  .school-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .3rem; color: var(--muted); font-size: var(--t-xs); font-weight: 450; }
   .school-meta .browse-code { font-size: inherit; }
   .ownership { padding-inline: .25em; border: 1px solid var(--line); border-radius: .2rem; }
   thead .school-name { z-index: 3; }
-  .group th { background: var(--panel); color: var(--ink-2); }
-  .group small { margin-inline-start: .4rem; }
-  tbody tr:not(.group):hover > * { background: var(--hover-row); }
+  tbody tr:hover > * { background: var(--hover-row); }
   td time { white-space: nowrap; }
   .coverage { min-inline-size: 8.75rem; }
-  .coverage :global(.strip) { flex-wrap: nowrap; }
   .directory-frame { --heatstrip-cell-size: 14px; }
-  .legend, .mobile-coverage { --heatstrip-cell-size: 15px; }
-  .coverage :global(.cell:not(.full, .partial)), .legend :global(.cell:not(.full, .partial)) { background: var(--table-head); border-color: var(--line); }
-  .coverage :global(.cell.partial), .legend :global(.cell.partial) { background: repeating-linear-gradient(135deg, var(--brand-wash) 0 2px, color-mix(in srgb, var(--brand) 58%, var(--brand-wash)) 2px 3px, var(--brand-wash) 3px 5px); }
-  .coverage .full-coverage :global(.strip) { flex-wrap: wrap; max-inline-size: 5.25rem; }
-  .full-coverage > summary { min-block-size: var(--target-min); align-content: center; color: var(--brand-ink); font-size: var(--t-xs); cursor: pointer; }
-  .mobile-coverage { display: none; }
+  .full-coverage > summary { min-block-size: var(--target-min); align-content: center; color: var(--brand-ink); font-size: var(--t-sm); cursor: pointer; }
+  .mobile-coverage, .mobile-sort { display: none; }
   .numeric { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
   td time { font-variant-numeric: tabular-nums; }
   .full-date { position: absolute; clip-path: inset(50%); inline-size: 1px; block-size: 1px; overflow: hidden; }
@@ -275,22 +298,17 @@
   .browse-field input::placeholder { color: var(--muted); }
   .unimported :is(.numeric, .coverage, .browse-code) { color: var(--muted); }
   #sources { border-block-start: 1px solid var(--line); padding-block-start: .85rem; }
-  @media (max-width: 938px) { .swipe-hint { display: block; } }
+  @media (max-width: 58rem) {
+    table { min-width: 0; }
+    .wide-column { display: none; }
+    .mobile-coverage { display: block; }
+    .mobile-sort { display: flex; gap: var(--space-2); }
+    .full-coverage .row-source :is(summary, a) { white-space: normal; }
+  }
   @media (max-width: 680px) {
     .directory-controls { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); }
-    .school-name { inline-size: 8.5rem; min-inline-size: 8.5rem; max-inline-size: 8.5rem; }
-    .school-meta .ownership { display: none; }
-    td.status-cell { min-inline-size: 5.5rem; }
-    .coverage { min-inline-size: 5.75rem; }
-    .term-count { display: none; }
-    .table-meta :global(nav) { display: none; }
-    .desktop-coverage { display: none; }
-    .mobile-coverage { display: block; }
+    .school-name { position: static; inline-size: 45%; min-inline-size: 0; max-inline-size: 9rem; }
     th, td { padding-inline: .45rem; }
-    .coverage { padding-block: .25rem; --heatstrip-cell-size: 17px; }
-    .recent-years { display: flex; gap: 2px; font: 9px var(--font-mono); }
-    .recent-years span { inline-size: 17px; text-align: center; }
-    .full-coverage > summary { margin-block-end: calc(-1 * var(--space-1)); }
-    .full-coverage .row-source :is(summary, a) { white-space: normal; }
+    .coverage { padding-block: .25rem; --heatstrip-cell-size: clamp(7px, 2.8vw, 14px); }
   }
 </style>
