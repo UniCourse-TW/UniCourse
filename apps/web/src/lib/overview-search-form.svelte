@@ -17,6 +17,7 @@
 
   const departmentOptions = $props.id();
   const hintId = `${departmentOptions}-hint`;
+  const sortLabelId = `${departmentOptions}-sort`;
   let selectedSchool = $derived(filters?.school ?? '');
   let selectedTerm = $derived(filters?.term ?? terms[0] ?? 'all');
   let schoolOptions = $derived([
@@ -24,7 +25,7 @@
     ...schools.map(({ slug, name }) => ({ value: slug, label: name }))
   ]);
   let termOptions = $derived([{ value: 'all', label: '全部學期' }, ...terms.map((term) => ({ value: term, label: term }))]);
-  let advancedCount = $derived(Number(Boolean(filters?.department && !selectedSchool)) + Number(Boolean(!externalSort && filters && filters.sort !== 'relevance')));
+  let advancedCount = $derived(Number(Boolean(filters?.department && (empty || !selectedSchool))) + Number(Boolean(!externalSort && filters && filters.sort !== 'relevance')));
   let loading = $derived(navigating.to?.url.pathname === '/' && navigating.to.url.searchParams.has('term'));
 
   let keyword = $state<HTMLInputElement>();
@@ -62,6 +63,10 @@
   {/if}
 {/snippet}
 
+{#snippet searchButton()}
+  <button type="submit" aria-busy={loading}>{loading ? '搜尋中…' : empty ? '重新搜尋' : '搜尋'}</button>
+{/snippet}
+
   <form id="course-search" action="/" method="GET" role="search" aria-label="課程搜尋" class:result-filters={filters && !empty} class:has-department={filters && selectedSchool && !empty} class:empty class:compact>
     <div class="keyword">
       <label for="course-keyword" class="keyword-label">關鍵字</label>
@@ -79,33 +84,30 @@
     </div>
     <div class="school-field"><FilterSelect name="school" label="學校" allLabel="所有學校" options={schoolOptions} value={selectedSchool} onchange={changeFilter} /></div>
     <div class="term-field"><FilterSelect name="term" label="學期" allLabel={null} options={termOptions} value={selectedTerm} onchange={changeFilter} /></div>
-    <button type="submit" aria-busy={loading}>{loading ? '搜尋中…' : empty ? '重新搜尋' : '搜尋'}</button>
+    {#if !empty}{@render searchButton()}{/if}
     {#if keywordHint}<p class="keyword-hint" id={hintId}>{keywordHint}</p>{/if}
-    {#if filters && empty}
-      {#if filters.department}{@render departmentField(filters.department)}{/if}
-      <input type="hidden" name="sort" value={filters.sort} />
-      {#if filters.group}<input type="hidden" name="group" value={filters.group} />{/if}
-    {/if}
-    {#if filters && !empty}
-      {#if selectedSchool}{@render departmentField(filters.department)}{/if}
-      {#if !externalSort || !selectedSchool}
-      <details class="advanced">
-        <summary>{selectedSchool ? '排序選項' : '更多篩選'}{#if advancedCount} <span>（已套用 {advancedCount} 項）</span>{/if}</summary>
-        <div class="advanced-fields">
-          {#if !selectedSchool}{@render departmentField(filters.department)}{/if}
-          {#if !externalSort}<label>
-            <span>排序</span>
-            <select name="sort" onchange={changeFilter}>
-              {#each searchSorts as option (option.value)}
-                <option value={option.value} selected={option.value === filters.sort}>{option.label}</option>
-              {/each}
-            </select>
-          </label>{/if}
-          <button type="submit" class="advanced-apply">套用進階條件</button>
-        </div>
-      </details>
+    {#if empty && filters?.group}<input type="hidden" name="group" value={filters.group} />{/if}
+    {#if filters}
+      {#if selectedSchool && !empty}{@render departmentField(filters.department)}{/if}
+      {#if empty || !externalSort || !selectedSchool}
+        <details class="advanced">
+          <summary>{selectedSchool && !empty ? '排序選項' : '更多篩選'}{#if advancedCount} <span>（已套用 {advancedCount} 項）</span>{/if}</summary>
+          <div class="advanced-fields">
+            {#if empty || !selectedSchool}{@render departmentField(filters.department)}{/if}
+            {#if !externalSort}<label>
+              <span id={sortLabelId}>排序</span>
+              <select name="sort" aria-labelledby={sortLabelId} onchange={changeFilter}>
+                {#each searchSorts as option (option.value)}
+                  <option value={option.value} selected={option.value === filters.sort}>{option.label}</option>
+                {/each}
+              </select>
+            </label>{/if}
+            {#if !empty}<button type="submit" class="advanced-apply">套用進階條件</button>{/if}
+          </div>
+        </details>
       {/if}
     {/if}
+    {#if empty}{@render searchButton()}{/if}
   </form>
 
 <style>
@@ -133,7 +135,12 @@
   summary span { color: var(--muted); font-weight: 500; }
   .advanced-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 12rem); gap: var(--space-2); max-width: 35rem; padding-block-end: var(--space-2); }
   .advanced-apply { grid-column: 1 / -1; width: fit-content; border: 1px solid var(--control-line); background: var(--panel-raised); color: var(--brand-ink); }
-  .empty > .department-field { grid-column: 1 / -1; }
+  .empty > .advanced[open] { grid-column: 1 / -1; }
+  @media (min-width: 54rem) {
+    .empty:not(:has(> .advanced[open])) { grid-template-columns: minmax(0, 1fr) minmax(0, 12rem) minmax(0, 8.5rem) auto auto; }
+    .empty > .advanced:not([open]) { grid-column: auto; }
+    .empty .keyword-hint { grid-row: 2; }
+  }
   @media (min-width: 54rem) {
     .result-filters:not(.has-department):has(> .advanced:not([open])) { grid-template-columns: minmax(0, 1fr) minmax(0, 12rem) minmax(0, 8.5rem) auto auto; }
     .result-filters:not(.has-department) > .advanced:not([open]) { grid-column: auto; }
@@ -162,11 +169,10 @@
     .advanced-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     select { text-overflow: ellipsis; }
   }
-  @media (min-width: 23rem) and (max-width: 37rem) {
-    .empty { grid-template-columns: minmax(0, 1fr) minmax(0, .35fr) auto; }
-    .empty > .keyword { grid-column: 1 / 3; }
-    .empty > button { grid-area: 1 / 3; padding-inline: var(--space-2); }
-    .empty > .term-field { grid-column: 2 / 4; }
+  @media (max-width: 53.99rem) {
+    .empty { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .empty .keyword, .empty .advanced[open], .empty:has(.advanced[open]) > button { grid-column: 1 / -1; }
+    .empty .advanced:not([open]), .empty:not(:has(.advanced[open])) > button { grid-column: auto; }
     .empty .keyword-hint { grid-row: 2; }
   }
 </style>

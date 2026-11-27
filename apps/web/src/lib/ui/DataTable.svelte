@@ -17,6 +17,7 @@
     minWidth?: string;
     maxHeight?: string;
     scrollHint?: boolean;
+    showCaption?: boolean;
     header?: Snippet<[TableColumn<Row>, 'ascending' | 'descending' | undefined]>;
     cell?: Snippet<[Row, TableColumn<Row>]>;
     empty?: Snippet;
@@ -24,7 +25,7 @@
 
   let {
     caption, columns, rows, rowKey, rowHref, groupLabel, rowHeaderColumn, stickyColumn, clientSort = false, order,
-    minWidth = '38rem', maxHeight = '30rem', scrollHint = true, header, cell, empty
+    minWidth = '38rem', maxHeight = '30rem', scrollHint = true, showCaption = true, header, cell, empty
   }: Props = $props();
 
   const collator = new Intl.Collator('zh-TW', { numeric: true });
@@ -74,7 +75,7 @@
   <div class="scroll" role="region" aria-label={`${caption}（表格）`} aria-describedby={scrollHint ? hintId : undefined}
     tabindex="0" style:max-block-size={maxHeight}>
     <table style:min-inline-size={minWidth}>
-      <caption>{caption}</caption>
+      <caption class:visually-hidden={!showCaption}>{caption}</caption>
       <thead>
         <tr>
           {#each columns as column (column.id)}
@@ -148,6 +149,7 @@
     outline-offset: calc(-1 * var(--focus-offset));
   }
   table { inline-size: 100%; border-collapse: separate; border-spacing: 0; text-align: start; }
+  .visually-hidden { position: absolute; inline-size: 1px; block-size: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   caption { padding: var(--space-2) var(--space-3); text-align: start; color: var(--muted); font-size: var(--t-sm); }
   th, td { padding: var(--table-pad-block, 0.375rem) 0.625rem; border-block-end: 1px solid var(--line); text-align: start; }
   .row-group td { padding-block: var(--space-1); background: var(--table-group-bg, var(--table-head)); color: var(--ink-2); font-weight: 650; font-size: var(--table-group-font-size, var(--t-sm)); }

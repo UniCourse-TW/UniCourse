@@ -38,19 +38,19 @@ test('shows historical enrollment, filters the ranking and browses a school and 
 
   const ranking = page.getByRole('region', { name: '歷史累計修課人數排行' });
   const rankingViews = ranking.getByRole('navigation', { name: '排行檢視' });
-  await expect(rankingViews.getByRole('link', { name: '每校最多 2 門' })).toHaveAttribute('aria-current', 'true');
+  await expect(rankingViews.getByRole('link', { name: '跨校排行' })).toHaveAttribute('aria-current', 'true');
   const linearAlgebra = ranking.getByRole('listitem').filter({ hasText: 'DEMO201' });
   await expect(linearAlgebra.getByRole('link', { name: '線性代數' })).toHaveAttribute('href', /^\/courses\/\d+$/);
   await expect(linearAlgebra.getByText('Linear Algebra (Demo)')).toBeHidden();
-  await expect(linearAlgebra.getByText(/國立清華大學 · DEMO201/)).toBeVisible();
+  await expect(linearAlgebra.getByText(/國立清華大學\s*DEMO201/)).toBeVisible();
   await expect(linearAlgebra.getByText('示範', { exact: true })).toBeVisible();
   await expect(linearAlgebra.getByText(/2 學期/)).toBeVisible();
-  await expect(linearAlgebra.getByRole('img', { name: /114-2：55 人；115-1：58 人/ })).toBeVisible();
-  await expect(linearAlgebra.getByText('最近開課 115-1 · 較 114-2')).toBeVisible();
+  await expect(linearAlgebra.getByText('2 期有數值')).toBeVisible();
+  await expect(linearAlgebra.getByText('114-2 55 人')).toBeVisible();
+  await expect(linearAlgebra.getByText('最近開課 115-1')).toBeVisible();
+  await expect(linearAlgebra.getByText('較 114-2')).toBeVisible();
   await expect(linearAlgebra.getByText('+3', { exact: true })).toBeVisible();
-  await expect(linearAlgebra.getByText('0–58 人')).toBeVisible();
-  await expect(linearAlgebra.locator('svg circle')).toHaveCount(2);
-  await expect(linearAlgebra.locator('svg path')).toHaveCount(0);
+  await expect(linearAlgebra.locator('svg')).toHaveCount(0);
   const singleTerm = ranking.getByRole('listitem').filter({ hasText: 'DEMO202' });
   await expect(singleTerm).toHaveCount(0);
   await rankingViews.getByRole('link', { name: '整體排行' }).click();
