@@ -12,6 +12,8 @@ import type { Actions, PageServerLoad } from './$types';
 type ListType = Exclude<PostType, 'reply'>;
 const listTypes: ListType[] = ['announcement', 'article', 'question'];
 const MAX_PAGE = 10_000;
+/** A forum with fewer posts than this is「剛開張」: the page leads with course suggestions to write about. */
+const YOUNG_BELOW = 10;
 
 /** The API pages newest-first. One oldest-first page maps to at most two adjacent API pages. */
 async function oldestPage(
@@ -28,6 +30,19 @@ async function oldestPage(
   if (pages.some((page) => !page)) error(503, UNAVAILABLE);
   const offset = (firstPage - 1) * current.pageSize;
   return { ...current, posts: pages.flatMap((page) => page?.posts ?? []).slice(start - offset, end - offset).reverse() };
+}
+
+/** Oldest and newest of a set of term keys such as `111-1`; `null` when there are none. */
+function termRange(terms: string[]) {
+  if (!terms.length) return null;
+  // Numeric, not string order: 99-2 comes before 100-1.
+  const key = (term: string) => term.split('-').map(Number);
+  const sorted = [...terms].sort((a, b) => {
+    const [ya, sa] = key(a);
+    const [yb, sb] = key(b);
+    return ya - yb || (sa ?? 0) - (sb ?? 0);
+  });
+  return { first: sorted[0], last: sorted[sorted.length - 1], count: sorted.length };
 }
 
 function listType(raw: string | null): ListType | '' {
@@ -83,7 +98,7 @@ export const load: PageServerLoad = async ({ fetch, url, locals }) => {
   // school first (someone at 臺大 has no use for 逢甲's general course), otherwise one per school so
   // the list is not three sections of the same general course.
   const unfiltered = !filters.type && !query.school && !query.q && !query.tag;
-  const young = unfiltered && posts.data.total <= 5;
+  const young = unfiltered && posts.data.total < YOUNG_BELOW;
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   const recentCount = young && all && all.posts.length === all.total
     ? all.posts.filter((post) => Date.parse(post.createdAt) >= weekAgo).length
@@ -107,9 +122,12 @@ export const load: PageServerLoad = async ({ fetch, url, locals }) => {
       title: entry.title,
       /** The course page (newest term) for the course name; 寫心得 opens the compose form instead. */
       offeringId: entry.latestOfferingId,
-      enrolledTotal: entry.enrolledTotal ?? null
+      enrolledTotal: entry.enrolledTotal ?? null,
+      /** The terms the total covers (oldest and newest imported term), so the bar has a stated range. */
+      terms: termRange(Object.keys(entry.sectionsByTerm ?? {}))
     }));
   return {
+    young,
     courseTitles: titles,
     suggestions,
     /** The suggestions come from the reader's own school (named in the heading). */

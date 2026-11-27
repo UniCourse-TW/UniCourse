@@ -43,8 +43,6 @@
   let composeOrLogin = $derived(data.user ? composeHref : loginHref(composeHref));
 
   const fmt = new Intl.NumberFormat('zh-TW');
-  /** At most this many posts in the whole forum: the list gets an invitation underneath. */
-  const SPARSE_POSTS = 5;
   function writeHref(school: string, courseCode: string) {
     const href = `/forum?${new URLSearchParams({ type: 'article', compose: '1', school, courseCode })}`;
     return data.user ? href : loginHref(href);
@@ -53,6 +51,8 @@
     const href = forumHref(next);
     return data.oldest ? `${href}${href.includes('?') ? '&' : '?'}sort=oldest` : href;
   }
+  /** A young forum with suggestions to show: the invitation sits beside (desktop) or under (phone) the list. */
+  let invite = $derived(data.young && data.posts.posts.length > 0 && !filtered && !filters.courseCode && data.suggestions.length > 0);
   let topEnrolled = $derived(Math.max(0, ...data.suggestions.map((entry) => entry.enrolledTotal ?? 0)));
   const count = (value: number | null) => (value === null ? '' : fmt.format(value));
   const typeChips = [
@@ -127,8 +127,8 @@
       {#each typeChips as chip (chip.key)}
         {@const n = data.counts[chip.key]}
         {#if n === 0 && chip.type && filters.type !== chip.type}
-          <!-- An empty category is shown, not hidden, so the set stays the same; it is not a link to nothing. -->
-          <span class="cm-chip empty" aria-disabled="true" title="目前沒有{chip.label}">{chip.label}<span class="n">0</span></span>
+          <!-- An empty category stays in the set but is plain text, not a pill: there is nothing to open. -->
+          <span class="chip-empty" aria-disabled="true" title="目前沒有{chip.label}">{chip.label} <span class="num">0</span></span>
         {:else}
           <a class="cm-chip" href={filterHref({ ...filters, type: chip.type, page: 1 })}
             aria-current={filters.type === chip.type ? 'true' : undefined}>
@@ -159,9 +159,12 @@
     {/if}
   </div>
 
+  <!-- A young forum (fewer than 10 posts) puts the course suggestions beside the list on wide screens, and
+       right under it on phones, with one line above the list pointing at them. -->
+  <div class="board" class:rail={invite}>
   <section aria-labelledby="results" class="results">
-    <h2 id="results" class="cm-sr">{filtered ? '符合的文章' : '最新文章'}（{total}）</h2>
     {#if data.posts.posts.length === 0}
+      <h2 id="results" class="cm-sr">{filtered ? '符合的文章' : '最新文章'}（{total}）</h2>
       {#if onlyType}
         <EmptyState title="還沒有{postTypeLabels[filters.type || 'question']}" description={filters.type === 'announcement' ? '公告由管理員發布；有新公告時會出現在這裡。' : `第一篇${postTypeLabels[filters.type || 'question']}就從你開始，發文時選「${postTypeLabels[filters.type || 'question']}」即可。`}>
           {#snippet action()}
@@ -193,8 +196,9 @@
         </EmptyState>
       {/if}
     {:else}
+      <!-- The list header: what is listed and how many (the one count on the page), then the sort. -->
       <div class="list-head">
-        <span>{#if filtered}符合條件 <b class="num">{fmt.format(total)}</b> 篇{:else if data.recentCount !== null}近 7 天新增 <b class="num">{fmt.format(data.recentCount)}</b> 篇・共 <b class="num">{fmt.format(total)}</b> 篇{/if}</span>
+        <h2 id="results">{filtered || filters.courseCode ? '符合的文章' : '最新文章'}<span class="count num">{fmt.format(total)} 篇</span></h2>
         {#if data.sortable}
           <form class="sort-form" method="GET" action="/forum">
             {#each Object.entries(filters) as [name, value] (name)}
@@ -210,57 +214,67 @@
             <noscript><button type="submit" class="cm-btn secondary">套用排序</button></noscript>
           </form>
         {:else}
-          <span>依發文時間・最新在前</span>
+          <span class="sort-note">依發文時間・最新在前</span>
         {/if}
       </div>
+      {#if invite}
+        <p class="young-note">
+          論壇剛開張{#if data.recentCount}，近 7 天新增 <b class="num">{fmt.format(data.recentCount)}</b> 篇{/if}。<a href="#sparse-title">看看你修過哪些熱門課<span class="arrow-side" aria-hidden="true"> →</span><span class="arrow-down" aria-hidden="true"> ↓</span></a>
+        </p>
+      {/if}
       <CommunityPostList posts={data.posts.posts} {schoolNames} courseTitles={data.courseTitles} dense label={filtered ? '符合的文章' : '最新文章'} />
+      {#if invite}
+        <!-- Wide screens: under the list (the right column is the taller one); phones: after the suggestions. -->
+        <p class="find-line wide">修的是別門課？<a class="find" href="/">先查課，從課程頁發文會自動帶上課號 →</a></p>
+      {/if}
       {#if pages > 1}
         <footer class="pager">
           <p class="num">第 {fmt.format(first)}–{fmt.format(last)} 篇<span class="sep">·</span>共 {fmt.format(total)} 篇</p>
           <Pagination url={page.url} page={filters.page} totalPages={pages} label="文章分頁" />
         </footer>
       {/if}
-      {#if !filtered && !filters.courseCode && total <= SPARSE_POSTS}
-        <!-- A young forum: a short, open list of well-attended courses to write about, apart from the results. -->
-        <aside class="sparse" aria-labelledby="sparse-title">
-          <div class="sparse-head">
-            <h2 id="sparse-title">修過這些熱門課？寫一篇心得</h2>
-            <p class="sparse-dek">{data.suggestionsSchool ?? '各校'}歷年修課人次最多的課・點課名看課程，按「寫心得」直接發文</p>
-          </div>
-          {#if data.suggestions.length}
-            <div class="suggest-frame">
-              <table class="suggest">
-                <caption class="cm-sr">依{data.suggestionsSchool ?? '各校'}歷年修課人次推薦的課程</caption>
-                <thead>
-                  <tr><th scope="col">課程</th><th scope="col" class="count-col">歷年修課人次</th><th scope="col"><span class="cm-sr">動作</span></th></tr>
-                </thead>
-                <tbody>
-                  {#each data.suggestions as entry (entry.school + entry.courseCode)}
-                    {@const share = entry.enrolledTotal != null && topEnrolled ? (entry.enrolledTotal / topEnrolled) * 100 : null}
-                    <tr>
-                      <th scope="row" class="suggest-course">
-                        <a href="/courses/{entry.offeringId}">{entry.title}</a>
-                        <span class="muted">{entry.schoolName}<span class="sep">·</span><span class="mono">{entry.courseCode}</span></span>
-                      </th>
-                      <td class="suggest-count">
-                        <!-- Bars share one scale starting at 0, so the three courses compare at a glance. -->
-                        {#if share !== null}<span class="bar" aria-hidden="true"><span style:inline-size="{share}%"></span></span>{/if}
-                        <span class="num value">{displayValue(entry.enrolledTotal)}<small> 人次</small></span>
-                      </td>
-                      <td class="suggest-act">
-                        <a class="cm-btn secondary write" href={writeHref(entry.school, entry.courseCode)} aria-label={`寫「${entry.title}」的心得`}>寫心得</a>
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </div>
-          {/if}
-          <p class="find-line">修的是別門課？<a class="find" href="/">先查課，從課程頁發文會自動帶上課號 →</a></p>
-        </aside>
-      {/if}
     {/if}
   </section>
+  {#if invite}
+    <!-- A young forum: a short, open list of well-attended courses to write about, apart from the results. -->
+    <aside class="sparse" aria-labelledby="sparse-title">
+      <div class="sparse-head">
+        <h2 id="sparse-title">修過這些熱門課？寫一篇心得</h2>
+        <p class="sparse-dek">{data.suggestionsSchool ?? '各校'}累計修課人次最多的課。點課名看課程，或直接寫心得。</p>
+      </div>
+      <div class="suggest-frame">
+        <table class="suggest">
+          <caption class="cm-sr">依{data.suggestionsSchool ?? '各校'}累計修課人次推薦的課程</caption>
+          <thead>
+            <tr><th scope="col">課程</th><th scope="col" class="count-col">累計修課人次</th><th scope="col"><span class="cm-sr">動作</span></th></tr>
+          </thead>
+          <tbody>
+            {#each data.suggestions as entry (entry.school + entry.courseCode)}
+              {@const share = entry.enrolledTotal != null && topEnrolled ? (entry.enrolledTotal / topEnrolled) * 100 : null}
+              <tr>
+                <th scope="row" class="suggest-course">
+                  <a href="/courses/{entry.offeringId}">{entry.title}</a>
+                  <span class="muted"><span class="nowrap">{entry.schoolName}</span><span class="sep">·</span><span class="mono">{entry.courseCode}</span></span>
+                </th>
+                <td class="suggest-count">
+                  <!-- Bars share one scale starting at 0 (the footnote names the full bar), so the courses compare at a glance. -->
+                  {#if share !== null}<span class="bar" aria-hidden="true"><span style:inline-size="{share}%"></span></span>{/if}
+                  <span class="num value">{displayValue(entry.enrolledTotal)}<small> 人次</small></span>
+                  {#if entry.terms}<span class="range num">{entry.terms.first === entry.terms.last ? entry.terms.first : `${entry.terms.first}–${entry.terms.last}`}・{entry.terms.count} 個學期</span>{/if}
+                </td>
+                <td class="suggest-act">
+                  <a class="cm-btn secondary write" href={writeHref(entry.school, entry.courseCode)} aria-label={`寫「${entry.title}」的心得`}>寫心得</a>
+                </td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+      <p class="scale-note">長條同一比例、從 0 起算，滿格 = <span class="num">{fmt.format(topEnrolled)}</span> 人次；學期區間為各課的收錄範圍。</p>
+      <p class="find-line narrow">修的是別門課？<a class="find" href="/">先查課，從課程頁發文會自動帶上課號 →</a></p>
+    </aside>
+  {/if}
+  </div>
 </div>
 
 <style>
@@ -347,10 +361,15 @@
   }
   .pager p { min-block-size: var(--target-min); display: flex; align-items: center; }
   .state-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }
-  /* The invitation uses the post list's full width and frame, so the page has one content edge. */
-  .sparse { display: grid; gap: var(--space-2); margin-block-start: var(--space-6); }
+  /* Young forum: on wide screens the invitation is a right column beside the list, so the list is narrower
+     (its numbers sit near the titles) and the call to write is in the first screen. */
+  .board { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); align-items: start; }
+  @media (min-width: 64rem) {
+    .board.rail { grid-template-columns: minmax(0, 1fr) 20rem; gap: var(--space-8); }
+  }
+  .sparse { display: grid; gap: var(--space-2); min-inline-size: 0; container: suggest / inline-size; }
   .sparse h2 { margin: 0; font-size: var(--t-lg); font-weight: 650; letter-spacing: var(--tracking-heading); }
-  .sparse-dek { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; }
+  .sparse-dek { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; text-wrap: pretty; }
   .suggest-frame { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); overflow: hidden; }
   .suggest { inline-size: 100%; border-collapse: collapse; font-size: var(--t-base); }
   .suggest thead th { padding: var(--space-2) var(--space-4); border-block-end: 1px solid var(--line); color: var(--muted); background: var(--table-head); font-size: var(--t-sm); font-weight: 600; text-align: start; }
@@ -358,25 +377,53 @@
   .suggest tbody tr + tr :is(th, td) { border-block-start: 1px solid var(--line); }
   .suggest-course { min-inline-size: 0; }
   .suggest-course a { font-weight: 650; }
-  .suggest .muted { margin-inline-start: var(--space-2); color: var(--muted); font-size: 0.8125rem; white-space: nowrap; }
-  .suggest .count-col { inline-size: 40%; }
-  .suggest-count { display: flex; gap: var(--space-3); align-items: center; }
-  .suggest-count .bar { flex: 1 1 auto; block-size: 0.5rem; border-radius: 2px; background: var(--chip); overflow: hidden; }
-  .suggest-count .bar > span { display: block; block-size: 100%; border-radius: 2px; background: var(--brand); }
-  .suggest-count .value { flex: none; min-inline-size: 6.5rem; color: var(--ink); font-weight: 600; text-align: end; white-space: nowrap; }
+  .suggest .muted { display: block; color: var(--muted); font-size: 0.8125rem; }
+  .suggest .count-col { inline-size: 45%; }
+  .suggest-count { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-3); align-items: center; }
+  /* Thin, slightly softened bars: they rank the courses but stay quieter than the post titles. */
+  .suggest-count .bar { block-size: 0.375rem; border-radius: 2px; background: var(--chip); overflow: hidden; }
+  .suggest-count .bar > span { display: block; block-size: 100%; border-radius: 2px; background: color-mix(in srgb, var(--brand) 78%, var(--panel-raised)); }
+  .suggest-count .value { color: var(--ink); font-weight: 600; text-align: end; white-space: nowrap; }
   .suggest-count small { margin-inline-start: 0.25em; color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
+  .suggest-count .range { grid-column: 1 / -1; color: var(--muted); font-size: var(--t-sm); }
   .suggest-act { inline-size: 1%; text-align: end !important; }
   .write { min-block-size: 2.25rem; padding-inline: var(--space-3); font-size: var(--t-sm); }
-  /* Empty categories: same pill, no fill, a dashed edge; the label keeps AA contrast (muted on the page). */
-  .cm-chip.empty { color: var(--muted) !important; background: transparent; box-shadow: inset 0 0 0 1px var(--line); cursor: default; }
-  .cm-chip.empty:hover { background: transparent; }
-  .find-line { margin: 0 !important; color: var(--muted); font-size: var(--t-sm); }
+  .nowrap { white-space: nowrap; }
+  .scale-note { margin: 0 !important; color: var(--muted); font-size: var(--t-sm); text-wrap: pretty; }
+  /* Narrow (the right column, or a phone): course and 寫心得 on the first line, the bar with its count
+     under them across the row, then the term range. */
+  @container suggest (max-width: 34rem) {
+    .suggest thead { display: none; }
+    .suggest, .suggest tbody { display: block; }
+    .suggest tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-3); align-items: center; padding: var(--space-3); }
+    .suggest tbody tr + tr { border-block-start: 1px solid var(--line); }
+    .suggest tbody tr > :is(th, td):nth-child(n) { display: block; padding: 0; border: 0; }
+    .suggest-count { grid-column: 1 / -1; grid-row: 2; display: grid !important; }
+    .suggest-act { grid-column: 2; grid-row: 1; inline-size: auto; }
+    .write { min-block-size: var(--target-min); }
+  }
+  /* An empty category: plain muted words beside the pills, not a pill of its own (nothing to open). */
+  .chip-empty { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: 2.25rem; padding-inline: var(--space-2); color: var(--muted); font: 500 var(--t-sm) / 1 var(--font-sans); white-space: nowrap; cursor: default; }
+  .find-line { margin: var(--space-3) 0 0 !important; color: var(--muted); font-size: var(--t-sm); }
   .find { color: var(--brand-ink); font-weight: 600; }
-  .list-head { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); justify-content: space-between; align-items: center; min-block-size: 1.25rem; margin: 0 0 var(--space-2); color: var(--ink-2); font-size: var(--t-sm); }
+  .list-head { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-3); justify-content: space-between; align-items: center; margin: 0 0 var(--space-2); color: var(--ink-2); font-size: var(--t-sm); }
+  .list-head h2 { display: flex; gap: var(--space-2); align-items: baseline; margin: 0; font-size: var(--t-lg); }
+  .list-head .count { color: var(--ink-2); font-size: var(--t-base); font-weight: 600; letter-spacing: 0; }
+  .sort-note { color: var(--muted); }
+  /* One line above a young forum's list; it points to the suggestions (right column or below). */
+  .young-note { margin: 0 0 var(--space-2) !important; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); color: var(--ink-2); background: var(--brand-wash); font-size: var(--t-base); text-wrap: pretty; }
+  .young-note b { color: var(--ink); font-weight: 650; }
+  .young-note a { font-weight: 600; }
+  .arrow-down { display: none; }
+  .find-line.narrow { display: none; }
+  @media (max-width: 63.99rem) {
+    .arrow-side, .find-line.wide { display: none; }
+    .arrow-down { display: inline; }
+    .find-line.narrow { display: block; margin-block-start: 0 !important; }
+  }
   .sort-form, .sort-field { display: flex; align-items: center; gap: var(--space-2); }
   .sort-field { min-block-size: var(--target-min); padding-inline-start: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); }
   .sort-field select { min-block-size: calc(var(--target-min) - 2px); padding: 0 var(--space-2); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink); font: inherit; color-scheme: var(--ui-color-scheme); }
-  .list-head b { color: var(--ink); font-weight: 650; }
   .submit { flex: none; order: 1; }
   .toolbar > .clear { order: 2; }
   .facts { display: flex; flex-wrap: wrap; gap: 0 0.35em; }
@@ -424,16 +471,6 @@
     .scope-fields :global(.field select) { flex: 1; max-inline-size: none; }
     .code-field { flex: 1 1 100%; }
     .code-field input { flex: 1; inline-size: auto; min-inline-size: 0; }
-    .suggest .muted { display: block; margin-inline-start: 0; }
-    /* Phones: course and 寫心得 on the first line, the bar with its count under them across the row. */
-    .suggest thead { display: none; }
-    .suggest, .suggest tbody { display: block; }
-    .suggest tbody tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-3); align-items: center; padding: var(--space-3); }
-    .suggest tbody tr + tr { border-block-start: 1px solid var(--line); }
-    .suggest tbody tr > :is(th, td):nth-child(n) { display: block; padding: 0; border: 0; }
-    .suggest-count { grid-column: 1 / -1; grid-row: 2; display: flex !important; }
-    .suggest-act { grid-column: 2; grid-row: 1; inline-size: auto; }
-    .write { min-block-size: var(--target-min); }
     /* The removable chips below already clear each filter; the text link only adds a wrapped row here. */
     .toolbar > .clear { display: none; }
     /* Category chips scroll sideways rather than wrapping into a tall block. */

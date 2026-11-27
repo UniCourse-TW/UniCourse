@@ -54,11 +54,18 @@
   let registerHref = $derived(loginHref(`${here}${page.url.search}#reply-form`, 'register'));
   /** The reply box asks for what this kind of thread needs, not a generic 說點什麼. */
   const replyPrompts: Record<string, string> = {
-    question: '修過的話，分享作業量、給分方式與上課情形。',
-    article: '想跟作者說什麼？分享你的想法或經驗。',
+    question: '修過嗎？說說作業量、給分或上課情形。',
+    article: '分享你的想法或提問。',
     announcement: '有疑問可以在這裡提出。'
   };
-  let replyPrompt = $derived(replyPrompts[post.type] ?? '分享你的經驗或回答問題。');
+  let replyPrompt = $derived(replyPrompts[post.type] ?? '分享你的想法或提問。');
+  /** Zero replies: a note beside the heading (it stays while typing, unlike a placeholder), by thread type. */
+  let emptyNote = $derived.by(() => {
+    const aboutCourse = Boolean(post.courseCode);
+    if (post.type === 'question') return aboutCourse ? '還沒有人回答。修過這門課的話，分享作業量、給分或上課情形。' : '還沒有人回答，第一則回覆就從你開始。';
+    if (post.type === 'article') return aboutCourse ? '還沒有回覆。修過這門課嗎？分享你的作業量或給分。' : '還沒有回覆，分享你的想法或提問。';
+    return '還沒有回覆。對公告有疑問可以在這裡提出。';
+  });
   /** The box grows with the text (JavaScript only), so a long answer never scrolls inside a 3-row frame. */
   function autogrow(box: HTMLTextAreaElement) {
     box.style.blockSize = 'auto';
@@ -127,14 +134,9 @@
     {:else}
       <p class="tally"><span class="label">推噓分數</span><span class="cm-score" data-sign={scoreSign(item.score)} aria-label="{kind}分數">{signed(item.score)}</span></p>
     {/if}
-    {#if !isReply}
-      {#if user}
-        <a class="action reply-link" href="#reply-form">寫回覆 <span aria-hidden="true">↓</span></a>
-      {:else}
-        <a class="action reply-link" href={signedOutHref}>登入後投票或回覆 <span aria-hidden="true">→</span></a>
-      {/if}
-      <!-- Phones put the course card between the post and the replies: a direct way past it. -->
-      {#if post.replies.length}<a class="action to-replies" href="#replies-title">看 {post.replies.length} 則回覆 <span aria-hidden="true">↓</span></a>{/if}
+    <!-- Signed out, the post shows only its score: the one sign-in call is the 參與討論 card after the replies. -->
+    {#if !isReply && user}
+      <a class="action reply-link" href="#reply-form">寫回覆 <span aria-hidden="true">↓</span></a>
     {/if}
   </div>
   {#if messageFor(item.id)}<p class="cm-alert" role="alert">{messageFor(item.id)}</p>{/if}
@@ -147,7 +149,7 @@
     <details class="more" open={form?.action === 'edit' && form.target === item.id && 'message' in form}>
       <summary class="more-btn" title={isAuthor ? `編輯或刪除這則${kind}` : '管理員選項'}>
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="currentColor"><circle cx="5" cy="12" r="1.8" /><circle cx="12" cy="12" r="1.8" /><circle cx="19" cy="12" r="1.8" /></svg>
-        <span class="more-label">{isAuthor ? `管理${kind}` : '管理員'}</span>
+        <span class="more-label">{isAuthor ? `管理${kind}` : '管理員'}</span><span class="more-caret" aria-hidden="true">▾</span>
       </summary>
       <div class="manage" role="group" aria-label="這則{kind}的管理選項">
       <p class="manage-note">{isAuthor ? '只有你看得到這些選項。作者可編輯，作者與管理員可刪除。' : '僅管理員可使用此選項。'}</p>
@@ -224,32 +226,31 @@
         </span>
         {@render manage(post, '文章')}
       </div>
+      {#if course}
+        <!-- Phones: the course in one line right under the byline (the full card follows the replies). -->
+        <p class="course-line">
+          <span class="eyebrow-inline">這門課</span>
+          {#if summary}
+            <a href="/courses/{summary.id}">{summary.title}</a> <span class="muted nowrap">{summary.schoolName}</span>
+            {#if summary.latestEnrolled != null}
+              <span class="facts-line"><span class="nowrap">{summary.latestTerm} 歷史資料：</span><span class="nowrap">已收錄 {summary.latestSections} 班合計 <strong class="num">{fmt.format(summary.latestEnrolled)}</strong> 人修課</span>{#if rating}<span class="rating-bit"><span class="sep">·</span><span class="nowrap">評價 <strong class="num">{rating.average?.toFixed(1)}</strong>（{rating.count} 則）</span></span>{/if}</span>
+            {:else}
+              <span class="facts-line"><span class="nowrap">{summary.terms} 個收錄學期</span>{#if rating}<span class="rating-bit"><span class="sep">·</span><span class="nowrap">評價 <strong class="num">{rating.average?.toFixed(1)}</strong>（{rating.count} 則）</span></span>{/if}</span>
+            {/if}
+          {:else}
+            <span class="mono">{post.courseCode}</span> <span class="muted">{schoolName}・不在目前收錄的課程中</span>
+          {/if}
+        </p>
+      {/if}
       <!-- User text is plain text: escaped by Svelte, line breaks preserved. -->
       <div class="content">{#each paragraphs(post.content) as paragraph, index (index)}<p>{paragraph}</p>{/each}</div>
       {@render controls(post, '文章')}
     </article>
 
     {#if course}
-      <!-- Phones keep the course summary visible and fold the detailed history. -->
+      <!-- Desktop: a sticky side card. Phones: the same card after the replies (the post carries a one-line summary). -->
       <aside class="course" aria-labelledby="course-card-title">
-        <div class="course-head">
-          <h2 id="course-card-title" class="eyebrow">這門課</h2>
-          {#if summary}
-            <p class="head-title"><a href="/courses/{summary.id}">{summary.title}</a> <span class="head-school">{summary.schoolName}</span></p>
-            <p class="head-facts num">
-              {#if summary.latestEnrolled != null}
-                <span class="nowrap">{summary.latestTerm} 歷史資料</span> · <span class="nowrap"><strong>{fmt.format(summary.latestEnrolled)}</strong> 人修課</span>
-              {:else}
-                <span class="nowrap">{summary.terms} 個收錄學期</span>
-              {/if}
-              {#if rating}<span class="rating-fact"><span class="sep">·</span><span class="nowrap">評價 <strong>{rating.average?.toFixed(1)}</strong>（{rating.count} 則）</span></span>{/if}
-            </p>
-          {:else}
-            <p class="head-title"><span class="mono">{post.courseCode}</span> <span class="head-school">{schoolName}</span></p>
-          {/if}
-        </div>
-        <details class="course-fold">
-          <summary class="fold-toggle"><span class="fold-open">詳情</span><span class="fold-close">收合</span><span class="cm-sr">這門課的數據與其他討論</span> <span class="chev" aria-hidden="true">▾</span></summary>
+        <h2 id="course-card-title" class="eyebrow">這門課</h2>
           <div class="course-body">
         {#if summary}
           {@const taken = share(summary.latestEnrolled, summary.latestCapacity)}
@@ -280,8 +281,7 @@
             <div>
               <dt>同學評價</dt>
               <dd class="num">
-                {#if rating}<span class="star" aria-hidden="true">★</span> {rating.average?.toFixed(1)}
-                  <small>{rating.count < 3 ? `目前僅 ${rating.count} 則` : `${rating.count} 則`}</small>{:else}尚無評價{/if}
+                {#if rating}<span class="star" aria-hidden="true">★</span> {rating.average?.toFixed(1)}<span class="inline-n">（{rating.count} 則）</span>{:else}尚無評價{/if}
               </dd>
             </div>
           </dl>
@@ -320,13 +320,13 @@
         </div>
         {/if}
           </div>
-        </details>
       </aside>
     {/if}
 
     <section class="replies" aria-labelledby="replies-title">
       <div class="replies-head">
         <h2 id="replies-title">回覆（{post.replies.length}）</h2>
+        {#if post.replies.length === 0}<p class="replies-empty">{emptyNote}</p>{/if}
         {#if post.replies.length >= SORT_TOGGLE_AT}
           <nav class="sort" aria-label="回覆排序">
             <a href={sortHref('oldest')} aria-current={newestFirst ? undefined : 'true'}>最早</a>
@@ -365,7 +365,7 @@
           <div class="cm-field">
             <div class="cm-label"><label for="reply-content">{post.replies.length ? '寫回覆' : '寫第一則回覆'}</label><span class="cm-hint">以 {user.displayName || `@${user.username}`} 的身分</span></div>
             <textarea id="reply-content" class="cm-input" name="content" required rows="3" maxlength="20000" defaultValue={replyDraft}
-              placeholder={post.replies.length ? replyPrompt : '還沒有回覆，說點什麼？'} aria-describedby="reply-hint"
+              placeholder={replyPrompt} aria-describedby="reply-hint"
               oninput={(event) => { replyText = event.currentTarget.value; autogrow(event.currentTarget); }}></textarea>
           </div>
           {#if form?.action === 'reply' && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
@@ -377,18 +377,18 @@
               {:else if replying}<span class="hint">送出中，請稍候…</span>
               {:else}<span class="hint">{hydrated && replyEmpty ? '輸入內容後才能送出' : '純文字，保留換行'}</span>{/if}
             </p>
-            <span class="cm-count" aria-live="polite">{fmt.format(replyLength)} / 20,000</span>
+            <span class="cm-count" aria-live="polite">{fmt.format(replyLength)} / 20,000 字</span>
             <!-- Without JavaScript the button is always live; with it, an empty box cannot be sent. -->
             <button class="cm-btn send" aria-busy={replying} aria-disabled={hydrated && replyEmpty || undefined} disabled={replying || (hydrated && replyEmpty)}>{replying ? '送出中…' : '送出回覆'}</button>
           </div>
         </form>
       {:else}
-        <div class="login"  id="reply-form">
+        <div class="login" id="reply-form">
           <h3>參與討論</h3>
-          <p>登入或建立帳號後會回到這篇討論，就能投票與回覆。</p>
+          <p>推、噓與回覆需要登入。</p>
           <div class="login-actions">
             <a class="cm-btn" href={signedOutHref}>登入並回到這篇討論</a>
-            <a class="cm-btn secondary" href={registerHref}>建立帳號</a>
+            <a class="register" href={registerHref}>還沒有帳號？<span class="register-cta">建立帳號 <span aria-hidden="true">→</span></span></a>
           </div>
         </div>
       {/if}
@@ -449,6 +449,8 @@
     font-weight: 600;
     cursor: pointer;
   }
+  .more-caret { color: var(--muted); font-size: 0.75em; }
+  .more[open] .more-caret { rotate: 180deg; }
   .more-btn:hover, .more[open] > .more-btn { color: var(--brand-ink); border-color: var(--brand); background: var(--brand-wash); }
   /* No content-visibility here: its paint containment would clip the dropdown to a zero-size box. */
   .more:not([open])::details-content { display: none; }
@@ -503,9 +505,7 @@
   }
   .action::-webkit-details-marker { display: none; }
   .action:hover { color: var(--brand-ink) !important; background: var(--hover-row); }
-  .reply-link, .to-replies { color: var(--brand-ink) !important; gap: 0.3em; }
-  /* Desktop: the replies follow the post directly (the course card is in the side column). */
-  @media (min-width: 56.01rem) { .with-aside .to-replies { display: none; } }
+  .reply-link { color: var(--brand-ink) !important; gap: 0.3em; }
   /* Delete is the one destructive tool, so it carries the danger colour even before it is opened. */
   .action.delete { color: var(--down) !important; }
   .danger > .action:hover, .danger > .action:focus-visible { color: var(--down) !important; background: color-mix(in srgb, var(--down) var(--status-tint), var(--panel-raised)); }
@@ -524,15 +524,21 @@
   .submit-row .status { flex: 1 1 auto; margin: 0 !important; font-size: var(--t-base); }
   .submit-row .ok { color: var(--up); font-weight: 600; }
   .submit-row .hint, .submit-row .cm-count { color: var(--ink-2); font-size: var(--t-sm); }
-  /* Not sendable yet: the brand outline stays (dashed), the fill goes, and the label keeps AA contrast
-     (muted on the panel: 5.9:1 light, 6.6:1 dark), so it reads as 'not yet' rather than missing. */
+  /* Not sendable yet: the standard disabled look (solid low-contrast border, muted fill); dashed lines are
+     kept for chart data-quality marks. The label stays AA: --muted on --chip is 5.4:1 light, 5.6:1 dark. */
   .reply-form .send:disabled:not([aria-busy='true']) {
     color: var(--muted) !important;
-    background: transparent;
-    border: 1px dashed color-mix(in srgb, var(--brand) 70%, var(--panel));
+    background: var(--chip);
+    border: 1px solid var(--line);
+    cursor: not-allowed;
+    filter: none;
   }
   .reply-form textarea::placeholder { color: var(--muted); opacity: 1; }
-  .login-actions { display: flex; flex-wrap: wrap; flex-basis: 100%; gap: var(--space-3); }
+  .login-actions { display: flex; flex-wrap: wrap; flex-basis: 100%; gap: var(--space-2) var(--space-4); align-items: center; }
+  /* The second path is a text link with a full-size target, clearly below the solid sign-in button. */
+  .register { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--ink-2) !important; font-size: var(--t-base); text-decoration: none; }
+  .register-cta { margin-inline-start: 0.25em; color: var(--brand-ink); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand-ink) 45%, transparent); text-underline-offset: 0.2em; }
+  .register:hover .register-cta { text-decoration-color: currentColor; }
 
   .course {
     position: relative;
@@ -544,11 +550,9 @@
     font-size: var(--t-base);
   }
   .eyebrow { color: var(--muted) !important; font-size: var(--t-sm) !important; font-weight: 600 !important; letter-spacing: 0 !important; }
-  /* Desktop: the head is just the eyebrow; the body is always open and the phone-only parts are hidden. */
-  .course-fold > summary { list-style: none; pointer-events: none; }
-  .course-fold > summary::-webkit-details-marker { display: none; }
-  .course-fold::details-content { display: block; content-visibility: visible; }
-  .course-head .head-title, .head-facts, .fold-toggle { display: none; }
+  /* The post's one-line course summary is for phones; wide screens have the side card. */
+  .course-line { display: none; }
+  .inline-n { color: var(--muted); font-weight: 400; font-size: var(--t-sm); }
   .course-title { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: baseline; margin-block-start: var(--space-2) !important; }
   .course-title a { font-size: var(--t-lg); font-weight: 650; }
   .code { color: var(--muted); }
@@ -583,7 +587,8 @@
 
   .replies { min-inline-size: 0; }
   .replies-head { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: baseline; justify-content: space-between; }
-  .replies h2 { font-size: var(--t-lg) !important; }
+  .replies h2 { font-size: var(--t-xl) !important; }
+  .replies-empty { flex-basis: 100%; color: var(--ink-2); font-size: var(--t-base); text-wrap: pretty; }
   .sort { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--radius-pill); background: var(--chip); font-size: var(--t-sm); }
   .sort a { display: inline-flex; align-items: center; min-block-size: 2rem; padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--ink-2); font-weight: 600; text-decoration: none; }
   .sort a[aria-current='true'] { color: var(--ink); background: var(--panel-raised); box-shadow: inset 0 0 0 1px var(--line); }
@@ -610,27 +615,28 @@
     /* The desktop sticky offset must not survive as a relative shift on phones. */
     .with-aside .course { position: relative; inset-block-start: auto; }
     .layout { gap: var(--space-4); }
-    /* Phone card: two lines (course name as the link to its page, then the key numbers) with a small
-       詳情 toggle in the top corner; the history and other threads open below on demand. */
-    .course { display: block; padding: var(--space-2) var(--space-3); }
-    .course-head { display: grid; gap: 0; padding-inline-end: 4.5rem; }
-    .course-head .head-title { display: block; margin: 0; min-inline-size: 0; color: var(--ink); font-size: var(--t-base); font-weight: 650; line-height: 1.5; overflow-wrap: anywhere; }
-    .head-title a { font-weight: 650; }
-    .course-head .eyebrow { position: absolute; clip-path: inset(50%); }
-    .head-school { margin-inline-start: 0.4em; color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
-    .head-facts { display: block; color: var(--ink-2); font-size: var(--t-sm); line-height: 1.55; }
-    .course-fold > summary { pointer-events: auto; cursor: pointer; }
-    .fold-toggle { position: absolute; inset-block-start: 0; inset-inline-end: 0; display: inline-flex; gap: 0.3em; align-items: center; justify-content: center; min-block-size: var(--target-min); min-inline-size: var(--target-min); padding: 0 var(--space-3); border-radius: var(--radius-control); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; }
-    .fold-toggle:hover { background: var(--hover-row); }
-    .fold-toggle .fold-close, .course-fold[open] .fold-toggle .fold-open { display: none; }
-    .course-fold[open] .fold-toggle .fold-close { display: inline; }
-    .course-fold[open] .chev { rotate: 180deg; }
-    .course-fold::details-content { content-visibility: auto; }
-    .course-fold:not([open])::details-content { content-visibility: hidden; }
-    .course-body { margin-block-start: var(--space-2); padding-block: var(--space-1) var(--space-2); border-block-start: 1px solid var(--line); }
-    /* The head already names the course; the body starts with school and department. */
-    .course-title { display: none; }
-    .course-body > .sub:first-of-type { margin-block-start: var(--space-2) !important; }
+    /* Phones: the full card comes after the replies and the reply box, so the post reads straight into
+       its replies; the post carries the one-line summary instead. */
+    .with-aside .course { order: 3; }
+    .course-line {
+      display: block;
+      margin-block-start: var(--space-3) !important;
+      padding: var(--space-2) var(--space-3);
+      border-inline-start: 3px solid var(--brand);
+      border-radius: 0 var(--radius-control) var(--radius-control) 0;
+      background: var(--panel);
+      color: var(--ink-2);
+      font-size: var(--t-sm);
+      line-height: 1.6;
+    }
+    .course-line .eyebrow-inline { margin-inline-end: 0.4em; color: var(--muted); font-weight: 600; }
+    .course-line a { font-size: var(--t-base); font-weight: 650; }
+    .course-line .muted { margin-inline-start: 0.25em; color: var(--muted); }
+    .course-line .facts-line { display: block; }
+    /* The rating takes its own line rather than leaving a separator dangling at a line end. */
+    .course-line .rating-bit { display: block; }
+    .course-line .rating-bit > .sep { display: none; }
+    .course-line strong { color: var(--ink); font-weight: 650; }
     .facts { margin-block: var(--space-2) var(--space-1); }
     .teachers { margin-block-end: var(--space-2) !important; }
   }
@@ -641,15 +647,14 @@
     .meta { flex-wrap: wrap; align-items: flex-start; }
     .byline { flex: 1 1 0; }
     .more-btn { min-block-size: var(--target-min); min-inline-size: var(--target-min); justify-content: center; margin-block: -0.5rem; padding: 0; }
-    .more-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    /* The label stays visible (管理文章 / 管理回覆), so the two menus are told apart without opening them. */
+    .more-btn { padding-inline: var(--space-2); }
     /* The menu hangs from the byline's left edge, wherever the button wrapped to. */
     .meta { position: relative; }
     .more { position: static; }
     /* Phones: the time takes the byline's second line, without a dangling separator. */
     .byline .timestamp { flex-basis: 100%; }
     .byline .sep.lead { display: none; }
-    .rating-fact { display: block; }
-    .rating-fact > .sep { display: none; }
     .submit-row { gap: var(--space-2); }
     .submit-row .status:empty { display: none; }
     /* Phones: condition and count share the line under the box; the button gets its own full row. */
