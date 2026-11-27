@@ -1,0 +1,774 @@
+{
+  "judge": "opus",
+  "round": 10,
+  "pages": [
+    {
+      "id": "home",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 9,
+        "viz": 8,
+        "family": 9,
+        "type": 8,
+        "mobile": 8,
+        "theme": 9,
+        "a11y": 8,
+        "states": 8,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 8.33,
+      "top_issues": [
+        "Phone (both themes): the top-10 ranking renders as ~185 px cards, so the 10 rows run ~1,800 px before the coverage section; compress each card to two lines (rank+name+number on one, school·code+sparkline on the other) or use the sticky-first-column table.",
+        "Ranking sparklines (desktop+phone): several NTU rows have only 2–3 points and the rows use different x-domains, so slopes are not comparable; draw all on the same 105-1…115-1 domain and break the line at gaps.",
+        "Coverage summary table (desktop): the nine school rows look identical (same status, similar bars) and add little scannable signal; collapse to one summary line + 'see /schools' or highlight what differs (latest term, missing years).",
+        "Rows showing '近期未公布' as a floating dash in the number column read as zero at a glance; put the reason text in the cell (muted, 12 px) so missing ≠ 0 is explicit.",
+        "Phone: the '多看各校課程' link sits detached below the ranking with a large gap; attach it to the ranking frame footer like '完整排行 →'."
+      ],
+      "keep": [
+        "Search-first masthead with one input and real ten-year enrollment ranking from production data.",
+        "Consistent zinc+purple tokens, tabular numbers and dark theme re-coloured rather than inverted."
+      ]
+    },
+    {
+      "id": "search",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": 7,
+        "family": 9,
+        "type": 8,
+        "mobile": 8,
+        "theme": 9,
+        "a11y": 8,
+        "states": 8,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 8.17,
+      "top_issues": [
+        "Desktop: four stacked rows (result meta, top pager, '本頁學校' details, legend) sit between the toolbar and the table, pushing the first result below ~600 px; merge meta+pager into one count line and move the legend into the 人數 column header tooltip.",
+        "Enrollment bar appears only on rows that have a quota, so the column is visually sparse and uneven; reserve the bar track on every row (empty track + '—' when capacity is missing) so the column scans as one chart.",
+        "'時地未公布' repeats on many rows in the time column as full text; use a single muted '—' with a column-level footnote to cut noise.",
+        "Phone (both themes): 20 result cards make the page ~7,000 px; tighten each card (title + one meta line + enrollment bar) to ~110 px and keep the pager sticky at the bottom.",
+        "Phone: the '結果顯示' label floats alone on its own row above the cards; fold it into the count line."
+      ],
+      "keep": [
+        "Filter toolbar with in-field labels and chips that double as counts, matching the site.observe.tw pattern.",
+        "Table rows link to course/instructor/department separately with tabular numbers."
+      ]
+    },
+    {
+      "id": "search-empty",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 8,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 9,
+        "states": 9,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 8.73,
+      "top_issues": [
+        "Desktop: the empty state sits left with a right column of only four school links and a large blank area; centre the empty block in the results frame per states.md or give the right column real suggestions (nearest matches, 全部學期 count).",
+        "Phone: the echoed query is truncated ('zzzz-no-such-cours…'); wrap it or ellipsize inside quotes with the full value in a title attribute.",
+        "Copy uses '沒有符合的課程' while the storyboard and other states say '找不到「{q}」的課程'; align the headline so the query is quoted in the title itself.",
+        "Example searches are generic popular terms unrelated to the query; when filters are set also show a '清除篩選' text link next to '查全部學期'."
+      ],
+      "keep": [
+        "Empty state keeps the header and toolbar in place and offers a one-click '查全部學期' recovery.",
+        "Both themes keep the panel frame and contrast."
+      ]
+    },
+    {
+      "id": "schools",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 9,
+        "viz": 9,
+        "family": 9,
+        "type": 8,
+        "mobile": 7,
+        "theme": 9,
+        "a11y": 8,
+        "states": 8,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 8.33,
+      "top_issues": [
+        "Phone (both themes): each school row becomes a ~200 px card with the coverage strip squeezed into the right column and the 班次 bar dropped, so the page runs ~6,700 px; use a two-line row with the coverage strip full-width under the name and keep the 班次 bar.",
+        "Phone: two separate disclosures ('更多篩選' and the system/shortcut chips) are stacked with large gaps; merge into one '篩選與排序 +' details per design-language toolbar rule.",
+        "Desktop table header for the coverage column packs legend, axis years and sort arrow into one th; move the legend above the table and keep only years + sort in the header.",
+        "The third stat tile shows a stacked status bar with no title or numbers beside segments; add the label and n for each segment (live/partial/blocked).",
+        "Page h1 is hero-sized (~34 px) unlike other inner pages (24 px); use the standard page-head scale."
+      ],
+      "keep": [
+        "Ten-year coverage heat strip per school drawn on one scale — the clearest visual of data completeness.",
+        "Status colours follow the token mapping (live/partial/blocked/planned) in both themes."
+      ]
+    },
+    {
+      "id": "school",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": 8,
+        "family": 9,
+        "type": 8,
+        "mobile": 8,
+        "theme": 9,
+        "a11y": 8,
+        "states": 8,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 8.25,
+      "top_issues": [
+        "Top-10 ranking sparklines: rows with gapped terms render as isolated dots (rows 7, 8, 10) which read as noise; draw a dot only for single points and use a dashed connector across gaps, or replace with a fixed-domain bar strip.",
+        "Department table shows only 8 rows per page (23 pages) and ends well above the right column, leaving the two-column layout unbalanced; show 20 rows with the 班次 bar and make the pager compact.",
+        "Term trend line chart starts the y-axis around 3,400, visually exaggerating the drop even with the note; start at 0 or add a clear axis-break marker.",
+        "The term select + '查該期' button sits inside the chart card and competes with the chart title; move it to the department table header where it filters.",
+        "Phone: the ranking turns into tall cards with tiny 36 px bars that look nearly identical; widen bars to the card width so differences are visible."
+      ],
+      "keep": [
+        "Header stat tiles + search-this-school input give the first screen a clear job.",
+        "Department table with proportional bars on a shared scale."
+      ]
+    },
+    {
+      "id": "department",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 9,
+        "viz": 9,
+        "family": 9,
+        "type": 8,
+        "mobile": 7,
+        "theme": 9,
+        "a11y": 8,
+        "states": 8,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 8.33,
+      "top_issues": [
+        "Phone (both themes): 24 offering cards make the page ~7,900 px; use a denser two-line card or the sticky-first-column table, and paginate at 20.",
+        "Offering meta line ('ECON3015 · 001 班 · 選課 0839') is fully underlined and muted, reading as one big link; underline only the course code link and render the rest as plain muted text.",
+        "The in-page search input has no placeholder or visible label hint; add '課名、教師或課號' placeholder and a search icon.",
+        "Top '下一頁' is a lone text link above the table; move pagination to the table footer with 'n / N 頁' and keep the top only as a count.",
+        "Phone: term pills wrap to two rows; make the pill row horizontally scrollable with an edge fade."
+      ],
+      "keep": [
+        "Term-by-term offering bars share one scale and make the department's size trend readable.",
+        "Rows keep '0 學分' and '教師未列' explicit instead of hiding missing values."
+      ]
+    },
+    {
+      "id": "instructor",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 9,
+        "viz": 8,
+        "family": 9,
+        "type": 8,
+        "mobile": 7,
+        "theme": 9,
+        "a11y": 8,
+        "states": 9,
+        "copy": 9,
+        "feel": 8
+      },
+      "mean": 8.42,
+      "top_issues": [
+        "Desktop: the 歷年授課 matrix occupies only ~540 px and leaves the right half of the section empty; widen columns to the content width or place the summary tiles beside it.",
+        "Phone: matrix cells clip and overlap ('114-2 ↗113-2 ↗') and course names truncate ('永續轉型、科…'); make the matrix horizontally scrollable with a sticky course column and a '左右捲動' hint.",
+        "'顯示其餘 11 班' details sits after the table on desktop, detached from the group it expands; attach it as the last row inside the table frame.",
+        "Header actions mix an underlined text link ('看開課列表 ↓') with a bordered button ('到其他網站搜尋 ↓') for the same kind of jump; use one style.",
+        "Dot-size encoding uses only three coarse bins; add a size legend with the bin thresholds or switch to a value label."
+      ],
+      "keep": [
+        "Cross-term teaching matrix is the right visual for a teacher's history.",
+        "External search links and PTT index presented with clear 'not copied' wording."
+      ]
+    },
+    {
+      "id": "course",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 9,
+        "viz": 8,
+        "family": 9,
+        "type": 8,
+        "mobile": 8,
+        "theme": 9,
+        "a11y": 8,
+        "states": 9,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 8.42,
+      "top_issues": [
+        "Trend chart (desktop+phone): the 111-1 '本班' bar is near zero because only 2 of ~38 sections were collected, so it reads as a collapse despite the footnote; draw partially collected terms as hatched/ghost bars or plot per-section average.",
+        "'展開其餘 8 期' control sits above the rows it reveals; move it to the bottom of the visible rows (or show a '⋯ 8 期' gap row in place).",
+        "Phone: the first x-axis label of the chart is clipped at the left edge; add left padding equal to half a label width.",
+        "'同學評價 4.0' tile renders the value in muted grey so it looks disabled; use --ink for the number and muted only for the n.",
+        "Phone: tile titles wrap ('111-1・已收錄班次合計' to two lines); shorten to '本期合計' with the term in the sub-line."
+      ],
+      "keep": [
+        "Five stat tiles + term table give quota/enrollment at a glance, with missing data shown as '—' not 0.",
+        "Over-quota and partial-collection states are explained inline."
+      ]
+    },
+    {
+      "id": "course-reviewed",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 9,
+        "viz": 9,
+        "family": 9,
+        "type": 8,
+        "mobile": 8,
+        "theme": 9,
+        "a11y": 8,
+        "states": 9,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 8.5,
+      "top_issues": [
+        "Term table collapses the middle: 113-1 is followed directly by '108-2 本頁' with no gap marker; insert a '⋯ 展開其餘 15 期' row at the gap instead of the expand button above the table.",
+        "PTT block (desktop): meta lines are ~11–12 px and dense, and only 4/43 posts show before '再顯示 5 篇'; show 8 by default and raise the meta to 13 px.",
+        "The empty '課程評價' card follows the long PTT block full-width and feels orphaned; place it beside the PTT summary on desktop or fold it into the reviews heading.",
+        "Phone: tile sub-lines wrap awkwardly ('僅計已公 / 布 ↓'); shorten the sub copy or let the tile span two columns.",
+        "Phone: first x-axis label of the trend chart is clipped at the left edge."
+      ],
+      "keep": [
+        "'本班教師' grouping separates this teacher's posts from other teachers', with type chips carrying counts.",
+        "Yearly post histogram drawn to scale with values on bars."
+      ]
+    },
+    {
+      "id": "forum",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": 8,
+        "family": 9,
+        "type": 8,
+        "mobile": 8,
+        "theme": 9,
+        "a11y": 8,
+        "states": 8,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 8.25,
+      "top_issues": [
+        "Desktop: '熱門課程徵心得' list is only ~728 px wide and leaves the right half empty; make it full width with an enrollment bar, or put it in a right rail beside the post table.",
+        "Desktop nav shows only a search icon here while thread/auth pages show the full search field; use the same nav state on every page at 1280 px.",
+        "Type chips show '公告 0' as a clickable chip; disable or hide zero-count chips, or give the 公告 filter an empty-state message.",
+        "Post table tag chips and meta are 12 px and low contrast in light mode; raise to 13 px and darken the tag text.",
+        "Phone: rows in '熱門課程徵心得' have tight separators and right-aligned numbers far from names; add 8 px vertical padding and a bar to connect them."
+      ],
+      "keep": [
+        "Toolbar with search, school, course code and tag filters plus counted type chips matches the family filter pattern.",
+        "Desktop post table with reply/score/time columns right-aligned and tabular."
+      ]
+    },
+    {
+      "id": "thread",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 8,
+        "viz": 8,
+        "family": 9,
+        "type": 8,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 8,
+        "states": 9,
+        "copy": 9,
+        "feel": 8
+      },
+      "mean": 8.58,
+      "top_issues": [
+        "'編輯／刪除選項 ▾' repeats under every post at the far right with a wide gap from the vote buttons; collapse into a '⋯' menu button next to the meta line.",
+        "Phone (both themes): the edit/delete options drop onto their own row under the vote buttons, adding an orphan line; put them in the post meta row.",
+        "Disabled '送出回覆' button is light grey on grey (dark theme especially) and below AA for its label; keep the brand outline with reduced opacity and the hint text beside it.",
+        "Desktop sidebar metric labels ('修課／名額・歷史資料') are ~11 px; raise to 12 px muted.",
+        "Reply votes show '▲推 0 ▼噓' with the score between the buttons; align with the post's vote group so the number reads as the score."
+      ],
+      "keep": [
+        "Course context sidebar (terms, enrollment bar, rating, other threads) links discussion back to data.",
+        "Vote state (推 ✓) and reply composer identity line are clear."
+      ]
+    },
+    {
+      "id": "thread-empty",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 8,
+        "viz": 8,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 8,
+        "states": 9,
+        "copy": 9,
+        "feel": 8
+      },
+      "mean": 8.67,
+      "top_issues": [
+        "'還沒有回覆' is just a heading; add the states.md nudge ('還沒有回覆，說點什麼？') as helper copy inside the composer so the empty state invites action.",
+        "Phone: '編輯／刪除選項' sits alone on its own row below the vote buttons; merge into the meta row.",
+        "Disabled '送出回覆' button contrast is low in dark theme; keep brand outline at reduced opacity.",
+        "The composer textarea already has a purple border at rest, which looks focused; use --axis at rest and brand only on focus."
+      ],
+      "keep": [
+        "Composer is placed exactly where replies would be with a first-reply placeholder.",
+        "Sidebar gives the same course context as the populated thread."
+      ]
+    },
+    {
+      "id": "thread-signed-out",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 8,
+        "viz": 8,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 8,
+        "states": 9,
+        "copy": 9,
+        "feel": 9
+      },
+      "mean": 8.75,
+      "top_issues": [
+        "'登入並回到這篇討論' appears twice (inline next to the score and as the card button); keep the inline one as '登入後可投票' and the card as the only CTA.",
+        "'建立帳號' is a small text link beside the primary button; give it secondary-button styling so both paths have ≥44 px targets.",
+        "Score pills ('分數 +1') are read-only but look like buttons; drop the pill background or add a 'read-only' cue.",
+        "Desktop sidebar metric labels are ~11 px; raise to 12 px."
+      ],
+      "keep": [
+        "Signed-out readers see the full thread with read-only scores and one clear path back after sign-in.",
+        "Return-to-thread promise in the CTA copy."
+      ]
+    },
+    {
+      "id": "auth",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 8,
+        "states": 9,
+        "copy": 9,
+        "feel": 9
+      },
+      "mean": 8.91,
+      "top_issues": [
+        "Nav keeps the '登入' button highlighted while already on the sign-in page; hide it or mark it aria-current on /auth.",
+        "'聯絡維護者重設密碼 ↗' link plus helper line sit between the password field and the primary button, interrupting the form flow; move it under the button with the '不登入' link.",
+        "Desktop: the 430 px card floats in a wide empty page; add one line of value context (what an account unlocks) beside or below, or reduce top whitespace.",
+        "Helper text is 12 px muted; raise to 13 px for CJK legibility."
+      ],
+      "keep": [
+        "Tabbed sign-in/register with return-to destination stated up front.",
+        "'不登入，繼續查課' escape keeps the no-login promise visible."
+      ]
+    },
+    {
+      "id": "auth-error",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 9,
+        "states": 9,
+        "copy": 9,
+        "feel": 9
+      },
+      "mean": 9.0,
+      "top_issues": [
+        "Alert link '確認帳號名稱' is ambiguous (it only focuses the field); reword to '檢查帳號拼字' or make it plain text since the field is right below.",
+        "'登入後會回到：論壇發文（需登入）' — the parenthetical is redundant on a sign-in page; show the destination title only.",
+        "Nav '登入' button still active on the sign-in page.",
+        "Consider marking the username field with the error tint too, since either field may be wrong."
+      ],
+      "keep": [
+        "Error keeps the username, focuses the password, and uses role=alert styling with icon + red wash in both themes.",
+        "'重新登入' button label changes to match the retry state."
+      ]
+    },
+    {
+      "id": "auth-locked",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 8,
+        "states": 9,
+        "copy": 9,
+        "feel": 8
+      },
+      "mean": 8.82,
+      "top_issues": [
+        "Lockout says '約 60 秒' but the disabled '等待重試' button has no live countdown; show '等待重試（58 秒）' and re-enable automatically.",
+        "Disabled '等待重試' button text is low contrast, especially in dark theme; keep ≥4.5:1 for the label even when disabled.",
+        "The reset-password link is the real escape here but keeps the same weight as normally; promote it inside the warning box.",
+        "Nav '登入' button still active on the sign-in page."
+      ],
+      "keep": [
+        "Warning uses --warn wash distinct from error red, with clear time and alternatives.",
+        "Username is preserved so the user only re-types the password."
+      ]
+    },
+    {
+      "id": "auth-pending",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 9,
+        "states": 9,
+        "copy": 9,
+        "feel": 9
+      },
+      "mean": 9.0,
+      "top_issues": [
+        "The pending '登入中…' button switches to a pale wash that can read as disabled; keep the solid brand fill with the spinner and aria-busy.",
+        "'停止等待並繼續查課' is awkward; use '取消，繼續查課'.",
+        "Disabled inputs drop to very low contrast in dark theme; keep values readable at ≥4.5:1.",
+        "Nav '登入' button still active on the sign-in page."
+      ],
+      "keep": [
+        "Inputs lock and the button shows a spinner without layout shift.",
+        "Escape link stays available during the wait."
+      ]
+    },
+    {
+      "id": "auth-register",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 9,
+        "states": 9,
+        "copy": 9,
+        "feel": 9
+      },
+      "mean": 9.0,
+      "top_issues": [
+        "Password hint shows a stray empty circle glyph before '8–128 個字元' that looks like a broken radio button; replace with a proper pending icon or remove until validation runs.",
+        "Heading says '加入 UniCourse 社群' while the tab and button say '建立帳號'; use one term.",
+        "'顯示名稱（選填）' expander sits far below the fields with extra spacing; tighten to 12 px after the password hint.",
+        "Nav '登入' button still active on the register page."
+      ],
+      "keep": [
+        "Username rule and 'public, cannot change' note are shown before typing.",
+        "Terms/privacy consent is one inline sentence above the button."
+      ]
+    },
+    {
+      "id": "auth-register-error",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 9,
+        "states": 9,
+        "copy": 9,
+        "feel": 9
+      },
+      "mean": 9.0,
+      "top_issues": [
+        "Username field shows a red error border inside a purple focus ring (double ring); in error state use a red focus ring only.",
+        "'顯示名稱（選填）' expander gets a grey panel background and outdents ~8 px past the field edge in this state; keep it aligned with the inputs and without background.",
+        "Inline error line packs the message and '這是你的帳號？用它登入 →' on one row at 13 px; on phone put the link on its own line.",
+        "Suggestion chips are good; add aria-label '使用 ui_climb_demo2' so screen readers know they fill the field."
+      ],
+      "keep": [
+        "One-tap username suggestions and a direct 'sign in instead' path.",
+        "Password is kept and validated ('符合長度要求') so only the username needs fixing."
+      ]
+    },
+    {
+      "id": "auth-signed-in",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 9,
+        "states": 9,
+        "copy": 9,
+        "feel": 9
+      },
+      "mean": 9.0,
+      "top_issues": [
+        "Phone: ~450 px of empty space under the card before the footer; pull the footer up or add recent activity.",
+        "Secondary links '查看公開個人頁（1 則評價、2 篇文章）' and '編輯個人資料' sit on one line and wrap awkwardly on phone; stack them as two full-width rows.",
+        "Desktop card gives no next-step beyond home; add 'return to where you were' when a destination exists.",
+        "Logout is a red outlined button inside the same card as the primary CTA; separate it visually with a lighter style."
+      ],
+      "keep": [
+        "Clear confirmation with account handle and what is now possible.",
+        "Logout explained ('只登出這個瀏覽器')."
+      ]
+    },
+    {
+      "id": "settings",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 9,
+        "states": 9,
+        "copy": 9,
+        "feel": 8
+      },
+      "mean": 8.91,
+      "top_issues": [
+        "Desktop: the 公開資料 card stretches to the right column height, leaving ~70 px dead space under '尚未變更'; let the cards size to content (align-items:start).",
+        "Disabled '儲存' is grey on grey with low label contrast; keep a brand outline at reduced opacity.",
+        "Phone: the '預覽個人頁' disclosure is tucked beside the disabled save button; move it above the form or below the save row.",
+        "Phone: 公開資料 card has ~90 px empty bottom padding."
+      ],
+      "keep": [
+        "Form fields have counters, 'optional' tags and per-field visibility notes.",
+        "Account panel separates immutable username, password reset path and logout."
+      ]
+    },
+    {
+      "id": "settings-saved",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 9,
+        "states": 9,
+        "copy": 9,
+        "feel": 9
+      },
+      "mean": 9.0,
+      "top_issues": [
+        "'查看公開個人頁 →' appears twice (page header and under the success pill); keep one.",
+        "Success pill is 12 px; raise to 13 px and announce via role=status.",
+        "Desktop left card still has dead space below; let cards size to content.",
+        "Preview card on the right doesn't flash or mark 'updated'; add a brief highlight so the saved change is visible."
+      ],
+      "keep": [
+        "Inline green '已儲存，個人頁已更新' feedback without page jump.",
+        "Save returns to disabled until the next change."
+      ]
+    },
+    {
+      "id": "profile",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 8,
+        "viz": 7,
+        "family": 9,
+        "type": 8,
+        "mobile": 8,
+        "theme": 9,
+        "a11y": 8,
+        "states": 8,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 8.17,
+      "top_issues": [
+        "Desktop: the reviews table is ~935 px wide while the posts table is 1,224 px; give both tables the same content width.",
+        "Two lines of hedging copy ('只有 1 則，還看不出給分習慣' + '給分分布將在累積 3 則後顯示') precede a one-row table; merge into one muted line.",
+        "Stat tile '此帳號的平均給分 4 / 5' duplicates a single review; show it only when n ≥ 3 and otherwise show '—（需 3 則）'.",
+        "'看評價 ↓ 看文章 ↓' jump links are redundant on a page this short; remove or make them chips with counts.",
+        "Phone: the third stat tile spans the full row alone and the bio is indented under the name, misaligned with the tiles; use a 3-up compact tile row and align the bio to the left edge."
+      ],
+      "keep": [
+        "Public profile reuses the forum post table and the course review table with real links.",
+        "Honest small-n handling for score distribution."
+      ]
+    },
+    {
+      "id": "landscape",
+      "scores": {
+        "task": 9,
+        "hierarchy": 8,
+        "density": 9,
+        "viz": 9,
+        "family": 9,
+        "type": 8,
+        "mobile": 8,
+        "theme": 9,
+        "a11y": 8,
+        "states": 8,
+        "copy": 8,
+        "feel": 8
+      },
+      "mean": 8.42,
+      "top_issues": [
+        "Phone: per-school rows show a bare '5 / 5 / 1' triplet; the desktop mini status bar is dropped, so the numbers lose meaning; keep the mini bar or label the triplet (運作／停止／不明).",
+        "Desktop+phone: three explanatory paragraphs precede the 各校 table; move details into the methodology section and keep one dek line.",
+        "Desktop '跨校與全國平台' table truncates 說明 with '▾' on every row; show two lines and expand on click, or drop the column on narrow widths.",
+        "'回篩選 ↑' links repeat on every section header; one sticky 'back to filters' affordance is enough.",
+        "Desktop filter row has five selects + checkbox in one line and feels crowded; group type/function/status into one '篩選' details like the phone version."
+      ],
+      "keep": [
+        "Stat tiles, stacked status bars and top-N bars are drawn on shared scales with clear legends.",
+        "Methodology section ('本頁的資料來源與計算方式') and JSON download match the family transparency pattern."
+      ]
+    },
+    {
+      "id": "legal",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 9,
+        "states": 9,
+        "copy": 9,
+        "feel": 9
+      },
+      "mean": 9.0,
+      "top_issues": [
+        "'外部評論索引' section hides key facts in four stacked collapsed details; surface the board list and retention inline and keep only one details for the long rules.",
+        "The gap between the '白話重點' box and the first H2 is much tighter (~12 px) than between other sections (~40 px); use the same section spacing.",
+        "Contact cards' meta bullets are ~11 px muted; raise to 12–13 px.",
+        "Header link says '聯絡與移除' while privacy says '移除與聯絡'; use one name across both pages."
+      ],
+      "keep": [
+        "Plain-language summary box first, then TOC + sections — the right legal pattern.",
+        "Private vs public contact channels are clearly contrasted."
+      ]
+    },
+    {
+      "id": "legal-privacy",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 9,
+        "states": 9,
+        "copy": 9,
+        "feel": 9
+      },
+      "mean": 9.0,
+      "top_issues": [
+        "Section naming differs from terms ('移除與聯絡' vs '聯絡與移除'); unify.",
+        "'白話重點' has seven bullets; trim to four or five so it stays a summary.",
+        "Gap after the summary box to the first H2 is tighter than other section gaps.",
+        "Contact card meta bullets ~11 px; raise to 12–13 px."
+      ],
+      "keep": [
+        "Data table (資料／用途／是否公開) becomes stacked labelled cards on phone without horizontal scroll.",
+        "Explicit 'not used for training' and robots Content-Signal statement."
+      ]
+    },
+    {
+      "id": "notfound",
+      "scores": {
+        "task": 9,
+        "hierarchy": 9,
+        "density": 9,
+        "viz": null,
+        "family": 9,
+        "type": 9,
+        "mobile": 9,
+        "theme": 9,
+        "a11y": 9,
+        "states": 9,
+        "copy": 9,
+        "feel": 9
+      },
+      "mean": 9.0,
+      "top_issues": [
+        "'熱門搜尋' chips are generic (資料結構、微積分…) and unrelated to the missing course; if the URL carries a code or school, prefill or suggest from it.",
+        "Under '其他查找方式' the first link is brand-coloured and the others ink-coloured; style all three the same.",
+        "'網址中的班次編號 999999999' meta line is useful but low contrast at 12 px; raise to 13 px.",
+        "Desktop nav here shows only a search icon while other pages show the search field; keep the nav consistent."
+      ],
+      "keep": [
+        "404 offers a real search form with term select in place, not a dead end.",
+        "Clear explanation of why the link may have expired."
+      ]
+    }
+  ]
+}
