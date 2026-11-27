@@ -194,7 +194,7 @@
   .ratings a { color: var(--brand-ink); text-underline-offset: 0.15em; }
   .ratings :is(a, button, input, textarea, summary):focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .num, .mono { font-variant-numeric: tabular-nums; }
-  .mono { font-family: var(--font-mono); font-size: 0.95em; }
+  .mono { font-family: var(--font-mono); font-size: max(0.95em, 0.8125rem); }
   h2 { font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); }
   .scope { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; overflow-wrap: anywhere; }
 

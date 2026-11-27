@@ -93,20 +93,34 @@
   let notesPeek = $derived(course.notes?.trim().replace(/\s+/gu, ' ') || undefined);
   /** Sections in page order, for the jump chips (sticky on phones, the one in view highlighted). */
   let sections = $derived.by(() => {
-    const list: { id: string; label: string; count?: number; lead?: boolean }[] = [{ id: 'history', label: '歷年開課' }];
-    const external = { id: 'external-reviews', label: '外站討論', count: externalTotal || undefined, lead: externalFirst };
+    // `short` is the phone label, so the sticky row fits 390 px; the full label stays the accessible name.
+    const list: { id: string; label: string; short: string; count?: number; lead?: boolean }[] = [{ id: 'history', label: '歷年開課', short: '歷年' }];
+    const external = { id: 'external-reviews', label: '外站討論', short: '外站', count: externalTotal || undefined, lead: externalFirst };
     if (externalFirst) list.push(external);
-    if (communityEmpty) list.push({ id: 'ratings', label: '站內評價與討論', count: 0 });
+    if (communityEmpty) list.push({ id: 'ratings', label: '站內評價與討論', short: '評價與討論', count: 0 });
     else {
-      list.push({ id: 'ratings', label: '站內評價', count: stats ? ratingCount : undefined });
-      list.push({ id: 'forum-title', label: '站內討論', count: data.posts?.total });
+      list.push({ id: 'ratings', label: '站內評價', short: '評價', count: stats ? ratingCount : undefined });
+      list.push({ id: 'forum-title', label: '站內討論', short: '討論', count: data.posts?.total });
     }
     if (!externalFirst) list.push(external);
-    if (hasAbout) list.push({ id: 'about-title', label: '課程說明' });
+    if (hasAbout) list.push({ id: 'about-title', label: '課程說明', short: '說明' });
     return list;
   });
   let inView = $state('');
   let chipRow: HTMLElement | undefined = $state();
+  /** Which ends of the (phone) chip row hide chips; that side fades (item 32). */
+  let chipsCut = $state({ start: false, end: false });
+  function readChips() {
+    if (!chipRow) return;
+    const max = chipRow.scrollWidth - chipRow.clientWidth;
+    chipsCut = { start: chipRow.scrollLeft > 4, end: max > 4 && chipRow.scrollLeft < max - 4 };
+  }
+  onMount(() => {
+    readChips();
+    const observer = new ResizeObserver(readChips);
+    if (chipRow) observer.observe(chipRow);
+    return () => observer.disconnect();
+  });
   onMount(() => {
     // The section whose top has passed the sticky bars most recently is the one being read.
     const update = () => {
@@ -177,17 +191,16 @@
         {#if course.campus}<span class="item">{course.campus}</span>{/if}
         {#if course.grade}<span class="item">{course.grade}</span>{/if}
       </p>
-      <!-- Every meeting slot, once on the page, as a meta line under the identity line (term, code, teacher). -->
-      <p class="when-line" aria-label="上課時間地點">
+      <!-- When, where, credits and 必選修 on one meta line under the identity line (separators sit in the gaps,
+           so a wrapped line never starts with one). -->
+      <p class="when-line" aria-label="上課時間地點、學分與必選修">
         {#each slots as slot, index (index)}
-          <span class="slot"><b>{meeting(slot)}</b>{#if slot.location}<span class="room">{slot.location}</span>{/if}</span>
+          <span class="slot"><span class="when">{meeting(slot)}</span>{#if slot.location}<span class="room">{slot.location}</span>{/if}</span>
         {:else}
-          {#if scheduleText}<span class="slot"><b>{scheduleText}</b></span>{:else}<span class="slot muted">校方未公布上課時間</span>{/if}
+          {#if scheduleText}<span class="slot"><span class="when">{scheduleText}</span></span>{:else}<span class="slot muted">校方未公布上課時間</span>{/if}
         {/each}
-      </p>
-      <p class="headline-facts" aria-label="學分與必選修">
-        <span class="item">{#if course.credits != null}<b class="num">{credits(course.credits)}</b> 學分{:else}學分未公布{/if}</span>
-        <span class="item">{#if requirementLabel}<b>{requirementLabel}</b>{#if requirementDetail}<a class="detail" href="#requirement-detail" title={`校方原文：「${requirementDetail}」`} aria-label="必選修的校方原文">ⓘ</a>{/if}{:else}必選修未公布{/if}</span>
+        <span class="slot fact">{#if course.credits != null}<span class="num">{credits(course.credits)}</span> 學分{:else}學分未公布{/if}</span>
+        <span class="slot fact">{#if requirementLabel}{requirementLabel}{#if requirementDetail}<a class="detail" href="#requirement-detail" title={`校方原文：「${requirementDetail}」`} aria-label="必選修的校方原文">ⓘ</a>{/if}{:else}必選修未公布{/if}</span>
       </p>
       {#if notesPeek}
         <!-- The school's notes (優先、限修、加簽) affect enrolment, so phones see their start in the head; the full text stays below. -->
@@ -251,7 +264,7 @@
       <div class="tile link-tile" class:partial={termTotal.partial}>
         <!-- The scope is in the label (how many sections the sum covers); the term goes in the sub-line. -->
         <!-- A partial term is flagged in the label row, so the sum is never read as the whole term. -->
-        <dt>同學期 {displayValue(termTotal.offeringCount)} 班合計{#if termTotal.partial}<span class="tile-badge warn" title="這一期的合計不能和其他學期直接比較">只收錄部分</span>{/if}</dt>
+        <dt>同學期 {displayValue(termTotal.offeringCount)} 班合計{#if termTotal.partial}<span class="tile-badge partial" title="這一期的合計不能和其他學期直接比較">只收錄部分</span>{/if}</dt>
         {#if termTotal.enrolled == null && termTotal.capacity != null}
           <dd><span class="value num">{displayValue(termTotal.capacity)}</span><small>名額</small></dd>
         {:else if termTotal.enrolled != null}
@@ -310,9 +323,9 @@
 
   <!-- Jump chips in page order. Phones keep them in one sticky, horizontally scrolling row under the site
        header, with the section in view highlighted (the same row on every long page). -->
-  <nav class="section-links" aria-label="本頁段落" bind:this={chipRow}>
+  <nav class="section-links" aria-label="本頁段落" bind:this={chipRow} class:fade-end={chipsCut.end} class:fade-start={chipsCut.start} onscroll={readChips}>
     {#each sections as section (section.id)}
-      <a href={`#${section.id}`} data-section={section.id} class:lead={section.lead} class:here={inView === section.id} aria-current={inView === section.id ? 'location' : undefined}>{section.label}{#if section.count != null} <span class="num">{displayValue(section.count)}</span>{/if}</a>
+      <a href={`#${section.id}`} data-section={section.id} class:lead={section.lead} class:here={inView === section.id} aria-current={inView === section.id ? 'location' : undefined} data-short={section.short}><span class="long">{section.label}</span>{#if section.count != null} <span class="num">{displayValue(section.count)}</span>{/if}</a>
     {/each}
   </nav>
 
@@ -430,12 +443,17 @@
   h1 { font-size: var(--t-2xl); overflow-wrap: anywhere; }
   .en { color: var(--ink-2); font-size: var(--t-md); overflow-wrap: anywhere; }
   /* When and where: a meta line under term, code and teacher (same size), the day and periods in ink. */
-  .when-line { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-5); color: var(--ink); font-size: var(--t-md); }
-  .when-line .slot { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; }
-  .when-line b { font-weight: 600; }
+  /* Regular weight in ink (the h1 is the one bold line); each item after the first carries its dot in the gap
+     before it and the row clips past its edge, so a wrapped line never starts with「·」 (item 33). */
+  .when-line { display: flex; flex-wrap: wrap; gap: 0.125rem 1.5em; align-items: baseline; color: var(--ink); font-size: var(--t-md); overflow-x: clip; overflow-clip-margin: 4px; }
+  .when-line .slot { position: relative; display: inline-flex; flex-wrap: wrap; align-items: baseline; }
+  .when-line .slot + .slot::before { content: '·'; position: absolute; inset-inline-start: -1.5em; inline-size: 1.5em; color: var(--muted); text-align: center; }
+  .when-line .when { font-weight: 500; }
   .when-line .room { color: var(--ink-2); }
-  .when-line .slot { gap: 0; }
-  .when-line .room::before { content: '·'; margin-inline: var(--space-2); color: var(--muted); }
+  .when-line .room::before { content: '・'; color: var(--muted); }
+  .when-line .fact { display: block; color: var(--ink-2); }
+  /* ⓘ: a 44 px square target hung on the text without growing the line (negative margins). */
+  .when-line .detail { display: inline-grid; place-items: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); margin-block: -0.875rem; margin-inline: -0.5rem -0.875rem; color: var(--ink-2); font-size: 0.8125rem; text-decoration: none; vertical-align: middle; }
   /* Everything else about the class on one wrapping line: term, code, teachers, credits, 必選修, language. */
   /* Each item carries its dot in the gap before it; the row clips anything left of its edge, so a wrapped
      line never starts with a stray「・」. */
@@ -445,11 +463,6 @@
   /* Teacher links: invisible block padding makes a 44 px tall target without changing the line. */
   .meta .people a { padding-block: 0.75rem; }
   .meta .item::before { content: '·'; position: absolute; inset-inline-start: -1.5em; inline-size: 1.5em; color: var(--muted); text-align: center; }
-  .headline-facts { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; margin-block-start: var(--space-1) !important; color: var(--ink-2); font-size: var(--t-md); }
-  .headline-facts .item { padding: 1px var(--space-2); border-radius: var(--radius-pill); background: var(--chip); }
-  .headline-facts b { color: var(--ink); font-weight: 650; }
-  /* ⓘ: a 44 px square target hung on the pill without growing it (negative margins). */
-  .headline-facts .detail { display: inline-grid; place-items: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); margin-block: -0.875rem; margin-inline: -0.5rem -0.75rem; color: var(--ink-2); font-size: 0.8125rem; text-decoration: none; vertical-align: middle; }
   .notes-peek { display: -webkit-box; margin-block-start: var(--space-2) !important; max-inline-size: 48rem; color: var(--ink-2); font-size: var(--t-base); line-height: 1.55; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
   .notes-peek .peek-key { margin-inline-end: var(--space-2); padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink); font-size: 0.8125rem; font-weight: 650; }
   .notes-peek a { margin-inline-start: var(--space-2); padding-block: 0.75rem; font-weight: 600; white-space: nowrap; }
@@ -496,7 +509,8 @@
   .tile dt { display: flex; flex-wrap: wrap; gap: 2px var(--space-2); align-items: center; }
   .tile-badge { padding: 0 6px; border-radius: var(--radius-pill); font-size: 0.8125rem; font-weight: 650; line-height: 1.5; white-space: nowrap; }
   .tile-badge.past { background: var(--chip); color: var(--ink-2); }
-  .tile-badge.warn { background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent); }
+  /* Partial coverage is a data note, not a warning: a grey outlined chip (amber stays for thin rating samples). */
+  .tile-badge.partial { background: var(--chip); color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--control-line); }
   .lead-facts { padding-block: var(--space-2) var(--space-4); }
   .meter { display: block !important; block-size: 10px; margin-block: var(--space-1) 0 !important; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .meter span { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); }
@@ -509,6 +523,8 @@
   .section-head h2 { font-size: var(--t-xl); }
   .section-head.row { display: flex; flex-wrap: wrap; gap: var(--space-3) var(--space-4); align-items: end; justify-content: space-between; }
   .sub { color: var(--muted); font-size: var(--t-base); overflow-wrap: anywhere; }
+  /* An explicit size, so the code in the sentence never drops under 13 px. */
+  .sub .mono { font-size: max(0.92em, 0.8125rem); }
 
   .section-links { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); align-items: center; margin-block: calc(-1 * var(--space-3)); font-size: var(--t-base); }
   .section-links a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
@@ -557,6 +573,13 @@
        sideways; the section in view is filled. Long phone pages share this look. */
     .section-links { position: sticky; inset-block-start: calc(2 * var(--target-min) + var(--space-1) + 1px); z-index: 5; display: flex; flex-wrap: nowrap; gap: var(--space-2); margin-block: 0 calc(-1 * var(--space-2)); margin-inline: calc(-1 * clamp(1rem, 3vw, 2.5rem)); padding: var(--space-1) clamp(1rem, 3vw, 2.5rem); overflow-x: auto; scrollbar-width: none; background: var(--bg); border-block-end: 1px solid var(--line); }
     .section-links::-webkit-scrollbar { display: none; }
+    /* Short labels on phones (the full one stays the accessible name), and a fade on the side that still scrolls. */
+    .section-links .long { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    /* The short label is generated text with empty alt text, so names and text content keep the full label. */
+    .section-links a::before { content: attr(data-short) / ''; }
+    .section-links.fade-end { mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent); }
+    .section-links.fade-start { mask-image: linear-gradient(to right, transparent, #000 2.5rem); }
+    .section-links.fade-start.fade-end { mask-image: linear-gradient(to right, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent); }
     .section-links a { flex: none; padding-inline: var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink-2); text-decoration: none; white-space: nowrap; }
     .section-links a.lead { border-radius: var(--radius-pill); }
     .section-links a.here { border-color: var(--brand); background: var(--brand); color: var(--on-brand); }

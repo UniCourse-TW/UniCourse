@@ -45,6 +45,18 @@
   let shownId = $derived(currentId || sections[0]?.id);
   // Phones: the contents are one sticky row of chips; keep the current chip in view as the reader scrolls.
   let chipRow = $state<HTMLOListElement>();
+  /** Phones: 「全部章節」 wraps the chip row into a full list, so every section is one tap away. */
+  let listAll = $state(false);
+  let hydrated = $state(false);
+  /** The row fades at the side that still has chips beyond it. */
+  let fadeEnd = $state(true);
+  let fadeStart = $state(false);
+  function readScroll() {
+    if (!chipRow) return;
+    const max = chipRow.scrollWidth - chipRow.clientWidth;
+    fadeStart = chipRow.scrollLeft > 4;
+    fadeEnd = max > 4 && chipRow.scrollLeft < max - 4;
+  }
   $effect(() => {
     const id = shownId;
     if (!chipRow || chipRow.scrollWidth <= chipRow.clientWidth) return;
@@ -53,6 +65,8 @@
   });
 
   onMount(() => {
+    hydrated = true;
+    readScroll();
     const headings = sections.map((section) => document.getElementById(section.id)).filter((node): node is HTMLElement => Boolean(node));
     if (!headings.length || !('IntersectionObserver' in window)) return;
     const visible = new Map<string, number>();
@@ -82,7 +96,7 @@
     <h1>{title}</h1>
     <p class="meta">
       <span class="updated">更新於 <time datetime={updated}>{updatedLabel}</time></span>
-      {#if contact}<span class="sep" aria-hidden="true">·</span><a class="contact-link" href={`#${contact.id}`}>{contactLabel ?? contact.title}</a>{/if}
+      {#if contact}<span class="sep" aria-hidden="true">·</span><a class="contact-link arrow-link" href={`#${contact.id}`}><span>{contactLabel ?? contact.title}</span><span aria-hidden="true">↓</span></a>{/if}
       <span class="sep" aria-hidden="true">·</span><a class="arrow-link" href={sibling.href}><span>{sibling.label}</span><span aria-hidden="true">→</span></a>
     </p>
   </header>
@@ -97,18 +111,20 @@
         </ul>
       </section>
     {/if}
-    <nav class="doc-toc" id="toc" aria-label="目錄">
+    <nav class="doc-toc" id="toc" aria-label="目錄" class:all={listAll}>
+      <!-- Phones only: the sticky chip row can open into the full list of sections. -->
+      {#if hydrated}<button type="button" class="toc-all" aria-expanded={listAll} aria-controls="toc-list" onclick={() => { listAll = !listAll; }}>{listAll ? '收合' : '全部章節'}<span aria-hidden="true">{listAll ? ' ▴' : ' ▾'}</span></button>{/if}
       <!-- Open in the markup: desktop shows the sticky list, phones show the sections as a row of chips near the
            top (the jump list), which the reader can still fold away. -->
       <details open>
         <summary>目錄</summary>
-        <ol bind:this={chipRow}>
+        <ol bind:this={chipRow} id="toc-list" class:fade-end={fadeEnd && !listAll} class:fade-start={fadeStart && !listAll} onscroll={readScroll}>
           {#each sections as section (section.id)}
             <li>
-              <a href={`#${section.id}`} aria-current={shownId === section.id ? 'location' : undefined}>{section.title}</a>
+              <a href={`#${section.id}`} aria-current={shownId === section.id ? 'location' : undefined} onclick={() => (listAll = false)}>{section.title}</a>
               {#if section.children?.length}
                 <ol class="sub">
-                  {#each section.children as child (child.id)}<li><a href={`#${child.id}`}>{child.title}</a></li>{/each}
+                  {#each section.children as child (child.id)}<li><a href={`#${child.id}`} onclick={() => (listAll = false)}>{child.title}</a></li>{/each}
                 </ol>
               {/if}
             </li>
@@ -142,8 +158,9 @@
   .gist-lines span::before { content: '・'; color: var(--muted); }
   .gist a { font-weight: 600; }
   /* The lead words are jump links: invisible padding makes 44 px targets without moving the text. */
-  .gist .lead-link { padding: 0.75rem 0.5rem; margin-inline: -0.5rem; color: var(--ink); text-decoration-color: color-mix(in srgb, var(--brand) 60%, transparent); text-underline-offset: 0.2em; }
-  .gist .lead-link:hover { color: var(--brand-ink); }
+  /* Bold leads without an underline (they read as labels); hover and focus show they jump to the section. */
+  .gist .lead-link { padding: 0.75rem 0.5rem; margin-inline: -0.5rem; color: var(--ink); text-decoration: none; }
+  .gist .lead-link:hover { color: var(--brand-ink); text-decoration: underline; text-underline-offset: 0.2em; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .meta { margin: 0; color: var(--muted); font-size: var(--t-base); }
   .meta .sep { margin-inline: 0.4em; color: var(--muted); }
@@ -170,6 +187,7 @@
   .doc-toc .sub a::before { content: '–'; margin-inline-end: var(--space-1); color: var(--muted); }
   .doc-toc .sibling { margin-block-start: var(--space-1); padding-block-start: var(--space-1); border-block-start: 1px solid var(--line); }
   .doc-toc .sibling a { color: var(--brand-ink); font-weight: 600; }
+  .toc-all { display: none; }
 
   /* Long-form text: 15 px on 1.85 (storyboard). One measure for text and tables alike: each section is
      52 em at the prose size and tables fill it. */
@@ -190,8 +208,9 @@
   /* Code inside CJK sentences sits on a chip that moves to the next line whole; it never breaks mid-word. */
   .prose :global(code) { padding: 1px 5px; border-radius: 4px; background: var(--chip); color: var(--ink); font-family: var(--font-mono); font-size: 0.88em; white-space: nowrap; }
   /* Identifier columns (board names) never break mid-word; the remarks column takes the wrapping. */
-  /* Boards: the table is as wide as its content (no wide, mostly empty remarks column). */
-  .prose :global(table.boards) { inline-size: auto; }
+  /* Boards: the table fills the measure; name and school take their content width, remarks the rest. */
+  .prose :global(table.boards) { inline-size: 100%; }
+  .prose :global(table.boards :is(td, th):is(:first-child, :nth-child(2))) { inline-size: 1%; }
   .prose :global(table.boards td:first-child), .prose :global(table.boards th:first-child) { white-space: nowrap; font-family: var(--font-mono); }
   .prose :global(table.boards td:nth-child(2)) { white-space: nowrap; }
   /* The data-kind column of the sources table reads as one unit (課程與修課人數 never breaks before its last word). */
@@ -209,6 +228,8 @@
   .prose :global(p.lead) { padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); font-size: inherit; line-height: inherit; }
   .prose :global(p.lead strong) { color: var(--ink); }
   .prose :global(.contact-routes > div) { display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  /* The private route is the one most readers come for: brand edge and tint; the public one stays plain. */
+  .prose :global(.contact-routes > div:has(.route-kind.private)) { border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); border-inline-start: 3px solid var(--brand); background: color-mix(in srgb, var(--brand) 5%, var(--panel)); }
   .prose :global(.contact-routes h3) { margin: 0; font-size: var(--t-md); }
   .prose :global(.contact-routes .route-kind) { justify-self: start; margin: 0; padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-size: 0.8125rem; font-weight: 650; line-height: 1.7; }
   .prose :global(.contact-routes .route-kind.public) { background: var(--chip); color: var(--ink-2); }
@@ -220,13 +241,19 @@
   .prose :global(.contact-routes a.route) { display: inline-flex; align-items: center; gap: var(--space-1); justify-self: start; min-block-size: var(--target-min); font-weight: 650; }
   /* Who can read it and what it needs, said before the button. */
   .prose :global(.contact-routes .route-access) { margin-block-start: var(--space-1) !important; color: var(--ink); font-size: var(--t-base); font-weight: 650; }
-  .prose :global(.account-data th:nth-child(-n+2)) { inline-size: 40%; }
-  .prose :global(.account-data td:last-child) { white-space: nowrap; }
+  /* Name, then who sees it right beside the name, then what it is for. */
+  .prose :global(.account-data th:first-child) { inline-size: 40%; }
+  .prose :global(.account-data :is(td, th):nth-child(2)) { inline-size: 1%; white-space: nowrap; }
   /* Who can see a piece of data, as one badge kind per answer (公開 / 選填公開 / 不公開 / 只公開合計). */
   .prose :global(.scope) { display: inline-block; padding: 0 var(--space-2); border-radius: var(--radius-pill); font-size: 0.8125rem; font-weight: 650; line-height: 1.7; white-space: nowrap; }
+  /* Public is filled brand with an open-eye dot; not public is an outlined grey badge with a bar, so the two
+     differ by shape and fill, not only by one character. */
+  .prose :global(.scope::before) { margin-inline-end: 0.3em; }
   .prose :global(.scope.public) { background: var(--brand-wash); color: var(--brand-ink); }
+  .prose :global(.scope.public::before) { content: '●'; font-size: 0.75em; vertical-align: 0.1em; }
   .prose :global(.scope.optional) { background: var(--brand-wash); color: var(--brand-ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 40%, transparent); }
-  .prose :global(.scope.private) { background: var(--chip); color: var(--ink-2); }
+  .prose :global(.scope.private) { background: transparent; color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--control-line); }
+  .prose :global(.scope.private::before) { content: '—'; color: var(--muted); }
   .prose :global(.review-data td:first-child) { inline-size: 8rem; }
   .prose :global(.doc-fold) { margin-block-end: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); }
   .prose :global(.doc-fold summary) { min-block-size: var(--target-min); padding: var(--space-2) var(--space-3); scroll-margin-block-start: 5rem; color: var(--brand-ink); font-weight: 650; cursor: pointer; }
@@ -254,17 +281,22 @@
     .prose :global(.stacked td:first-child) { display: block; padding-block-end: var(--space-1); font-weight: 600; }
     .prose :global(.stacked td:first-child)::before { display: none; }
     /* Boards read top to bottom: board name, then its school, then the remark. */
-    .prose :global(.stacked.boards td[data-label]) { display: block; padding: 0; white-space: normal; }
-    .prose :global(.stacked.boards td[data-label])::before { display: none; }
+    /* Boards: one line per board (name・school), the remark under it with its short label. */
+    .prose :global(.stacked.boards tr) { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; }
+    .prose :global(.stacked.boards td[data-label]) { display: block; inline-size: auto; padding: 0; white-space: normal; }
+    .prose :global(.stacked.boards td:first-child) { white-space: nowrap; }
+    .prose :global(.stacked.boards td:nth-child(2))::before { display: none; }
+    .prose :global(.stacked.boards td:nth-child(2)) { color: var(--ink-2); font-size: var(--t-base); }
     .prose :global(.stacked.boards td:first-child) { padding-block-end: 0; }
-    .prose :global(.stacked.boards td:last-child) { color: var(--ink-2); font-size: 0.8125rem; }
+    .prose :global(.stacked.boards td:last-child) { flex-basis: 100%; color: var(--ink-2); font-size: 0.8125rem; }
+    .prose :global(.stacked.boards td:last-child)::before { content: '備註　'; display: inline; color: var(--ink-2); font-weight: 650; }
     /* Account data: the name with its public status beside it, the purpose on the line below. */
     .prose :global(.stacked.account-data tr) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-2); align-items: baseline; }
     .prose :global(.stacked.account-data td:first-child) { grid-row: 1; grid-column: 1; padding: 0; }
-    .prose :global(.stacked.account-data td:last-child) { grid-row: 1; grid-column: 2; display: block; padding: 0; white-space: nowrap; }
-    .prose :global(.stacked.account-data td:last-child)::before { display: none; }
-    .prose :global(.stacked.account-data td:nth-child(2)) { grid-row: 2; grid-column: 1 / -1; display: block; color: var(--ink-2); font-size: 0.8125rem; }
+    .prose :global(.stacked.account-data td:nth-child(2)) { grid-row: 1; grid-column: 2; display: block; padding: 0; white-space: nowrap; }
     .prose :global(.stacked.account-data td:nth-child(2))::before { display: none; }
+    .prose :global(.stacked.account-data td:last-child) { grid-row: 2; grid-column: 1 / -1; display: block; color: var(--ink-2); font-size: 0.8125rem; }
+    .prose :global(.stacked.account-data td:last-child)::before { display: none; }
     .prose :global(.review-data td:first-child) { inline-size: auto; }
     .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: auto; white-space: normal; }
   }
@@ -284,7 +316,18 @@
     .prose { order: 2; }
     /* Under the one-row site header (two rows below 39 rem, see the rule after this block). */
     .doc-toc { position: sticky; inset-block-start: calc(3.75rem + 1px); z-index: 5; margin-inline: calc(-1 * clamp(1rem, 3vw, 2.5rem)); margin-block: calc(-1 * var(--space-2)) 0; background: var(--bg); border-block-end: 1px solid var(--line); }
-    .doc-toc details { border: 0; border-radius: 0; background: none; }
+    .doc-toc { display: flex; align-items: center; }
+    .doc-toc details { flex: 1 1 auto; min-inline-size: 0; border: 0; border-radius: 0; background: none; }
+    /* 「全部章節」 leads the row (never scrolls away); opened, the chips wrap into the full list. */
+    .toc-all { display: inline-flex; flex: none; align-items: center; min-block-size: var(--target-min); margin-inline-start: clamp(1rem, 3vw, 2.5rem); padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font: 650 var(--t-base) / 1 var(--font-sans); cursor: pointer; touch-action: manipulation; }
+    .toc-all:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
+    .doc-toc.all { align-items: flex-start; padding-block: var(--space-1); }
+    .doc-toc.all ol { flex-wrap: wrap; overflow: visible; padding-block: 0; }
+    .doc-toc:has(.toc-all) ol { padding-inline-start: var(--space-2); }
+    /* A fade on the cut side says the row scrolls. */
+    .doc-toc ol.fade-end { mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent); }
+    .doc-toc ol.fade-start { mask-image: linear-gradient(to right, transparent, #000 2.5rem); }
+    .doc-toc ol.fade-start.fade-end { mask-image: linear-gradient(to right, transparent, #000 2.5rem, #000 calc(100% - 2.5rem), transparent); }
     .doc-toc summary { display: none; }
     .doc-toc ol { display: flex; flex-wrap: nowrap; gap: var(--space-2); padding: var(--space-1) clamp(1rem, 3vw, 2.5rem); overflow-x: auto; scrollbar-width: none; }
     .doc-toc ol::-webkit-scrollbar { display: none; }

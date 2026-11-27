@@ -132,6 +132,8 @@
   let nameCharsOk = $derived(hydrated && nameLength > 0 && /^[A-Za-z0-9_]+$/.test(typedUsername));
   /** A server-side field error gets one summary at the top of the form, linked to the field. */
   let takenName = $derived(mode === 'register' && errorAt === 'username' && form?.message?.includes('已有人') ? (form?.username ?? '') : '');
+  /** Register: the refused name is still in the box, so「建立帳號」waits (with the reason under it). */
+  let waitForName = $derived(hydrated && usernameError && Boolean(takenName));
   let fieldSummary = $derived(mode === 'register' && !multipleErrors && Boolean(form?.message) && !takenName && (usernameError || serverPasswordError || errorAt === 'displayName'));
   let summaryTarget = $derived(errorAt === 'password' ? 'password' : errorAt === 'displayName' ? 'displayName' : 'username');
   let credentialError = $derived(mode === 'login' && form?.message === '帳號或密碼錯誤。');
@@ -301,13 +303,13 @@
 {#snippet exitLine(label: string)}
   <div class="after">
     {#if submitting}
-      <!-- Leaving stops waiting for the answer; it cannot promise the server did not finish, so it says "先". -->
-      <a href={browseHref} onclick={stopWaiting}>不等了，先{browseHref === '/' ? '去查課' : '回搜尋結果'} <span aria-hidden="true">→</span></a>
+      <!-- Leaving stops this page waiting; it cannot stop the server, so the note under it says what may still happen. -->
+      <a href={browseHref} onclick={stopWaiting}>先{browseHref === '/' ? '去查課' : '回搜尋結果'} <span aria-hidden="true">→</span></a>
     {:else}
       <a href={browseHref}>{label} <span aria-hidden="true">→</span></a>
     {/if}
   </div>
-  {#if submitting && slow}<p class="request-note">若伺服器已收到請求，取消後仍可能完成{mode === 'login' ? '登入' : '建立'}。</p>{/if}
+  {#if submitting}<p class="request-note">{slow ? '若伺服器已收到請求，取消後仍可能' : '離開這頁不會取消請求，仍可能'}完成{mode === 'login' ? '登入；可從右上角確認' : '建立帳號'}。</p>{/if}
 {/snippet}
 
 
@@ -340,7 +342,7 @@
       </form>
     {:else}
       <!-- One dek line: where the button leads (when a page sent the visitor here), then why an account. -->
-      <p class="why">{#if hasDestination}<b class="return-to">{mode === 'register' ? '建立帳號' : '登入'}後回到{returnTo === '論壇發文' ? '你正要寫的文章' : returnTo}。</b>{/if}查課不用登入；評分、發文與回覆才需要帳號。</p>
+      <p class="why">{#if hasDestination}<b class="return-to">{mode === 'register' ? '建立帳號' : '登入'}後回到{returnTo === '論壇發文' ? '論壇，繼續發文' : returnTo}。</b>{/if}查課不用登入；評分、發文與回覆才需要帳號。</p>
       {#if data.signedOut}<p class="signed-out" role="status"><span aria-hidden="true">✓</span> 已登出這個瀏覽器，可以換帳號登入。</p>{/if}
 
       <nav class="tabs" class:busy={submitting} aria-label="表單切換">
@@ -362,10 +364,11 @@
               </p>
               {#if credentialError}
                 <!-- Which half is wrong is unknown: the summary offers both fixes (and the password help) as targets. -->
+                <!-- Says what was kept and cleared, then the two fixes; password help stays beside the field (one entry). -->
+                <p class="alert-note">帳號已保留，密碼已清空。</p>
                 <p class="alert-fix">
-                  <a href="#password" onclick={(event) => fixField(event, 'password')}>重新輸入密碼</a>
+                  <a class="fix-main" href="#password" onclick={(event) => fixField(event, 'password')}>重新輸入密碼</a>
                   <a href="#username" onclick={(event) => fixField(event, 'username')}>修改帳號</a>
-                  <a href="#reset-help" onclick={showReset}>忘記密碼？</a>
                 </p>
                 {#if hydrated && attemptsLeft <= WARN_FROM}<p class="alert-note count">還可再試 <b class="num">{attemptsLeft}</b> 次，之後暫停一分鐘。</p>{/if}
               {:else if tooMany}
@@ -381,7 +384,7 @@
           {/if}
           <div class="cm-field">
             <!-- The kept name is an ordinary editable field; the hint beside it says what usually goes wrong. -->
-            <div class="cm-label"><label for="username">帳號</label>{#if credentialError}<span class="cm-hint kept-neutral">已保留，可修改</span>{/if}</div>
+            <div class="cm-label"><label for="username">帳號</label></div>
             <!-- The server cannot tell which half of a wrong pair is wrong, so neither field is marked invalid;
                  the alert above carries the message and the password (cleared) takes the focus. -->
             <input id="username" class="cm-input" name="username" autocomplete="username" required maxlength="32"
@@ -392,7 +395,7 @@
           </div>
           <div class="cm-field">
             <!-- The one 「忘記密碼？」 entry: beside the field, or inside the error summary once there is one. -->
-            <div class="cm-label"><label for="password">密碼</label>{#if !tooMany && !credentialError}<a class="field-action" class:idle={submitting} href="#reset-help" onclick={showReset} aria-hidden={submitting || undefined} tabindex={submitting ? -1 : undefined}>忘記密碼？</a>{/if}</div>
+            <div class="cm-label"><label for="password">密碼</label>{#if !tooMany}<a class="field-action" class:idle={submitting} href="#reset-help" onclick={showReset} aria-hidden={submitting || undefined} tabindex={submitting ? -1 : undefined}>忘記密碼？</a>{/if}</div>
             <div class="password">
               <input id="password" class="cm-input" name="password" type={showPassword ? 'text' : 'password'} autocomplete="current-password"
                 required maxlength="128" placeholder="輸入密碼"
@@ -440,16 +443,15 @@
               oninput={(event) => { typedUsername = event.currentTarget.value; chosenName = ''; checkUsername(typedUsername); }}
               aria-invalid={usernameError || Boolean(checked.username) || undefined}
               aria-describedby={describedBy('username-rule', (usernameError || checked.username) && 'username-error')} />
-            <!-- The format rule stays under the box in every state (also after a taken-name error), each part
-                 ticked live as the name is typed. -->
-            <p id="username-rule" class="rule checklist">
-              <span class="rule-key">格式</span>
-              <span class:met={nameLengthOk} class:miss={hydrated && nameLength > 0 && !nameLengthOk}><span class="mark" aria-hidden="true">{nameLengthOk ? '✓' : hydrated && nameLength > 0 ? '✗' : '・'}</span>3–32 字元</span>
-              <span class:met={nameCharsOk} class:miss={hydrated && nameLength > 0 && !nameCharsOk}><span class="mark" aria-hidden="true">{nameCharsOk ? '✓' : hydrated && nameLength > 0 ? '✗' : '・'}</span>英數與底線</span>
+            <!-- The format rule sits under the box, each part ticked live as the name is typed. A taken name
+                 passed the format already, so then only the conflict shows (no green ticks beside a red error). -->
+            <p id="username-rule" class="rule checklist" class:sr-rule={takenName && usernameError}>
+              <span class:met={nameLengthOk} class:miss={hydrated && nameLength > 0 && !nameLengthOk}><span class="mark" aria-hidden="true">{nameLengthOk ? '✓' : hydrated && nameLength > 0 ? '✗' : '・'}</span>3–32 個字元</span>
+              <span class:met={nameCharsOk} class:miss={hydrated && nameLength > 0 && !nameCharsOk}><span class="mark" aria-hidden="true">{nameCharsOk ? '✓' : hydrated && nameLength > 0 ? '✗' : '・'}</span>英文、數字或底線</span>
             </p>
             {#if usernameError && form?.message}
-              <!-- The error, then the fixes in order: pick another name (fills the box), or sign in with this one. -->
-              <p id="username-error" class="field-error" role={fieldSummary ? undefined : 'alert'}>{@render alertIcon('error')}{form.message}</p>
+              <!-- The error, then the fixes in order, all beside the field: sign in with this name, or pick another (fills the box). -->
+              <p id="username-error" class="field-error" role={fieldSummary ? undefined : 'alert'}>{@render alertIcon('error')}<span>{form.message}{#if takenName}<a class="use-login" href={tabHref('login', takenName)}>是你的帳號？改用它登入 <span aria-hidden="true">→</span></a>{/if}</span></p>
               {#if takenName && hydrated && suggestions.length}
                 <!-- The server checked these names a moment ago: they are free. A chip fills the box; the chosen one is marked. -->
                 <div class="taken-ways">
@@ -482,9 +484,8 @@
             </div>
             <!-- Two rules on two lines: the length (ticked live, with what is missing) and what is allowed. -->
             <p id="password-rule" class="rule checklist">
-              <span class="rule-key">格式</span>
-              <span class="len" class:met={passwordLength >= 8}><span class="mark" aria-hidden="true">{passwordLength >= 8 ? '✓' : '・'}</span><b>至少 8 字元</b>{#if hydrated && passwordLength > 0 && passwordLength < 8}<span class="short">（還差 {8 - passwordLength}）</span>{/if}</span>
-              <span><span class="mark" aria-hidden="true">・</span>可用空格、分大小寫</span>
+              <span class="len" class:met={passwordLength >= 8}><span class="mark" aria-hidden="true">{passwordLength >= 8 ? '✓' : '・'}</span><b>至少 8 個字元</b>{#if hydrated && passwordLength > 0 && passwordLength < 8}<span class="short">（還差 {8 - passwordLength}）</span>{/if}</span>
+              <span class="allowed">可用空格，大小寫有別</span>
             </p>
             <div class="under">
               {@render capsNote()}
@@ -495,9 +496,9 @@
           </div>
           <!-- The optional field is a text disclosure (no frame: a frame reads as a drop zone or an empty chip). -->
           <details class="optional" open={Boolean(form && 'displayName' in form && form.displayName) || errorAt === 'displayName'}>
-            <summary><span class="chev" aria-hidden="true"></span><span class="optional-label">顯示名稱（選填）</span><span class="optional-public">會公開</span></summary>
+            <summary><span class="chev" aria-hidden="true"></span><span class="optional-label">顯示名稱（選填）</span><span class="optional-public">公開；留空就用帳號署名</span></summary>
             <div class="cm-field">
-              <div class="cm-label near"><label for="displayName">顯示名稱</label><span class="cm-hint">公開在個人頁、評價與文章；未填則以帳號署名，最多 50 字，之後可改</span></div>
+              <div class="cm-label near"><label for="displayName">顯示名稱</label><span class="cm-hint">顯示在個人頁、評價與文章，最多 50 字，之後可改</span></div>
               <input id="displayName" class="cm-input" name="displayName" maxlength="50" autocomplete="nickname" placeholder="例如 小蔡"
                 readonly={submitting}
                 defaultValue={form && 'displayName' in form ? form.displayName : ''} aria-invalid={errorAt === 'displayName' || undefined}
@@ -505,16 +506,12 @@
               {@render fieldError('display-error', 'displayName')}
             </div>
           </details>
-          <!-- Two separate targets before the button, each a full-size link. -->
-          <div class="terms"><span>建立帳號即表示同意</span><a href="/terms">使用條款</a><a href="/privacy">隱私權政策</a></div>
-          <!-- While the refused name is still in the box the button says what to do first (and takes the visitor
-               there); once the name changes it is「建立帳號」again. -->
-          {#if hydrated && usernameError && takenName}
-            <button type="button" class="cm-btn block secondary" onclick={(event) => fixField(event, 'username')}>先換一個帳號名稱</button>
-          {:else}
-            <button class="cm-btn block" aria-busy={submitting} disabled={submitting}>{submitting ? (slow ? '連線較慢，仍在嘗試…' : '建立中…') : '建立帳號'}</button>
-          {/if}
-          {#if takenName}<a class="use-login" href={tabHref('login', takenName)}>{takenName} 是你的帳號？改用它登入 <span aria-hidden="true">→</span></a>{/if}
+          <!-- One sentence with two text links (padded to full touch height), not two buttons beside the submit. -->
+          <p class="terms">建立帳號即表示同意<a href="/terms">使用條款</a>與<a href="/privacy">隱私權政策</a>。</p>
+          <!-- The one action stays「建立帳號」. While the refused name is still in the box it is paused, and the reason
+               sits right under it; changing the name (or tapping a suggestion) brings it back. -->
+          <button class="cm-btn block" aria-busy={submitting} disabled={submitting || waitForName} aria-describedby={waitForName ? 'submit-reason' : undefined}>{submitting ? (slow ? '連線較慢，仍在嘗試…' : '建立中…') : '建立帳號'}</button>
+          {#if waitForName}<p id="submit-reason" class="submit-reason">先在上方換一個帳號名稱，或點一個建議名稱。</p>{/if}
           {@render exitLine('不建立帳號，繼續查課')}
         </form>
       {/if}
@@ -542,7 +539,8 @@
   h1 { font-size: 1.375rem !important; }
   .why { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
   .why { color: var(--ink-2); }
-  .why .return-to { display: block; color: var(--brand-ink); font-weight: 650; }
+  /* Where the button leads: plain ink, so it never competes with an error or the main button. */
+  .why .return-to { display: block; color: var(--ink); font-weight: 600; }
   .signed-out { margin-block-start: var(--space-3) !important; padding: var(--space-2) var(--space-3); border-inline-start: 3px solid var(--up); border-radius: var(--radius-control); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); color: var(--ink); font-size: var(--t-base); font-weight: 600; }
   /* Display name first, handle after, the same order as the profile page. */
   .identity { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-2); margin-block-start: var(--space-2) !important; font-size: var(--t-md); overflow-wrap: anywhere; }
@@ -611,7 +609,9 @@
   .toggle::before { content: ''; position: absolute; inset-block: 0; inset-inline-start: -1px; border-inline-start: 1px solid var(--control-line); }
   .toggle:hover { background: var(--brand-wash); }
   /* In flight the toggle reads as paused, not gone: label kept at AA contrast, a not-allowed cursor. */
-  .toggle:disabled { color: var(--ink-2); cursor: not-allowed; background: color-mix(in srgb, var(--chip) 60%, transparent); }
+  .toggle:disabled { color: var(--ink-2); cursor: not-allowed; background: var(--chip); }
+  /* The icon fades (the label keeps AA contrast), so the paused toggle reads as off in both themes. */
+  .toggle:disabled svg { opacity: 0.45; }
   .toggle[aria-pressed='true'] { color: var(--ink-2); }
   .toggle:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
   /* Fields in flight use the shared read-only look from community-ui.css (muted fill, solid border). */
@@ -629,7 +629,6 @@
   .cm-label.near .cm-hint { font-size: 0.8125rem; }
   .rule { color: var(--ink-2); font-size: var(--t-base); line-height: 1.5; }
   .checklist { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: baseline; }
-  .rule-key { color: var(--ink-2); font-size: 0.8125rem; font-weight: 650; }
   .checklist .len b { color: inherit; font-weight: 650; }
   .checklist .mark { display: inline-block; inline-size: 1.1em; color: var(--muted); font-weight: 700; }
   .checklist .met { color: var(--ink); }
@@ -642,8 +641,6 @@
   .weak { color: var(--ink); font-weight: 600; }
   .weak > span { display: inline-grid; place-items: center; inline-size: 1.1em; block-size: 1.1em; margin-inline-end: 0.3em; border-radius: 50%; background: var(--warn); color: var(--on-brand); font-size: 0.75em; }
   .kept { color: var(--up) !important; font-weight: 600 !important; }
-  /* Sign-in: the kept name is neutral (not a green「passed」mark beside a red error). */
-  .kept-neutral { color: var(--ink-2) !important; }
   .rule.state:empty { display: none; }
   .rule b { color: var(--ink); font-weight: 650; }
   /* The row under a field: the Caps Lock note at the start, password help at the end; 44 px tall. */
@@ -691,7 +688,15 @@
   .suggest-chip:hover { background: var(--brand-wash); border-color: var(--brand); }
   .suggest-chip b { color: var(--brand-ink); }
   .suggest-chip:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .use-login { display: inline-flex; gap: 0.3em; align-items: center; justify-self: center; min-block-size: var(--target-min); margin-block: calc(-1 * var(--space-2)); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; }
+  /* 「是你的帳號？改用它登入」 follows the conflict on the same line (wrapping under it on phones), padded to touch height. */
+  .use-login { display: inline-block; margin-inline-start: var(--space-2); padding-block: 0.7rem; margin-block: -0.7rem; color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; white-space: nowrap; }
+  .use-login:hover { color: var(--brand-ink); }
+  .use-login:focus-visible { outline: var(--focus-ring); outline-offset: 2px; border-radius: 4px; }
+  /* A taken name already passed the format: the ticks step aside (still read via aria-describedby). */
+  .sr-rule { display: none; }
+  .checklist .allowed { color: var(--ink-2); }
+  /* Why「建立帳號」is paused, right under it. */
+  .submit-reason { margin-block-start: calc(-1 * var(--space-1)) !important; color: var(--ink-2); font-size: 0.8125rem; text-align: center; text-wrap: pretty; }
   .form-alert { display: grid; gap: 2px; background: color-mix(in srgb, var(--down) 12%, var(--panel-raised)); }
   /* A wait (locked name, busy API) is not the visitor's mistake: amber and a clock, not red and a cross. */
   .form-alert.wait { border-color: var(--warn); background: var(--warn-wash); }
@@ -700,8 +705,10 @@
   .wait .alert-title, .wait .alert-icon { color: var(--warn); }
   /* The error summary's ways forward: full-size targets on one wrapping row. */
   .form-alert:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .alert-fix { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); align-items: center; margin-block-start: 2px !important; }
-  .alert-fix a { display: inline-flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-base); font-weight: 650; }
+  .alert-fix { display: flex; flex-wrap: wrap; gap: 0 var(--space-6); align-items: center; margin-block-start: -2px !important; }
+  .alert-fix a { display: inline-flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-base); font-weight: 500; }
+  /* The likely fix leads in bold; the other is a plain link with its own 44 px target and a clear gap. */
+  .alert-fix a.fix-main { font-weight: 700; }
   .alert-fix .cm-btn { min-block-size: var(--target-min); }
   .alert-note, .alert-wait { margin-block-start: 2px !important; color: var(--ink-2); font-size: var(--t-base); line-height: 1.55; text-wrap: pretty; }
   .form-alert.summary { display: flex; gap: var(--space-2); align-items: flex-start; font-weight: 600; }
@@ -712,10 +719,12 @@
   .form-alert a { color: var(--ink); text-decoration: underline; }
   .cm-form { margin-block-start: var(--space-1); }
   .cm-form .cm-btn { margin-block-start: var(--space-1); }
-  .terms { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.5; }
-  .terms span { flex: 1 1 100%; }
-  .terms a { display: inline-flex; flex: 1 1 0; align-items: center; justify-content: center; min-block-size: var(--target-min); padding-inline: var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); font-size: var(--t-base); font-weight: 600; text-decoration: none; }
-  .terms a:hover { background: var(--hover-row); }
+  /* One line of consent with two inline links; vertical padding gives each a 44 px hit area without
+     adding height. */
+  .terms { color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; text-wrap: pretty; }
+  .terms a { padding: 0.8rem 0.25rem; color: var(--brand-ink); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
+  .terms a:hover { color: var(--ink); }
+  .terms a:focus-visible { outline: var(--focus-ring); outline-offset: -0.6rem; border-radius: 4px; }
   .after { display: flex; justify-content: center; margin-block-start: calc(-1 * var(--space-1)); text-align: center; color: var(--ink-2); font-size: 0.8125rem; }
   .after a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-weight: 600; }
   .after a:hover { color: var(--brand-ink); }
@@ -735,7 +744,7 @@
   /* The marker leads the label, like the site's other disclosures. */
   .optional .chev::before { content: '▸'; color: var(--brand-ink); }
   .optional[open] .chev::before { content: '▾'; }
-  .optional-public { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
+  .optional-public { color: var(--ink-2); font-size: 0.8125rem; font-weight: 500; }
   .optional summary:hover .optional-label { text-decoration: underline; text-underline-offset: 0.15em; }
   .optional summary::-webkit-details-marker { display: none; }
   .optional[open] summary .optional-label { color: var(--ink); }
