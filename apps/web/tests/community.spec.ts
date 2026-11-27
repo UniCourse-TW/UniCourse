@@ -44,7 +44,8 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   // Anonymous visitors get a sign-in link that comes back to the course.
   await page.goto(`/courses/${course.id}`);
   const ratings = page.locator('#ratings');
-  await expect(ratings.getByRole('heading', { name: '課程評價' })).toBeVisible();
+  // 「站內評價與討論」 while the course has neither ratings nor posts,「課程評價」 otherwise.
+  await expect(ratings.getByRole('heading', { name: /^(課程評價|站內評價與討論)$/ })).toBeVisible();
   // Exactly one sign-in link whatever the count: 「登入後成為第一個評分」 with none,「登入後加上你的評分」
   // with one or two, 「登入」 under the list from three on.
   await expect(ratings.getByRole('link', { name: /^登入/ })).toHaveCount(1);
@@ -52,7 +53,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(page).toHaveURL(/\/auth\?next=/);
 
   await page.getByRole('link', { name: '建立帳號', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '加入 UniCourse 社群' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '建立 UniCourse 帳號' })).toBeVisible();
   await page.getByLabel('帳號').fill(username);
   await page.getByLabel('密碼').fill('correct horse battery');
   await page.getByText('顯示名稱（選填）', { exact: false }).click();
@@ -225,7 +226,7 @@ test('saves a profile while the phone preview is open', async ({ page }) => {
   await save.click();
 
   await expect(page.getByRole('status')).toContainText('已儲存，個人頁已更新');
-  await expect(preview).toContainText('目前公開版本');
+  await expect(preview).toContainText('已更新為剛儲存的內容');
   await bio.fill('這次還沒儲存。');
   await expect(page.getByRole('status')).toContainText('有 1 項變更尚未儲存');
 });

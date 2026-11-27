@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { searchExamples } from '$lib/overview-paths';
+  import { PUBLIC_REPORT_URL } from '$lib/legal-contact';
 
   /**
    * The shared error view (states.md §3–4): a human title first, the HTTP status demoted to an
@@ -26,12 +27,15 @@
     /** Prefilled search text, e.g. a course code or name taken from the address. */
     query?: string;
     crossTerm?: boolean;
+    /** One line under the search box: where the words to search for can be found. */
+    hint?: string;
+    /** Diagnostic detail (the dead id), shown beside a link to report the broken link. */
     context?: string;
     /** Current path, for the retry link on server errors. */
     retryHref?: string;
   }
 
-  let { status, message, title, description, primary, secondary, also = [], search = false, query = '', crossTerm = false, context, retryHref }: Props = $props();
+  let { status, message, title, description, primary, secondary, also = [], search = false, query = '', crossTerm = false, hint, context, retryHref }: Props = $props();
 
   const examples = searchExamples.slice(0, 3);
 
@@ -96,6 +100,7 @@
       </label>
       <button type="submit">搜尋課程</button>
     </form>
+    {#if hint}<p class="hint">{hint}</p>{/if}
     {#if crossTerm}
       <a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: query })}`}>查「{query}」的其他學期 <span aria-hidden="true">→</span></a>
     {:else if !query && !back}
@@ -119,12 +124,14 @@
     <nav class="also" aria-label="其他查找方式">
       <span class="also-label">其他查找方式</span>
       <ul>
-        {#if search}<li><a class="lead-out" href={second.href}><span>{second.label}</span><span aria-hidden="true">→</span></a></li>{/if}
+        {#if search}<li><a href={second.href}><span>{second.label}</span><span aria-hidden="true">→</span></a></li>{/if}
         {#each also as link (link.href)}<li><a href={link.href}><span>{link.label}</span><span aria-hidden="true">→</span></a></li>{/each}
       </ul>
     </nav>
   {/if}
-  {#if context}<p class="diagnostic">{context}</p>{/if}
+  {#if context}
+    <p class="diagnostic"><span>{context}</span><a href={PUBLIC_REPORT_URL} rel="noopener external">回報這個失效連結 <span aria-hidden="true">↗</span></a></p>
+  {/if}
 </section>
 </div>
 
@@ -150,7 +157,11 @@
   .code { padding: 0 6px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--panel-raised); font-family: var(--font-mono); font-weight: 500; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .detail { margin: 0; color: var(--ink-2); }
-  .diagnostic { margin: var(--space-1) 0 0; color: var(--muted); font-size: var(--t-sm); font-variant-numeric: tabular-nums; }
+  .diagnostic { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; margin: var(--space-1) 0 0; color: var(--ink-2); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
+  .diagnostic a { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-weight: 600; text-underline-offset: 0.15em; }
+  .diagnostic a:hover { color: var(--brand-ink); }
+  .diagnostic a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  .hint { margin: calc(-1 * var(--space-1)) 0 0; color: var(--ink-2); font-size: 0.8125rem; }
   /* Toolbar row: words (with the family's search icon), scope, button. */
   .search { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: end; inline-size: 100%; margin-block-start: var(--space-2); }
   .search-field { display: grid; flex: 1 1 14rem; gap: var(--space-1); }
@@ -199,18 +210,18 @@
   .actions .secondary { border-color: var(--brand); color: var(--brand-ink); background: var(--panel-raised); }
   .actions .secondary:hover { background: var(--brand-wash); }
   .examples { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: 0; }
-  .examples-label { color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
+  .examples-label { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
   .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
   .chip { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: var(--t-sm); font-weight: 600; text-decoration: none; white-space: nowrap; touch-action: manipulation; }
   .chip:hover { color: var(--brand-ink); background: var(--brand-wash); }
   .chip:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .also { display: grid; gap: var(--space-1); inline-size: 100%; margin-block-start: var(--space-4); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
-  .also-label { color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
+  .also-label { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
   .also ul { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; }
   .also a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-underline-offset: 0.15em; }
-  /* The first way out (the data route: 各校收錄狀態) leads; the rest are plain links. */
-  .also a.lead-out { color: var(--brand-ink); font-weight: 650; }
-  .also a:hover { color: var(--brand-ink); }
+  /* Every way out has the same weight; order carries priority (各校收錄狀態, then 回首頁). */
+  .also a { color: var(--brand-ink); }
+  .also a:hover { text-decoration-thickness: 2px; }
 
   @media (max-width: 40rem) {
     .error-wrap { min-block-size: 0; }
@@ -225,7 +236,8 @@
     /* The label on its own line, then one wrapping row of 40 px chips (no grid, so no ragged columns). */
     .examples { display: grid; gap: var(--space-2); inline-size: 100%; }
     .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-    /* The ways out share wrapping 44 px rows (two per line) instead of one tall row each. */
-    .also ul { gap: 0 var(--space-4); }
+    /* The ways out are separate 44 px rows with room between them, so a thumb never hits the wrong one. */
+    .also ul { display: grid; gap: var(--space-2); }
+    .also a { justify-content: space-between; inline-size: 100%; padding-inline: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); text-decoration: none; }
   }
 </style>

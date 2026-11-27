@@ -9,16 +9,15 @@
     { id: 'public', title: '公開內容' },
     { id: 'reviews', title: '外部評論索引儲存的資料' },
     { id: 'cookies', title: 'Cookie 與記錄' },
-    { id: 'contact', title: '移除與聯絡' }
+    { id: 'contact', title: '聯絡與移除' }
   ];
+  // Five points, each lead jumping to the section with the detail.
   const summary: GistPoint[] = [
-    { lead: '查課', text: '不用帳號；本站不要求學號、姓名或電子郵件。' },
-    { lead: '帳號', text: '只存帳號名稱與雜湊後的密碼；顯示名稱、學校與自我介紹都是選填。' },
-    { lead: '公開內容', text: '評分、文章與回覆會公開，也可能被搜尋引擎索引；投票只顯示合計。' },
-    { lead: '外部評價', text: '只索引 PTT 課程板公開文章的標題與短摘要，不存全文。' },
-    { lead: 'Cookie', text: '登入保存 30 天，主題偏好保存一年。' },
-    { lead: '伺服器記錄', text: '請求時間、路徑與 IP 短期保留。' },
-    { lead: '刪除與移除', text: '一般資料錯誤公開回報；刪除帳號或涉及個資的，', link: { href: PRIVATE_REPORT_URL, label: '在 GitHub 私密回報', external: true } }
+    { lead: '查課', href: '#browse', text: '不用帳號；本站不要求學號、姓名或電子郵件。' },
+    { lead: '帳號與公開', href: '#account', text: '只存帳號名稱與雜湊後的密碼，其餘欄位選填；評分、文章與回覆會公開，投票只顯示合計。' },
+    { lead: '外部評價', href: '#reviews', text: '只索引 PTT 課程板公開文章的標題與 120 字內摘要，不存全文。' },
+    { lead: 'Cookie 與記錄', href: '#cookies', text: '登入 30 天、主題偏好一年；請求時間、路徑與 IP 只為排除故障短期保留。' },
+    { lead: '刪除與移除', href: '#contact', text: '一般資料錯誤公開回報；刪除帳號或涉及個資的，', link: { href: PRIVATE_REPORT_URL, label: '在 GitHub 私密回報', external: true } }
   ];
 </script>
 
@@ -72,7 +71,7 @@
         </tbody>
       </table>
     </details>
-    <p>只收錄站方 robots 檔以 <code>Content-Signal</code> 明確允許搜尋的網站；歐趴糖、Dcard 等其他網站只提供搜尋連結，不抓取任何內容。索引內容不用於訓練模型，也不提供給第三方。索引不會自動得知原文已刪除；要移除某一筆，請用下方<a href="#contact">移除與聯絡</a>的管道。收錄範圍詳見<a href="/terms#reviews">使用條款</a>。</p>
+    <p>只收錄站方 robots 檔以 <code>Content-Signal</code> 明確允許搜尋的網站；歐趴糖、Dcard 等其他網站只提供搜尋連結，不抓取任何內容。索引內容不用於訓練模型，也不提供給第三方。索引不會自動得知原文已刪除；要移除某一筆，請用下方<a href="#contact">聯絡與移除</a>的管道。收錄範圍詳見<a href="/terms#reviews">使用條款</a>。</p>
   </section>
 
   <section aria-labelledby="cookies">
@@ -90,23 +89,23 @@
   </section>
 
   <section aria-labelledby="contact">
-    <div class="h2-row"><h2 id="contact">移除與聯絡</h2></div>
+    <div class="h2-row"><h2 id="contact">聯絡與移除</h2></div>
     <p>先選管道：<strong>刪除帳號、涉及個資或不想公開的請求走私密聯絡</strong>，一般的資料處理問題可以公開回報。</p>
     <div class="contact-routes">
       <div>
         <p class="route-kind">私密聯絡</p>
         <h3>刪除帳號或移除個資</h3>
         <p>刪除帳號、移除與你有關的索引，或處理其他私人請求。</p>
-        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">在 GitHub 私密回報 <span aria-hidden="true">↗</span></a>
         <p class="route-access">需 GitHub 帳號 · 僅維護者可見</p>
+        <a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">在 GitHub 私密回報 <span aria-hidden="true">↗</span></a>
         <ul class="route-meta"><li>附上相關頁面連結</li><li>通常七天內在同一則回報回覆</li></ul>
       </div>
       <div>
         <p class="route-kind">公開回報</p>
         <h3>可公開的資料錯誤</h3>
         <p>回報錯配的外部文章或其他資料錯誤。請勿附上個資。</p>
-        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 公開回報 <span aria-hidden="true">↗</span></a>
         <p class="route-access">需 GitHub 帳號 · 所有人可見</p>
+        <a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 公開回報 <span aria-hidden="true">↗</span></a>
         <ul class="route-meta"><li>附上相關頁面連結</li><li>通常七天內在同一則 issue 回覆</li></ul>
       </div>
     </div>

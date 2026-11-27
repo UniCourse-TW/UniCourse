@@ -9,6 +9,8 @@
   /** One plain-language point: a bold lead, the sentence, and optionally a link that ends it. */
   export interface GistPoint {
     lead: string;
+    /** In-page section the lead jumps to. */
+    href?: string;
     text: string;
     link?: { href: string; label: string; external?: boolean };
   }
@@ -100,7 +102,7 @@
         <h2 id="gist-title">白話重點</h2>
         <ul>
           {#each summary as point, index (index)}
-            <li><strong>{point.lead}</strong>{point.text}{#if point.link}<a href={point.link.href} rel={point.link.external ? 'noopener external' : undefined}>{point.link.label}{#if point.link.external}<span aria-hidden="true"> ↗</span>{/if}</a>。{/if}</li>
+            <li>{#if point.href}<a class="lead-link" href={point.href}><strong>{point.lead}</strong></a>{:else}<strong>{point.lead}</strong>{/if}{point.text}{#if point.link}<a href={point.link.href} rel={point.link.external ? 'noopener external' : undefined}>{point.link.label}{#if point.link.external}<span aria-hidden="true"> ↗</span>{/if}</a>。{/if}</li>
           {/each}
         </ul>
       </section>
@@ -147,6 +149,11 @@
   .gist li strong { margin-inline-end: 0.35em; color: var(--ink); font-weight: 650; }
   .gist li strong::after { content: '：'; }
   .gist a { font-weight: 600; }
+  .gist .lead-link { color: var(--ink); text-decoration-color: color-mix(in srgb, var(--brand) 60%, transparent); text-underline-offset: 0.2em; }
+  .gist .lead-link:hover { color: var(--brand-ink); }
+  .gist .lead-link strong::after { content: ''; }
+  .gist .lead-link::after { content: '：'; margin-inline-end: 0.35em; color: var(--ink); }
+  .gist .lead-link strong { margin-inline-end: 0; }
   .toc-hint { display: none; font-weight: 500; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .meta { margin: 0; color: var(--muted); font-size: var(--t-base); }
@@ -158,6 +165,8 @@
   .doc-toc { grid-column: 1; grid-row: 1; align-self: start; position: sticky; inset-block-start: 4.75rem; font-size: var(--t-md); }
   .has-gist .doc-toc { grid-row: 1 / span 2; }
   .prose { grid-column: 2; }
+  /* The first h2 sits as far below the gist as every h2 sits below the previous section. */
+  .has-gist .prose { padding-block-start: var(--space-4); }
   .doc-toc details { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .doc-toc summary { padding: var(--space-2) var(--space-3); color: var(--muted); font-size: var(--t-sm); font-weight: 600; list-style: none; pointer-events: none; }
   .doc-toc summary::-webkit-details-marker { display: none; }
@@ -166,7 +175,8 @@
   .doc-toc li a { display: flex; align-items: center; min-block-size: 2.25rem; padding: 0 var(--space-2); border-inline-start: 2px solid transparent; border-radius: 0 var(--radius-control) var(--radius-control) 0; color: var(--ink-2); text-decoration: none; }
   .doc-toc li a:hover { background: var(--brand-wash); color: var(--brand-ink); }
   .doc-toc li a[aria-current='true'] { border-inline-start-color: var(--brand); color: var(--brand-ink); font-weight: 600; background: var(--brand-wash); }
-  .doc-toc .sub { display: grid; margin: 0; padding: 0 0 0 var(--space-3); list-style: none; }
+  /* Sub-sections hang off a rule under their parent, so they never read as siblings of it. */
+  .doc-toc .sub { display: grid; margin: 0 0 var(--space-1) var(--space-4); padding: 0; border-inline-start: 1px solid var(--control-line); list-style: none; }
   .doc-toc .sub a { min-block-size: 2rem; color: var(--ink-2); font-size: var(--t-base); }
   .doc-toc .sibling { margin-block-start: var(--space-1); padding-block-start: var(--space-1); border-block-start: 1px solid var(--line); }
   .doc-toc .sibling a { color: var(--brand-ink); font-weight: 600; }
@@ -182,7 +192,7 @@
   .prose :global(li) { margin-block-end: 6px; }
   .prose :global(li:last-child) { margin-block-end: 0; }
   .prose :global(table) { inline-size: 100%; margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); border-collapse: separate; border-spacing: 0; overflow: hidden; background: var(--panel-raised); font-size: var(--t-base); line-height: var(--leading-table); }
-  .prose :global(th), .prose :global(td) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
+  .prose :global(th), .prose :global(td) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid color-mix(in srgb, var(--control-line) 35%, var(--line)); text-align: start; vertical-align: top; }
   .prose :global(th) { background: var(--table-head); color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .prose :global(tr:last-child td) { border-block-end: 0; }
   /* Code inside CJK sentences sits on a chip that moves to the next line whole; it never breaks mid-word. */
@@ -192,7 +202,7 @@
   .prose :global(table.boards td:nth-child(2)) { white-space: nowrap; }
   /* The data-kind column of the sources table reads as one unit (課程與修課人數 never breaks before its last word). */
   .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: 9.5rem; white-space: nowrap; }
-  .prose :global(.contact-routes .route-meta) { display: grid; gap: 2px; margin: 0; color: var(--muted); font-size: var(--t-sm); line-height: 1.6; }
+  .prose :global(.contact-routes .route-meta) { display: grid; gap: 2px; margin: 0; padding-inline-start: 1.2em; color: var(--ink-2); font-size: 0.8125rem; line-height: 1.6; }
   .prose :global(.contact-routes .route-meta li) { margin: 0; }
   .prose :global(p.update-note a.private) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: 2rem; font-weight: 600; }
   .prose :global(.callout) { margin: 0 0 var(--space-3); padding: var(--space-3) var(--space-4); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); }
@@ -202,14 +212,15 @@
   .prose :global(section:first-of-type .h2-row) { margin-block-start: 0; }
   .prose :global(.h2-row h2) { margin: 0; }
   /* A section's one-paragraph answer before the detail: what, and what to do. */
-  .prose :global(p.lead) { padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink-2); font-size: inherit; line-height: inherit; }
+  .prose :global(p.lead) { padding: var(--space-2) var(--space-3); border: 1px solid var(--line); border-inline-start: 3px solid var(--brand); border-radius: var(--radius-control); background: var(--panel); color: var(--ink-2); font-size: inherit; line-height: inherit; }
   .prose :global(p.lead strong) { color: var(--ink); }
   .prose :global(.contact-routes > div) { display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .prose :global(.contact-routes h3) { margin: 0; font-size: var(--t-md); }
-  .prose :global(.contact-routes .route-kind) { margin: 0; color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
+  .prose :global(.contact-routes .route-kind) { justify-self: start; margin: 0; padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-size: 0.8125rem; font-weight: 650; line-height: 1.7; }
   .prose :global(.contact-routes p) { margin: 0; color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
   .prose :global(.contact-routes a.route) { display: inline-flex; align-items: center; gap: var(--space-1); justify-self: start; min-block-size: var(--target-min); font-weight: 650; }
-  .prose :global(.contact-routes .route-access) { color: var(--ink-2); font-size: var(--t-base); font-weight: 600; }
+  /* Who can read it and what it needs, said before the button. */
+  .prose :global(.contact-routes .route-access) { margin-block-start: var(--space-1) !important; color: var(--ink); font-size: var(--t-base); font-weight: 650; }
   .prose :global(.account-data th:nth-child(-n+2)) { inline-size: 40%; }
   .prose :global(.account-data td:last-child) { white-space: nowrap; }
   .prose :global(.review-data td:first-child) { inline-size: 8rem; }
@@ -233,7 +244,7 @@
     .prose :global(.stacked td) { padding: 2px 0; border: 0; }
     /* Each cell is one row: the column name in a 5.5 rem label column, the value beside it. */
     .prose :global(.stacked td[data-label]) { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: var(--space-2); }
-    .prose :global(.stacked td[data-label])::before { content: attr(data-label); color: var(--muted); font-size: var(--t-sm); font-weight: 600; line-height: inherit; }
+    .prose :global(.stacked td[data-label])::before { content: attr(data-label); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; line-height: inherit; }
     .prose :global(.stacked td:first-child) { display: block; padding-block-end: var(--space-1); font-weight: 600; }
     .prose :global(.stacked td:first-child)::before { display: none; }
     .prose :global(.stacked.account-data td[data-label]) { grid-template-columns: 4rem minmax(0, 1fr); }
