@@ -68,7 +68,8 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
   await page.getByRole('link', { name: '線性代數' }).click();
   await expect(page.getByRole('heading', { name: '線性代數' })).toBeVisible();
   await expect(page.getByText('Linear Algebra (Demo)')).toBeVisible();
-  await expect(page.getByText('週二 第 3、4 節 · 示範館 101')).toBeVisible();
+  await expect(page.getByLabel('上課時間地點')).toContainText('週二 第 3、4 節');
+  await expect(page.getByLabel('上課時間地點')).toContainText('示範館 101');
   // Credits and 必選修 sit in the header meta line; seat counts in the tiles above the fold; school
   // fields are a definition list further down.
   await expect(page.getByText('3 學分', { exact: true })).toBeVisible();
@@ -81,7 +82,7 @@ test('filters by term and shows snapshot v2 details', async ({ page }) => {
   const history = page.getByRole('table', { name: /各學期開課與修課人數/ });
   await expect(history.getByRole('row', { name: /115-1/ })).toContainText('本頁');
   // The bar key is visible on the table itself (phones too), not packed into the column header.
-  await expect(page.getByText('刻線＝名額（100%）')).toBeVisible();
+  await expect(page.getByText('刻線＝100%')).toBeVisible();
   await expect(history.getByRole('row', { name: /114-2/ }).getByRole('link', { name: /114-2/ })).toHaveAttribute('href', /^\/courses\/\d+$/);
 
   // The course page breadcrumb leads to the department page.

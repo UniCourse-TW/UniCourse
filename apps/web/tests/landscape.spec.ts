@@ -6,22 +6,28 @@ test('the old static address redirects and the page renders from the bundled dat
   await expect(page).toHaveURL('/landscape');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('臺灣大專校院課程網站總覽');
   const tiles = page.getByRole('group', { name: '網站統計' });
-  for (const label of ['已盤點到網站的學校', '官方系統', '第三方服務', '運作中']) await expect(tiles.getByRole('term').filter({ hasText: label })).toBeVisible();
+  for (const label of ['已盤點到網站的學校', '官方網站', '第三方網站', '運作中']) await expect(tiles.getByRole('term').filter({ hasText: label })).toBeVisible();
   // Desktop shows the sortable table; phones get one short row per site instead.
   const thirdParty = page.getByRole('table', { name: /第三方查課網站/ }).or(page.getByRole('list', { name: '第三方查課網站' }));
   await expect(thirdParty.filter({ visible: true })).toHaveCount(1);
-  // Schools keep their anchor and link to the status page when they have imported offerings.
+  // Each school is one summary row; a fragment link opens that school's sites and its UniCourse link.
+  await expect(page.getByRole('heading', { name: /^各校（\d+ 所）$/ })).toBeVisible();
   const ntu = page.locator('#ntu');
-  await expect(ntu.getByRole('heading', { level: 2 })).toContainText('國立臺灣大學');
+  await expect(ntu.getByRole('heading', { level: 3 })).toContainText('國立臺灣大學');
+  await expect(ntu.getByRole('list', { name: '國立臺灣大學的課程網站' })).toBeHidden();
+  await page.goto('/landscape#ntu');
   await expect(ntu.getByRole('list', { name: '國立臺灣大學的課程網站' })).toBeVisible();
+  // Another fragment opens that school's row too.
+  await page.goto('/landscape#nthu');
+  await expect(page.locator('#nthu').getByRole('list', { name: '國立清華大學的課程網站' })).toBeVisible();
 });
 
 test('filters are plain query parameters and narrow the school sections', async ({ page }) => {
   await page.goto('/landscape?q=%E8%87%BA%E5%A4%A7&kind=third');
-  await expect(page.getByRole('status')).toContainText(/符合 \d+ \/ \d+ 個系統/);
+  await expect(page.getByRole('status')).toContainText(/符合 \d+ \/ \d+ 個網站/);
   await expect(page.getByRole('link', { name: '移除篩選：「臺大」' })).toBeVisible();
   await expect(page.getByRole('link', { name: '移除篩選：第三方' })).toBeVisible();
-  const sections = page.locator('.schools section.school');
+  const sections = page.locator('.schools details.school');
   await expect(sections.first()).toContainText('國立臺灣大學');
   await expect(sections.first().locator('.kind')).toHaveText(Array((await sections.first().locator('.kind').count())).fill('第三方'));
 

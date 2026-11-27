@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { authorName, dateTime, oneLine, postTypeLabels, scoreSign, shortDateTime, signed } from '$lib/community-format';
+  import { authorName, courseKey, dateTime, oneLine, postTypeLabels, scoreSign, shortDateTime, signed, titleWithoutCourse } from '$lib/community-format';
   import { forumHref, postHref, profileHref } from '$lib/community-paths';
   import type { PostSummary } from '$lib/community-types';
 
@@ -8,10 +8,13 @@
     schoolNames = {},
     showAuthor = true,
     label = '文章列表',
-    dense = false
+    dense = false,
+    courseTitles = {}
   }: {
     posts: PostSummary[];
     schoolNames?: Record<string, string>;
+    /** Course titles keyed `school/courseCode`: the row names the course once and the title drops it. */
+    courseTitles?: Record<string, string>;
     showAuthor?: boolean;
     label?: string;
     /** Compact rows: category, course and title on one line, then a one-line summary, then author and tags. */
@@ -31,6 +34,7 @@
   </div>
   <ol aria-label={label}>
     {#each posts as post (post.id)}
+      {@const courseTitle = post.school && post.courseCode ? courseTitles[courseKey(post.school, post.courseCode)] : undefined}
       <li>
         <article aria-labelledby="{id}-{post.id}">
           <div class="main">
@@ -38,11 +42,11 @@
               <span class="cm-type" data-type={post.type}>{postTypeLabels[post.type]}</span>
               {#if post.school}
                 <a class="over" href={forumHref({ school: post.school, courseCode: post.courseCode ?? undefined })}>
-                  {schoolNames[post.school] ?? post.school}{#if post.courseCode}&nbsp;<span class="mono">{post.courseCode}</span>{/if}
+                  {schoolNames[post.school] ?? post.school}{#if courseTitle}&nbsp;<span class="course">{courseTitle}</span>{/if}{#if post.courseCode}&nbsp;<span class="mono">{post.courseCode}</span>{/if}
                 </a>
               {/if}
             </p>
-            <h3 id="{id}-{post.id}"><a class="title" href={postHref(post.id)}>{post.title}</a></h3>
+            <h3 id="{id}-{post.id}"><a class="title" href={postHref(post.id)} title={courseTitle && titleWithoutCourse(post.title, courseTitle) !== post.title ? post.title : undefined}>{titleWithoutCourse(post.title, courseTitle)}</a></h3>
             {#if dense}
               {#if post.excerpt.trim()}<p class="excerpt">{oneLine(post.excerpt)}</p>{/if}
               {#if showAuthor || post.tags.length}
@@ -152,6 +156,10 @@
   dt { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   dd { margin: 0; color: var(--ink-2); font-size: var(--t-base); font-variant-numeric: tabular-nums; }
   .when dd { color: var(--muted); }
+  /* Replies and score in one weight; only the sign carries colour (green up, red down, grey zero). */
+  dd.cm-score { font-weight: 400; }
+  dd.cm-score[data-sign='zero'] { color: var(--muted); }
+  .kicker .course { color: var(--ink); font-weight: 600; }
 
   @media (max-width: 40rem) {
     .cols { display: none; }

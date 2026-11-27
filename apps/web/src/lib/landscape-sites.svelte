@@ -23,6 +23,14 @@
 
   const tones: Record<Site['status'], BadgeTone> = { active: 'live', inactive: 'blocked', unknown: 'none' };
 
+  /** A click anywhere on a row with notes (not on a link or the disclosure itself) opens them. */
+  function toggleRow(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (target.closest('a, summary, dl')) return;
+    const details = (event.currentTarget as HTMLElement).querySelector('details');
+    if (details) details.open = !details.open;
+  }
+
   function host(url: string) {
     try {
       return new URL(url).hostname.replace(/^www\./, '');
@@ -34,31 +42,34 @@
 
 {#snippet row(site: Site)}
   {@const official = isOfficial(site)}
-  {@const long = (site.features?.length ?? 0) > 44}
-  <li class:third={!official}>
+  {@const detail = Boolean(site.notes || site.repo)}
+  <!-- The description is shown in full; survey notes open from anywhere on the row (the cell's
+       disclosure is the keyboard and no-JS control). -->
+  <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (the summary is the keyboard control) -->
+  <li class:third={!official} class:expandable={detail} onclick={detail ? toggleRow : undefined}>
     <span class="kind">{kindLabels[official ? 'official' : 'third']}</span>
     <span class="name">
       <a href={site.url} rel="noopener external">{site.name}<span class="ext" aria-hidden="true"> ↗</span></a>
-      <small class="host">{host(site.url)}{#if (showOperator || !official) && site.operatorName} · {site.operatorName}{/if}</small>
+      <small class="host">{host(site.url)}{#if (showOperator || !official) && site.operatorName} · {site.operatorName}{/if}{#if site.sourceType !== 'web'}<span class="form">{sourceLabels[site.sourceType]}</span>{/if}</small>
     </span>
     <span class="cats">
       {#each site.category as category (category)}<span class="cat">{categoryLabels[category]}</span>{/each}
     </span>
     <span class="login">{loginLabel(site.loginRequired)}</span>
     <span class="status"><Badge tone={tones[site.status]} label={statusLabels[site.status]} dot /></span>
-    <!-- One line of description per row; the disclosure holds the full text and the survey notes. -->
     <span class="features">
-      <details class="more" class:long>
-        <summary><span class="clamp">{site.features ?? '—'}</span><span class="toggle">{long ? '全文與備註' : '備註'}</span></summary>
-        <dl>
-          {#if long}<dt>功能</dt><dd>{site.features}</dd>{/if}
-          {#if site.notes}<dt>說明</dt><dd>{site.notes}</dd>{/if}
-          <dt>營運者</dt><dd>{operatorLabels[site.operator]}{#if site.operatorName}（{site.operatorName}）{/if}</dd>
-          <dt>形式</dt><dd>{sourceLabels[site.sourceType]}</dd>
-          {#if site.repo}<dt>原始碼</dt><dd><a href={site.repo} rel="noopener external">{host(site.repo)}{site.repo.replace(/^https?:\/\/[^/]+/, '')}</a></dd>{/if}
-          <dt>查核</dt><dd>{site.lastChecked}</dd>
-        </dl>
-      </details>
+      {#if detail}
+        <details class="more">
+          <summary><span class="text">{site.features ?? '—'}</span><span class="chev" aria-hidden="true"></span><span class="sr-only">（說明與原始碼）</span></summary>
+          <dl>
+            {#if site.notes}<dt>說明</dt><dd>{site.notes}</dd>{/if}
+            {#if site.operatorName && official && !showOperator}<dt>營運者</dt><dd>{operatorLabels[site.operator]}（{site.operatorName}）</dd>{/if}
+            {#if site.repo}<dt>原始碼</dt><dd><a href={site.repo} rel="noopener external">{host(site.repo)}{site.repo.replace(/^https?:\/\/[^/]+/, '')}</a></dd>{/if}
+          </dl>
+        </details>
+      {:else}
+        <span class="text">{site.features ?? '—'}</span>
+      {/if}
     </span>
   </li>
 {/snippet}
@@ -66,7 +77,7 @@
 <div class="sites-box">
   {#if header}
     <!-- Same order as the third-party table above: site, functions, login, status; then the notes. -->
-    <div class="cols" aria-hidden="true"><span>類型</span><span>網站</span><span>功能</span><span>登入</span><span>狀態</span><span>說明</span></div>
+    <div class="cols" aria-hidden="true"><span>類型</span><span>網站</span><span>功能</span><span>登入</span><span>狀態</span><span>說明（點列看備註）</span></div>
   {/if}
   <ul class="sites" aria-label={label}>
     {#each head as site (site.url)}{@render row(site)}{/each}
@@ -152,28 +163,19 @@
   .login { color: var(--ink-2); white-space: nowrap; font-size: var(--t-sm); line-height: 1.5; }
   .status { white-space: nowrap; }
   .features { color: var(--ink-2); min-inline-size: 0; font-size: var(--t-sm); line-height: 1.5; overflow-wrap: anywhere; }
-  .more { display: block; color: var(--muted); font-size: var(--t-sm); }
-  .more > summary {
-    display: flex;
-    gap: var(--space-2);
-    align-items: baseline;
-    min-block-size: 1.5rem;
-    border-radius: var(--radius-control);
-    cursor: pointer;
-    list-style: none;
-  }
+  .form { margin-inline-start: var(--space-1); padding: 0 5px; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--ink-2); font-size: var(--t-xs); white-space: nowrap; }
+  .sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  li.expandable { cursor: pointer; }
+  .more { display: block; }
+  .more > summary { display: flex; gap: var(--space-2); align-items: baseline; justify-content: space-between; border-radius: var(--radius-control); cursor: pointer; list-style: none; }
   .more > summary::-webkit-details-marker { display: none; }
-  .clamp { flex: 1 1 auto; min-inline-size: 0; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .more[open] .clamp { white-space: normal; }
-  /* Wide screens have room for two lines of description before the disclosure is needed. */
-  @media (min-width: 56rem) {
-    .clamp { display: -webkit-box; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
-  }
-  .more.long[open] .clamp { display: none; }
-  .toggle { flex: none; color: var(--brand-ink); font-weight: 600; white-space: nowrap; }
-  .toggle::before { content: '＋ '; color: var(--muted); font-weight: 400; }
-  .more[open] .toggle::before { content: '－ '; }
-  dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px var(--space-3); margin: var(--space-1) 0 0; color: var(--ink-2); }
+  .text { color: var(--ink-2); }
+  /* A quiet chevron instead of a repeated 「＋備註」 label on every row. */
+  .chev { flex: none; inline-size: 1.25rem; color: var(--muted); text-align: center; }
+  .chev::before { content: '▾'; }
+  .more[open] .chev::before { content: '▴'; }
+  li.expandable:hover .chev { color: var(--brand-ink); }
+  dl { display: grid; grid-template-columns: max-content 1fr; gap: 2px var(--space-3); margin: var(--space-1) 0 0; padding: var(--space-2); border-radius: var(--radius-control); background: var(--chip); color: var(--ink-2); cursor: auto; }
   dt { color: var(--muted); }
   dd { margin: 0; overflow-wrap: anywhere; }
   dd a { color: var(--brand-ink); }

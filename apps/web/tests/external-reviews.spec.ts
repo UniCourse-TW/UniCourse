@@ -11,16 +11,16 @@ test('course page lists external reviews from the demo index and outbound search
 
   await page.goto(`/courses/${course.id}`);
 
-  // The page head links to the section with its size.
-  await expect(page.getByRole('navigation', { name: '跳到本頁段落' }).getByRole('link', { name: /外部評價/ })).toContainText('PTT 1 篇');
+  // The summary tiles link down to the indexed posts (the fourth tile, or its link under the ratings).
+  await expect(page.getByRole('group', { name: '課程重點' }).locator('a[href="#external-reviews"]')).toBeVisible();
 
   const section = page.locator('#external-reviews');
-  await expect(section.getByRole('heading', { name: /外部評價/ })).toContainText('1 篇');
+  await expect(section.getByRole('heading', { name: /外站討論（PTT）/ })).toContainText('1 篇');
   await expect(section).toContainText('只存標題、日期、作者帳號與開頭摘要');
   await expect(section).toContainText('DEMO_Course 板');
 
   // Summary first: this offering's teacher count; phones filter by teacher with a select inside
-  // 篩選與排序 (desktop uses the per-teacher bars in the summary).
+  // 教師、學期與排序 (desktop uses the per-teacher bars in the summary).
   const summary = section.locator('aside', { hasText: '依教師篩選' });
   await expect(summary).toContainText('本班教師');
   // The summary counts double as filters.
@@ -41,8 +41,8 @@ test('course page lists external reviews from the demo index and outbound search
   await expect(link).toHaveAttribute('href', 'https://example.com/demo/ptt/DEMO_Course/1');
   await expect(link).toHaveAttribute('target', '_blank');
 
-  // Phones fold the filters behind one button; they work after hydration and say what they narrowed to.
-  const toggle = section.getByRole('button', { name: /篩選與排序/ });
+  // Phones fold the teacher, term and sort selects behind one button; the type chips stay visible.
+  const toggle = section.getByRole('button', { name: /教師、學期與排序/ });
   await expect(toggle).toBeEnabled();
   await toggle.click();
   await expect(toggle).toHaveAttribute('aria-expanded', 'true');

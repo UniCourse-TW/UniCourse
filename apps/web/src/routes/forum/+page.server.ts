@@ -4,6 +4,7 @@ import { UNAVAILABLE, apiMessage } from '$lib/community-messages';
 import { postHref, type ForumFilters } from '$lib/community-paths';
 import type { PostType } from '$lib/community-types';
 import { catalog } from '$lib/server/catalog';
+import { courseTitles } from '$lib/server/community-course-titles';
 import { field, requireUser } from '$lib/server/community-forms';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -61,6 +62,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
         .then((result) => result.data ?? [])
         .catch(() => [])
     : [];
+  const titles = await courseTitles(fetch, posts.data.posts);
   const seen = new Set<string>();
   const suggestions = ranked
     .filter((entry) => !seen.has(entry.school) && seen.add(entry.school))
@@ -75,6 +77,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
       terms: entry.terms
     }));
   return {
+    courseTitles: titles,
     suggestions,
     filters,
     compose: url.searchParams.get('compose') === '1',
