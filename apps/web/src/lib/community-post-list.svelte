@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { authorName, oneLine, postTypeLabels, scoreSign, shortDate, signed } from '$lib/community-format';
+  import { authorName, dateTime, oneLine, postTypeLabels, scoreSign, shortDateTime, signed } from '$lib/community-format';
   import { forumHref, postHref, profileHref } from '$lib/community-paths';
   import type { PostSummary } from '$lib/community-types';
 
@@ -47,7 +47,7 @@
           <dl class="stats">
             <div class="replies"><dt>回覆</dt><dd class="num">{post.replyCount}</dd></div>
             <div><dt>分數</dt><dd class="cm-score" data-sign={scoreSign(post.score)}>{signed(post.score)}</dd></div>
-            <div class="when"><dt>發表於</dt><dd class="num"><time datetime={post.createdAt}>{shortDate(post.createdAt)}</time></dd></div>
+            <div class="when"><dt>發表於</dt><dd class="num"><time datetime={post.createdAt} title={dateTime(post.createdAt)}>{shortDateTime(post.createdAt)}</time></dd></div>
           </dl>
         </article>
       </li>
@@ -64,7 +64,7 @@
   }
   .cols, article {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 4rem 4rem 5.75rem;
+    grid-template-columns: minmax(0, 1fr) 4rem 4rem 8rem;
     gap: 0 var(--space-2);
     padding-inline: var(--space-4);
   }

@@ -91,9 +91,8 @@
       <input name="q" type="search" maxlength="100" defaultValue={filters.q} placeholder="搜尋標題或內文" aria-describedby="search-scope" />
     </label>
     <details class="scope" open={scopeCount > 0 || undefined}>
-      <summary>課程範圍{#if scopeCount}<span class="scope-now">：{schoolNames[filters.school] ?? filters.school}{#if filters.courseCode}&nbsp;<span class="mono">{filters.courseCode}</span>{/if}</span>{/if}</summary>
-      <div class="scope-fields" role="group" aria-labelledby="scope-label">
-        <span class="scope-label" id="scope-label">課程範圍</span>
+      <summary>課程範圍<span class="scope-now">：{#if scopeCount}{schoolNames[filters.school] ?? filters.school}{#if filters.courseCode}&nbsp;<span class="mono">{filters.courseCode}</span>{/if}{:else}所有課程{/if}</span></summary>
+      <div class="scope-fields" role="group" aria-label="課程範圍">
         <FilterSelect name="school" label="學校" options={schoolOptions} value={filters.school} allLabel="全部學校" />
         <label class="code-field">
           <span>課號</span>
@@ -106,7 +105,7 @@
     {#if filters.tag}<input type="hidden" name="tag" value={filters.tag} />{/if}
     <button class="cm-btn">套用</button>
     {#if filtered || filters.courseCode}<a class="clear" href="/forum">清除</a>{/if}
-    <p class="scope-hint" id="search-scope"><span id="code-hint">關鍵字比對標題與內文；要找某門課的討論，在「課程範圍」選學校並填課號。列表依發表時間由新到舊。</span></p>
+    <p class="scope-hint" id="search-scope"><span id="code-hint">關鍵字比對標題與內文；由新到舊排列。</span></p>
   </form>
 
   <div class="chip-bar">
@@ -185,13 +184,11 @@
       {#if !filtered && !filters.courseCode && total <= SPARSE_POSTS}
         <!-- A young forum: say so and point at the most useful next post. -->
         <aside class="sparse" aria-labelledby="sparse-title">
-          <h3 id="sparse-title">論壇才剛開始，目前只有 {fmt.format(total)} 篇。</h3>
-          <p>
-            {#if data.counts.article === 0}還沒有修課心得。{/if}最有用的是針對一門課的心得或提問：到課程頁按「發表關於這門課的文章」，課號會自動帶上；也可以直接在這裡發表。
-          </p>
+          <h3 id="sparse-title">論壇才剛開始，目前只有 {fmt.format(total)} 篇{#if data.counts.article === 0}，還沒有修課心得{/if}。</h3>
+          <p>從課程頁發文會自動帶上課號，最容易被修同一門課的人找到。</p>
           <div class="state-actions start">
-            <a class="cm-btn" href={data.user ? articleHref : loginHref(articleHref)}>寫一篇修課心得</a>
-            <a class="cm-btn secondary" href="/">先查一門修過的課</a>
+            <a class="cm-btn secondary" href="/">查一門修過的課 →</a>
+            {#if data.counts.article === 0}<a class="text-link" href={data.user ? articleHref : loginHref(articleHref)}>或直接寫一篇修課心得</a>{/if}
           </div>
         </aside>
       {/if}
@@ -290,7 +287,7 @@
   .sparse { display: grid; gap: var(--space-2); margin-block-start: var(--space-4); padding: var(--space-4) var(--space-5); border: 1px dashed var(--control-line); border-radius: var(--radius-panel); background: var(--panel); }
   .sparse h3 { font-size: var(--t-md) !important; }
   .sparse p { color: var(--ink-2); font-size: var(--t-base); max-inline-size: 46em; }
-  .scope-label { color: var(--muted); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
+  .text-link { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-weight: 600; }
   .scope-now { font-weight: 500; color: var(--ink); }
 
   @media (max-width: 40rem) {
@@ -317,7 +314,6 @@
     .scope summary::after { content: '▾'; margin-inline-start: var(--space-2); color: var(--muted); }
     .scope[open] summary::after { content: '▴'; }
     .scope-fields { flex-basis: 100%; padding-block-start: var(--space-2); }
-    .scope-label { display: none; }
     .scope-fields :global(.field) { flex: 1 1 100%; }
     .scope-fields :global(.field select) { flex: 1; max-inline-size: none; }
     .code-field { flex: 1 1 100%; }

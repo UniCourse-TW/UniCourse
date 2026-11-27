@@ -46,6 +46,8 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(page.getByRole('heading', { name: '建立帳號' })).toBeVisible();
   await page.getByLabel('帳號').fill(username);
   await page.getByLabel('密碼').fill('correct horse battery');
+  // The optional display name sits in a collapsed「加上顯示名稱」section.
+  await page.getByText('加上顯示名稱').click();
   await page.getByLabel('顯示名稱').fill('測試同學');
   await page.getByRole('button', { name: '註冊' }).click();
 

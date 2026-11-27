@@ -1,6 +1,7 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
   import { navigating, page } from '$app/state';
+  import { initial } from '$lib/community-format';
   import { loginHref, profileHref } from '$lib/community-paths';
   import '$lib/ui/tokens.css';
   import type { LayoutProps } from './$types';
@@ -61,8 +62,9 @@
       </form>
       {#if data.user}
         <details class="account" bind:open={accountOpen}>
-          <summary aria-label="帳號選單"><span>@{data.user.username}</span><span aria-hidden="true">▾</span></summary>
+          <summary aria-label="帳號選單"><span class="initial" aria-hidden="true">{initial(data.user.displayName || data.user.username)}</span><span class="handle">@{data.user.username}</span><span aria-hidden="true">▾</span></summary>
           <div class="account-links">
+            <p class="menu-who">@{data.user.username}</p>
             <a href={profileHref(data.user.username)}>個人頁面</a>
             <a href="/settings">設定</a>
             <form method="POST" action="/auth?/logout"><button>登出</button></form>
@@ -131,12 +133,16 @@
     .site-header:not([data-shell-theme]) .set-light { display: inline-grid; }
   }
   .login { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target-min); min-width: var(--target-min); padding-inline: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); font-size: var(--t-base); font-weight: 650; white-space: nowrap; text-decoration: none; }
-  .login[aria-current='page'] { border-color: var(--brand); color: var(--brand-ink); background: var(--brand-wash); }
+  /* On /auth the card is the call to action; the header link steps back instead of repeating it. */
+  .login[aria-current='page'] { border-color: transparent; color: var(--muted); background: transparent; }
   .account { position: relative; }
   .account summary { display: flex; gap: var(--space-1); padding-inline: var(--space-2); list-style: none; font-weight: 650; }
   .account summary::-webkit-details-marker { display: none; }
-  .account summary span:first-child { max-width: clamp(5rem, 12vw, 9rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .account summary .handle { max-width: clamp(5rem, 12vw, 9rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Phones show an initial instead of a clipped @handle; the menu still names the account. */
+  .account summary .initial { display: none; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; background: var(--brand-wash); color: var(--brand-ink); font-size: var(--t-base); }
   .account-links { position: absolute; inset-inline-end: 0; margin-top: var(--space-1); min-width: 9rem; padding: var(--space-1); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); box-shadow: 0 5px 16px rgb(0 0 0 / 0.12); }
+  .menu-who { margin: 0; padding: var(--space-1) var(--space-3) var(--space-2); border-bottom: 1px solid var(--line); color: var(--muted); font-size: var(--t-sm); overflow-wrap: anywhere; }
   .account-links :is(a, button) { display: flex; align-items: center; width: 100%; min-height: var(--target-min); padding: 0 var(--space-3); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink); font: inherit; text-decoration: none; cursor: pointer; }
   .tools :is(a, button, summary):hover { background: var(--hover-row); }
   .progress { position: absolute; bottom: -1px; height: 2px; width: 35%; background: var(--brand); animation: progress 1s ease-in-out infinite alternate; }
@@ -153,6 +159,8 @@
   .footer-inner nav a { display: grid; align-items: center; min-height: var(--target-min); color: var(--ink-2); }
   @media (max-width: 55rem) { .nav-search { display: none; } .mobile-search { display: inline-grid; } }
   @media (max-width: 39rem) {
+    .account summary .handle { display: none; }
+    .account summary .initial { display: grid; }
     .bar { flex-wrap: wrap; gap: 0; padding-block-start: var(--space-1); }
     .tabs { order: 1; flex: 1 0 100%; }
     .tabs a { padding-inline: var(--space-2); }

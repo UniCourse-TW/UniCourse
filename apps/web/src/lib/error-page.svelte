@@ -30,6 +30,9 @@
 
   let { status, message, title, description, primary, secondary, also = [], search = false, query = '', retryHref }: Props = $props();
 
+  /** Searches that find courses at most schools, as a starting point when the address gave no clue. */
+  const examples = ['微積分', '普通心理學', '經濟學原理', '計算機概論'];
+
   let notFound = $derived(status === 404);
   let heading = $derived(title ?? (notFound ? '找不到這個頁面' : '暫時無法顯示'));
   let detail = $derived(
@@ -61,7 +64,7 @@
 </svelte:head>
 
 <section class="error-page" class:outage={!notFound} aria-labelledby="error-title">
-  <p class="eyebrow"><span class="ui-tabular code">{status}</span>{notFound ? '找不到' : '暫時無法取得'}{#if !notFound && message && message !== detail} · {message}{/if}</p>
+  <p class="eyebrow"><span class="ui-tabular code">{status}</span>{#if !notFound}暫時無法取得{#if message && message !== detail} · {message}{/if}{/if}</p>
   <h1 id="error-title">{heading}</h1>
   <p class="detail">{detail}</p>
   {#if search}
@@ -73,6 +76,7 @@
       </label>
       <button type="submit">搜尋課程</button>
     </form>
+    <p class="examples">常見搜尋：{#each examples as example, index (example)}{index ? '・' : ''}<a href={`/?${new URLSearchParams({ q: example, term: 'all' })}`}>{example}</a>{/each}</p>
   {/if}
   <div class="actions">
     <!-- The search form's submit button is the primary action when a search box is shown. -->
@@ -83,7 +87,10 @@
     <a class="secondary" href={second.href}>{second.label}</a>
   </div>
   {#if also.length}
-    <p class="also">你也可以：{#each also as link, index (link.href)}{index ? ' · ' : ''}<a href={link.href}>{link.label}</a>{/each}</p>
+    <nav class="also" aria-label="其他出路">
+      <span class="also-label">你也可以</span>
+      <ul>{#each also as link (link.href)}<li><a href={link.href}>{link.label} <span aria-hidden="true">→</span></a></li>{/each}</ul>
+    </nav>
   {/if}
 </section>
 
@@ -92,7 +99,7 @@
     display: grid;
     gap: var(--space-2);
     justify-items: start;
-    inline-size: min(100%, 38rem);
+    inline-size: min(100%, 42rem);
     margin: var(--space-4) auto;
     padding: var(--space-6) var(--space-6);
     border: 1px solid var(--line);
@@ -144,10 +151,14 @@
     cursor: pointer;
   }
   button, .primary { color: var(--on-brand); background: var(--brand); border-color: var(--brand); }
-  .secondary { border-color: var(--brand); color: var(--brand-ink); background: var(--panel-raised); }
-  .secondary:hover { background: var(--brand-wash); }
-  .also { margin: var(--space-1) 0 0; color: var(--muted); font-size: var(--t-base); }
-  .also a { color: var(--brand-ink); text-underline-offset: 0.15em; }
+  .actions .secondary { border-color: var(--brand); color: var(--brand-ink); background: var(--panel-raised); }
+  .actions .secondary:hover { background: var(--brand-wash); }
+  .examples { margin: 0; color: var(--muted); font-size: var(--t-sm); }
+  .examples a { display: inline-flex; align-items: center; min-block-size: 2rem; color: var(--brand-ink); text-underline-offset: 0.15em; }
+  .also { display: grid; gap: var(--space-1); inline-size: 100%; margin-block-start: var(--space-2); padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
+  .also-label { color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
+  .also ul { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; }
+  .also a { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; text-underline-offset: 0.15em; }
 
   @media (max-width: 40rem) {
     .error-page { padding: var(--space-5) var(--space-4); margin-block-start: 0; }
@@ -157,5 +168,7 @@
     .actions { inline-size: 100%; }
     .actions .primary { flex: 1 1 100%; }
     .actions .secondary { flex: 1 1 10rem; }
+    .also ul { display: grid; gap: 0; }
+    .also li + li { border-block-start: 1px solid var(--line); }
   }
 </style>
