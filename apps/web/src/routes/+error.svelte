@@ -28,9 +28,9 @@
         description: '這個連結可能已失效。用課名、課號或教師搜尋其他學期的開課。',
         hint: '課號可在舊課表或校方課程頁上找到。',
         context: offeringId ? pathname : undefined,
-        // Only course-finding routes here: coverage first, then home (the forum is not a way to a course).
-        secondary: SCHOOLS,
-        also: [{ href: '/', label: '回首頁' }],
+        // Ways to the course: start from its school, or ask classmates in the forum; then home.
+        secondary: { href: '/schools', label: '從學校開始找' },
+        also: [{ href: '/forum', label: '到論壇問修過的同學' }, { href: '/', label: '回首頁' }],
         search: true,
         query: courseCode,
         crossTerm: Boolean(courseCode)

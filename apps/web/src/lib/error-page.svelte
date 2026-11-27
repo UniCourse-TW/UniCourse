@@ -132,7 +132,13 @@
     </nav>
   {/if}
   {#if context}
-    <p class="diagnostic"><span>你開啟的連結（{status}）：<code>{context}</code></span><a href={PUBLIC_REPORT_URL} rel="noopener external">回報這個失效連結 <span aria-hidden="true">↗</span></a></p>
+    <!-- The status and the dead address on lines of their own (a long address wraps), then the report link,
+         which says where it goes and what to paste. -->
+    <div class="diagnostic">
+      <p class="diag-label">你開啟的連結・<span class="ui-tabular">{status}</span> 找不到</p>
+      <p class="diag-path"><code>{context}</code></p>
+      <p class="diag-report"><a href={PUBLIC_REPORT_URL} rel="noopener external">回報這個失效連結 <span aria-hidden="true">↗</span></a><span class="diag-how">開啟 GitHub 公開回報，請貼上上面的連結</span></p>
+    </div>
   {/if}
 </section>
 </div>
@@ -155,14 +161,18 @@
     overflow-wrap: anywhere;
   }
   .outage { border-inline-start: 3px solid var(--down); }
-  .eyebrow { display: flex; gap: var(--space-2); align-items: center; margin: 0; color: var(--muted); font-size: 0.8125rem; font-weight: 600; }
+  .eyebrow { display: flex; gap: var(--space-2); align-items: center; margin: 0; color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
   .code { padding: 0 6px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--panel-raised); font-family: var(--font-mono); font-weight: 500; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .detail { margin: 0; color: var(--ink-2); }
   /* One row: the address that failed (with its status) and the action to report it. */
-  .diagnostic { display: flex; flex-wrap: wrap; gap: 0 var(--space-4); align-items: center; inline-size: 100%; margin: var(--space-1) 0 0; padding: var(--space-1) var(--space-3); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); font-variant-numeric: tabular-nums; }
-  .diagnostic code { font-family: var(--font-mono); font-size: 0.92em; color: var(--ink); }
-  .diagnostic a { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); margin-inline-start: auto; color: var(--brand-ink); font-weight: 600; text-underline-offset: 0.15em; }
+  .diagnostic { display: grid; gap: 2px; inline-size: 100%; margin: var(--space-1) 0 0; padding: var(--space-2) var(--space-3) var(--space-1); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); font-variant-numeric: tabular-nums; }
+  .diagnostic p { margin: 0; }
+  .diag-label { font-size: 0.8125rem; font-weight: 600; }
+  .diag-path code { font-family: var(--font-mono); font-size: var(--t-md); color: var(--ink); overflow-wrap: anywhere; word-break: break-all; }
+  .diag-report { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; }
+  .diag-how { color: var(--ink-2); font-size: 0.8125rem; }
+  .diagnostic a { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-weight: 600; text-underline-offset: 0.15em; }
   .diagnostic a:hover { color: var(--brand-ink); }
   .diagnostic a:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .search-hint { margin: calc(-1 * var(--space-1)) 0 0; color: var(--ink-2); font-size: 0.8125rem; text-wrap: pretty; }
@@ -245,6 +255,5 @@
     .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); }
     /* The ways out are separate 44 px rows with room between them, so a thumb never hits the wrong one. */
     .also ul { gap: var(--space-1); }
-    .diagnostic a { margin-inline-start: 0; }
   }
 </style>

@@ -43,28 +43,14 @@
   let currentId = $state('');
   // Before the observer has spoken (and without JavaScript) the first section is the current one.
   let shownId = $derived(currentId || sections[0]?.id);
-  // Phones also get a floating shortcut once the contents have scrolled away.
-  let tocAway = $state(false);
-  let tocDetails = $state<HTMLDetailsElement>();
-  onMount(() => {
-    const toc = document.getElementById('toc');
-    if (!toc || !('IntersectionObserver' in window)) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      tocAway = !entry.isIntersecting && entry.boundingClientRect.top < 0;
-    });
-    observer.observe(toc);
-    return () => observer.disconnect();
+  // Phones: the contents are one sticky row of chips; keep the current chip in view as the reader scrolls.
+  let chipRow = $state<HTMLOListElement>();
+  $effect(() => {
+    const id = shownId;
+    if (!chipRow || chipRow.scrollWidth <= chipRow.clientWidth) return;
+    const chip = chipRow.querySelector<HTMLElement>(`a[href="#${id}"]`);
+    if (chip) chipRow.scrollTo({ left: chip.offsetLeft - chipRow.clientWidth / 2 + chip.offsetWidth / 2, behavior: 'smooth' });
   });
-
-  /** Opens the collapsed phone contents and moves focus there, not just the scroll position. */
-  function toToc(event: MouseEvent) {
-    if (!tocDetails) return;
-    event.preventDefault();
-    tocDetails.open = true;
-    const toc = document.getElementById('toc');
-    toc?.scrollIntoView({ block: 'start' });
-    tocDetails.querySelector('summary')?.focus({ preventScroll: true });
-  }
 
   onMount(() => {
     const headings = sections.map((section) => document.getElementById(section.id)).filter((node): node is HTMLElement => Boolean(node));
@@ -95,7 +81,7 @@
   <header class="doc-head">
     <h1>{title}</h1>
     <p class="meta">
-      更新於 <time datetime={updated}>{updatedLabel}</time>
+      <span class="updated">更新於 <time datetime={updated}>{updatedLabel}</time></span>
       {#if contact}<span class="sep" aria-hidden="true">·</span><a class="contact-link" href={`#${contact.id}`}>{contactLabel ?? contact.title}</a>{/if}
       <span class="sep" aria-hidden="true">·</span><a class="arrow-link" href={sibling.href}><span>{sibling.label}</span><span aria-hidden="true">→</span></a>
     </p>
@@ -114,12 +100,12 @@
     <nav class="doc-toc" id="toc" aria-label="目錄">
       <!-- Open in the markup: desktop shows the sticky list, phones show the sections as a row of chips near the
            top (the jump list), which the reader can still fold away. -->
-      <details bind:this={tocDetails} open>
-        <summary>目錄<span class="toc-hint">・{sections.length} 個章節</span></summary>
-        <ol>
+      <details open>
+        <summary>目錄</summary>
+        <ol bind:this={chipRow}>
           {#each sections as section (section.id)}
             <li>
-              <a href={`#${section.id}`} aria-current={shownId === section.id ? 'true' : undefined}>{section.title}</a>
+              <a href={`#${section.id}`} aria-current={shownId === section.id ? 'location' : undefined}>{section.title}</a>
               {#if section.children?.length}
                 <ol class="sub">
                   {#each section.children as child (child.id)}<li><a href={`#${child.id}`}>{child.title}</a></li>{/each}
@@ -134,12 +120,11 @@
     <div class="prose">
       {@render children()}
       <p class="next">
-        <a href="#toc" class="back" onclick={toToc}><span aria-hidden="true">↑</span><span>回目錄</span></a>
+        <a href="#top-of-doc" class="back"><span aria-hidden="true">↑</span><span>回到頂端</span></a>
         <a href={sibling.href}><span>另請參閱{sibling.label}</span><span aria-hidden="true">→</span></a>
       </p>
     </div>
   </div>
-  <a class="toc-fab" class:shown={tocAway} href="#toc" onclick={toToc} aria-hidden={tocAway ? undefined : 'true'} tabindex={tocAway ? undefined : -1}><span aria-hidden="true">↑</span> 回目錄</a>
 </article>
 
 <style>
@@ -156,12 +141,12 @@
   .gist-lines { display: grid; margin-block-start: 2px; color: var(--ink-2); font-size: var(--t-base); line-height: 1.6; }
   .gist-lines span::before { content: '・'; color: var(--muted); }
   .gist a { font-weight: 600; }
-  .gist .lead-link { color: var(--ink); text-decoration-color: color-mix(in srgb, var(--brand) 60%, transparent); text-underline-offset: 0.2em; }
+  /* The lead words are jump links: invisible padding makes 44 px targets without moving the text. */
+  .gist .lead-link { padding: 0.75rem 0.5rem; margin-inline: -0.5rem; color: var(--ink); text-decoration-color: color-mix(in srgb, var(--brand) 60%, transparent); text-underline-offset: 0.2em; }
   .gist .lead-link:hover { color: var(--brand-ink); }
-  .toc-hint { display: none; font-weight: 500; }
   h1 { margin: 0; font-size: var(--t-2xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); text-wrap: balance; }
   .meta { margin: 0; color: var(--muted); font-size: var(--t-base); }
-  .meta .sep { margin-inline: 0.4em; color: var(--axis); }
+  .meta .sep { margin-inline: 0.4em; color: var(--muted); }
   .meta a, .doc-toc a, .next a, .prose :global(a) { color: var(--brand-ink); text-underline-offset: 0.15em; }
   :is(.meta, .doc-toc, .next, .prose) :global(a:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: 2px; }
 
@@ -172,13 +157,13 @@
   /* The first h2 sits as far below the gist as every h2 sits below the previous section. */
   .has-gist .prose { padding-block-start: var(--space-4); }
   .doc-toc details { border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
-  .doc-toc summary { padding: var(--space-2) var(--space-3); color: var(--muted); font-size: 0.8125rem; font-weight: 600; list-style: none; pointer-events: none; }
+  .doc-toc summary { padding: var(--space-2) var(--space-3); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; list-style: none; pointer-events: none; }
   .doc-toc summary::-webkit-details-marker { display: none; }
   .doc-toc details::details-content { display: block; content-visibility: visible; }
   .doc-toc ol { display: grid; margin: 0; padding: 0 var(--space-2) var(--space-2); list-style: none; }
   .doc-toc li a { display: flex; align-items: center; min-block-size: 2.25rem; padding: 0 var(--space-2); border-inline-start: 2px solid transparent; border-radius: 0 var(--radius-control) var(--radius-control) 0; color: var(--ink-2); text-decoration: none; }
   .doc-toc li a:hover { background: var(--brand-wash); color: var(--brand-ink); }
-  .doc-toc li a[aria-current='true'] { border-inline-start-color: var(--brand); color: var(--brand-ink); font-weight: 600; background: var(--brand-wash); }
+  .doc-toc li a[aria-current] { border-inline-start-color: var(--brand); color: var(--brand-ink); font-weight: 600; background: var(--brand-wash); }
   /* Sub-sections hang off a rule under their parent, so they never read as siblings of it. */
   .doc-toc .sub { display: grid; margin: 0 0 var(--space-1) var(--space-5); padding: 0; border-inline-start: 1px solid var(--control-line); list-style: none; }
   .doc-toc .sub a { min-block-size: 2rem; color: var(--ink-2); font-size: 0.8125rem; }
@@ -200,12 +185,14 @@
   .prose :global(li:last-child) { margin-block-end: 0; }
   .prose :global(table) { inline-size: 100%; margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); border-collapse: separate; border-spacing: 0; overflow: hidden; background: var(--panel-raised); font-size: var(--t-base); line-height: var(--leading-table); }
   .prose :global(th), .prose :global(td) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
-  .prose :global(th) { background: var(--table-head); color: var(--muted); font-size: 0.8125rem; font-weight: 600; }
+  .prose :global(th) { background: var(--table-head); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
   .prose :global(tr:last-child td) { border-block-end: 0; }
   /* Code inside CJK sentences sits on a chip that moves to the next line whole; it never breaks mid-word. */
   .prose :global(code) { padding: 1px 5px; border-radius: 4px; background: var(--chip); color: var(--ink); font-family: var(--font-mono); font-size: 0.88em; white-space: nowrap; }
   /* Identifier columns (board names) never break mid-word; the remarks column takes the wrapping. */
-  .prose :global(table.boards td:first-child), .prose :global(table.boards th:first-child) { white-space: nowrap; font-family: var(--font-mono); font-size: 0.92em; }
+  /* Boards: the table is as wide as its content (no wide, mostly empty remarks column). */
+  .prose :global(table.boards) { inline-size: auto; }
+  .prose :global(table.boards td:first-child), .prose :global(table.boards th:first-child) { white-space: nowrap; font-family: var(--font-mono); }
   .prose :global(table.boards td:nth-child(2)) { white-space: nowrap; }
   /* The data-kind column of the sources table reads as one unit (課程與修課人數 never breaks before its last word). */
   .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: 9.5rem; white-space: nowrap; }
@@ -224,6 +211,11 @@
   .prose :global(.contact-routes > div) { display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .prose :global(.contact-routes h3) { margin: 0; font-size: var(--t-md); }
   .prose :global(.contact-routes .route-kind) { justify-self: start; margin: 0; padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-size: 0.8125rem; font-weight: 650; line-height: 1.7; }
+  .prose :global(.contact-routes .route-kind.public) { background: var(--chip); color: var(--ink-2); }
+  /* Who will see it sits inside the link, so the button names its purpose and its audience together. */
+  .prose :global(.contact-routes a.route) { flex-wrap: wrap; }
+  .prose :global(.contact-routes .who-sees) { padding: 0 var(--space-2); border-radius: var(--radius-pill); background: var(--chip); color: var(--ink); font-size: 0.8125rem; font-weight: 600; line-height: 1.7; }
+  .prose :global(td .opt) { margin-inline-start: var(--space-2); padding: 0 6px; border-radius: var(--radius-pill); box-shadow: inset 0 0 0 1px var(--control-line); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
   .prose :global(.contact-routes p) { margin: 0; color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
   .prose :global(.contact-routes a.route) { display: inline-flex; align-items: center; gap: var(--space-1); justify-self: start; min-block-size: var(--target-min); font-weight: 650; }
   /* Who can read it and what it needs, said before the button. */
@@ -240,9 +232,6 @@
   .prose :global(.doc-fold summary) { min-block-size: var(--target-min); padding: var(--space-2) var(--space-3); scroll-margin-block-start: 5rem; color: var(--brand-ink); font-weight: 650; cursor: pointer; }
   .prose :global(.doc-fold summary:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: var(--radius-control); }
   .prose :global(.doc-fold > :not(summary)) { inline-size: calc(100% - 2 * var(--space-3)); margin-inline: var(--space-3); }
-  .toc-fab { display: none; }
-  /* Section ends get a small way back to the jump list on phones; desktop has the sticky contents. */
-  .prose :global(.section-end) { display: none; }
   /* Shared conditions for both contact routes, said once before the two cards. */
   .prose :global(.routes-shared) { color: var(--ink-2); font-size: var(--t-base); }
   .prose :global(.contact-routes .route-needs) { color: var(--ink-2); font-size: var(--t-base); }
@@ -276,41 +265,39 @@
     .prose :global(.stacked.account-data td:last-child)::before { display: none; }
     .prose :global(.stacked.account-data td:nth-child(2)) { grid-row: 2; grid-column: 1 / -1; display: block; color: var(--ink-2); font-size: 0.8125rem; }
     .prose :global(.stacked.account-data td:nth-child(2))::before { display: none; }
-    /* A full-size way back at each section end: 44 px tall, outlined, not a small grey line. */
-    .prose :global(.section-end) { display: block; margin: var(--space-3) 0 0; }
-    .prose :global(.section-end a) { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-decoration: none; }
     .prose :global(.review-data td:first-child) { inline-size: auto; }
     .prose :global(table.sources th:first-child), .prose :global(table.sources td:first-child) { inline-size: auto; white-space: normal; }
   }
   @media (max-width: 56rem) {
     .doc-layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
-    /* Phones: the gist answers first, then the contents (the jump list), then the text. */
+    /* The date on its own line, the two links together on the next (no link left alone on a third). */
+    .meta { display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--space-3); }
+    .meta .updated { flex-basis: 100%; }
+    .meta .sep { display: none; }
+    .meta a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
+    /* Phones: the contents first, as one sticky row of section chips under the site header (the same row
+       as the course page), the section in view filled; then the gist and the text. No per-section
+       「回目錄」 links: the row is always there. */
     .gist, .doc-toc, .has-gist .doc-toc, .prose { grid-column: 1; grid-row: auto; }
-    .gist { order: 0; }
-    .doc-toc { order: 1; }
+    .doc-toc { order: 0; }
+    .gist { order: 1; }
     .prose { order: 2; }
-    .doc-toc { position: static; scroll-margin-block-start: 4.75rem; }
-    .doc-toc details::details-content { content-visibility: auto; }
-    .doc-toc details:not([open])::details-content { content-visibility: hidden; }
-    .doc-toc .sub a { min-block-size: var(--target-min); }
-    .doc-toc summary { display: flex; align-items: center; justify-content: space-between; min-block-size: var(--target-min); padding-inline: var(--space-3); color: var(--ink-2); font-size: var(--t-base); cursor: pointer; pointer-events: auto; }
-    .doc-toc summary::after { content: '▾'; color: var(--muted); }
-    .doc-toc details[open] summary::after { content: '▴'; }
-    .doc-toc summary:focus-visible { outline: var(--focus-ring); outline-offset: calc(-1 * var(--focus-offset)); border-radius: var(--radius-panel); }
-    .doc-toc li a { min-block-size: var(--target-min); }
-    /* Phones: the contents are a wrapping row of section chips (the jump list); sub-sections and the sibling
-       link are left to the desktop list and the header. */
-    .doc-toc ol { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0 var(--space-3) var(--space-3); }
-    .doc-toc li a { padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink); font-size: var(--t-base); }
-    .doc-toc li a[aria-current='true'] { border-color: var(--control-line); background: var(--panel-raised); color: var(--ink); font-weight: 500; }
-    .doc-toc .sub, .doc-toc .sibling { display: none; }
-    .toc-hint { display: inline; }
-    .doc-toc summary { justify-content: flex-start; }
-    .doc-toc summary::after { margin-inline-start: auto; }
-    /* Phones: one floating way back to the contents once it has scrolled out of view. */
-    .toc-fab { position: fixed; inset-block-end: calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); inset-inline-end: var(--space-4); z-index: 20; display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 18%, transparent); color: var(--ink); font-size: var(--t-base); font-weight: 650; text-decoration: none; opacity: 0; pointer-events: none; transition: opacity 150ms; }
-    .toc-fab.shown { opacity: 1; pointer-events: auto; }
-    .toc-fab:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+    /* Under the one-row site header (two rows below 39 rem, see the rule after this block). */
+    .doc-toc { position: sticky; inset-block-start: calc(3.75rem + 1px); z-index: 5; margin-inline: calc(-1 * clamp(1rem, 3vw, 2.5rem)); margin-block: calc(-1 * var(--space-2)) 0; background: var(--bg); border-block-end: 1px solid var(--line); }
+    .doc-toc details { border: 0; border-radius: 0; background: none; }
+    .doc-toc summary { display: none; }
+    .doc-toc ol { display: flex; flex-wrap: nowrap; gap: var(--space-2); padding: var(--space-1) clamp(1rem, 3vw, 2.5rem); overflow-x: auto; scrollbar-width: none; }
+    .doc-toc ol::-webkit-scrollbar { display: none; }
+    .doc-toc li, .doc-toc .sub { display: contents; }
+    .doc-toc li a { flex: none; min-block-size: var(--target-min); padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-base); font-weight: 650; white-space: nowrap; }
+    .doc-toc .sub a { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
+    .doc-toc .sub a::before { content: '└'; margin-inline-end: var(--space-1); color: var(--ink-2); }
+    .doc-toc li a[aria-current] { border-color: var(--brand); background: var(--brand); color: var(--on-brand); font-weight: 650; }
+    .doc-toc .sibling { display: none; }
+    .prose :global(h2), .prose :global(h3), .prose :global(.doc-fold summary) { scroll-margin-block-start: 9.75rem; }
     .prose :global(section + section .h2-row) { margin-block-start: var(--space-5); }
+  }
+  @media (max-width: 39rem) {
+    .doc-toc { inset-block-start: calc(2 * var(--target-min) + var(--space-1) + 1px); }
   }
 </style>

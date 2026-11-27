@@ -448,7 +448,8 @@
   .headline-facts { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: baseline; margin-block-start: var(--space-1) !important; color: var(--ink-2); font-size: var(--t-md); }
   .headline-facts .item { padding: 1px var(--space-2); border-radius: var(--radius-pill); background: var(--chip); }
   .headline-facts b { color: var(--ink); font-weight: 650; }
-  .headline-facts .detail { margin-inline-start: 2px; padding: 0.75rem 0.6rem; color: var(--ink-2); font-size: 0.8125rem; text-decoration: none; }
+  /* ⓘ: a 44 px square target hung on the pill without growing it (negative margins). */
+  .headline-facts .detail { display: inline-grid; place-items: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); margin-block: -0.875rem; margin-inline: -0.5rem -0.75rem; color: var(--ink-2); font-size: 0.8125rem; text-decoration: none; vertical-align: middle; }
   .notes-peek { display: -webkit-box; margin-block-start: var(--space-2) !important; max-inline-size: 48rem; color: var(--ink-2); font-size: var(--t-base); line-height: 1.55; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
   .notes-peek .peek-key { margin-inline-end: var(--space-2); padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink); font-size: 0.8125rem; font-weight: 650; }
   .notes-peek a { margin-inline-start: var(--space-2); padding-block: 0.75rem; font-weight: 600; white-space: nowrap; }

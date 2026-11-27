@@ -591,8 +591,8 @@
   .password .cm-input { padding-inline-end: 7.75rem; letter-spacing: normal; }
   .toggle {
     position: absolute;
-    inset-block: 1px;
-    inset-inline-end: 1px;
+    inset-block: 0;
+    inset-inline-end: 0;
     display: inline-flex;
     gap: 0.3rem;
     align-items: center;

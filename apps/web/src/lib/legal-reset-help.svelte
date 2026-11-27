@@ -11,16 +11,18 @@
     quiet?: boolean;
     /** Centred under a form (sign-in), or flush left in a list (settings). */
     align?: 'center' | 'start';
+    /** Plain text before the summary link (settings: what happens), so the row is not a bold purple action. */
+    note?: string;
   }
 
-  let { summary = '忘記密碼？重設方式', id = 'reset-help', open = $bindable(false), quiet = false, align = 'center' }: Props = $props();
+  let { summary = '忘記密碼？重設方式', id = 'reset-help', open = $bindable(false), quiet = false, align = 'center', note }: Props = $props();
 </script>
 
 <!-- Password help, said in full before anyone leaves the site: there is no e-mail reset, so a maintainer
      resets it by hand from a private report; what to send, what never to send, how long it takes, and what
      to do without a GitHub account. No contact address is invented here. -->
 <details class="reset-help" class:quiet class:start={align === 'start'} {id} bind:open>
-  <summary><span class="label">{summary}</span><span class="chev" aria-hidden="true"></span></summary>
+  <summary>{#if note}<span class="note">{note}</span>{/if}<span class="label">{summary}</span><span class="chev" aria-hidden="true"></span></summary>
   <div class="body">
     <!-- The answer first (who resets it, how long), then the steps; what to write is a list of its own. -->
     <p class="lead">沒有 email 自動重設：維護者手動處理，通常七天內回覆。</p>
@@ -49,7 +51,9 @@
   .chev::before { content: '▾'; color: var(--muted); }
   details[open] .chev::before { content: '▴'; }
   .quiet summary { color: var(--ink-2); }
-  .start summary { justify-content: space-between; }
+  .start summary { justify-content: flex-start; flex-wrap: wrap; gap: 0 var(--space-2); }
+  .note { color: var(--ink); font-weight: 400; }
+  .start .label { text-decoration: underline; text-underline-offset: 0.15em; }
   .body { display: grid; gap: var(--space-1); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); font-size: 0.8125rem; }
   .body p, .body ol { margin: 0; }
   .lead { color: var(--ink); font-weight: 600; text-wrap: pretty; }

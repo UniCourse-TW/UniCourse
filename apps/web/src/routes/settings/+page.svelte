@@ -35,15 +35,23 @@
   let previewName = $derived(current.displayName.trim() || data.profile.username);
   let previewSchool = $derived(current.school ? (schoolNames[current.school] ?? '') : '');
   // One label for what the preview shows: the draft being typed, the version just saved, or the stored one.
-  let version = $derived(dirty ? '含未儲存的變更（尚未公開）' : savedVisible ? '已儲存的版本（已公開）' : '與目前公開的相同');
+  let version = $derived(dirty ? '編輯中，尚未公開' : '公開版本');
   let joined = $derived(slashDate(data.profile.createdAt));
   let profile = $derived(profileHref(data.profile.username));
 
+  // Right after a save the button itself says 「已儲存 ✓」 for three seconds, then rests disabled.
+  let savedFlash = $state(false);
+  let flashTimer: ReturnType<typeof setTimeout> | undefined;
   const save: SubmitFunction = () => {
     saving = true;
-    return async ({ update }) => {
+    return async ({ result, update }) => {
       await update({ reset: false });
       saving = false;
+      if (result.type === 'success') {
+        savedFlash = true;
+        clearTimeout(flashTimer);
+        flashTimer = setTimeout(() => (savedFlash = false), 3000);
+      }
     };
   };
 
@@ -79,7 +87,7 @@
     <p class="cm-dek">
       <span class="who-line mono">@{data.profile.username}</span>
       <!-- The header keeps the same links in every state, so saving never moves the page. -->
-      <span class="sep dek-sep">·</span><a class="dek-link" href={profile}>查看已公開的個人頁 <span aria-hidden="true">→</span></a>
+      <span class="sep dek-sep" aria-hidden="true">·</span><a class="dek-link" href={profile}>查看公開個人頁 <span aria-hidden="true">→</span></a>
       <!-- Phones stack the panels; this in-page jump (muted, unlike the link beside it) goes to the account panel. -->
       <a class="dek-link jump-link" href="#account">帳號與登出 <span aria-hidden="true">↓</span></a>
     </p>
@@ -88,7 +96,7 @@
   <div class="layout">
     <section id="public" class="cm-panel" aria-labelledby="public-title" tabindex="-1">
       <h2 id="public-title">公開資料</h2>
-      <p class="lead">顯示名稱用於<a href={profile}>公開個人頁</a>與社群署名。</p>
+      <p class="lead">顯示名稱會出現在個人頁，也是評價與文章的署名；自我介紹與學校只在個人頁。</p>
       <form method="POST" class="cm-form" use:enhance={save} oninput={onInput} onchange={onInput}>
         <div class="cm-field">
           <div class="cm-label">
@@ -97,7 +105,7 @@
           </div>
           <input id="displayName" class="cm-input" name="displayName" maxlength="50" readonly={saving} defaultValue={values.displayName}
             placeholder={data.profile.username} aria-describedby="displayName-hint" />
-          <p id="displayName-hint" class="cm-hint">留空時顯示帳號 @{data.profile.username}。</p>
+          <p id="displayName-hint" class="cm-hint">留空時以帳號 @{data.profile.username} 署名。</p>
         </div>
         <div class="cm-field">
           <div class="cm-label">
@@ -106,7 +114,7 @@
           </div>
           <textarea id="bio" class="cm-input" name="bio" rows="3" maxlength="500" readonly={saving} defaultValue={values.bio}
             placeholder="例如：資工系大三，喜歡演算法與系統課。" aria-describedby="bio-hint"></textarea>
-          <p id="bio-hint" class="cm-hint">只顯示在公開個人頁。</p>
+          <p id="bio-hint" class="cm-hint">最多 500 字。</p>
         </div>
         <div class="cm-field">
           <div class="cm-label"><label for="school">所屬學校</label><span class="cm-hint">選填</span></div>
@@ -121,28 +129,27 @@
             </select>
             <span class="chev" aria-hidden="true">▾</span>
           </span>
-          <p id="school-hint" class="cm-hint">只顯示在個人頁，不會出現在評價或文章旁。</p>
+          <p id="school-hint" class="cm-hint">不會出現在評價或文章旁。</p>
         </div>
         {#if form && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
+        <!-- Phones: the preview folds right before the save line (check, then save); its summary names the version. -->
+        <details class="preview-fold">
+          <summary>編輯預覽 <span class="version" class:draft={dirty}>{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
+          {@render previewCard()}
+        </details>
         <!-- Button and its state on one line: why it is greyed out, what is unsaved, or the saved result with
              the one link to the updated profile (the header link steps aside meanwhile). -->
         <div class="save-row">
-          <button class="cm-btn" aria-busy={saving} disabled={saving || (hydrated && !dirty)}>{saving ? '儲存中…' : '儲存'}</button>
+          <button class="cm-btn" class:just-saved={savedFlash} aria-busy={saving} disabled={saving || (hydrated && !dirty)}>{saving ? '儲存中…' : savedFlash ? '已儲存 ✓' : '儲存'}</button>
+          <!-- A fixed message line: the same height idle, unsaved and saved, so nothing below moves. The
+               public page is the header link (one name for it everywhere). -->
           <div class="status" role="status">
             {#if saving}<span class="cm-sr">儲存中…</span>
-            {:else if savedVisible}
-              <!-- One success message, then the updated page as its own full-size link. -->
-              <span class="ok"><span aria-hidden="true">✓</span><span>已儲存，個人頁已更新</span></span>
-              <a class="see" href={profile}>查看更新後的個人頁 <span aria-hidden="true">→</span></a>
+            {:else if savedVisible}<span class="ok"><span aria-hidden="true">✓</span><span>已儲存，個人頁已更新</span></span>
             {:else if hydrated && dirty}<span class="pending">有 {changes} 項變更尚未儲存</span><span class="preview-note">預覽已即時更新</span>
-            {:else if hydrated}<span class="idle">尚未變更，修改後才能儲存</span>{/if}
+            {:else if hydrated}<span class="idle">沒有待儲存的變更</span>{/if}
           </div>
         </div>
-        <!-- Phones: the preview folds under the save line, its summary saying which version it shows. -->
-        <details class="preview-fold">
-          <summary>{dirty ? '預覽變更後的個人頁' : '預覽個人頁'} <span class="version" class:draft={dirty}>{version}</span><span class="chev" aria-hidden="true">▾</span></summary>
-          {@render previewCard()}
-        </details>
       </form>
     </section>
 
@@ -163,15 +170,15 @@
         <div><dt>加入於</dt><dd class="num">{joined}</dd></div>
         {#if data.profile.isAdmin}<div><dt>權限</dt><dd>管理員</dd></div>{/if}
         <div class="account-action">
-          <dt>工作階段</dt>
+          <dt>此瀏覽器的登入</dt>
           <dd>
-            <p class="cm-hint">只登出這個瀏覽器。</p>
+            <p class="cm-hint">只登出這個瀏覽器，其他裝置不變。</p>
             <form method="POST" action="/auth?/logout"><button class="cm-btn leave">登出</button></form>
           </dd>
         </div>
         <div class="reset-row">
           <dt>密碼</dt>
-          <dd><ResetHelp summary="重設密碼：由維護者手動處理" id="settings-reset" align="start" /></dd>
+          <dd><ResetHelp note="由維護者手動重設" summary="怎麼重設" id="settings-reset" align="start" /></dd>
         </div>
       </dl>
     </section>
@@ -179,9 +186,9 @@
 </div>
 
 <style>
-  .settings .sep { margin-inline: 0.4em; color: var(--axis); }
+  .settings .sep { margin-inline: 0.4em; color: var(--muted); }
   .cm-dek { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-3); }
-  .dek-link { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: 2rem; }
+  .dek-link { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); }
   .jump-link { display: none; color: var(--ink-2) !important; font-weight: 600; }
   .cm-panel:focus { outline: none; }
   .cm-panel:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
@@ -196,7 +203,7 @@
   #account { grid-column: 2; grid-row: 2; }
   .cm-panel { min-inline-size: 0; scroll-margin-block-start: 5rem; }
   h2 { font-size: var(--t-lg) !important; }
-  .lead { margin-block: var(--space-1) var(--space-4) !important; color: var(--muted); font-size: 0.8125rem; line-height: 1.6; }
+  .lead { margin-block: var(--space-1) var(--space-4) !important; color: var(--ink-2); font-size: var(--t-base); line-height: 1.6; text-wrap: pretty; }
   /* The select looks like the other inputs, with one chevron at its end. */
   .select-wrap { position: relative; display: block; }
   .select-wrap select { appearance: none; padding-inline-end: 2.5rem; cursor: pointer; }
@@ -204,20 +211,21 @@
   .save-row { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
   .save-row .cm-btn { min-inline-size: 6rem; }
   /* The status takes the rest of the button's row; a second item (the profile link) wraps inside it. */
-  .status { display: flex; flex: 1 1 10rem; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; min-block-size: var(--target-min); font-size: 0.8125rem; }
+  .status { display: flex; flex: 1 1 10rem; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; min-block-size: var(--target-min); font-size: var(--t-base); }
+  .cm-btn.just-saved:disabled { color: var(--up) !important; border-color: color-mix(in srgb, var(--up) 55%, var(--line)); }
   .ok { display: inline-flex; gap: 0.3em; align-items: center; padding: 0 var(--space-2); border-radius: var(--radius-pill); color: var(--up); background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); font-size: var(--t-base); font-weight: 650; line-height: 1.9; }
-  .see { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); font-size: var(--t-base); font-weight: 600; }
   .preview-note { color: var(--ink-2); }
   @media (max-width: 56rem) { .preview-note { display: none; } }
   .pending { color: var(--warn); font-weight: 600; }
   .idle { color: var(--ink-2); }
   /* The character count sits at the field's right edge (label left, limit right), readable in both themes. */
-  .settings .cm-label { justify-content: space-between; gap: 0 var(--space-3); }
+  /* The count sits right after its label, so the two are read together. */
+  .settings .cm-label { justify-content: flex-start; gap: 0 var(--space-3); }
   .settings .cm-count { color: var(--ink-2); font-size: 0.8125rem; font-variant-numeric: tabular-nums; }
   .settings .cm-field > .cm-hint { color: var(--ink-2); font-size: 0.8125rem; }
   .facts { display: grid; margin: 0; border-block-start: 1px solid var(--line); }
   .facts div { display: grid; grid-template-columns: 5rem minmax(0, 1fr); gap: var(--space-3); padding-block: var(--space-2); border-block-end: 1px solid var(--line); font-size: var(--t-base); }
-  dt { color: var(--muted); }
+  dt { color: var(--ink-2); }
   dd { margin: 0; }
   dd .cm-hint { display: block; }
   .account-action { align-items: baseline; }
@@ -227,14 +235,14 @@
   .preview { grid-column: 2; grid-row: 1; display: grid; gap: var(--space-2); padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .preview .preview-card { background: var(--panel-raised); }
   .preview-heading { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; }
-  .version { display: inline-block; padding: 0 6px; border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
+  .version { display: inline-block; padding: 0 var(--space-2); border-radius: var(--radius-pill); color: var(--ink-2); background: var(--chip); font-size: var(--t-base); font-weight: 600; white-space: nowrap; }
   .version.draft { color: var(--warn); background: var(--warn-wash); }
   /* Saved: the preview keeps its ordinary frame; the one success signal is the status beside the button. */
   .preview-card { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .avatar { display: grid; place-items: center; inline-size: 3rem; block-size: 3rem; border-radius: 50%; color: var(--brand-ink); background: var(--brand-wash); font-size: 1.25rem; font-weight: 650; }
   .who { min-inline-size: 0; }
   .name { font-size: var(--t-lg); font-weight: 650; line-height: var(--leading-tight); overflow-wrap: anywhere; }
-  .handle { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; }
+  .handle { margin-block-start: var(--space-1) !important; color: var(--ink-2); font-size: 0.8125rem; }
   .bio { margin-block-start: var(--space-2) !important; color: var(--ink-2); font-size: var(--t-base); white-space: pre-wrap; overflow-wrap: anywhere; }
   .bio.empty { color: var(--muted); }
 
@@ -242,7 +250,7 @@
     .layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
     #public, #account { grid-column: 1; grid-row: auto; }
     .preview { display: none; }
-    .preview-fold { display: block; min-inline-size: 0; margin-block-start: calc(-1 * var(--space-2)); border-block-start: 1px solid var(--line); }
+    .preview-fold { display: block; min-inline-size: 0; border-block: 1px solid var(--line); }
     .jump-link { display: inline-flex; }
     .cm-panel { scroll-margin-block-start: 5rem; }
   }
@@ -257,10 +265,12 @@
     .facts dd { text-align: end; }
     /* The fixed-name note goes under the handle, so a long handle keeps its line. */
     .facts dd .cm-hint.fixed { display: block; font-size: 0.8125rem; }
-    .account-action dd { justify-content: end; }
-    .account-action dd .cm-hint { display: none; }
+    /* The sign-out scope stays visible on phones: the label row, then the hint beside the button. */
+    .account-action { grid-template-columns: minmax(0, 1fr) !important; gap: var(--space-1) !important; }
+    .account-action dd { justify-content: space-between; text-align: start !important; }
+    .account-action dd .cm-hint { flex: 1 1 10rem; }
+    .save-row .status { flex-basis: 100%; }
     .facts .reset-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
-    .facts .reset-row dt { display: none; }
     .facts .reset-row dd { text-align: start; }
   }
 </style>
