@@ -113,18 +113,15 @@
             <dd class="go"><a href="#posts">看文章 <span aria-hidden="true">↓</span></a></dd>
           </div>
           <div>
-            <dt>文章收到的回覆</dt>
+            <!-- The API counts every reply under the posts, the author's own included; the label says so. -->
+            <dt>文章下的回覆</dt>
             <dd><span class="big num">{replies}</span> 則</dd>
-            <dd class="note">含作者自己的回覆</dd>
+            <dd class="note">含自己的回覆</dd>
           </div>
           <div>
             <dt>評價過的學校</dt>
-            {#if schoolCounts.length === 1}
-              <dd class="school-name">{schoolSpread}</dd>
-            {:else}
-              <dd><span class="big num">{schoolCounts.length}</span> 所</dd>
-              <dd class="note">{schoolCounts.length ? schoolSpread : '還沒有評價'}</dd>
-            {/if}
+            <dd><span class="big num">{schoolCounts.length}</span> 所</dd>
+            <dd class="note">{schoolSpread}</dd>
           </div>
         </dl>
       </div>
@@ -134,7 +131,7 @@
     <StatRow label="活動統計">
       <StatTile label="課程評價" value={ratingCount} unit="則" note={ratingCount >= RATING_CAP ? `顯示最近 ${RATING_CAP} 則` : undefined} />
       <StatTile label="發表文章" value={profile.posts.length} unit="篇" note={profile.posts.length >= POST_CAP ? `顯示最近 ${POST_CAP} 篇` : undefined} />
-      <StatTile label="文章收到的回覆" value={replies} unit="則" note="含作者自己的回覆" />
+      <StatTile label="文章下的回覆" value={replies} unit="則" note="含自己的回覆" />
       {#if topSchool}
         <StatTile label="最常評的學校" value={topSchool.name} note={`${topSchool.count} 則評價`} />
       {:else}
@@ -154,7 +151,11 @@
 
   <section class="block" aria-labelledby="ratings">
     <div class="block-head">
-      <h2 id="ratings">課程評價（{ratingCount}）{#if sparse && average !== null && ratingCount < 3}<span class="head-note">樣本太少，還看不出給分習慣</span>{/if}</h2>
+      <h2 id="ratings">課程評價（{ratingCount}）</h2>
+      {#if sparse && average !== null && ratingCount < 3}
+        <!-- One or two ratings: the scores in one sentence instead of a distribution chart. -->
+        <p class="head-note">給分：{histogram.filter((bar) => bar.value > 0).map((bar) => `${bar.label} ${bar.value} 則`).join('、')}<span class="sep">·</span>樣本太少，還看不出給分習慣</p>
+      {/if}
       {#if hydrated && ratingCount > 1}
         <div class="sort" role="group" aria-label="評價排序">
           <button type="button" aria-pressed={sort === 'recent'} onclick={() => (sort = 'recent')}>最新</button>
@@ -206,10 +207,9 @@
           </tbody>
         </table>
       </div>
-      {#if sparse && average !== null}
-        <!-- A few ratings: the ratings themselves come first; the distribution is a summary below,
-             folded while one or two ratings cannot show a habit. -->
-        <details class="dist compact-dist inline-dist" open={ratingCount >= 3 || undefined}>
+      {#if sparse && average !== null && ratingCount >= 3}
+        <!-- Three or four ratings: the ratings come first; the distribution is a summary below. -->
+        <details class="dist compact-dist inline-dist" open>
           <summary class="eyebrow">給分分布<span class="sep">·</span><span class="num">{ratingCount}</span>&nbsp;則</summary>
           <BarList label="給分分布" items={histogram} unit="則" showValues={false} />
         </details>
@@ -283,14 +283,14 @@
   .inline-dist summary::after { content: '▾'; margin-inline-start: auto; color: var(--muted); }
   .inline-dist[open] summary::after { content: '▴'; }
   .inline-dist[open] summary { margin-block-end: var(--space-2) !important; }
-  .head-note { margin-inline-start: var(--space-2); color: var(--muted); font-size: var(--t-sm); font-weight: 500; }
+  .head-note { flex: 1 1 auto; margin: 0 !important; color: var(--ink-2); font-size: var(--t-sm); }
+  .block-head:has(.head-note) { justify-content: start; gap: var(--space-1) var(--space-3); }
   .counts div { display: grid; align-content: start; gap: 2px; min-inline-size: 0; }
   .counts dt { color: var(--muted); font-size: var(--t-sm); }
   .counts dd { margin: 0; color: var(--ink-2); font-size: var(--t-sm); }
   .counts .big { color: var(--ink); font-size: var(--t-2xl); font-weight: 650; line-height: 1.2; }
   .counts .sub { margin-inline-start: var(--space-2); color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
   .counts .note { color: var(--muted); }
-  .counts .school-name { color: var(--ink); font-size: var(--t-lg); font-weight: 650; line-height: 1.5; overflow-wrap: anywhere; }
   .compact-dist :global(.bar-row) { min-block-size: 1.25rem !important; }
   .dist { padding: var(--space-3) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .eyebrow { display: flex; flex-wrap: wrap; align-items: baseline; margin-block-end: var(--space-2) !important; color: var(--ink-2) !important; font-size: var(--t-sm) !important; letter-spacing: 0 !important; }
