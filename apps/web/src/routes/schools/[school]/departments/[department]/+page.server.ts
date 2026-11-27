@@ -32,7 +32,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const { offerings: sample, terms, total, ...department } = result.data;
   const query = (url.searchParams.get('q') ?? '').trim().replace(/[\r\n\0]/g, ' ').slice(0, 100);
   const requestedPage = Number(url.searchParams.get('page'));
-  const pageSize = 50;
+  const pageSize = 16;
   const safePage = Number.isSafeInteger(requestedPage) ? Math.max(1, requestedPage) : 1;
   let page = Math.min(safePage, Math.max(1, Math.ceil(total / pageSize)));
   const results = (pageNumber: number) => client.GET('/api/courses/search', {
@@ -48,7 +48,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
       page = finalPage;
       search = await results(page);
     }
-    offerings = search?.data?.courses ?? [];
+    offerings = search?.data?.courses.slice(0, pageSize) ?? [];
     matches = search?.data?.total ?? 0;
     resultsError = !search?.data;
   }
@@ -56,7 +56,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const [institution, ratings] = await Promise.all([institutionRequest, browseRatings(client, department.school, offerings)]);
   return {
     department, trends, terms, term, total, offerings, ratings, query, resultsError, matches, page,
-    totalPages: Math.max(1, Math.ceil(matches / pageSize)),
+    totalPages: Math.max(1, Math.ceil(matches / pageSize)), firstRow: (page - 1) * pageSize + 1,
     updatedAt: offeringEdition(sample),
     complete: sample.length === total,
     breakdown: {

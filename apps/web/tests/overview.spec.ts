@@ -13,12 +13,13 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(linearAlgebra.getByText('示範', { exact: true })).toBeVisible();
   await expect(linearAlgebra.getByText(/2 學期/)).toBeVisible();
   await expect(linearAlgebra.getByText('113', { exact: true })).toBeVisible();
-  await expect(linearAlgebra.getByRole('img', { name: /各學期修課人數/ }).locator('path.line')).toHaveCount(1);
-  const singleTerm = ranking.getByRole('listitem').filter({ hasText: 'DEMO202' }).getByRole('img', { name: /單期有資料/ });
-  await expect(singleTerm).toHaveText('115-1 · 72');
+  await expect(linearAlgebra.getByText('115-1 · 58 人')).toBeVisible();
+  await expect(linearAlgebra.getByText('114-2 · 55 人')).toBeVisible();
+  const singleTerm = ranking.getByRole('listitem').filter({ hasText: 'DEMO202' });
+  await expect(singleTerm.getByText('115-1 · 72 人')).toBeVisible();
   await expect(singleTerm.locator('svg')).toHaveCount(0);
   await ranking.getByText('計算方式', { exact: true }).click();
-  await expect(ranking.getByText(/另以累計名額/)).toBeVisible();
+  await expect(ranking.getByText(/以累計名額排列在後/)).toBeVisible();
   await expect(ranking.getByRole('list').getByText('人數與名額未公布').first()).toBeVisible();
 
   const rankSchool = ranking.getByLabel('排行範圍');
@@ -27,7 +28,7 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(rankSchool).toHaveValue('nthu');
   await expect(ranking.getByRole('listitem')).toHaveCount(4);
   await expect(ranking.getByRole('link', { name: '資料結構' })).toHaveCount(0);
-  await ranking.getByRole('checkbox', { name: '含班會、體育等非學術課程' }).check();
+  await ranking.getByRole('checkbox', { name: '納入零學分及行政活動' }).check();
   await expect(page).toHaveURL(/[?&]include_non_academic=true([&#]|$)/);
 
   const snapshot = page.getByRole('region', { name: '目前收錄' });
@@ -37,7 +38,8 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   const nthuCoverage = coverage.getByRole('row').filter({ hasText: '國立清華大學' });
   await expect(nthuCoverage).toContainText('114-2 至 115-1');
   await expect(nthuCoverage).toContainText('2 個學期');
-  await coverage.getByRole('link', { name: /全部 \d+ 所/ }).click();
+  expect(await coverage.locator('tbody tr').count()).toBeLessThanOrEqual(10);
+  await coverage.getByRole('link', { name: /查看全部 \d+ 所學校/ }).click();
   await expect(page).toHaveURL('/schools');
 
   const school = page.getByRole('table').getByRole('row').filter({ hasText: '國立清華大學' });
@@ -47,7 +49,7 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(page).toHaveURL('/schools/nthu');
   await expect(page.getByRole('heading', { name: '國立清華大學' })).toBeVisible();
   await expect(page.getByRole('list', { name: '每學期開課班次' }).getByRole('listitem')).toHaveCount(2);
-  await expect(page.getByRole('table', { name: '校內累計修課人次排行' })).toBeVisible();
+  await expect(page.getByRole('list', { name: '校內累計修課人次排行' })).toBeVisible();
   await expect(page.getByText(/收錄期間：114-2 至 115-1/)).toBeVisible();
 
   await page.getByRole('link', { name: '示範數學系' }).click();
@@ -82,6 +84,17 @@ test('returns a localized 404 for an unknown department', async ({ page }) => {
   await expect(page.getByRole('link', { name: '看各校收錄狀態' })).toBeVisible();
 });
 
+test('shows indexed instructor discussions separately from outbound searches', async ({ page }) => {
+  await page.goto(`/instructors/nthu/${encodeURIComponent('王示範')}`);
+  await page.getByRole('link', { name: '看網路討論 ↓' }).click();
+  const discussions = page.getByRole('region', { name: '網路上的討論' });
+  await expect(discussions.getByText('已索引 2 篇')).toBeVisible();
+  await expect(discussions.getByRole('link', { name: /線性代數 王示範/ })).toHaveAttribute('href', 'https://example.com/demo/ptt/DEMO_Course/1');
+  await expect(discussions.getByText(/示範資料：老師講解清楚/)).toBeVisible();
+  await expect(discussions.getByRole('heading', { name: '到其他網站搜尋' })).toBeVisible();
+  await expect(discussions.getByRole('link', { name: /搜尋 Dcard/ })).toHaveAttribute('href', /^https:\/\/www\.dcard\.tw\/search\?/);
+});
+
 test('shows recovery links for an empty semester and an unknown teacher', async ({ page }) => {
   const department = `/schools/nthu/departments/${encodeURIComponent('示範數學系')}`;
   await page.goto(`${department}?term=999-1`);
@@ -109,7 +122,7 @@ test('derives directory coverage from crawler status and imported offerings', as
   );
 
   const chips = page.getByRole('list', { name: '收錄狀態統計' }).getByRole('link');
-  await expect(chips.filter({ hasText: /(^|\s)0 所/ })).toHaveCount(0);
+  await expect(chips.filter({ hasNotText: '待匯入' }).filter({ hasText: /(^|\s)0 所/ })).toHaveCount(0);
   await expect(chips.filter({ hasText: '已收錄' })).toContainText(`已收錄 ${liveCount} 所`);
   await expect(chips.filter({ hasText: '待匯入' })).toContainText(`待匯入 ${pendingCount} 所`);
   const blockedChip = chips.filter({ hasText: '受阻' });
@@ -125,8 +138,8 @@ test('derives directory coverage from crawler status and imported offerings', as
   // hold no NCKU offerings, so it is waiting for import and has no school page link yet.
   const ncku = rows.filter({ hasText: '國立成功大學' });
   await expect(ncku.getByText('0005', { exact: true })).toBeVisible();
-  await expect(ncku.getByText(/資料來源：大學校院課程資源網/)).toBeVisible();
-  await expect(ncku.getByRole('link', { name: '#1' })).toHaveAttribute(
+  await expect(ncku.getByRole('link', { name: '課程資源網' })).toHaveAttribute('href', '#resource-network');
+  await expect(ncku.getByRole('link', { name: '收錄紀錄 ↗' })).toHaveAttribute(
     'href',
     'https://github.com/UniCourse-TW/UniCourse/issues/1'
   );
@@ -134,7 +147,7 @@ test('derives directory coverage from crawler status and imported offerings', as
 
   const nthu = rows.filter({ hasText: '國立清華大學' });
   await expect(nthu.getByRole('link', { name: '國立清華大學', exact: true })).toHaveAttribute('href', '/schools/nthu');
-  await expect(nthu.getByRole('img', { name: /國立清華大學.*114 學年 1 學期/ })).toBeVisible();
+  await expect(nthu.getByRole('img', { name: /國立清華大學.*114 學年：1 學期/ })).toBeVisible();
 
   if (institutions.length > 24) {
     await page.getByRole('navigation', { name: '學校名錄分頁' }).getByRole('link', { name: '下一頁' }).click();

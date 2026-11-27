@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const normalize = (value: string) => value.toLocaleLowerCase('zh-TW').replaceAll('台', '臺');
   const matches = departments.filter(({ name }) => normalize(name).includes(normalize(query)))
     .sort((left, right) => right.offerings - left.offerings || left.name.localeCompare(right.name, 'zh-TW'));
-  const pageSize = 24;
+  const pageSize = 12;
   const totalPages = Math.max(1, Math.ceil(matches.length / pageSize));
   const requestedPage = Number(url.searchParams.get('page'));
   const page = Number.isSafeInteger(requestedPage) ? Math.min(Math.max(1, requestedPage), totalPages) : 1;
