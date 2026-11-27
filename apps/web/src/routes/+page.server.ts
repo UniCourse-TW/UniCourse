@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { safeNext } from '$lib/community-paths';
 import { coverage, hasImportedOfferings } from '$lib/institutions';
-import { overviewSearchHref, searchPageSize, searchSorts, type OverviewSearchFilters } from '$lib/overview-paths';
+import { overviewSearchHref, searchExamples, searchPageSize, searchSorts, type OverviewSearchFilters } from '$lib/overview-paths';
 import { catalog } from '$lib/server/catalog';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -100,7 +100,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   if (result?.data && page > totalPages) redirect(307, overviewSearchHref({ ...filters, page: totalPages }));
 
   const looksLikeName = /^\p{Script=Han}{3,24}$/u.test(query) || /^[a-z][a-z ]{3,23}$/i.test(query);
-  const codePrefix = query.match(/^([A-Za-z]{1,8}\d{3,12})[-\s]+\w+$/)?.[1];
+  const codePrefix = query.match(/^([A-Za-z]{1,10}\d{2,12}|\d{4,12})[-\s]+\w+$/)?.[1];
   const chars = Array.from(query);
   const chunk = Math.max(2, Math.min(6, Math.floor(chars.length / 2)));
   const fragments = codePrefix ? [codePrefix] : looksLikeName ? [chars.slice(0, chunk).join('').trim(), chars.slice(-chunk).join('').trim()] : [];
@@ -115,6 +115,13 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     .filter(({ distance }) => distance <= (chars.length < 7 ? 1 : 2))
     .sort((left, right) => left.distance - right.distance).slice(0, 5).map(({ text }) => text);
 
+  const exampleQueries = empty && !suggestions.length
+    ? (await Promise.all(searchExamples.filter((example) => example !== query).map(async (example) => {
+        const response = await client.GET('/api/courses', { params: { query: { q: example } } }).catch(() => null);
+        return response?.data?.length ? [example] : [];
+      }))).flat()
+    : [];
+
   const browseSchools = (await directory)?.data?.institutions
     .filter((row) => row.slug !== school && hasImportedOfferings(row) && row.terms.length >= 4)
     .sort((left, right) => right.terms.length - left.terms.length || right.offerings - left.offerings)
@@ -125,7 +132,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     terms: term !== 'all' && !options.includes(term) ? [term, ...options] : options,
     content: {
       kind: 'search' as const, filters, page, totalPages, result: result?.data ? { ...result.data, courses: result.data.courses.slice(0, searchPageSize) } : null,
-      suggestions, browseSchools,
+      suggestions, exampleQueries, browseSchools,
       invalid: result?.response.status === 400,
       departments: departments?.data ?? [...new Set((result?.data?.courses ?? []).flatMap((course) => course.department ? [course.department] : []))].sort()
     }

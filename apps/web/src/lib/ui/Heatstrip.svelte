@@ -36,7 +36,11 @@
 {#if yearTicks && rows.length}
   <span class="strip ticks" aria-hidden="true">
     {#each rows as cell, index (cell.period)}
-      <span>{#if index === 0 || index === rows.length - 1 || (index % 4 === 0 && index < rows.length - 2)}{cell.period}{/if}</span>
+      <span class="tick">
+        {#if index === 0 || index === rows.length - 1 || (index % 4 === 0 && index < rows.length - 2)}
+          <span class="tick-label">{cell.period}</span>
+        {/if}
+      </span>
     {/each}
   </span>
 {/if}
@@ -64,7 +68,8 @@
   .hatched, .ticks { flex-wrap: nowrap; }
   .hatched .partial { background-image: var(--heatstrip-partial-hatch, var(--partial-hatch)); }
   .ticks { margin-block-end: .2rem; color: var(--ink-2); font: var(--heatstrip-tick-size, var(--t-xs)) / 1 var(--font-mono); }
-  .ticks span { display: inline-grid; justify-content: center; inline-size: var(--heatstrip-cell-size, 10px); }
+  .tick { position: relative; flex: 0 0 var(--heatstrip-cell-size, 10px); block-size: 1em; }
+  .tick-label { position: absolute; inset-inline-start: 50%; transform: translateX(-50%); }
   .counts .cell { display: grid; place-items: center; font: var(--t-xs) / 1 var(--font-mono); color: var(--ink-2); }
   .counts .partial { color: var(--brand-ink); font-weight: 650; }
   .counts .full { color: var(--on-brand); font-weight: 650; }
