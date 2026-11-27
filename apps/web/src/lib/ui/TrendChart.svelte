@@ -2,6 +2,7 @@
   import { linePath, lineSegments, spreadIndexes, zeroBasedScale } from './chart-scale';
   import type { Snippet } from 'svelte';
   import ChartValues from './ChartValues.svelte';
+  import PartialTermLegend from './PartialTermLegend.svelte';
   import { displayValue, finiteValue } from './format';
   import { partialTermLabel } from './partial-terms';
   import type { TableColumn, TrendPoint } from './types';
@@ -16,6 +17,8 @@
     termPairs?: boolean;
     linkedBars?: boolean;
     condensed?: boolean;
+    /** Set false when the caller supplies a shared partial-term legend. */
+    showPartialLegend?: boolean;
     highlight?: string;
     yearsOnly?: boolean;
     /** @deprecated All trend charts now include zero. */
@@ -23,7 +26,7 @@
     header?: Snippet;
   }
 
-  let { label, points, unit, kind = 'column', termHref, yearTicks = false, termPairs = false, linkedBars = false, condensed = false, highlight, yearsOnly = false, header }: Props = $props();
+  let { label, points, unit, kind = 'column', termHref, yearTicks = false, termPairs = false, linkedBars = false, condensed = false, showPartialLegend = true, highlight, yearsOnly = false, header }: Props = $props();
   let rows = $derived(points.map((point) => ({ ...point, value: finiteValue(point.value) })));
   let values = $derived(rows.flatMap(({ value }) => value === null ? [] : [value]));
   let compact = $derived(values.length <= 3);
@@ -37,7 +40,7 @@
   let desktopTicks = $derived(yearTicks ? yearlyTicks(rows, condensed ? 7 : 12, 1) : spreadIndexes(rows.length, 7));
   let phoneTicks = $derived(yearTicks ? yearlyTicks(rows, condensed ? 2 : 5, 3) : spreadIndexes(rows.length, 3));
   let hasMissing = $derived(rows.some(({ value }) => value === null));
-  let hasPartial = $derived(rows.some((point) => point.partial));
+  let hasPartial = $derived(rows.some((point) => point.partial && point.value !== null));
   let yearBoundaries = $derived(rows.flatMap(({ term }, index) => index > 0 && term.split('-')[0] !== rows[index - 1].term.split('-')[0] ? [index] : []));
   let columns: TableColumn<TrendPoint>[] = $derived([
     { id: 'term', label: '學期', value: (point) => point.term },
@@ -70,13 +73,16 @@
   {:else if compact}
     <dl class="period-values" aria-label={label}>
       {#each compactRows as point (point.term)}
-        <div class:partial={point.partial} class:selected={point.term === highlight}>
+        <div class:selected={point.term === highlight}>
           <dt>{#if termHref && point.value !== null}<a href={termHref(point.term)}>{point.term}</a>{:else}{point.term}{/if}</dt>
-          <dd class:missing={point.value === null}>{point.value === null ? '未公布' : displayValue(point.value)}{#if point.value !== null && unit} <small>{unit}</small>{/if}</dd>
-          {#if point.partial}<small>{partialTermLabel}</small>{/if}
+          <dd class:missing={point.value === null} title={point.partial ? partialTermLabel : undefined}>
+            {#if point.partial && point.value !== null}<i class="partial-dot" aria-hidden="true"></i><span class="visually-hidden">{partialTermLabel}：</span>{/if}
+            {point.value === null ? '未公布' : displayValue(point.value)}{#if point.value !== null && unit} <small>{unit}</small>{/if}
+          </dd>
         </div>
       {/each}
     </dl>
+    {#if hasPartial && showPartialLegend}<p><PartialTermLegend /></p>{/if}
     {#if compactRows.length < rows.length}<p>其餘 {displayValue(rows.length - values.length)} 期數值未公布。</p>{/if}
   {:else}
     <div role={linkedBars ? 'group' : 'img'} aria-label={`${label}${unit ? `（${unit}）` : ''}，可展開數值表格查看各期數值。`}>
@@ -101,18 +107,22 @@
             {#each bars as { x, y }, index}
               {#if y !== null}
                 {#if y === zero}
-                  <line class="zero" class:partial-zero={rows[index].partial} x1={x - slot * 0.32} x2={x + slot * 0.32} y1={y} y2={y} vector-effect="non-scaling-stroke" />
+                  <line class="zero" class:partial-zero={rows[index].partial} x1={x - slot * 0.32} x2={x + slot * 0.32} y1={y} y2={y} vector-effect="non-scaling-stroke">
+                    {#if rows[index].partial}<title>{rows[index].term} · {partialTermLabel}</title>{/if}
+                  </line>
                 {:else}
-                  <rect class:partial-bar={rows[index].partial} x={x - slot * 0.32} y={Math.min(y, zero)} width={slot * 0.64} height={Math.abs(zero - y)} vector-effect="non-scaling-stroke" />
+                  <rect class:partial-bar={rows[index].partial} x={x - slot * 0.32} y={Math.min(y, zero)} width={slot * 0.64} height={Math.abs(zero - y)}>
+                    {#if rows[index].partial}<title>{rows[index].term} · {displayValue(rows[index].value)} {unit ?? ''} · {partialTermLabel}</title>{/if}
+                  </rect>
                 {/if}
               {/if}
             {/each}
           {:else}
             {#each bars as { x, y }, index}
               {#if y !== null && rows[index].partial}
-                <line class="partial-guide" x1={x} x2={x} y1={y} y2={ordinate(0)} vector-effect="non-scaling-stroke" />
-                <path class="partial-point-outline" d={`M${x},${y} h0.01`} vector-effect="non-scaling-stroke" />
-                <path class="partial-point-center" d={`M${x},${y} h0.01`} vector-effect="non-scaling-stroke" />
+                <line class="partial-point" x1={x} x2={x} y1={y} y2={y} vector-effect="non-scaling-stroke">
+                  <title>{rows[index].term} · {displayValue(rows[index].value)} {unit ?? ''} · {partialTermLabel}</title>
+                </line>
               {/if}
             {/each}
             {#each segments as segment}
@@ -152,13 +162,13 @@
         </div>
       </div>
     </div>
-    {#if (!condensed && (unit || yearTicks)) || hasMissing || hasPartial || (highlight && rows.some(({ term }) => term === highlight))}
+    {#if (!condensed && (unit || yearTicks)) || hasMissing || (hasPartial && showPartialLegend) || (highlight && rows.some(({ term }) => term === highlight))}
       <p class="chart-legend">
         {#if unit && !condensed}<span>單位：{unit}</span>{/if}
         {#if yearTicks && !condensed}<span>{termPairs ? '直線分隔學年；1 為上學期，2 為下學期。' : kind === 'column' ? '橫軸為學年，每柱一學期。' : '橫軸為學年，每個數值對應一學期。'}</span>{/if}
         {#if highlight && rows.some(({ term }) => term === highlight)}<span class="selection">所選學期 {highlight}</span>{/if}
         {#if hasMissing}<span>空白表示沒有資料。</span>{/if}
-        {#if hasPartial}<span><i aria-hidden="true"></i>{partialTermLabel}{kind === 'line' ? '，折線於該期中斷' : ''}</span>{/if}
+        {#if hasPartial && showPartialLegend}<PartialTermLegend />{/if}
       </p>
     {/if}
   {/if}
@@ -190,12 +200,10 @@
   .current-point { stroke: var(--brand); stroke-width: 7; stroke-linecap: round; }
   .selection { color: var(--brand-ink); }
   .period-values .selected { background: var(--brand-wash); border-color: var(--brand); }
-  .partial-bar, .partial-guide, .zero.partial-zero { fill: var(--warn-wash); stroke: var(--warn); stroke-dasharray: 2 2; stroke-width: 1; }
-  .partial-point-outline, .partial-point-center { fill: none; stroke-linecap: round; }
-  .partial-point-outline { stroke: var(--warn); stroke-width: 6; }
-  .partial-point-center { stroke: var(--panel-raised); stroke-width: 3; }
+  .partial-bar, .partial-dot { fill: var(--partial-fill); background: var(--partial-fill); }
+  .partial-point, .zero.partial-zero { stroke: var(--partial-fill); stroke-linecap: round; }
+  .partial-point { stroke-width: 6; }
   .chart-legend { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); }
-  .chart-legend i { display: inline-block; inline-size: 1em; block-size: .65em; margin-inline-end: .3em; background: var(--warn-wash); border: 1px dashed var(--warn); }
   .series, .point, .zero { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   .point { stroke-width: 5; }
   .terms { grid-column: 2; position: relative; min-block-size: 1.25rem; margin-block-start: var(--space-2); font-family: var(--font-mono); }
@@ -205,7 +213,8 @@
   p { margin: var(--space-2) 0 0; color: var(--muted); font-size: var(--t-sm); }
   .period-values { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.25rem), 1fr)); gap: var(--space-2); max-inline-size: 30rem; margin: 0; }
   .period-values div { min-width: 0; padding: var(--space-2) var(--space-3); border-inline-start: 2px solid var(--line); background: var(--panel); }
-  .period-values .partial { border-inline-start-style: dashed; border-inline-start-color: var(--brand-ring); }
+  .partial-dot { display: inline-block; inline-size: .55em; block-size: .55em; margin-inline-end: var(--space-1); border-radius: 2px; }
+  .visually-hidden { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
   dt, dd { overflow-wrap: anywhere; }
   dt { color: var(--muted); font: var(--t-sm) var(--font-mono); }
   dd { margin: var(--space-1) 0 0; font-size: var(--t-lg); font-weight: 650; font-variant-numeric: tabular-nums; }

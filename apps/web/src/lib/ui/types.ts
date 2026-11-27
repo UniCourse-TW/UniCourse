@@ -24,6 +24,7 @@ export interface BarItem {
   label: string;
   value: number | null;
   href?: string;
+  partial?: boolean;
 }
 
 export interface TrendPoint {

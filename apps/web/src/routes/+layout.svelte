@@ -51,7 +51,7 @@
     </div>
 
     <div class="tools">
-      <a href={searchTarget} class="nav-search icon-action" aria-label="前往查課" title="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}</a>
+      <a href={searchTarget} class="nav-search icon-action" aria-label="前往查課" title="前往查課" aria-current={onSearch ? 'location' : undefined}>{@render searchIcon()}<span>前往查課</span></a>
       <form method="POST" action="/?/theme" class="theme-form">
         <input type="hidden" name="returnTo" value={here} />
         {#if data.theme !== 'dark'}
@@ -107,10 +107,10 @@
 
 <style>
   :global(*) { box-sizing: border-box; }
-  :global(html) { scroll-padding-top: 8rem; color-scheme: var(--ui-color-scheme); }
+  :global(html) { scroll-padding-block-start: 4.75rem; color-scheme: var(--ui-color-scheme); }
   :global(body) { display: flex; flex-direction: column; min-height: 100vh; margin: 0; background: var(--bg); color: var(--ink); font: var(--t-md) / var(--leading-body) var(--font-sans); }
   :global(a) { color: var(--brand-ink); text-underline-offset: 0.18em; }
-  :global(:is(a, button, input, select, summary):focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
+  :global(:is(a, button, input, select, textarea, summary, [tabindex]):focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .skip { position: fixed; z-index: 12; top: var(--space-2); left: var(--space-2); padding: var(--space-2) var(--space-4); background: var(--bg); transform: translateY(-150%); }
   .skip:focus { transform: none; }
   .site-header { position: sticky; inset-block-start: 0; z-index: 10; border-block-end: 1px solid var(--line); background: var(--bg); }
@@ -126,6 +126,12 @@
   .icon-action, .account summary { display: inline-grid; place-items: center; min-width: var(--target-min); min-height: var(--target-min); padding: 0; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink-2); cursor: pointer; }
   .set-light { display: none; }
   .nav-search[aria-current] { background: var(--brand-wash); color: var(--brand-ink); }
+  .nav-search { text-decoration: none; }
+  .nav-search span { display: none; }
+  @media (min-width: 56rem) {
+    .nav-search { display: inline-flex; gap: var(--space-1); align-items: center; padding-inline: var(--space-2); font-size: var(--t-base); font-weight: 650; }
+    .nav-search span { display: inline; }
+  }
   [data-shell-theme='dark'] .set-light { display: inline-grid; }
   @media (prefers-color-scheme: dark) {
     .site-header:not([data-shell-theme]) .set-dark { display: none; }
@@ -159,6 +165,7 @@
   .footer-group > span { grid-column: 1 / -1; color: var(--ink); font-weight: 650; }
   .footer-inner nav a { display: grid; align-items: center; min-height: var(--target-min); color: var(--ink-2); }
   @media (max-width: 39rem) {
+    :global(html) { scroll-padding-block-start: 7rem; }
     .account summary .handle { display: none; }
     .account summary .initial { display: grid; }
     .bar { flex-wrap: wrap; gap: 0; padding-block-start: var(--space-1); }
