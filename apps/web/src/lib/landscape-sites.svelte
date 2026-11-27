@@ -13,9 +13,11 @@
     showOperator?: boolean;
     /** Long lists show this many rows and fold the rest behind a disclosure (works without JavaScript). */
     collapseAfter?: number;
+    /** A column header row on wide screens (the cross-school table, which has no section of its own). */
+    header?: boolean;
   }
 
-  let { label, sites, showOperator = false, collapseAfter }: Props = $props();
+  let { label, sites, showOperator = false, collapseAfter, header = false }: Props = $props();
   let head = $derived(collapseAfter && sites.length > collapseAfter + 2 ? sites.slice(0, collapseAfter) : sites);
   let tail = $derived(sites.slice(head.length));
 
@@ -62,6 +64,10 @@
 {/snippet}
 
 <div class="sites-box">
+  {#if header}
+    <!-- Same order as the third-party table above: site, functions, login, status; then the notes. -->
+    <div class="cols" aria-hidden="true"><span>類型</span><span>網站</span><span>功能</span><span>登入</span><span>狀態</span><span>說明</span></div>
+  {/if}
   <ul class="sites" aria-label={label}>
     {#each head as site (site.url)}{@render row(site)}{/each}
   </ul>
@@ -112,6 +118,17 @@
     min-inline-size: 0;
   }
   li:first-child { border-block-start: 0; }
+  .cols {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(12rem, 1.3fr) minmax(7rem, 0.9fr) 5.5rem 4.75rem minmax(12rem, 2fr);
+    gap: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+    border-block-end: 1px solid var(--line);
+    background: var(--table-head);
+    color: var(--muted);
+    font-size: var(--t-sm);
+    font-weight: 600;
+  }
   li:hover { background: var(--hover-row); }
   .kind { color: var(--muted); font-size: var(--t-sm); font-weight: 600; line-height: 1.5; }
   .third .kind { color: var(--series-2); }
@@ -162,6 +179,7 @@
   dd a { color: var(--brand-ink); }
 
   @media (max-width: 56rem) {
+    .cols { display: none; }
     li {
       grid-template-columns: 3rem minmax(0, 1fr) auto;
       grid-template-areas: 'kind name status' 'kind cats login' 'kind features features';
