@@ -19,10 +19,11 @@ test('course page lists external reviews from the demo index and outbound search
   await expect(section).toContainText('只存標題、日期、作者帳號與開頭摘要');
   await expect(section).toContainText('DEMO_Course 板');
 
-  // Summary first: this offering's teacher, then per-teacher filter buttons.
+  // Summary first: this offering's teacher count; phones filter by teacher with a select
+  // (desktop uses the per-teacher bars in the summary).
   const summary = section.locator('aside', { hasText: '依教師篩選' });
   await expect(summary).toContainText('本班教師');
-  await expect(summary.getByRole('button', { name: /王示範/ })).toContainText('本班');
+  await expect(section.getByRole('combobox', { name: '教師' }).locator('option', { hasText: '王示範（本班）' })).toHaveCount(1);
 
   const post = section.getByRole('listitem').filter({ hasText: '[心得] 114-2 線性代數 王示範' });
   await expect(post).toContainText('本班教師');
