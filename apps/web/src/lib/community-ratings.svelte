@@ -156,7 +156,8 @@
           </div>
         </form>
       </details>
-    {:else}
+    {:else if count >= sparseBelow}
+      <!-- With no or few ratings the summary above already carries the one sign-in link. -->
       <p class="login"><a href={loginHref(`${page.url.pathname}#ratings`)}>登入</a>後即可評分與撰寫評論。</p>
     {/if}
   {/if}

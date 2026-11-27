@@ -27,8 +27,10 @@
 
   let { school, courseCode, instructors = [], reviews }: Props = $props();
 
-  /** Posts listed before「顯示全部」. */
+  /** Posts listed before「再顯示」. */
   const initialPosts = 6;
+  /** Posts each「再顯示」adds. */
+  const stepPosts = 10;
   /** Teachers listed in the summary before「其他 N 位」. */
   const initialTeachers = 6;
 
@@ -111,6 +113,10 @@
   onMount(() => (ready = true));
   let filtersOpen = $state(false);
   let teacher = $state<string>('');
+  /** Only posts naming this offering's teachers (any of them). */
+  let mineOnly = $state(false);
+  /** Posts shown per list after hydration, keyed by list id; grows by `stepPosts`. */
+  let limits = $state<Record<string, number>>({});
   let term = $state<string>('');
   let kind = $state<PostKind | ''>('');
   let sort = $state<Sort>('relevant');
@@ -119,6 +125,7 @@
     rows.filter(
       (row) =>
         (!teacher || row.teachers.includes(teacher)) &&
+        (!mineOnly || row.mine) &&
         (!term || (term === noTerm ? !row.post.term : row.post.term === term)) &&
         (!kind || row.kind === kind)
     )
@@ -131,8 +138,8 @@
       return b.time - a.time;
     })
   );
-  let filtering = $derived(Boolean(teacher || term || kind));
-  let activeFilters = $derived([teacher, term, kind].filter(Boolean).length);
+  let filtering = $derived(Boolean(teacher || term || kind || mineOnly));
+  let activeFilters = $derived([teacher, term, kind].filter(Boolean).length + Number(mineOnly));
   /**
    * The default view lists this offering's teacher in a group of its own, so a lone question by that
    * teacher is not mistaken for the top review; everyone else follows, reviews first.
@@ -144,7 +151,7 @@
   let mineLine = $derived.by(() => {
     const names = instructors.join('、');
     if (mineReviews === mineRows.length) return `本班教師 ${names}・${mineRows.length} 篇心得評價`;
-    if (mineReviews === 0) return `本班教師 ${names} 只有 ${mineRows.length} 篇提問或討論，沒有心得評價`;
+    if (mineReviews === 0) return `本班教師 ${names}・還沒有心得評價`;
     return `本班教師 ${names}・${mineRows.length} 篇（心得評價 ${mineReviews} 篇在前）`;
   });
 
@@ -153,6 +160,7 @@
   }
 
   function clearFilters() {
+    mineOnly = false;
     teacher = '';
     term = '';
     kind = '';
@@ -168,9 +176,12 @@
   }
 </script>
 
-{#snippet postList(items: Row[], labelledby: string | undefined)}
-  <ol class="list" class:collapsible={items.length > initialPosts} aria-label={labelledby ? undefined : '外部文章'} aria-labelledby={labelledby}>
-    {#each items as row, index (row.key)}
+{#snippet postList(items: Row[], labelledby: string | undefined, listId: string)}
+  {@const limit = limits[listId] ?? initialPosts}
+  <!-- Without JavaScript every post is rendered and CSS folds the rest behind「顯示全部」; with it, the
+       list grows in steps of ten so a long list does not jump from 6 to 43 at once. -->
+  <ol class="list" class:collapsible={!ready && items.length > initialPosts} aria-label={labelledby ? undefined : '外部文章'} aria-labelledby={labelledby}>
+    {#each ready ? items.slice(0, limit) : items as row, index (row.key)}
       <li class:extra={index >= initialPosts} class:mine={row.mine}>
         <article>
           <h3 class="title">
@@ -185,6 +196,7 @@
             {#if boards.length > 1}<span>{row.post.board}</span>{/if}
             {#if row.author}<span class="author">{row.author}</span>{/if}
             {#if row.post.pushScore}<span class="push num" class:down={row.post.pushScore < 0}>推 {pushLabel(row.post.pushScore)}</span>{/if}
+            {#if !row.parts.length}<span class="title-only" title="這篇的開頭沒有可摘錄的心得文字，請點標題看原文">只收錄標題</span>{/if}
           </p>
           {#if row.parts.length}
             <p class="excerpt">
@@ -195,7 +207,15 @@
       </li>
     {/each}
   </ol>
-  {#if items.length > initialPosts}
+  {#if ready && items.length > limit}
+    <p class="grow">
+      <span class="num">已列 {limit} / {items.length} 篇</span>
+      <button type="button" class="grow-btn" onclick={() => (limits[listId] = limit + stepPosts)}>再顯示 {Math.min(stepPosts, items.length - limit)} 篇 ▾</button>
+      {#if items.length - limit > stepPosts}<button type="button" class="clear" onclick={() => (limits[listId] = items.length)}>全部顯示</button>{/if}
+    </p>
+  {:else if ready && limit > initialPosts}
+    <p class="grow"><button type="button" class="clear" onclick={() => (limits[listId] = initialPosts)}>收合為前 {initialPosts} 篇 ▴</button></p>
+  {:else if !ready && items.length > initialPosts}
     <details class="more">
       <summary><span class="closed">顯示全部 {items.length} 篇 ▾</span><span class="opened">收合為前 {initialPosts} 篇 ▴</span></summary>
     </details>
@@ -222,14 +242,16 @@
     <header class="head">
       <div class="head-text">
         <h2 id="external-title">外部評價 <span class="head-count num">{displayValue(total)} 篇</span></h2>
-        <p class="dek">
-          {#if kindCounts.question || kindCounts.other}<span class="mix">心得評價與提問混合，依標題分類。</span>{/if}來源：{sourceLabels.join('、')}{#if boards.length}（{boards.join('、')} 板）{/if}{#if firstYear !== undefined}・發文 {firstYear}{#if lastYear !== firstYear}–{lastYear}{/if} 年{/if}。UniCourse 只存標題、日期、作者帳號與開頭摘要，全文請點標題到原站。
-        </p>
+        <ul class="dek">
+          <li>來源：{sourceLabels.join('、')}{#if boards.length}・{boards.join('、')} 板{/if}{#if firstYear !== undefined}・發文 {firstYear}{#if lastYear !== firstYear}–{lastYear}{/if} 年{/if}</li>
+          {#if kindCounts.question || kindCounts.other}<li>心得評價與提問混在一起，依標題的〔評價〕〔問題〕等分類</li>{/if}
+          <li>只存標題、日期、作者帳號與開頭摘要；全文請點標題到原站</li>
+        </ul>
       </div>
     </header>
     {#if links.length}
       <div class="elsewhere">
-        <p class="elsewhere-label">其他網站只提供搜尋連結，不收錄內容：</p>
+        <p class="elsewhere-label">沒有收錄的網站，可以直接到站上搜尋這門課：</p>
         <ul class="links" aria-label="到其他網站搜尋">
           {#each links as link (link.source)}
             <li><a href={link.url} target="_blank" rel="noopener noreferrer nofollow">在 {link.label} 搜尋<span aria-hidden="true"> ↗</span><span class="sr-only">（開啟外部網站）</span></a></li>
@@ -240,17 +262,21 @@
 
     <div class="layout">
       <aside class="summary" aria-label="外部文章摘要">
-        <dl class="figures">
-          <div>
-            <dt>本班教師</dt>
-            <dd><b class="num">{displayValue(mineCount)}</b> 篇</dd>
-          </div>
-          <div><dt>心得評價</dt><dd><b class="num">{displayValue(kindCounts.review)}</b> 篇</dd></div>
-          <div><dt>提問</dt><dd><b class="num">{displayValue(kindCounts.question)}</b> 篇</dd></div>
-        </dl>
+        <!-- The three counts double as filters (phones too, where the teacher list is hidden). -->
+        <div class="figures" role="group" aria-label="快速篩選">
+          <button type="button" class="figure" aria-pressed={mineOnly} disabled={!ready || mineCount === 0} onclick={() => (mineOnly = !mineOnly)}>
+            <span class="fig-label">本班教師</span><span><b class="num">{displayValue(mineCount)}</b> 篇</span>
+          </button>
+          <button type="button" class="figure" aria-pressed={kind === 'review'} disabled={!ready || kindCounts.review === 0} onclick={() => (kind = kind === 'review' ? '' : 'review')}>
+            <span class="fig-label">心得評價</span><span><b class="num">{displayValue(kindCounts.review)}</b> 篇</span>
+          </button>
+          <button type="button" class="figure" aria-pressed={kind === 'question'} disabled={!ready || kindCounts.question === 0} onclick={() => (kind = kind === 'question' ? '' : 'question')}>
+            <span class="fig-label">提問</span><span><b class="num">{displayValue(kindCounts.question)}</b> 篇</span>
+          </button>
+        </div>
 
         <div class="block by-teacher">
-          <h3 id="external-teachers">依教師篩選</h3>
+          <h3 id="external-teachers">依教師篩選 <span class="hint">點一下只看該教師</span></h3>
           <ul class="teachers" class:collapsible={teacherCounts.length > initialTeachers} aria-labelledby="external-teachers">
             {#each teacherCounts as entry, index (entry.name)}
               <li class:extra={index >= initialTeachers}>
@@ -295,9 +321,9 @@
 
       <div class="posts">
         <div class="list-bar">
-          <p class="status" aria-live="polite">
+          <p class="status" role="status" aria-live="polite">
             {#if filtering}
-              符合條件 <b class="num">{ordered.length}</b> 篇{#if teacher}・教師 {teacherLabel(teacher)}{/if}{#if term}・{term === noTerm ? '標題沒寫學期' : term}{/if}{#if kind}・{postKindLabels[kind]}{/if}
+              符合條件 <b class="num">{ordered.length}</b> 篇{#if mineOnly}・本班教師{/if}{#if teacher}・教師 {teacherLabel(teacher)}{/if}{#if term}・{term === noTerm ? '標題沒寫學期' : term}{/if}{#if kind}・{postKindLabels[kind]}{/if}
               <button type="button" class="clear" onclick={clearFilters}>清除篩選</button>
             {:else if instructors.length && mineCount === 0}
               沒有找到本班教師 {instructors.join('、')} 的文章；下面是其他教師開這門課的文章，心得評價在前。
@@ -352,12 +378,16 @@
         </div>
 
         {#if grouped}
-          <h3 class="group-head" id="external-mine">{mineLine}</h3>
-          {@render postList(mineRows, 'external-mine')}
-          <h3 class="group-head" id="external-others">其他教師與標題沒寫教師・<span class="num">{otherRows.length}</span> 篇・心得評價在前</h3>
-          {@render postList(otherRows, 'external-others')}
+          <!-- This offering's teacher gets a box of its own, so a lone question is never read as the top review. -->
+          <div class="mine-box" class:empty={mineReviews === 0}>
+            <h3 class="group-head" id="external-mine">{mineLine}</h3>
+            {#if mineReviews === 0}<p class="mine-empty">只找到 {mineRows.length} 篇提問或討論（如下）。再往下是其他教師開同一門課的文章，內容不一定適用本班。</p>{/if}
+            {@render postList(mineRows, 'external-mine', 'mine')}
+          </div>
+          <h3 class="group-head others" id="external-others">其他教師與標題沒寫教師・<span class="num">{otherRows.length}</span> 篇・心得評價在前</h3>
+          {@render postList(otherRows, 'external-others', 'others')}
         {:else if ordered.length}
-          {@render postList(ordered, undefined)}
+          {@render postList(ordered, undefined, `all-${teacher}-${term}-${kind}-${mineOnly}-${sort}`)}
         {:else}
           <p class="none">沒有符合條件的文章。<button type="button" class="clear" onclick={clearFilters}>清除篩選</button></p>
         {/if}
@@ -368,7 +398,7 @@
 
 <style>
   .external { display: grid; gap: var(--space-4); min-inline-size: 0; padding: var(--space-4) var(--space-5); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); color: var(--ink); font: var(--t-base) / var(--leading-body) var(--font-sans); }
-  .external :is(h2, h3, p, ol, ul, dl, figure) { margin: 0; }
+  .external :is(h2, h3, p, ol, ul, figure) { margin: 0; }
   .external a { color: var(--brand-ink); text-underline-offset: 0.18em; }
   .external :is(a, button, select, summary):focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   .sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -389,29 +419,36 @@
   .links a:hover { background: var(--hover-row); }
 
   /* Desktop: text and search links side by side above the summary and list; phones put the links last. */
-  .external:not(.compact) { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'head elsewhere' 'layout layout'; column-gap: var(--space-6); }
+  /* Indexed posts first; the search links for sites UniCourse does not index form their own strip last. */
+  .external:not(.compact) { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'layout' 'elsewhere'; }
   .head { grid-area: head; display: grid; min-inline-size: 0; }
   .head-text { display: grid; gap: var(--space-1); min-inline-size: 0; }
-  .elsewhere { grid-area: elsewhere; display: grid; gap: var(--space-1); justify-items: end; align-content: start; }
-  .elsewhere-label { color: var(--muted); font-size: var(--t-xs); }
+  .elsewhere { grid-area: elsewhere; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
+  .elsewhere-label { color: var(--ink-2); font-size: var(--t-sm); }
   .layout { grid-area: layout; }
   .teacher-select { display: none !important; }
   .head-count { margin-inline-start: var(--space-2); color: var(--muted); font-size: var(--t-md); font-weight: 600; }
-  .dek { color: var(--muted); font-size: var(--t-sm); overflow-wrap: anywhere; }
+  .dek { display: grid; gap: 1px; padding: 0; list-style: none; color: var(--muted); font-size: var(--t-sm); overflow-wrap: anywhere; }
+  .dek li::before { content: '・'; color: var(--axis); }
 
   .layout { display: grid; grid-template-columns: minmax(15rem, 19rem) minmax(0, 1fr); gap: var(--space-6); align-items: start; }
   .summary { display: grid; gap: var(--space-4); min-inline-size: 0; }
   .figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
-  .figures div { display: grid; align-content: start; gap: 0.125rem; min-inline-size: 0; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); }
-  .figures dt { color: var(--muted); font-size: var(--t-xs); line-height: 1.35; overflow-wrap: anywhere; }
-  .figures dd { margin: 0; color: var(--muted); font-size: var(--t-sm); }
-  .figures b { color: var(--ink); font-size: var(--t-xl); font-weight: 650; }
+  .figure { display: grid; align-content: start; justify-items: start; gap: 0.125rem; min-inline-size: 0; padding: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--muted); font-size: var(--t-sm); text-align: start; }
+  .figure:not(:disabled):hover { border-color: var(--brand); background: var(--hover-row); }
+  .figure[aria-pressed='true'] { border-color: var(--brand); background: var(--brand-wash); box-shadow: inset 3px 0 0 var(--brand); }
+  .figure:disabled { border-color: var(--line); }
+  .fig-label { color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+  .figure b { color: var(--ink); font-size: var(--t-xl); font-weight: 650; }
   .block { display: grid; gap: var(--space-2); }
-  .teachers { display: grid; padding: 0; list-style: none; }
+  .teachers { display: grid; gap: 3px; padding: 0; list-style: none; }
   .teachers.collapsible:not(:has(+ .more-teachers[open])) li.extra { display: none; }
-  .teacher { display: grid; grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr) 2rem; gap: var(--space-2); align-items: center; inline-size: 100%; min-block-size: 2.25rem; padding: 0 var(--space-2); border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--ink); font-size: var(--t-sm); text-align: start; }
-  .teacher:not(:disabled):hover { background: var(--hover-row); }
-  .teacher[aria-pressed='true'] { border-color: var(--brand); background: var(--brand-wash); }
+  /* Each teacher is a visible button row: outlined, hover tint, and a brand bar on the left when chosen. */
+  .teacher { display: grid; grid-template-columns: minmax(0, 7.5rem) minmax(0, 1fr) 2rem; gap: var(--space-2); align-items: center; inline-size: 100%; min-block-size: 2.25rem; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font-size: var(--t-sm); text-align: start; }
+  .teacher:not(:disabled):hover { border-color: var(--control-line); background: var(--hover-row); }
+  .teacher[aria-pressed='true'] { border-color: var(--brand); background: var(--brand-wash); box-shadow: inset 3px 0 0 var(--brand); }
+  .teacher:disabled { background: transparent; }
+  .by-teacher .hint { color: var(--muted); font-size: var(--t-xs); font-weight: 500; }
   .teacher:disabled { color: var(--ink-2); }
   .teacher .name { display: inline-flex; gap: var(--space-1); align-items: center; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .here, .badge-mine { flex: none; padding: 0 6px; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-size: var(--t-xs); font-weight: 650; line-height: 1.6; }
@@ -451,8 +488,18 @@
   .filter-toggle { display: none; flex: none; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font-size: var(--t-sm); font-weight: 600; }
   .filter-toggle[aria-expanded='true'] { border-color: var(--brand); }
   .filter-toggle .active { display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 4px; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); }
-  .group-head { margin-block-start: var(--space-2); color: var(--ink-2); font-size: var(--t-sm); font-weight: 650; }
-  .group-head:first-of-type { margin-block-start: 0; }
+  .group-head { color: var(--ink-2); font-size: var(--t-sm); font-weight: 650; }
+  .group-head.others { margin-block-start: var(--space-3); }
+  .mine-box { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--brand) 5%, var(--panel-raised)); }
+  .mine-box .group-head { color: var(--ink); font-size: var(--t-base); }
+  .mine-empty { color: var(--ink-2); font-size: var(--t-sm); }
+  .mine-box .list { border-block-start: 1px solid var(--line); }
+  .mine-box .list li:last-child { border-block-end: 0; }
+  .grow { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: center; justify-content: center; color: var(--muted); font-size: var(--t-sm); }
+  .grow-btn { min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; }
+  .grow-btn:hover { background: var(--hover-row); }
+  .grow .clear { min-block-size: var(--target-min); margin: 0; }
+  .title-only { padding: 0 6px; border: 1px dashed var(--control-line); border-radius: var(--radius-pill); color: var(--muted); font-size: var(--t-xs); }
   .status b { color: var(--ink); }
   .clear { margin-inline-start: var(--space-2); padding: 0; border: 0; background: none; color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
   .none { padding: var(--space-4) 0; color: var(--ink-2); }
@@ -482,7 +529,6 @@
 
   @media (max-width: 64rem) {
     .external:not(.compact) { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'head' 'layout' 'elsewhere'; }
-    .elsewhere { justify-items: start; padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
     .layout { grid-template-columns: minmax(0, 1fr); gap: var(--space-4); }
     .summary { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
     .figures { grid-column: 1 / -1; }
@@ -493,10 +539,11 @@
     .years, .by-teacher { display: none; }
     /* Phones: the three figures become one line and the filters fold behind one button, so the first
        posts follow the heading directly. */
-    .figures { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); }
-    .figures div { display: flex; gap: var(--space-1); align-items: baseline; padding: 0; border: 0; background: none; }
-    .figures dt { font-size: var(--t-sm); color: var(--ink-2); }
-    .figures b { font-size: var(--t-md); }
+    /* Phones: the three counts are one row of filter chips right under the heading. */
+    .figures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-1); }
+    .figure { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; justify-content: center; min-block-size: var(--target-min); padding: var(--space-1) var(--space-2); border-radius: var(--radius-pill); }
+    .fig-label { font-size: var(--t-sm); }
+    .figure b { font-size: var(--t-md); }
     .posts > .toolbar { order: 0; }
     .toolbar:not(.open) { display: none; }
     .toolbar { padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); }
