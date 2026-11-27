@@ -201,6 +201,7 @@
       <!-- 147 of 150 schools are 已收錄, so only the exceptions carry a pill (the line above the list says the rest). -->
       <h3 id={`${school.id}-title`} class="s-name">{school.name} <small class="code">{school.code}</small>{#if crawl && crawl.status !== 'live'} <StatusPill status={crawl.status} />{/if}</h3>
       <span class="s-where">{school.systemLabel}・{school.ownership === 'public' ? '公立' : '私立'}{#if school.city}・{school.city}{/if}</span>
+      <span class="s-stats">
       <span class="s-n ui-tabular"><span class="s-lbl">官方 </span>{school.official.length}</span>
       <span class="s-n ui-tabular" class:zero={!school.third.length}><span class="s-lbl">第三方 </span>{school.third.length}</span>
       <span class="s-mix">
@@ -212,6 +213,7 @@
         {:else}
           <span class="muted">尚未盤點</span>
         {/if}
+      </span>
       </span>
     </summary>
     <div class="school-body">
@@ -737,6 +739,8 @@
   .s-n { color: var(--ink); font-size: var(--t-base); font-weight: 600; }
   .s-n.zero { color: var(--muted); font-weight: 400; }
   .s-lbl { display: none; }
+  /* Desktop: the counts and the mix are grid cells; narrow screens put them on their own line. */
+  .s-stats { display: contents; }
   .s-mix { display: flex; gap: var(--space-2); align-items: center; min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); white-space: nowrap; }
   .mini { display: flex; flex: none; inline-size: 4.5rem; block-size: 8px; overflow: hidden; border-radius: 2px; background: var(--chip); }
   .mini i { display: block; block-size: 100%; }
@@ -763,8 +767,8 @@
     .s-name { flex: 0 1 auto; }
     .s-where { flex: 1 1 auto; font-size: var(--t-xs); color: var(--muted); }
     .school > summary::after { position: absolute; inset-block-start: var(--space-2); inset-inline-end: var(--space-3); }
-    .s-n { order: 4; font-size: var(--t-sm); }
-    .s-mix { order: 5; }
+    .s-stats { display: flex; flex: 1 1 100%; flex-wrap: wrap; gap: 2px var(--space-3); align-items: center; }
+    .s-n { font-size: var(--t-sm); }
     .s-lbl { display: inline; color: var(--muted); font-weight: 400; }
   }
   @media (max-width: 40rem) {

@@ -185,7 +185,8 @@
           {@const share = Math.round(ratio * 100)}
           <dd class="meter" aria-hidden="true"><span style:width={`${Math.min(100, ratio * 100)}%`}></span></dd>
           {#if latestTerm}
-            <dd class="note" title="UniCourse 匯入校方資料當時的快照，即時名額以校方為準">{importDay} 匯入時{ratio > 1 ? `超額：名額的 ${share}%` : `已選 ${share}%`}{#if full && ratio <= 1}，接近額滿{/if}</dd>
+            <!-- The term is in the sentence, so an older term's snapshot is not read as today's seats. -->
+            <dd class="note" title="UniCourse 匯入校方資料當時的快照，即時名額以校方為準">{course.term} {ratio > 1 ? `超額，名額的 ${share}%` : `已選 ${share}%`}{#if full && ratio <= 1}，接近額滿{/if}・{importDay} 匯入</dd>
           {:else}
             <dd class="note">{course.term} 選課結果：{ratio > 1 ? `超額，名額的 ${share}%` : `名額的 ${share}%`}</dd>
           {/if}

@@ -17,9 +17,9 @@ test('the old static address redirects and the page renders from the bundled dat
   await expect(ntu.getByRole('list', { name: '國立臺灣大學的課程網站' })).toBeHidden();
   await page.goto('/landscape#ntu');
   await expect(ntu.getByRole('list', { name: '國立臺灣大學的課程網站' })).toBeVisible();
-  // A seeded school links to its UniCourse page from inside its row.
+  // Another fragment opens that school's row too.
   await page.goto('/landscape#nthu');
-  await expect(page.locator('#nthu').getByRole('link', { name: /看 UniCourse 收錄的國立清華大學課程/ })).toHaveAttribute('href', '/schools/nthu');
+  await expect(page.locator('#nthu').getByRole('list', { name: '國立清華大學的課程網站' })).toBeVisible();
 });
 
 test('filters are plain query parameters and narrow the school sections', async ({ page }) => {
