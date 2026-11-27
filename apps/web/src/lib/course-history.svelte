@@ -2,7 +2,7 @@
   import { instructorHref } from '$lib/overview-paths';
   import { zeroBasedScale } from '$lib/ui/chart-scale';
   import { displayValue } from '$lib/ui/format';
-  import { historySlots, type HistoryRow } from '$lib/course-history';
+  import { fillRatio, historySlots, nearlyFull, type HistoryRow } from '$lib/course-history';
 
   interface Props {
     rows: HistoryRow[];
@@ -45,6 +45,11 @@
     return value == null || !(scale.max > 0) ? 0 : Math.min(100, (value / scale.max) * 100);
   }
 
+  /** Table bars show each term's own fill rate (修課／名額), so the bar always agrees with its label. */
+  function fill(row: HistoryRow) {
+    return fillRatio(row.enrolled, row.capacity);
+  }
+
   function termSearch(term: string) {
     return `/?${new URLSearchParams({ q: courseCode, school, term })}`;
   }
@@ -79,6 +84,7 @@
           {#if hasEnrolled}<span><i class="key fill"></i>修課人數</span>{/if}
           {#if hasBoth}<span><i class="key cap"></i>名額</span>{/if}
           {#if hasCapacityOnly}<span><i class="key dashed"></i>只公布名額</span>{/if}
+          {#if rows.some((row) => row.current)}<span><i class="key mark"></i>本班學期</span>{/if}
         </span>
       </figcaption>
       <div class="plot" role="img" aria-label={chartLabel}>
@@ -116,7 +122,7 @@
           </div>
         </div>
       </div>
-      <p class="note">x 軸為學年度，每格一個學期（上、下學期依序排列）{#if gaps}；空格是該學期沒有開課紀錄{/if}{#if hasUnpublished}；「·」表示有開課但未公布人數與名額{/if}。多班次的學期為各班加總。</p>
+      <p class="note">{#if !hasEnrolled}校方沒有公布修課人數，長條是各學期的名額，不是修課人數。{/if}x 軸為學年度，每格一個學期（上、下學期依序排列）{#if gaps}；空格是該學期沒有開課紀錄{/if}{#if hasUnpublished}；「·」表示有開課但未公布人數與名額{/if}。多班次的學期為各班加總。</p>
     </figure>
   {/if}
 
@@ -131,12 +137,13 @@
           <tr>
             <th scope="col">學期</th>
             <th scope="col">授課教師</th>
-            <th scope="col" class="num">修課人數／名額{#if multiSection}<span class="unit">（全班次合計）</span>{/if}</th>
+            <th scope="col" class="num">修課人數／名額{#if multiSection}<span class="unit">（全班次合計）</span>{/if}{#if hasBoth}<span class="unit">・條＝滿額率</span>{:else if !hasEnrolled && hasCapacityOnly}<span class="unit">・只公布名額</span>{/if}</th>
             <th scope="col">班次</th>
           </tr>
         </thead>
         <tbody>
           {#each rows as row, index (row.term)}
+            {@const ratio = fill(row)}
             <tr
               class:extra={index >= initialRows}
               class:active={row.term === active}
@@ -148,18 +155,21 @@
             >
               <th scope="row" class="ui-mono">{row.term}</th>
               <td class="names">
-                {#each row.instructors as name, i (name)}<span class="name">{#if i > 0}、{/if}<a href={instructorHref(school, name)}>{name}</a></span>{:else}<span class="muted">未公布</span>{/each}{#if row.instructorCount > 1}<span class="muted count" class:narrow-only={row.instructorCount <= row.instructors.length}> 等 {displayValue(row.instructorCount)} 位</span>{/if}
+                {#each row.instructors as name, i (name)}<span class="name">{#if i > 0}、{/if}<a href={instructorHref(school, name)}>{name}</a></span>{:else}<span class="muted">未公布</span>{/each}{#if row.instructorCount > row.instructors.length}<span class="muted count">，另 {displayValue(row.instructorCount - row.instructors.length)} 位</span>{/if}
               </td>
               <td class="num">
                 <span class="cell-bar">
-                  <span class="track" class:blank={row.enrolled == null && row.capacity == null} aria-hidden="true">
-                    {#if row.capacity != null}<span class="cap" class:dashed={row.enrolled == null} style:width={`${percent(row.capacity)}%`}></span>{/if}
-                    {#if row.enrolled != null}<span class="fill" style:width={`${percent(row.enrolled)}%`}></span>{/if}
-                  </span>
+                  {#if ratio != null}
+                    <span class="track" class:warn={ratio >= nearlyFull} aria-hidden="true"><span class="fill" style:width={`${Math.min(100, ratio * 100)}%`}></span></span>
+                  {:else if hasBoth}
+                    <span class="track blank" aria-hidden="true"></span>
+                  {/if}
                   <span class="ui-tabular value">
                     {#if row.enrolled == null && row.capacity == null}<span class="muted">未公布</span>
                     {:else}{displayValue(row.enrolled)}<span class="muted">&nbsp;/&nbsp;{displayValue(row.capacity)}</span>{/if}
                   </span>
+                  {#if ratio != null && ratio > 1}<span class="over">超額 {Math.round((ratio - 1) * 100)}%</span>
+                  {:else if hasEnrolled && row.enrolled == null && row.capacity != null}<span class="only">只公布名額</span>{/if}
                 </span>
               </td>
               <td class="sections" class:multi={row.offeringCount > 1}>
@@ -174,7 +184,7 @@
                   </span>
                 {/each}
                 {#if row.offeringCount > 1}
-                  <a class="more" class:narrow-only={row.offeringCount <= row.offerings.length} href={termSearch(row.term)}>全部 {displayValue(row.offeringCount)} 班</a>
+                  {#if row.offeringCount > row.offerings.length}<a class="more" href={termSearch(row.term)}>全部 {displayValue(row.offeringCount)} 班</a>{/if}
                 {/if}
               </td>
             </tr>
@@ -207,7 +217,8 @@
   .key { display: inline-block; inline-size: 10px; block-size: 10px; border-radius: 2px; }
   .key.fill { background: var(--brand); }
   .key.cap { background: var(--brand-wash); box-shadow: inset 0 0 0 1px var(--control-line); }
-  .key.dashed { border: 1px dashed var(--control-line); }
+  .key.dashed { border: 1.5px dashed color-mix(in srgb, var(--muted) 75%, transparent); }
+  .key.mark { block-size: 3px; border-radius: 2px; background: var(--brand); }
 
   .plot { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--space-2); }
   .y { position: relative; block-size: 9.5rem; min-inline-size: 1.5rem; color: var(--muted); font-size: var(--t-xs); }
@@ -219,7 +230,9 @@
   .slot { position: relative; display: flex; justify-content: center; align-items: end; block-size: 100%; }
   .slot > span { position: absolute; inset-block-end: 0; inline-size: min(70%, 2.25rem); border-radius: 2px 2px 0 0; }
   .slot .cap { background: var(--brand-wash); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--control-line) 60%, transparent); }
-  .slot .cap.dashed { background: transparent; box-shadow: none; border: 1px dashed var(--control-line); border-block-end: 0; }
+  .slot .cap.dashed { background: color-mix(in srgb, var(--muted) 8%, transparent); box-shadow: none; border: 1.5px dashed color-mix(in srgb, var(--muted) 75%, transparent); border-block-end: 0; }
+  .slot.current .cap.dashed { border-style: solid; border-color: var(--brand); background: var(--brand-wash); }
+  .slot.current::before { content: ''; position: absolute; inset-block-end: -0.5rem; inset-inline: 15%; block-size: 3px; border-radius: 2px; background: var(--brand); }
   .slot .fill { background: color-mix(in srgb, var(--brand) 72%, var(--panel-raised)); }
   .slot.current .fill { background: var(--brand); }
   .slot.withdrawn .fill { background: color-mix(in srgb, var(--muted) 60%, var(--panel-raised)); }
@@ -248,8 +261,11 @@
   .cell-bar { display: flex; gap: var(--space-2); align-items: center; justify-content: end; }
   .track { position: relative; flex: 0 0 4.5rem; block-size: 10px; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .track > span { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: inherit; }
-  .track .cap { background: color-mix(in srgb, var(--brand) 22%, var(--chip)); }
   .track .fill { background: var(--brand); }
+  .track.warn .fill { background: var(--warn); }
+  .over, .only { flex: none; padding: 0 6px; border-radius: var(--radius-pill); font-size: var(--t-xs); font-weight: 650; white-space: nowrap; }
+  .over { background: var(--warn-wash); color: var(--ink); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent); }
+  .only { background: var(--chip); color: var(--ink-2); }
   .track.blank { visibility: hidden; }
   .value { min-inline-size: 5.5rem; white-space: nowrap; }
   .sections { white-space: nowrap; }
@@ -258,7 +274,6 @@
   .here { color: var(--brand-ink); }
   .withdrawn { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); font-weight: 600; }
   .more { color: var(--muted); font-size: var(--t-sm); }
-  .history .narrow-only { display: none; }
 
   .collapsible:not(:has(details[open])) tr.extra { display: none; }
   .toggle { border-block-start: 1px solid var(--line); }
@@ -286,10 +301,8 @@
     .names { min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); }
     .track { flex: 1 1 auto; max-inline-size: 8rem; }
     .value { min-inline-size: 0; }
-    .name + .name { display: none; }
     .sections { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; white-space: normal; }
-    .sections.multi .section:not(:has(.here)) { display: none; }
-    .history .narrow-only { display: inline-flex; }
+    .sections .more { margin-inline-start: auto; padding-inline: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); min-block-size: 2.25rem; display: inline-flex; align-items: center; }
     .section { margin-inline-end: 0; }
     .sections a, .here { min-block-size: var(--target-min); }
   }

@@ -14,14 +14,14 @@
   const summary = [
     '課程資料來自各校公開系統，可能比校方晚更新；選課與上課以校方為準。',
     '查課不用登入；評分、發文與回覆需要帳號，內容會公開顯示並可能被搜尋引擎索引。',
-    '外站評論只提供連結；索引功能上線後也只存標題與 120 字以內的摘要，不轉載全文。',
-    '要更正或移除資料，可以公開回報，也可以私密聯絡維護者。'
+    '課程頁的「外部評價」索引 PTT 四個課程板 2016 年起的公開文章，只存標題、日期、作者帳號與 120 字以內的開頭摘要，不轉載全文；其他網站只給搜尋連結。',
+    '要更正資料或移除某一筆索引：一般錯誤公開回報，涉及個資或不想公開的請私密聯絡維護者。'
   ];
 </script>
 
 <svelte:head>
   <title>使用條款｜UniCourse</title>
-  <meta name="description" content="UniCourse 的使用條款：課程資料的來源與限制、帳號與社群規範、外部評論索引的收錄原則與移除方式。" />
+  <meta name="description" content="UniCourse 的使用條款：課程資料的來源與限制、帳號與社群規範、PTT 課程板外部評論索引的收錄範圍、儲存欄位與移除方式。" />
 </svelte:head>
 
 <LegalDoc title="使用條款" updated={UPDATED} {sections} {summary} sibling={{ href: '/privacy', label: '隱私權政策' }}>
@@ -29,7 +29,6 @@
     <h2 id="data">課程資料</h2>
     <p>UniCourse 彙整各校公開系統的課程資料，方便跨校查詢與比較歷年修課人數。資料可能晚於校方更新，實際選課、上課時間、名額與成績規定請以校方系統為準。</p>
     <p>標示「示範」的課程不是實際開課紀錄；各校的收錄進度與未收錄原因列在<a href="/schools">各校收錄狀態</a>。</p>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="sources">
@@ -44,7 +43,6 @@
       </tbody>
     </table>
     <p>校方系統要求登入、使用驗證碼或以 robots 規則拒絕抓取時，本站不會收錄該校資料，並在各校收錄狀態頁標示「受阻」。本站的程式碼與資料檔以開源方式公開於 GitHub。</p>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="account">
@@ -56,26 +54,42 @@
       <li>違反上述規範的內容可能被移除；情節嚴重時會停用帳號。</li>
     </ul>
     <p>你送出的公開內容會以帳號名稱顯示，並可能被搜尋引擎索引；細節見<a href="/privacy#public">隱私權政策的公開內容</a>。</p>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="reviews">
     <h2 id="reviews">外部評論索引</h2>
-    <p><span class="status">目前狀態</span>課程頁的「網路上的討論」區目前只提供站外搜尋連結，索引功能尚未上線，也還沒有儲存任何外站內容。下面是功能上線後會遵守的收錄原則：</p>
-    <p>上線後，課程頁會列出其他網站上與該課程相關的公開文章，例如 PTT 各校課程板。本站只做搜尋索引，不轉載全文：</p>
+    <p><span class="status live">已上線</span>課程頁的「外部評價」區列出其他網站上與這門課相關的公開文章。本站只做搜尋索引，不轉載全文：讀者看到的是標題、日期與開頭摘要，點標題會回到原網站閱讀全文。</p>
+    <h3>目前收錄的看板</h3>
+    <p>只收錄 PTT（批踢踢實業坊）上專門討論課程的看板，從 2016 年起的文章：</p>
+    <table role="table">
+      <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">看板</th><th role="columnheader" scope="col">對應學校</th><th role="columnheader" scope="col">備註</th></tr></thead>
+      <tbody role="rowgroup">
+        <tr role="row"><td role="cell" data-label="看板">NTUcourse</td><td role="cell" data-label="對應學校">國立臺灣大學</td><td role="cell" data-label="備註">作者在評價範本中選「否」（不同意轉載）的文章不存摘要，只列標題。</td></tr>
+        <tr role="row"><td role="cell" data-label="看板">NTHU_Course</td><td role="cell" data-label="對應學校">國立清華大學</td><td role="cell" data-label="備註">2017 年看板搬遷時轉錄的舊文，日期是轉錄日。</td></tr>
+        <tr role="row"><td role="cell" data-label="看板">NCTU-Teacher</td><td role="cell" data-label="對應學校">國立陽明交通大學</td><td role="cell" data-label="備註">2016 年看板搬遷時轉錄的舊文，日期是轉錄日。</td></tr>
+        <tr role="row"><td role="cell" data-label="看板">NCHU-Courses</td><td role="cell" data-label="對應學校">國立中興大學</td><td role="cell" data-label="備註">文章較少。</td></tr>
+      </tbody>
+    </table>
+    <h3>儲存與顯示的內容</h3>
     <ul>
-      <li>只儲存連結、標題、發文日期、作者帳號（handle）與不超過 120 字的摘要，以及比對出的學校、課程與教師。</li>
-      <li>只收錄明確允許搜尋索引的網站，依站方 robots 檔的 <code>Content-Signal</code> 判斷；未明確允許的網站（例如歐趴糖、NCKU HUB、NTU Rating）只提供外部連結，不複製任何內容。</li>
-      <li>索引內容只用於搜尋與連結，不用於訓練模型，也不提供給第三方。</li>
-      <li>原文被刪除或站方規則改變時，索引會在下次更新時一併移除。</li>
+      <li>每篇只儲存：連結、標題、發文日期、作者帳號（PTT ID，不含暱稱）、看板、推文數、內文開頭不超過 120 字的摘要，以及從標題比對出的學期、課程與教師。不存全文、推文內容與圖片。</li>
+      <li>課程頁顯示摘要時會去掉評價範本的欄位提示（例如「哪一學年度修課」），只留作者寫的內容；剩下的內容太少時只顯示標題。</li>
+      <li>比對以標題中的課名與教師名為準，可能有錯配或漏配；課程頁會把本班教師的文章排在前面並標示出來。</li>
     </ul>
-    <p>各站的處理方式列在<a href="/landscape#third-party">課程網站總覽的第三方查課網站</a>。</p>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
+    <h3>為什麼可以收錄、哪些網站只給連結</h3>
+    <ul>
+      <li>只收錄站方 robots 檔以 <code>Content-Signal: search=yes</code> 明確允許建立搜尋索引的網站；PTT 屬於這一類，同時標明 <code>ai-train=no</code>。</li>
+      <li>歐趴糖、Dcard、想鑑你 NTU Rating 等沒有明確允許的網站，課程頁只提供用課名與教師組成的站外搜尋連結；本站不抓取、不儲存這些網站的任何內容。</li>
+      <li>索引內容只用於搜尋與連結，不用於訓練模型，也不提供給第三方。</li>
+    </ul>
+    <h3>更新與移除</h3>
+    <p>索引由維護者定期重新抓取並匯入，目前不是每晚自動更新，因此新文章會晚一段時間才出現。原文在 PTT 刪除後，本站不會自動得知；請用下方<a href="#removal">聯絡與移除</a>的管道告訴我們，該筆索引會被移除。</p>
+    <p>各站的處理方式也列在<a href="/landscape#third-party">課程網站總覽的第三方查課網站</a>。</p>
   </section>
 
   <section aria-labelledby="removal">
     <h2 id="removal">聯絡與移除</h2>
-    <p>若你是文章作者、被提及的教師或當事人，想移除外部索引中的某一筆，或認為課程資料、評分與文章有誤，用下面兩種方式之一告訴我們：</p>
+    <p>先選管道：<strong>涉及個人資料、帳號，或你不想公開提出的移除請求，請私密聯絡</strong>；一般的資料錯誤（課程資料、錯配的外部文章）可以公開回報。文章作者、被提及的教師或當事人都可以要求移除外部索引中的某一筆。</p>
     <div class="contact-routes">
       <div>
         <h3>公開回報</h3>
@@ -90,12 +104,10 @@
     </div>
     <p>請附上相關頁面的連結。請求通常在七天內處理，結果會回覆在同一則 issue 或私密回報中。</p>
     <p>移除索引不影響原網站上的文章；要刪除原文請聯絡該網站。</p>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="changes">
     <h2 id="changes">條款變更</h2>
     <p>條款有實質更動時會更新頁首的日期；重大變更會在首頁公告。繼續使用本站即表示你同意更新後的條款。</p>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 </LegalDoc>

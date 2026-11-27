@@ -46,6 +46,17 @@
   let ratingCount = $derived(stats?.count ?? 0);
   let span = $derived(history.rows.length > 1 ? `${history.rows.at(-1)?.term}–${history.rows[0]?.term}` : undefined);
   let hasAbout = $derived(Boolean(course.description || course.notes || extra.length));
+  // When and where is what a student checks first, so the head repeats it in one line.
+  let when = $derived.by(() => {
+    const slots = course.schedule ?? [];
+    if (!slots.length) return course.scheduleText?.trim() || undefined;
+    const shown = slots.slice(0, 2).map((slot) => `${meeting(slot)}${slot.location ? `・${slot.location}` : ''}`);
+    return shown.join('；') + (slots.length > 2 ? `；另 ${slots.length - 2} 個時段` : '');
+  });
+  let externalTotal = $derived(data.externalReviews?.sources.reduce((sum, source) => sum + source.count, 0) ?? 0);
+  let externalLabel = $derived(
+    data.externalReviews?.sources.length === 1 ? data.externalReviews.sources[0].sourceLabel.replace(/\s*批踢踢$/u, '') : '外站'
+  );
 
   // Long text sits last and starts collapsed on phones; desktops keep it open (it is server-rendered open).
   let aboutOpen = $state(true);
@@ -79,6 +90,7 @@
         {#if course.instructors.length}
           <span class="item">{#each course.instructors as name, index (name)}{#if index > 0}、{/if}<a href={instructorHref(course.school, name)}>{name}</a>{/each}</span>
         {/if}
+        {#if when}<span class="item when">{when}</span>{/if}
       </p>
       <p class="meta">
         {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}
@@ -96,6 +108,12 @@
         <a class="button" href={syllabus} target="_blank" rel="noopener noreferrer">課綱<span aria-hidden="true"> ↗</span><span class="sr-only">（外部網站）</span></a>
       {/if}
     </div>
+    <nav class="jumps" aria-label="跳到本頁段落">
+      <a href="#history">歷年開課{#if history.rows.length > 1}<span class="n">{displayValue(history.rows.length)} 期</span>{/if}</a>
+      <a href="#ratings">同學評價<span class="n">{stats ? `${displayValue(ratingCount)} 則` : '—'}</span></a>
+      <a href="#forum-title">站內討論<span class="n">{data.posts ? `${displayValue(data.posts.total)} 篇` : '—'}</span></a>
+      <a href="#external-reviews" class:strong={externalTotal > 0}>外部評價<span class="n">{externalTotal > 0 ? `${externalLabel} ${displayValue(externalTotal)} 篇` : '尚未收錄'}</span></a>
+    </nav>
   </header>
 
   {#if course.isDemo || !course.active || (!isHttpUrl(course.sourceUrl) && course.sourceUrl) || (course.syllabusUrl && !syllabus)}
@@ -209,33 +227,35 @@
     </section>
   </div>
 
+  <!-- Site ratings and site threads side by side; indexed posts from other sites get the full width below. -->
   <div class="community">
     <CommunityRatings ratings={data.ratings} user={data.user} {form} courseCode={course.courseCode} />
-    <div class="external-slot"><CourseExternalReviews school={course.school} courseCode={course.courseCode} reviews={data.externalReviews} /></div>
+
+    <section class="forum" aria-labelledby="forum-title">
+      <div class="section-head row">
+        <div>
+          <h2 id="forum-title">站內討論{#if data.posts}（{displayValue(data.posts.total)}）{/if}</h2>
+          <p class="sub">UniCourse 論壇裡標記這門課的文章。</p>
+        </div>
+        <div class="actions">
+          <a class="button primary" href={data.user ? composeHref : loginHref(composeHref)}>發表關於這門課的文章</a>
+          <a class="button" href={forumList}>在論壇查看</a>
+        </div>
+      </div>
+      {#if !data.posts}
+        <EmptyState title="站內討論暫時無法取得" description="課程資料不受影響，請稍後再試。" tone="error" />
+      {:else if data.posts.posts.length}
+        <div class="cm"><CommunityPostList posts={data.posts.posts} schoolNames={{ [course.school]: course.schoolName }} label="這門課的站內討論" /></div>
+        {#if data.posts.total > data.posts.posts.length}
+          <p class="small"><a href={forumList}>查看全部 {displayValue(data.posts.total)} 篇 →</a></p>
+        {/if}
+      {:else}
+        <EmptyState title="還沒有人討論這門課" description="問問修過的同學作業量、給分或考古題。" />
+      {/if}
+    </section>
   </div>
 
-  <section class="forum" aria-labelledby="forum-title">
-    <div class="section-head row">
-      <div>
-        <h2 id="forum-title">站內討論{#if data.posts}（{displayValue(data.posts.total)}）{/if}</h2>
-        <p class="sub">UniCourse 論壇裡標記這門課的文章。</p>
-      </div>
-      <div class="actions">
-        <a class="button primary" href={data.user ? composeHref : loginHref(composeHref)}>發表關於這門課的文章</a>
-        <a class="button" href={forumList}>在論壇查看</a>
-      </div>
-    </div>
-    {#if !data.posts}
-      <EmptyState title="站內討論暫時無法取得" description="課程資料不受影響，請稍後再試。" tone="error" />
-    {:else if data.posts.posts.length}
-      <div class="cm"><CommunityPostList posts={data.posts.posts} schoolNames={{ [course.school]: course.schoolName }} label="這門課的站內討論" /></div>
-      {#if data.posts.total > data.posts.posts.length}
-        <p class="small"><a href={forumList}>查看全部 {displayValue(data.posts.total)} 篇 →</a></p>
-      {/if}
-    {:else}
-      <EmptyState title="還沒有人討論這門課" description="問問修過的同學作業量、給分或考古題。" />
-    {/if}
-  </section>
+  <CourseExternalReviews school={course.school} courseCode={course.courseCode} instructors={course.instructors} reviews={data.externalReviews} />
 
   {#if hasAbout}
     <section class="about" aria-labelledby="about-title">
@@ -347,12 +367,19 @@
   .sub { color: var(--muted); font-size: var(--t-base); overflow-wrap: anywhere; }
 
   .community { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); align-items: start; }
-  /* Until the external reviews section exists, the ratings take the full width. */
-  .community:has(> .external-slot:empty) { grid-template-columns: minmax(0, 1fr); }
-  .external-slot:empty { display: none; }
-  .external-slot > :global(section) { margin-block-start: 0; }
 
-  .about { display: grid; gap: var(--space-2); max-inline-size: 52rem; }
+  /* Section shortcuts under the title: what a student scrolls for, with its size. */
+  .jumps { flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+  .jumps a { display: inline-flex; gap: var(--space-2); align-items: center; min-block-size: 2.25rem; padding: 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--panel); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .jumps a::after { content: '↓'; color: var(--muted); font-weight: 500; }
+  .jumps a:hover { border-color: var(--control-line); background: var(--hover-row); color: var(--ink); }
+  .jumps .n { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .jumps a.strong { border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); color: var(--brand-ink); }
+  .jumps a.strong .n { color: var(--brand-ink); }
+  .dek .when { color: var(--ink); font-weight: 600; }
+
+  .about { display: grid; gap: var(--space-2); }
+  .about details > p { max-inline-size: 52rem; }
   .about h2 { margin-block-end: var(--space-1) !important; font-size: var(--t-xl); }
   .about details { border-block-start: 1px solid var(--line); }
   .about summary { display: flex; align-items: center; justify-content: space-between; min-block-size: var(--target-min); list-style: none; cursor: pointer; }
@@ -378,6 +405,11 @@
     .course-page { gap: var(--space-5); }
     .crumbs { margin-block-end: calc(-1 * var(--space-4)); }
     .actions .button { flex: 1 1 auto; }
+    .dek .when { flex-basis: 100%; }
+    .dek .when::before { content: none; }
+    .jumps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1); }
+    .jumps a { justify-content: space-between; min-block-size: var(--target-min); padding-inline: var(--space-3); border-radius: var(--radius-control); white-space: normal; }
+    .jumps a::after { content: none; }
     .tiles { gap: var(--space-2); }
     .tile { padding: var(--space-3); }
     .tile .value { font-size: var(--t-2xl); }

@@ -24,6 +24,29 @@
 
   // Scroll-spy for the desktop table of contents: the section nearest the top is marked current.
   let currentId = $state('');
+  // Phones: one floating「目錄」button once the contents have scrolled away (replaces a link per section).
+  let tocAway = $state(false);
+  let tocDetails = $state<HTMLDetailsElement>();
+  onMount(() => {
+    const toc = document.getElementById('toc');
+    if (!toc || !('IntersectionObserver' in window)) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      tocAway = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+    });
+    observer.observe(toc);
+    return () => observer.disconnect();
+  });
+
+  /** Opens the collapsed phone contents and moves focus there, not just the scroll position. */
+  function toToc(event: MouseEvent) {
+    if (!tocDetails) return;
+    event.preventDefault();
+    tocDetails.open = true;
+    const toc = document.getElementById('toc');
+    toc?.scrollIntoView({ block: 'start' });
+    tocDetails.querySelector('summary')?.focus({ preventScroll: true });
+  }
+
   onMount(() => {
     const headings = sections.map((section) => document.getElementById(section.id)).filter((node): node is HTMLElement => Boolean(node));
     if (!headings.length || !('IntersectionObserver' in window)) return;
@@ -67,7 +90,7 @@
   <div class="doc-layout">
     <nav class="doc-toc" id="toc" aria-label="目錄">
       <!-- Closed in the markup so phones start collapsed; desktop CSS keeps the list visible regardless. -->
-      <details>
+      <details bind:this={tocDetails}>
         <summary>目錄<span class="toc-hint">：展開 {sections.length} 個章節</span></summary>
         <ol>
           {#each sections as section (section.id)}
@@ -80,11 +103,12 @@
     <div class="prose">
       {@render children()}
       <p class="next">
-        <a href="#top-of-doc" class="back"><span aria-hidden="true">↑</span> 回目錄</a>
+        <a href="#toc" class="back" onclick={toToc}><span aria-hidden="true">↑</span> 回目錄</a>
         <a href={sibling.href}>另請參閱{sibling.label} <span aria-hidden="true">→</span></a>
       </p>
     </div>
   </div>
+  <a class="toc-fab" class:shown={tocAway} href="#toc" onclick={toToc} aria-hidden={tocAway ? undefined : 'true'} tabindex={tocAway ? undefined : -1}><span aria-hidden="true">☰</span> 目錄</a>
 </article>
 
 <style>
@@ -122,7 +146,7 @@
   .prose :global(p), .prose :global(ul), .prose :global(ol) { margin: 0 0 var(--space-3); }
   .prose :global(ul), .prose :global(ol) { padding-inline-start: 1.4em; }
   .prose :global(li) { margin-block-end: var(--space-1); }
-  .prose :global(table) { inline-size: 100%; margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); border-collapse: separate; border-spacing: 0; overflow: hidden; background: var(--panel-raised); font-size: var(--t-base); line-height: var(--leading-table); }
+  .prose :global(table) { inline-size: 100%; max-inline-size: 46em; margin: 0 0 var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); border-collapse: separate; border-spacing: 0; overflow: hidden; background: var(--panel-raised); font-size: var(--t-base); line-height: var(--leading-table); }
   .prose :global(th), .prose :global(td) { padding: var(--space-2) var(--space-3); border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
   .prose :global(th) { background: var(--table-head); color: var(--muted); font-size: var(--t-sm); font-weight: 600; }
   .prose :global(tr:last-child td) { border-block-end: 0; }
@@ -134,7 +158,8 @@
   .prose :global(.contact-routes h3) { margin: 0; font-size: var(--t-md); }
   .prose :global(.contact-routes p) { margin: 0; color: var(--ink-2); font-size: var(--t-base); line-height: 1.65; }
   .prose :global(.contact-routes a.route) { display: inline-flex; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
-  .prose :global(.to-toc) { display: none; }
+  .toc-fab { display: none; }
+  .prose :global(.status.live) { background: color-mix(in srgb, var(--up) var(--status-tint), var(--panel-raised)); color: color-mix(in srgb, var(--up) 85%, var(--ink)); }
   .prose :global(.status) { display: inline-block; margin-inline-end: var(--space-1); padding: 0 7px; border-radius: var(--radius-pill); background: var(--warn-wash); color: var(--warn); font-size: var(--t-sm); font-weight: 600; line-height: 1.6; }
   .next { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); margin: var(--space-6) 0 0; padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); font-weight: 600; }
   .next a { display: inline-flex; align-items: center; min-block-size: var(--target-min); }
@@ -166,7 +191,9 @@
     .toc-hint { display: inline; }
     .doc-toc summary { justify-content: flex-start; }
     .doc-toc summary::after { margin-inline-start: auto; }
-    /* Phones: every section ends with a way back to the contents. */
-    .prose :global(.to-toc) { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; text-decoration: none; }
+    /* Phones: one floating way back to the contents once it has scrolled out of view. */
+    .toc-fab { position: fixed; inset-block-end: calc(var(--space-4) + env(safe-area-inset-bottom, 0px)); inset-inline-end: var(--space-4); z-index: 20; display: inline-flex; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); box-shadow: 0 4px 14px color-mix(in srgb, var(--ink) 18%, transparent); color: var(--ink); font-size: var(--t-base); font-weight: 650; text-decoration: none; opacity: 0; pointer-events: none; transition: opacity 150ms; }
+    .toc-fab.shown { opacity: 1; pointer-events: auto; }
+    .toc-fab:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
   }
 </style>

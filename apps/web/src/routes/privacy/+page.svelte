@@ -15,7 +15,8 @@
     '查課不用帳號，本站不要求學號、姓名或電子郵件。',
     '註冊只存帳號名稱與雜湊後的密碼；顯示名稱、學校與自我介紹都是選填。',
     '評分、文章與回覆會公開，也可能被搜尋引擎索引；投票只顯示合計。',
-    '沒有廣告與第三方追蹤；登入 Cookie 只用來維持登入。'
+    '外部評價只索引 PTT 課程板的公開文章（標題、日期、作者帳號與 120 字內摘要），不存全文。',
+    '沒有廣告與第三方追蹤；Cookie 只用來維持登入和記住你選的深淺色。'
   ];
 </script>
 
@@ -29,7 +30,6 @@
     <h2 id="browse">查課與登入</h2>
     <p>查詢各校公開課程不需要帳號，本站不會要求你提供學號、姓名或電子郵件。課程資料可能未即時更新，請以校方公開系統為準。</p>
     <p>只有評分、發文、回覆與投票需要登入。登入後瀏覽器會儲存一個用於維持登入狀態的 Cookie；登出即結束目前的登入。</p>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="account">
@@ -44,47 +44,43 @@
         <tr role="row"><td role="cell" data-label="資料">評分、心得、文章、回覆、投票</td><td role="cell" data-label="用途">社群功能</td><td role="cell" data-label="是否公開">內容公開；投票只顯示合計</td></tr>
       </tbody>
     </table>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="public">
     <h2 id="public">公開內容</h2>
     <p>帳號名稱、你填寫的公開個人資料，以及送出的課程評分、心得、文章與回覆都會公開顯示，也可能被搜尋引擎索引。請勿在公開內容中填寫學號、聯絡方式等不想公開的資料。</p>
     <p>你可以自行修改或刪除自己的評分與文章；刪除後不再顯示於站內，但已被搜尋引擎或他人保存的副本不在本站控制範圍。</p>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="reviews">
     <h2 id="reviews">外部評論索引儲存的資料</h2>
-    <p><span class="status">目前狀態</span>外部評論索引尚未上線，目前沒有儲存任何外站資料；課程頁只提供站外搜尋連結。上線後，為了在課程頁列出其他網站上的相關討論，本站會為允許搜尋索引的公開看板建立索引。每一筆只儲存下列欄位，不儲存全文，也不儲存任何未公開的資料：</p>
+    <p><span class="status live">已上線</span>為了在課程頁列出其他網站上的相關討論，本站為 PTT 的四個課程看板（NTUcourse、NTHU_Course、NCTU-Teacher、NCHU-Courses）2016 年起的公開文章建立了搜尋索引。每一筆只儲存下列欄位，不儲存全文、推文內容或圖片，也不儲存任何未公開的資料：</p>
     <table role="table">
       <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">欄位</th><th role="columnheader" scope="col">說明</th></tr></thead>
       <tbody role="rowgroup">
         <tr role="row"><td role="cell" data-label="欄位">連結</td><td role="cell" data-label="說明">原文網址，點擊後回到原網站。</td></tr>
         <tr role="row"><td role="cell" data-label="欄位">標題與日期</td><td role="cell" data-label="說明">原文標題與發文日期。</td></tr>
-        <tr role="row"><td role="cell" data-label="欄位">作者帳號</td><td role="cell" data-label="說明">原站顯示的帳號（handle），不另外比對真實身分。</td></tr>
-        <tr role="row"><td role="cell" data-label="欄位">摘要</td><td role="cell" data-label="說明">不超過 120 字，取自公開內文開頭。</td></tr>
+        <tr role="row"><td role="cell" data-label="欄位">作者帳號</td><td role="cell" data-label="說明">PTT ID（不含暱稱），不另外比對真實身分。</td></tr>
+        <tr role="row"><td role="cell" data-label="欄位">摘要</td><td role="cell" data-label="說明">不超過 120 字，取自公開內文開頭；NTUcourse 作者選擇不同意轉載的文章不存摘要。</td></tr>
         <tr role="row"><td role="cell" data-label="欄位">比對結果</td><td role="cell" data-label="說明">對應的學校、課程與教師，以及看板與推文數。</td></tr>
       </tbody>
     </table>
-    <p>只收錄站方 robots 檔以 <code>Content-Signal</code> 明確允許搜尋的網站；其他網站只提供連結。索引內容不用於訓練模型，不提供給第三方；原文被刪除時會在下次更新時移除。收錄原則詳見<a href="/terms#reviews">使用條款</a>。</p>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
+    <p>只收錄站方 robots 檔以 <code>Content-Signal</code> 明確允許搜尋的網站；歐趴糖、Dcard 等其他網站只提供搜尋連結，不抓取任何內容。索引內容不用於訓練模型，也不提供給第三方。索引不會自動得知原文已刪除；要移除某一筆，請用下方<a href="#contact">移除與聯絡</a>的管道。收錄範圍詳見<a href="/terms#reviews">使用條款</a>。</p>
   </section>
 
   <section aria-labelledby="cookies">
     <h2 id="cookies">Cookie 與記錄</h2>
     <ul>
-      <li>登入 Cookie：維持登入狀態，登出或過期後失效。未登入不會設定任何 Cookie。</li>
-      <li>主題偏好：深淺色設定只存在你的瀏覽器（localStorage），不會傳回伺服器。</li>
+      <li>登入 Cookie：維持登入狀態，登出或過期後失效。</li>
+      <li>主題 Cookie（<code>uc_theme</code>）：只在你按下深淺色切換時設定，內容只有 light 或 dark，保存一年，讓頁面一開始就用你選的主題。沒有登入也沒有切換主題時，本站不設定任何 Cookie。</li>
       <li>伺服器記錄：為了排除故障與防止濫用，會短期保留請求時間、路徑與來源 IP，不用於廣告，也不與第三方分享。</li>
       <li>本站沒有第三方追蹤或廣告程式碼。</li>
     </ul>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 
   <section aria-labelledby="contact">
     <h2 id="contact">移除與聯絡</h2>
-    <p>想刪除帳號、移除外部索引中的某一筆，或對資料處理有疑問，用下面兩種方式之一聯絡：</p>
+    <p>先選管道：<strong>刪除帳號、涉及個人資料或不想公開的請求，請私密聯絡</strong>；一般的資料處理問題或移除外部索引中錯配的文章，可以公開回報。</p>
     <div class="contact-routes">
       <div>
         <h3>公開回報</h3>
@@ -98,6 +94,5 @@
       </div>
     </div>
     <p>請附上相關頁面的連結。請求通常在七天內處理，結果會回覆在同一則 issue 或私密回報中。</p>
-    <a class="to-toc" href="#toc">↑ 回目錄</a>
   </section>
 </LegalDoc>
