@@ -1,6 +1,6 @@
 # 臺灣大專院校課程相關網站總覽
 
-由 `scripts/build-landscape.py` 合併 `data/landscape/*.json` 產生；共 505 個系統，其中跨校/全國 47 個。學校依教育部學校代碼排序；標「跨校」者為多校平台在該校的對應。
+由 `scripts/build-landscape.py` 合併 `data/landscape/*.json` 產生；共 506 個系統，其中跨校/全國 47 個。學校依教育部學校代碼排序；標「跨校」者為多校平台在該校的對應。
 
 ## 跨校與全國平台
 
@@ -212,6 +212,7 @@
 | [中興大學選課小幫手（iach526526）](https://iach526526.github.io/NCHU_Course_Selector/) | 課程查詢、排課 | 學生（iach526526（fork 自 EricYang801）） | 免登入 | 運作中 | 關鍵字／系所／教師搜尋、即時衝堂課表；每日 06:00 GitHub Actions 爬取官方 JSON | 涵蓋學士、碩博、進修部、在職專班、通識體育；最後 push 2026-11-26。上游 EricYang801/NCHU_Course_Selector 最後 push 2026-01-06。 [repo](https://github.com/iach526526/NCHU_Course_Selector) |
 | [中興選課小幫手（學生會）](http://course.nchusg.org/) | 排課、課程查詢 | 學生（中興大學學生會資訊部、資訊社） | 免登入 | 停止 | 雙主修介面、全學制選課模擬、課綱查詢、中籤率與剩餘名額 | course.nchusg.org 與 campass.com.tw 皆無法解析；repo 最後 push 2018-12-14。 [repo](https://github.com/david30907d/CoursePickingHelper) |
 | [nchu-academic-navigator](https://github.com/yuanting0117a/nchu-academic-navigator) | 課程地圖、排課 | 學生（yuanting0117a） | 免登入 | 運作中 | 中興畢業學分與修課路徑規劃，可匯入官方課程查詢 Excel/CSV | 最後 push 2026-11-23；支援 114、115 學年入學。 [repo](https://github.com/yuanting0117a/nchu-academic-navigator) |
+| [PTT NCHU-Courses 看板](https://www.ptt.cc/bbs/NCHU-Courses/index.html) | 評價、討論 | 社群（PTT） | 免登入 | 運作中 | 中興大學課程心得與評價的 BBS 看板 | UniCourse 外部評價索引收錄的 4 個 PTT 看板之一（只存連結、標題與 120 字以內摘錄）。 |
 
 **跨校平台涵蓋**：[臺灣綜合大學系統（臺綜大）](https://www.tcus.edu.tw/)、[UniCourse 查課](https://unicourse.observe.tw/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
@@ -266,7 +267,7 @@
 
 **跨校平台涵蓋**：[台灣聯合大學系統（台聯大）](https://www.ust.edu.tw/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 國立中山大學（0009）
+### 國立中山大學（0009） · UniCourse slug `nsysu`
 
 **校方系統**
 
@@ -285,7 +286,7 @@
 
 **跨校平台涵蓋**：[臺灣綜合大學系統（臺綜大）](https://www.tcus.edu.tw/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 國立臺灣海洋大學（0012）
+### 國立臺灣海洋大學（0012） · UniCourse slug `ntou`
 
 **校方系統**
 
@@ -319,7 +320,7 @@
 
 **跨校平台涵蓋**：[臺灣綜合大學系統（臺綜大）](https://www.tcus.edu.tw/)、[UniCourse 查課](https://unicourse.observe.tw/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 國立高雄師範大學（0014）
+### 國立高雄師範大學（0014） · UniCourse slug `nknu`
 
 **校方系統**
 
@@ -330,7 +331,7 @@
 | [課程核心能力一覽](https://sso.nknu.edu.tw/CourseMap/showList.aspx) | 課程地圖 | 官方（國立高雄師範大學） | 免登入 | 運作中 | 依學院系所查看課程及核心能力對應。 | sso.nknu.edu.tw：robots.txt 回傳 HTML，未取得可辨識的規則。 |
 | [高師大數位學習專區](https://moocs.nknu.edu.tw/moodle/) | LMS | 官方（國立高雄師範大學） | 部分需登入 | 停止 | 高師大校首頁列出的 Moodle 數位學習站。 | 屬數位學習專區，未確認是否全校一般課程的主要 LMS。 本次未能開啟此入口（timed out），不代表官方已宣告停用。 moocs.nknu.edu.tw：robots.txt 無法取得（timed out），未判定規則。 |
 
-### 國立彰化師範大學（0015）
+### 國立彰化師範大學（0015） · UniCourse slug `ncue`
 
 **校方系統**
 
@@ -347,7 +348,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [NCUE 課程查詢模擬選課](https://github.com/yoychen/ncue-curriculum-chrome-extension) | 排課 | 學生（yoychen） | 免登入 | 停止 | 彰師大課程查詢模擬選課 Chrome 擴充 | 最後 push 2016-06-26。 [repo](https://github.com/yoychen/ncue-curriculum-chrome-extension) |
 
-### 國立臺北大學（0017）
+### 國立臺北大學（0017） · UniCourse slug `ntpu`
 
 **校方系統**
 
@@ -367,7 +368,7 @@
 
 **跨校平台涵蓋**：[臺北聯合大學系統（北聯大）臺北聯大課程](https://ustp.ntpu.edu.tw/info/8)
 
-### 國立嘉義大學（0018）
+### 國立嘉義大學（0018） · UniCourse slug `ncyu`
 
 **校方系統**
 
@@ -385,7 +386,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [嘉大選課輔助器](https://tony11306.github.io/Chiayi-university-course-selection-support/) | 排課 | 學生（tony11306） | 免登入 | 不明 | 衝堂鎖定、課表預覽、篩選、學分計算 | 可連線；作者另有嘉義大學課表產生器（repo 最後 push 2024-02）。 |
 
-### 國立高雄大學（0019）
+### 國立高雄大學（0019） · UniCourse slug `nuk`
 
 **校方系統**
 
@@ -396,7 +397,7 @@
 | [NUK I-Course 智慧選課引導系統](https://icourse.nuk.edu.tw/auth/signIn) | 課程地圖、排課 | 官方（國立高雄大學） | 需登入 | 不明 | 校方列出的智慧選課引導服務。 | 需要登入；不是一般公開開課查詢。 icourse.nuk.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。 |
 | [Moodle 教學平台 4.0](https://elearningv4.nuk.edu.tw/) | LMS | 官方（國立高雄大學） | 需登入 | 運作中 | 高雄大學 Moodle 4 教學平台。 | elearningv4.nuk.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。 |
 
-### 國立東華大學（0020）
+### 國立東華大學（0020） · UniCourse slug `ndhu`
 
 **校方系統**
 
@@ -409,7 +410,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 國立暨南國際大學（0021）
+### 國立暨南國際大學（0021） · UniCourse slug `ncnu`
 
 **校方系統**
 
@@ -452,7 +453,7 @@
 | [推廣教育中心學分課程](https://eec.ntua.edu.tw/Course/Credit) | 課程查詢 | 官方（國立臺灣藝術大學） | 免登入 | 運作中 | 公開列出臺藝大推廣學士、碩士學分課程。 | 報名另需登入；本筆僅指查詢，不含普通學制或非學分班。 eec.ntua.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。 |
 | [台藝大網路學園](https://elearning.ntua.edu.tw/) | LMS | 官方（國立臺灣藝術大學） | 需登入 | 停止 | 臺藝大數位學習平台。 | 以校內平台名稱辨識，未登入。 本次未能開啟此入口（HTTP 403），不代表官方已宣告停用。 elearning.ntua.edu.tw：robots.txt 回傳 HTTP 403；未取得規則。 |
 
-### 國立臺東大學（0030）
+### 國立臺東大學（0030） · UniCourse slug `nttu`
 
 **校方系統**
 
@@ -461,7 +462,7 @@
 | [臺東大學校務系統](https://infosys.nttu.edu.tw/) | 課程查詢、教學大綱、課程地圖、選課 | 官方（國立臺東大學） | 部分需登入 | 運作中 | 公開查課、週課表與課程地圖，學生登入辦理選課。 | 同一服務下的公開查課與選課入口合併列出。 infosys.nttu.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。 |
 | [網路學園](https://eclass2.nttu.edu.tw/) | LMS | 官方（國立臺東大學） | 需登入 | 運作中 | 臺東大學的數位教學入口。 | 在校生頁也列 eclass 子網域別名。 eclass2.nttu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /media/s/、Disallow: /km/s/、Disallow: /*.mp4$。 |
 
-### 國立宜蘭大學（0031）
+### 國立宜蘭大學（0031） · UniCourse slug `niu`
 
 **校方系統**
 
@@ -478,7 +479,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [宜大 App（niu_app）](https://github.com/mpeilun/niu_app) | 其他 | 學生（mpeilun） | 需登入 | 停止 | 宜大學生 App：數位學習、分數、課表、畢業門檻、選課 | 最後 push 2023-09-20。 [repo](https://github.com/mpeilun/niu_app) |
 
-### 國立聯合大學（0032）
+### 國立聯合大學（0032） · UniCourse slug `nuu`
 
 **校方系統**
 
@@ -490,7 +491,7 @@
 
 **跨校平台涵蓋**：[智慧大師 Wisdom Master 教學平台](https://www.sun.net.tw/)
 
-### 國立臺南藝術大學（0035）
+### 國立臺南藝術大學（0035） · UniCourse slug `tnnua`
 
 **校方系統**
 
@@ -500,7 +501,7 @@
 | [學生資訊系統](https://ap.tnnua.edu.tw/StdInfo/) | 選課 | 官方（國立臺南藝術大學） | 需登入 | 運作中 | 學生登入南藝大學生資訊系統辦理網路選課。 | ap.tnnua.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。 |
 | [Moodle 數位學習平台](https://elearning.tnnua.edu.tw/) | LMS | 官方（國立臺南藝術大學） | 需登入 | 運作中 | 南藝大 Moodle 教學入口。 | elearning.tnnua.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。 |
 
-### 國立臺南大學（0036）
+### 國立臺南大學（0036） · UniCourse slug `nutn`
 
 **校方系統**
 
@@ -516,7 +517,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [TAINAN選｜南大選課評價](https://nutnselect.com/) | 評價、課程查詢 | 學生（NoZ915） | 免登入 | 運作中 | 臺南大學非官方選課評價系統 | 最後 push 2026-11-24。 [repo](https://github.com/NoZ915/tainan-select) |
 
-### 國立臺北教育大學（0037）
+### 國立臺北教育大學（0037） · UniCourse slug `ntue`
 
 **校方系統**
 
@@ -528,7 +529,7 @@
 | [智慧大師教學平台](https://wm.ntue.edu.tw/) | LMS | 官方（國立臺北教育大學） | 需登入 | 停止 | 校方列出的智慧大師教學平台。 | 校方註明限校內瀏覽。 本次未能開啟此入口（[Errno -5] No address associated with hostname），不代表官方已宣告停用。 wm.ntue.edu.tw：robots.txt 無法取得（[Errno -5] No address associated with hostname），未判定規則。 |
 | [教學魔法師教學平台](https://imagic.ntue.edu.tw/magic/) | LMS | 官方（國立臺北教育大學） | 需登入 | 停止 | 校方列出的教學魔法師教學平台。 | 校方註明限校內瀏覽。 本次未能開啟此入口（[Errno -2] Name or service not known），不代表官方已宣告停用。 imagic.ntue.edu.tw：robots.txt 無法取得（[Errno -2] Name or service not known），未判定規則。 |
 
-### 國立臺中教育大學（0039）
+### 國立臺中教育大學（0039） · UniCourse slug `ntcu`
 
 **校方系統**
 
@@ -538,7 +539,7 @@
 | [國立臺中教育大學課程地圖](https://careerweb.ntcu.edu.tw/CourseMap/Map/Index.aspx) | 課程地圖 | 官方（國立臺中教育大學） | 免登入 | 運作中 | 依系所瀏覽或下載中教大課程地圖。 | 另連至舊版課程地圖。 careerweb.ntcu.edu.tw：robots.txt 對 User-agent: * 列出 Disallow: /。 |
 | [E 化教學系統](https://elearning.ntcu.edu.tw/) | LMS | 官方（國立臺中教育大學） | 不明 | 停止 | 中教大學生入口所列 E 化教學系統。 | 外部實測回傳 HTTP 403，未測登入、不代表官方已宣告停用。 elearning.ntcu.edu.tw：robots.txt 回傳 HTTP 403。 |
 
-### 國立體育大學（0044）
+### 國立體育大學（0044） · UniCourse slug `ntsu`
 
 **校方系統**
 
@@ -549,7 +550,7 @@
 | [eeclass 數位學習系統 3.0](https://eeclass2.ntsu.edu.tw/) | LMS | 官方（國立體育大學） | 需登入 | 運作中 | 國體大 ee-class 3.0 數位課堂。 | eeclass2.ntsu.edu.tw：robots.txt 的 User-agent: * 規則包含 Disallow: /media/s/、Disallow: /km/s/、Disallow: /*.mp4$。 |
 | [國體大教務處課程地圖](https://aca.ntsu.edu.tw/p/412-1004-3028.php?Lang=zh-tw) | 課程地圖 | 官方（國立體育大學） | 免登入 | 不明 | 國體大教務處的公開課程地圖資源。 | 未確認最近一年的地圖更新。 aca.ntsu.edu.tw：robots.txt 對 User-agent: * 列出 Allow: /。 |
 
-### 國立金門大學（0048）
+### 國立金門大學（0048） · UniCourse slug `nqu`
 
 **校方系統**
 
@@ -558,7 +559,7 @@
 | [國立金門大學校務系統](https://select.nqu.edu.tw/) | 課程查詢、課程地圖、選課 | 官方（國立金門大學） | 需登入 | 停止 | 學生登入選課；校方教務處另提供訪客登入查課及課程規劃。 | 訪客仍須登入，未登入查證；不列為完全免登入。 本次未能開啟此入口（[SSL: UNSAFE_LEGACY_RENEGOTIATION_DISABLED] unsafe legacy renegotiation disabled (_ssl.c:1082)），不代表官方已宣告停用。 select.nqu.edu.tw：robots.txt 無法取得（[SSL: UNSAFE_LEGACY_RENEGOTIATION_DISABLED] unsafe legacy renegotiation disabled (_ssl.c:1082)），未判定規則。 |
 | [e-Campus 網路學習平台](https://ecampus.nqu.edu.tw/eCampus3P/Learn/LoginPage2/product_login.aspx) | LMS | 官方（國立金門大學） | 部分需登入 | 不明 | 金門大學 e-Campus 教學平台，手冊另說明訪客身分。 | 登入頁標示 inService；未確認最近一年的課程更新。 ecampus.nqu.edu.tw：robots.txt 回傳 HTML，未取得可辨識規則。 |
 
-### 國立臺灣體育運動大學（0049）
+### 國立臺灣體育運動大學（0049） · UniCourse slug `ntus`
 
 **校方系統**
 
@@ -569,7 +570,7 @@
 | [數位學習平台](https://el.ntus.edu.tw/) | LMS | 官方（國立臺灣體育運動大學） | 需登入 | 運作中 | 臺灣體大校方數位教學平台。 | 系統頁面標示 Moodle。 el.ntus.edu.tw：robots.txt 回傳 HTTP 404；未取得規則。 |
 | [課程地圖（競技運動學院教學組）](https://cosp.ntus.edu.tw/index.php?code=list&ids=628) | 課程地圖 | 官方（國立臺灣體育運動大學） | 免登入 | 運作中 | 臺灣體大競技運動學院教學組公開 115 學年度等課程地圖。 | 此頁為指定單位範圍，不視為全校課程地圖。 cosp.ntus.edu.tw：robots.txt 對 User-agent: * 列出 Disallow: /，另允許首頁及 /index.php。 |
 
-### 國立屏東大學（0052）
+### 國立屏東大學（0052） · UniCourse slug `nptu`
 
 **校方系統**
 
@@ -581,7 +582,7 @@
 
 **跨校平台涵蓋**：[ee-class 易課學習管理系統](https://tw.formosasoft.com/p/ee-class)、[智慧大師 Wisdom Master 教學平台](https://www.sun.net.tw/)
 
-### 東海大學（1001）
+### 東海大學（1001） · UniCourse slug `thu`
 
 **校方系統**
 
@@ -600,7 +601,7 @@
 
 **跨校平台涵蓋**：[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)、[TronClass 暢課](https://www.tronclass.com/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 輔仁大學（1002）
+### 輔仁大學（1002） · UniCourse slug `fju`
 
 **校方系統**
 
@@ -621,7 +622,7 @@
 
 **跨校平台涵蓋**：[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 東吳大學（1003）
+### 東吳大學（1003） · UniCourse slug `scu`
 
 **校方系統**
 
@@ -640,7 +641,7 @@
 
 **跨校平台涵蓋**：[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)
 
-### 中原大學（1004）
+### 中原大學（1004） · UniCourse slug `cycu`
 
 **校方系統**
 
@@ -660,7 +661,7 @@
 
 **跨校平台涵蓋**：[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 淡江大學（1005）
+### 淡江大學（1005） · UniCourse slug `tku`
 
 **校方系統**
 
@@ -681,7 +682,7 @@
 
 **跨校平台涵蓋**：[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)、[TronClass 暢課](https://www.tronclass.com/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 中國文化大學（1006）
+### 中國文化大學（1006） · UniCourse slug `pccu`
 
 **校方系統**
 
@@ -714,7 +715,7 @@
 
 **跨校平台涵蓋**：[OpenEdu 中華開放教育平台](https://www.openedu.tw/)、[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)、[UniCourse 查課](https://unicourse.observe.tw/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 靜宜大學（1008）
+### 靜宜大學（1008） · UniCourse slug `pu`
 
 **校方系統**
 
@@ -729,7 +730,7 @@
 
 **跨校平台涵蓋**：[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)、[TronClass 暢課](https://www.tronclass.com/)
 
-### 長庚大學（1009）
+### 長庚大學（1009） · UniCourse slug `cgu`
 
 **校方系統**
 
@@ -741,7 +742,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 元智大學（1010）
+### 元智大學（1010） · UniCourse slug `yzu`
 
 **校方系統**
 
@@ -753,7 +754,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 中華大學（1011）
+### 中華大學（1011） · UniCourse slug `chu`
 
 **校方系統**
 
@@ -763,7 +764,7 @@
 | [CHUMoodle 數位學習平台入口網站](https://elearn.chu.edu.tw/) | LMS | 官方（中華大學） | 部分需登入 | 運作中 | 校內教學空間，首頁公布各學年度的課程平台。 | 產品：Moodle。 |
 | [中華大學學生學習歷程資訊系統](https://sso.chu.edu.tw/) | 選課 | 官方（中華大學） | 需登入 | 運作中 | 學生登入 e-Portfolio 進入網路選課和查詢選課結果。 | 與免登入課程查詢、CHUMoodle 分開。 |
 
-### 大葉大學（1012）
+### 大葉大學（1012） · UniCourse slug `dyu`
 
 **校方系統**
 
@@ -774,7 +775,7 @@
 | [大葉大學 TronClass](https://tronclass.dyu.edu.tw/) | LMS | 官方（大葉大學） | 需登入 | 不明 | 校內數位課程及教材平台。 | 產品：TronClass。 |
 | [多媒體數位內容學程課程規劃](https://mdc.dyu.edu.tw/rwd/course.html) | 課程地圖、課程查詢 | 官方（大葉大學） | 免登入 | 運作中 | 公開系級課程地圖及歷年開課總表、班級和教師課表。 | 僅所屬系所；有 115-1 的 PDF 附件。 |
 
-### 華梵大學（1013）
+### 華梵大學（1013） · UniCourse slug `hfu`
 
 **校方系統**
 
@@ -784,7 +785,7 @@
 | [MyWay 我的模組課程學習地圖](https://myway.hfu.edu.tw/) | 課程地圖 | 官方（華梵大學） | 部分需登入 | 不明 | 提供課程模組總覽與個人模組選擇。 | 公開首頁和模組資訊；個人功能另設登入。 |
 | [華梵大學數位學習網](https://m26.hfu.edu.tw/moodle/) | LMS | 官方（華梵大學） | 需登入 | 停止 | 校方連結的 Moodle 數位教學入口。 | 產品：Moodle。 本次直連：連線或回應逾時；不代表已永久停用。 |
 
-### 義守大學（1014）
+### 義守大學（1014） · UniCourse slug `isu`
 
 **校方系統**
 
@@ -794,7 +795,7 @@
 | [義守大學網路註冊與選課](https://netreg.isu.edu.tw/) | 選課 | 官方（義守大學） | 需登入 | 不明 | 校內學生辦理網路選課。 | 同主機有公開課程大綱；本項指需登入的選課入口。 |
 | [ISU Moodle 教學資源平台](https://moodle.isu.edu.tw/) | LMS | 官方（義守大學） | 部分需登入 | 不明 | 義守大學的數位教學資源及課程搜尋入口。 | 產品：Moodle；首頁另連 110–113 學年度平台。 |
 
-### 世新大學（1015）
+### 世新大學（1015） · UniCourse slug `shu`
 
 **校方系統**
 
@@ -808,7 +809,7 @@
 
 **跨校平台涵蓋**：[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)、[TronClass 暢課](https://www.tronclass.com/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 銘傳大學（1016）
+### 銘傳大學（1016） · UniCourse slug `mcu`
 
 **校方系統**
 
@@ -820,7 +821,7 @@
 
 **跨校平台涵蓋**：[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)
 
-### 實踐大學（1017）
+### 實踐大學（1017） · UniCourse slug `usc`
 
 **校方系統**
 
@@ -832,7 +833,7 @@
 
 **跨校平台涵蓋**：[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)、[TronClass 暢課](https://www.tronclass.com/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 高雄醫學大學（1019）
+### 高雄醫學大學（1019） · UniCourse slug `kmu`
 
 **校方系統**
 
@@ -842,7 +843,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 南華大學（1020）
+### 南華大學（1020） · UniCourse slug `nhu`
 
 **校方系統**
 
@@ -852,7 +853,7 @@
 | [南華大學數位學習網](https://moodle.nhu.edu.tw/) | LMS | 官方（南華大學） | 需登入 | 不明 | 校內課程教材和數位教學。 | 產品：Moodle。 |
 | [南華大學課程資訊查詢](https://std.nhu.edu.tw/Academic/SelCourse/QueryCourses.aspx) | 課程查詢 | 官方（南華大學） | 免登入 | 不明 | 免登入以學期、系所、課程名稱與 SDGs 等條件查詢課程。 | 同一表單提供英文介面入口。 |
 
-### 真理大學（1021）
+### 真理大學（1021） · UniCourse slug `au`
 
 **校方系統**
 
@@ -863,7 +864,7 @@
 | [真理大學校務資訊系統](https://sso.au.edu.tw/portal/) | 選課 | 官方（真理大學） | 需登入 | 不明 | 經校務入口登入後進行學生選課。 |  |
 | [真理大學 TronClass](https://tronclass.au.edu.tw/#/) | LMS | 官方（真理大學） | 需登入 | 停止 | 校內數位課程與教材。 | 產品：TronClass。 本次直連：連線或回應逾時；不代表已永久停用。 |
 
-### 大同大學（1022）
+### 大同大學（1022） · UniCourse slug `ttu`
 
 **校方系統**
 
@@ -884,7 +885,7 @@
 
 **跨校平台涵蓋**：[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)
 
-### 慈濟大學（1027）
+### 慈濟大學（1027） · UniCourse slug `tcu`
 
 **校方系統**
 
@@ -896,7 +897,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 臺北醫學大學（1028）
+### 臺北醫學大學（1028） · UniCourse slug `tmu`
 
 **校方系統**
 
@@ -908,7 +909,7 @@
 
 **跨校平台涵蓋**：[臺北聯合大學系統（北聯大）臺北聯大課程](https://ustp.ntpu.edu.tw/info/8)、[優久大學聯盟 校際教務系統（校際選課）](https://course.ttu.edu.tw/u9/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 中山醫學大學（1029）
+### 中山醫學大學（1029） · UniCourse slug `csmu`
 
 **校方系統**
 
@@ -919,7 +920,7 @@
 | [ee-class 數位學習系統](https://ee2.csmu.edu.tw/) | LMS | 官方（中山醫學大學） | 部分需登入 | 不明 | 教學空間與數位學習功能。 | 產品：ee-class。 |
 | [中山醫學大學課表及課程綱要查詢](https://student.csmu.edu.tw/guest/wSco005Pub/wSco005Pub.aspx) | 課程查詢、教學大綱 | 官方（中山醫學大學） | 免登入 | 不明 | 免登入依學年度、學期、學制及系所查詢課表與課程綱要。 | 學生資訊系統的訪客區，不是登入選課入口。 |
 
-### 長榮大學（1033）
+### 長榮大學（1033） · UniCourse slug `cjcu`
 
 **校方系統**
 
@@ -929,7 +930,7 @@
 | [長榮大學選課系統](https://csweb.cjcu.edu.tw/) | 選課 | 官方（長榮大學） | 需登入 | 不明 | 學生線上選課。 |  |
 | [長榮大學 I-Learning](https://tronclass.cjcu.edu.tw/#/) | LMS | 官方（長榮大學） | 需登入 | 不明 | 長榮大學數位教學平台，首頁提供登入。 | 產品：TronClass；未驗證課內教材。 |
 
-### 中國醫藥大學（1035）
+### 中國醫藥大學（1035） · UniCourse slug `cmu`
 
 **校方系統**
 
@@ -942,7 +943,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 玄奘大學（1039）
+### 玄奘大學（1039） · UniCourse slug `hcu`
 
 **校方系統**
 
@@ -952,7 +953,7 @@
 | [玄奘大學選課系統](https://csys.hcu.edu.tw/) | 選課 | 官方（玄奘大學） | 需登入 | 不明 | 學生登入後選課。 |  |
 | [玄奘大學數位學習 I-learn 平台](https://ilearn.hcu.edu.tw/) | LMS | 官方（玄奘大學） | 部分需登入 | 不明 | 教學資訊、課程教材與 I-learn 操作教學。 | 產品：Moodle；校方使用 I-learn 品牌。 |
 
-### 亞洲大學（1048）
+### 亞洲大學（1048） · UniCourse slug `asia`
 
 **校方系統**
 
@@ -970,7 +971,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 開南大學（1049）
+### 開南大學（1049） · UniCourse slug `knu`
 
 **校方系統**
 
@@ -982,7 +983,7 @@
 | [開南大學數位學習網](http://elearning.knu.edu.tw/) | LMS | 官方（開南大學） | 不明 | 停止 | 教務處列出的數位學習入口。 | 本次直連：無法建立連線；不代表已永久停用。 |
 | [開南大學跨平台校務行政資訊系統](https://sts2.knu.edu.tw/) | 選課 | 官方（開南大學） | 需登入 | 不明 | 校內學生登入教務系統進行加選、退選與微學分課程選課。 | 官方另列需舊瀏覽器的校務入口。 |
 
-### 佛光大學（1050）
+### 佛光大學（1050） · UniCourse slug `fgu`
 
 **校方系統**
 
@@ -993,7 +994,7 @@
 | [佛光大學 Moodle 學習平台](https://moodle.fgu.edu.tw/) | LMS | 官方（佛光大學） | 部分需登入 | 運作中 | 自 114-1 起使用的 Moodle 線上教學平台。 | 產品：Moodle；113-2 前另用舊平台。 |
 | [佛光大學數位學習平台（113-2 前）](https://elearn.fgu.edu.tw/) | LMS | 官方（佛光大學） | 需登入 | 停止 | 提供 113-2 以前的數位課程。 | 校方已指向新 Moodle 平台；此筆標記舊平台，不代表歷史內容不可存取。 本次直連：HTTP 403。 |
 
-### 康寧大學（1079）
+### 康寧大學（1079） · UniCourse slug `ukn`
 
 **校方系統**
 
@@ -1006,7 +1007,7 @@
 | [Moodle 數位學習平台（專科部）](http://moodle2.ukn.edu.tw/) | LMS | 官方（康寧大學） | 需登入 | 不明 | 康寧專科部的 Moodle 教學平台。 | 專科部與大學部有不同主機。 |
 | [Moodle 數位學習平台（大學部）](http://e-learning.ukn.edu.tw/) | LMS | 官方（康寧大學） | 需登入 | 不明 | 康寧大學部的 Moodle 教學平台。 | 專科部與大學部有不同主機。 |
 
-### 馬偕醫學大學（1085）
+### 馬偕醫學大學（1085） · UniCourse slug `mmc`
 
 **校方系統**
 
@@ -1019,7 +1020,7 @@
 | [馬偕醫學大學數位學習平台](https://moodle.mmu.edu.tw/) | LMS | 官方（馬偕醫學大學） | 部分需登入 | 不明 | 數位教學和課程空間，首頁可見平台公告與登入。 | 產品：Moodle；另列 Teams 同步教室。 |
 | [馬偕醫學大學全校課程查詢](https://portal.mmu.edu.tw/VC2/global_cos.aspx?Lang=EN) | 課程查詢、教學大綱 | 官方（馬偕醫學大學） | 免登入 | 不明 | 公開依系所、課程、教師、時間和大綱關鍵字查詢課程。 | 中英文入口；不是教務處學期課表附件索引。 |
 
-### 中信金融管理學院（1125）
+### 中信金融管理學院（1125） · UniCourse slug `ctbc`
 
 **校方系統**
 
@@ -1028,7 +1029,7 @@
 | [中信金融管理學院學生資訊系統](https://ap01.ctbc.edu.tw/) | 課程查詢、選課 | 官方（中信金融管理學院） | 需登入 | 運作中 | 登入學生資訊系統後查課、加退選及印選課確認單。 | 115-1 選課公告仍明列此入口。 |
 | [中信金融管理學院全校課表](https://acad.ctbc.edu.tw/p/406-1002-46205%2Cr11.php?Lang=zh-tw) | 課程查詢 | 官方（中信金融管理學院） | 免登入 | 停止 | 教務處公開 115-1 各學制全校課表附件。 | 搜尋索引可見 115-1 全校課表；本次直連 TLS 憑證驗證失敗，未讀取附件。不代表永久停用。 |
 
-### 法鼓文理學院（1196）
+### 法鼓文理學院（1196） · UniCourse slug `dila`
 
 **校方系統**
 
@@ -1037,7 +1038,7 @@
 | [DILA 教務系統](https://ecampus.dila.edu.tw/ddb/) | 課程查詢、選課 | 官方（法鼓文理學院） | 部分需登入 | 不明 | 全校課程查詢提供訪客登入；學生校務與選課功能須身分驗證。 | 登入頁明示可用 GUEST 帳號、無需密碼；未使用任何校內帳號。 |
 | [法鼓文理學院數位學習系統](https://moodle2.dila.edu.tw/) | LMS | 官方（法鼓文理學院） | 需登入 | 不明 | 校內 Moodle 課程與數位教學資源。 | 產品：Moodle。 |
 
-### 臺北市立大學（3002）
+### 臺北市立大學（3002） · UniCourse slug `utaipei`
 
 **校方系統**
 
@@ -1052,7 +1053,7 @@
 
 ## 技職校院
 
-### 國立臺灣科技大學（0022）
+### 國立臺灣科技大學（0022） · UniCourse slug `ntust`
 
 **校方系統**
 
@@ -1074,7 +1075,7 @@
 
 **跨校平台涵蓋**：[國立臺灣大學系統（臺大系統）](https://ntusystem.ntu.edu.tw/)、[CrossLink 臺大、臺科大、臺師大選課模擬](https://www.crosslink.tw/)、[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 國立雲林科技大學（0023）
+### 國立雲林科技大學（0023） · UniCourse slug `yuntech`
 
 **校方系統**
 
@@ -1085,7 +1086,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 國立屏東科技大學（0024）
+### 國立屏東科技大學（0024） · UniCourse slug `npust`
 
 **校方系統**
 
@@ -1095,7 +1096,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 國立臺北科技大學（0025）
+### 國立臺北科技大學（0025） · UniCourse slug `ntut`
 
 **校方系統**
 
@@ -1116,7 +1117,7 @@
 
 **跨校平台涵蓋**：[臺北聯合大學系統（北聯大）臺北聯大課程](https://ustp.ntpu.edu.tw/info/8)
 
-### 國立虎尾科技大學（0033）
+### 國立虎尾科技大學（0033） · UniCourse slug `nfu`
 
 **校方系統**
 
@@ -1124,7 +1125,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [國立虎尾科技大學班級課表查詢](https://qry.nfu.edu.tw/class.php) | 課程查詢 | 官方（國立虎尾科技大學教務處） | 免登入 | 運作中 | 虎尾科大班級課表查詢 | 教務處課程資訊頁 https://oaa.nfu.edu.tw/zh_tw/teaching/courses 與選課專區 https://oaa.nfu.edu.tw/zh_tw/teaching/select 為入口;未找到公開教學大綱查詢系統。 2026-11-27 探測 HTTP 200 |
 
-### 國立澎湖科技大學（0042）
+### 國立澎湖科技大學（0042） · UniCourse slug `npu`
 
 **校方系統**
 
@@ -1132,7 +1133,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [國立澎湖科技大學教務處選課/課程地圖頁](https://www.npu.edu.tw/sub/form/index.aspx?Parser=2,21,153,139) | 選課、課程地圖 | 官方（國立澎湖科技大學教務處） | 不明 | 運作中 | 澎科大教務處選課說明與課程地圖(Parser=1,21,156,139)頁面 | 僅找到說明頁,未找到公開開課查詢系統;澎科大網站為 content/index.aspx?Parser= 版型。 2026-11-27 探測 HTTP 200 |
 
-### 國立勤益科技大學（0043）
+### 國立勤益科技大學（0043） · UniCourse slug `ncut`
 
 **校方系統**
 
@@ -1140,7 +1141,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [國立勤益科技大學校務行政入口頁](https://www.ncut.edu.tw/p/412-1000-737.php?Lang=zh-tw) | 其他、選課 | 官方（國立勤益科技大學） | 不明 | 運作中 | 勤益科大校務行政系統入口(教師篇 nmsd.ncut.edu.tw/teacher/、行政篇 msd.ncut.edu.tw) | 學生課程查詢/選課系統入口未能從公開頁確認,需再查。 2026-11-27 探測 HTTP 200 |
 
-### 國立臺北護理健康大學（0046）
+### 國立臺北護理健康大學（0046） · UniCourse slug `ntunhs`
 
 **校方系統**
 
@@ -1154,7 +1155,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [北護助手 NTUNHS-Assistant](https://github.com/Chinlinlee/NTUNHS-Assistant) | 成績分布、排課 | 學生（Chinlinlee） | 需登入 | 停止 | 北護課表、成績、成績分佈圖、課程查詢、模擬課表 | 最後 push 2024-03-08。 [repo](https://github.com/Chinlinlee/NTUNHS-Assistant) |
 
-### 國立高雄餐旅大學（0047）
+### 國立高雄餐旅大學（0047） · UniCourse slug `nkuht`
 
 **校方系統**
 
@@ -1162,7 +1163,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [國立高雄餐旅大學MyNKUHT 入口網](https://cip.nkuht.edu.tw/) | 其他、選課 | 官方（國立高雄餐旅大學） | 需登入 | 運作中 | 高餐大校園入口(單一登入),選課/課表經此 | 公開課程查詢頁未找到;校網版型為 /p/403-1000-x.php。 2026-11-27 探測 HTTP 200 |
 
-### 國立臺中科技大學（0050）
+### 國立臺中科技大學（0050） · UniCourse slug `nutc`
 
 **校方系統**
 
@@ -1178,7 +1179,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 國立臺北商業大學（0051）
+### 國立臺北商業大學（0051） · UniCourse slug `ntub`
 
 **校方系統**
 
@@ -1186,7 +1187,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [國立臺北商業大學課程資訊查詢](https://ntcbadm.ntub.edu.tw/pub/TchSchedule_Search.aspx) | 課程查詢 | 官方（國立臺北商業大學） | 免登入 | 運作中 | 北商大公開課程資訊/班級課表/教師課表查詢 | 同網域 /pub/cur_class.aspx(班級課表)、/pub/Cur_Teachers.aspx(教師課表);學生資訊系統 ntcbadm1.ntub.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 國立高雄科技大學（0053）
+### 國立高雄科技大學（0053） · UniCourse slug `nkust`
 
 **校方系統**
 
@@ -1203,7 +1204,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 國立臺灣戲曲學院（0144）
+### 國立臺灣戲曲學院（0144） · UniCourse slug `tcpa`
 
 **校方系統**
 
@@ -1211,7 +1212,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [國立臺灣戲曲學院在校學生頁(教學務系統入口)](https://www.tcpa.edu.tw/p/426-1000-5.php?Lang=zh-tw) | 其他、選課 | 官方（國立臺灣戲曲學院） | 不明 | 運作中 | 戲曲學院教學務系統與選課分流入口、北區跨校選課連結 | 未找到公開課程查詢頁。 2026-11-27 探測 HTTP 200 |
 
-### 國立臺南護理專科學校（0221）
+### 國立臺南護理專科學校（0221） · UniCourse slug `ntin`
 
 **校方系統**
 
@@ -1219,7 +1220,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [國立臺南護理專科學校單一登入入口網(教務學務系統)](https://sso-portal.ntin.edu.tw/SSO/) | 其他、選課 | 官方（國立臺南護理專科學校） | 需登入 | 不明 | 南護專單一登入,教務學務系統入口(舊入口 academy.ntin.edu.tw/ntin/) | 公開課程查詢未找到。 2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>;無法從本機確認,可能為防火牆/舊 TLS/校內限定 |
 
-### 國立臺東專科學校（0222）
+### 國立臺東專科學校（0222） · UniCourse slug `ntc`
 
 **校方系統**
 
@@ -1227,7 +1228,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [國立臺東專科學校教務處(選課.成績.缺曠查詢)](https://acad.ntc.edu.tw/) | 其他、選課 | 官方（國立臺東專科學校教務處） | 不明 | 運作中 | 臺東專校教務處首頁;學生專區「選課.成績.缺曠查詢」(http://b001.ntc.edu.tw/p/426-1001-15.php?Lang=zh-tw) | portal.ntc.edu.tw 為校園入口網;公開課程查詢未找到。 2026-11-27 探測 HTTP 200 |
 
-### 朝陽科技大學（1018）
+### 朝陽科技大學（1018） · UniCourse slug `cyut`
 
 **校方系統**
 
@@ -1236,7 +1237,7 @@
 | [朝陽科技大學課程資訊查詢(CTS0006)](https://cts.cyut.edu.tw/CTS0006) | 課程查詢、教學大綱 | 官方（朝陽科技大學教務處） | 免登入 | 運作中 | 朝陽科大課程資訊總覽、全文檢索、學程查詢、選課手冊 | 舊版 admin.cyut.edu.tw/crsinfo/;選課系統另為 class.cyut.edu.tw。 2026-11-27 探測 HTTP 200 |
 | [朝陽科技大學選課系統](https://class.cyut.edu.tw/) | 選課 | 官方（朝陽科技大學教務處） | 部分需登入 | 運作中 | 初選/加退選;公開頁有選課人數查詢 CED/CourseLimitDInfos、可選課程清單 CED/EtcCourseList | 2026-11-27 探測 HTTP 200 |
 
-### 南臺科技大學（1023）
+### 南臺科技大學（1023） · UniCourse slug `stust`
 
 **校方系統**
 
@@ -1246,7 +1247,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 崑山科技大學（1024）
+### 崑山科技大學（1024） · UniCourse slug `ksu`
 
 **校方系統**
 
@@ -1254,7 +1255,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [崑山科技大學課程教學大綱資訊網](https://syllabus.ksu.edu.tw/) | 課程查詢、教學大綱 | 官方（崑山科技大學教務處） | 免登入 | 運作中 | 崑山科大依學期/課名/班級/教師查課並看教學大綱(已有 115-1) | myKSU 入口 https://my.ksu.edu.tw/ 含日間部抽籤選課系統;有 syllabus.ahan.net 同介面站,疑為廠商(阿漢)平台。 2026-11-27 探測 HTTP 200 |
 
-### 嘉南藥理大學（1025）
+### 嘉南藥理大學（1025） · UniCourse slug `cnu`
 
 **校方系統**
 
@@ -1262,7 +1263,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [嘉南藥理大學學生課程導航GPS系統](https://ais.cnu.edu.tw) | 課程地圖、課程查詢 | 官方（嘉南藥理大學） | 不明 | 運作中 | 嘉藥課程導航、課程地圖 | 全校課程地圖(日間部) https://exam.cnu.edu.tw/Dsbc/ 、(進修部) /Nsbc/;學生資訊行動化平台 st.cnu.edu.tw;網路大學(舊版) ecourse.cnu.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 樹德科技大學（1026）
+### 樹德科技大學（1026） · UniCourse slug `stu`
 
 **校方系統**
 
@@ -1270,7 +1271,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [樹德科技大學課程查詢系統](https://info.stu.edu.tw/ACA/student/QueryAGECourse/index.asp) | 課程查詢、教學大綱 | 官方（樹德科技大學教務處） | 免登入 | 運作中 | 樹德科大當期開課查詢,點課程代碼看教學大綱;大綱歷年查詢 info.stu.edu.tw/ACA/teacher/Syllabus/CourseQuery.asp | 校務資訊系統(info.stu.edu.tw)含課程地圖、選課;教務處 aca2.wp.stu.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 龍華科技大學（1030）
+### 龍華科技大學（1030） · UniCourse slug `lhu`
 
 **校方系統**
 
@@ -1278,7 +1279,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [龍華科技大學開放式課程查詢系統](https://sys.lhu.edu.tw/oapx/lhuplan/Query/course_qry.aspx) | 課程查詢 | 官方（龍華科技大學） | 免登入 | 運作中 | 龍華科大開放式課程查詢 | 網路選課 https://sys.lhu.edu.tw/CourseAp/SGLogin.aspx;課程地圖 https://sys.lhu.edu.tw/oapx/lhuplan/Course/SCourse_Qry.aspx;校園入口網 eportal.lhu.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 輔英科技大學（1031）
+### 輔英科技大學（1031） · UniCourse slug `fy`
 
 **校方系統**
 
@@ -1286,7 +1287,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [輔英科技大學輔英資訊服務(課程)](https://cos.fy.edu.tw/) | 課程查詢、教學大綱、選課 | 官方（輔英科技大學） | 不明 | 運作中 | 課程計畫(yco_1112.asp)、科目表/課程概述/開課科目/教室時間/全校課程地圖查詢;選課日程 | 選課路徑:學生專區→資訊系統→學期選課系統入口;選課日程 PDF 在 cos.fy.edu.tw/Cos/<學期>選課日程.pdf。 2026-11-27 探測 HTTP 200 |
 
-### 明新科技大學（1032）
+### 明新科技大學（1032） · UniCourse slug `must`
 
 **校方系統**
 
@@ -1294,7 +1295,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [明新科技大學開課資訊查詢服務](https://sss.must.edu.tw/RWD_CosInfo/) | 課程查詢 | 官方（明新科技大學） | 免登入 | 運作中 | 明新科大開課資訊查詢 | 學生資訊服務系統 sss.must.edu.tw;校務學生資訊系統 mustwebsystem.must.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 弘光科技大學（1034）
+### 弘光科技大學（1034） · UniCourse slug `hk`
 
 **校方系統**
 
@@ -1302,7 +1303,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [弘光科技大學課程資訊查詢(HK_Y01)](http://course.hk.edu.tw/hktea/HK_Y01/Y01_login_cus.aspx) | 課程查詢 | 官方（弘光科技大學教務處） | 免登入 | 不明 | 弘光科大課程資訊查詢(訪客) | 課程大綱 https://course.hk.edu.tw/hktea/HK_A02/A020A20.aspx;選課分流六站 cou01~cou06.hk.edu.tw/hk_a03/;97 學年前大綱舊站為內網 IP。 2026-11-27 本機探測失敗:<urlopen error timed out>;無法從本機確認,可能為防火牆/舊 TLS/校內限定 |
 
-### 健行科技大學（1036）
+### 健行科技大學（1036） · UniCourse slug `uch`
 
 **校方系統**
 
@@ -1310,7 +1311,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [健行科技大學課程資訊(cos.uch)](https://cos.uch.edu.tw/course_info/index.html) | 課程查詢、教學大綱 | 官方（健行科技大學教務處） | 免登入 | 運作中 | 健行科大課程資訊查詢 | 選課系統 日間部 https://cosop.uch.edu.tw/stdsel/system_D/std_web/sel_index.asp、進修部 …/system_N/…;「stdsel」路徑與育達科大 cur.ydu.edu.tw/stdsel 相同,疑同一套 ASP 選課系統。 2026-11-27 探測 HTTP 200 |
 
-### 正修科技大學（1037）
+### 正修科技大學（1037） · UniCourse slug `csu`
 
 **校方系統**
 
@@ -1320,7 +1321,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 萬能科技大學（1038）
+### 萬能科技大學（1038） · UniCourse slug `vnu`
 
 **校方系統**
 
@@ -1328,7 +1329,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [萬能科技大學學生網路選課系統(ezpick)](http://ezpick.vnu.edu.tw/elective.aspx) | 選課 | 官方（萬能科技大學教務處） | 需登入 | 運作中 | 萬能科大第一階段選課;第二階段後查詢在學生資訊系統 weboffice.vnu.edu.tw/web_stu/ | 未找到全校公開課程查詢,僅通識中心/各系提供課程綱要下載;選課說明 https://administration.vnu.edu.tw/oaa/3077?n=47050。 2026-11-27 探測 HTTP 200 |
 
-### 建國科技大學（1040）
+### 建國科技大學（1040） · UniCourse slug `ctu`
 
 **校方系統**
 
@@ -1338,7 +1339,7 @@
 
 **跨校平台涵蓋**：[ee-class 易課學習管理系統](https://tw.formosasoft.com/p/ee-class)
 
-### 明志科技大學（1041）
+### 明志科技大學（1041） · UniCourse slug `mcut`
 
 **校方系統**
 
@@ -1354,7 +1355,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 台鋼科技大學（1042）
+### 台鋼科技大學（1042） · UniCourse slug `kyu`
 
 **校方系統**
 
@@ -1362,7 +1363,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [台鋼科技大學課程查詢](https://stuinfo.tsust.edu.tw/course.htm) | 課程查詢 | 官方（台鋼科技大學） | 不明 | 運作中 | 台鋼科大課程查詢 | 前身高苑科大;網路選課 https://webinfo2.tsust.edu.tw/SL_Publicationsystem/;單一登入 portal.tsust.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 大仁科技大學（1043）
+### 大仁科技大學（1043） · UniCourse slug `tajen`
 
 **校方系統**
 
@@ -1370,7 +1371,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [大仁科技大學大仁選課系統](https://web95.tajen.edu.tw/PHP/index_stu.html) | 選課、課程查詢 | 官方（大仁科技大學） | 不明 | 運作中 | 大仁科大選課 | 校務平台 cli.tajen.edu.tw/studentcutclass/。 2026-11-27 探測 HTTP 200 |
 
-### 聖約翰科技大學（1044）
+### 聖約翰科技大學（1044） · UniCourse slug `sju`
 
 **校方系統**
 
@@ -1378,7 +1379,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [聖約翰科技大學課程資訊網(Sjucourse)](https://sjuportal.sju.edu.tw/Sjucourse/) | 課程查詢 | 官方（聖約翰科技大學） | 不明 | 運作中 | 聖約翰科大課程資訊 | 學生入口網 sjusip.sju.edu.tw;教師入口 epteacher.sju.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 嶺東科技大學（1045）
+### 嶺東科技大學（1045） · UniCourse slug `ltu`
 
 **校方系統**
 
@@ -1388,7 +1389,7 @@
 
 **跨校平台涵蓋**：[ee-class 易課學習管理系統](https://tw.formosasoft.com/p/ee-class)
 
-### 中國科技大學（1046）
+### 中國科技大學（1046） · UniCourse slug `cute`
 
 **校方系統**
 
@@ -1396,7 +1397,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [中國科技大學學生選課系統](https://sas1.cute.edu.tw/student_portal/index.htm) | 選課 | 官方（中國科技大學） | 需登入 | 運作中 | 中國科大學生選課系統(另有內網 IP 備用) | 單一入口 iq.cute.edu.tw;進修部時程 PDF 在 even.cute.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 中臺科技大學（1047）
+### 中臺科技大學（1047） · UniCourse slug `ctust`
 
 **校方系統**
 
@@ -1404,7 +1405,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [中臺科技大學課程資訊・開課清單](https://aca.ctust.edu.tw/p/412-1021-6142.php?Lang=zh-tw) | 課程查詢 | 官方（中臺科技大學教務處） | 不明 | 運作中 | 中臺科大開課清單、選課公告 | 2026-11-27 探測 HTTP 200 |
 
-### 台南應用科技大學（1051）
+### 台南應用科技大學（1051） · UniCourse slug `tut`
 
 **校方系統**
 
@@ -1412,7 +1413,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [台南應用科技大學開課課程查詢(sc2008)](https://stu95.tut.edu.tw/sc2008/default(tutst).asp) | 課程查詢 | 官方（台南應用科技大學） | 不明 | 運作中 | 台南應大開課課程查詢 | 路徑「/sc2008」與慈惠醫專學生資訊網(163.24.235.235/sc2008)相同,疑同一套學生資訊系統;課程地圖 https://coursemap.tut.edu.tw/;南應入口 portal.tut.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 中信科技大學（1052）
+### 中信科技大學（1052） · UniCourse slug `feu`
 
 **校方系統**
 
@@ -1420,7 +1421,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [中信科技大學課程資訊查詢平台(CourseQuery)](https://web.isic.ctbctech.edu.tw/CourseQuery) | 課程查詢 | 官方（中信科技大學） | 免登入 | 運作中 | 中信科大課程資訊查詢(班級/教師/教室課表) | /CourseQuery 路徑與致理科大 coursequery.chihlee.edu.tw/CourseQuery/ 相同,疑同一廠商模板;網路選課 https://web6.isic.ctbctech.edu.tw/webselect/login.asp(日)、websel.isic.ctbctech.edu.tw/webselect_n/(夜)。 2026-11-27 探測 HTTP 200 |
 
-### 元培醫事科技大學（1053）
+### 元培醫事科技大學（1053） · UniCourse slug `ypu`
 
 **校方系統**
 
@@ -1428,7 +1429,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [元培醫事科技大學校務系統(選課/課程大綱)](https://is.ypu.edu.tw/) | 課程查詢、教學大綱、選課 | 官方（元培醫事科技大學） | 部分需登入 | 運作中 | 元培醫事科大校務系統;訪客帳號可查全校課表與課程大綱,學生入口選課 | 查詢方式與訪客帳號公布於 https://edu.ypu.edu.tw/p/412-1011-5926.php;選課專區 https://edu.ypu.edu.tw/p/404-1011-54789.php。 2026-11-27 探測 HTTP 200 |
 
-### 景文科技大學（1054）
+### 景文科技大學（1054） · UniCourse slug `just`
 
 **校方系統**
 
@@ -1436,7 +1437,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [景文科技大學網路選課系統(GCourse)](http://aisvm7.just.edu.tw/GCourse/) | 選課 | 官方（景文科技大學） | 需登入 | 運作中 | 景文科大選課;通識/體育志願選課 deans.just.edu.tw/RedirectPECourse/ | 搜尋結果顯示頁面為 109 學年舊畫面;課表查詢由 CIP 入口雲(jwcip.just.edu.tw)提供。 2026-11-27 探測 HTTP 200 |
 
-### 中華醫事科技大學（1055）
+### 中華醫事科技大學（1055） · UniCourse slug `hwai`
 
 **校方系統**
 
@@ -1444,7 +1445,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [中華醫事科技大學科目名稱暨課程大綱查詢](https://mys.hwai.edu.tw/hwai-m/AA/Sel0405/Sel0405) | 課程查詢、教學大綱 | 官方（中華醫事科技大學） | 免登入 | 運作中 | 中華醫大課程大綱、班級/教師/教室課表查詢(Sel0401~0405) | 選課系統 https://course.hwai.edu.tw/hwai-m/S 與 course2.hwai.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 東南科技大學（1056）
+### 東南科技大學（1056） · UniCourse slug `tnu`
 
 **校方系統**
 
@@ -1452,7 +1453,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [東南科技大學在校學生頁(課程/授課大綱查詢)](https://index.tnu.edu.tw/page/student) | 課程查詢、教學大綱 | 官方（東南科技大學） | 不明 | 不明 | 東南科大班級開課表、課程/授課大綱、教室課表、教師課表、學習地圖查詢入口 | 資訊公開頁 https://web.tnu.edu.tw/campusdata/?p=216 列同樣連結;新一代校務系統/Info 為選課入口。 2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>;無法從本機確認,可能為防火牆/舊 TLS/校內限定 |
 
-### 德明財經科技大學（1057）
+### 德明財經科技大學（1057） · UniCourse slug `takming`
 
 **校方系統**
 
@@ -1466,7 +1467,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [德明課程評價論壇（takming-forum）](https://takming-forum.sao-x.com/) | 評價、討論 | 學生（sao-coding） | 免登入 | 停止 | 課程評價與二手書交流 | 網站回 402（託管欠費）；repo 最後 push 2025-05-31。 [repo](https://github.com/sao-coding/takming-forum-web) |
 
-### 南開科技大學（1060）
+### 南開科技大學（1060） · UniCourse slug `nkut`
 
 **校方系統**
 
@@ -1474,7 +1475,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [南開科技大學選課專區(教務處)](https://nkaao.nkut.edu.tw/front/curriculum/course/news.php?ID=bmt1dF9hYW8mY291cnNl) | 選課 | 官方（南開科技大學教務處） | 不明 | 運作中 | 南開科大學生選課專區 | 校務資訊系統 https://app2.nkut.edu.tw/nkc/。 2026-11-27 探測 HTTP 200 |
 
-### 中華科技大學（1061）
+### 中華科技大學（1061） · UniCourse slug `cust`
 
 **校方系統**
 
@@ -1482,7 +1483,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [中華科技大學公開課表/課程查詢系統(PubCsSearch)](http://ap26.cust.edu.tw:8080/pis/PubCsSearch) | 課程查詢 | 官方（中華科技大學教務處） | 不明 | 運作中 | 中華科大公開課程查詢 | 本機對 cust.edu.tw 的 TLS 握手失敗(legacy renegotiation),僅能經搜尋結果(教務處 FAQ http://aca.cust.edu.tw/aca/fqa.html)確認;課程規劃表 https://aca.cust.edu.tw/curicul/course.html;舊資訊查詢系統 http://www.cust.edu.tw/www/info/intro_s.php 為 99 學年頁面。 2026-11-27 探測 HTTP 200 |
 
-### 僑光科技大學（1062）
+### 僑光科技大學（1062） · UniCourse slug `ocu`
 
 **校方系統**
 
@@ -1490,7 +1491,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [僑光科技大學開課排課、各類課表查詢](https://www.ocu.edu.tw/p/404-1000-42863.php?Lang=zh-tw) | 課程查詢 | 官方（僑光科技大學） | 不明 | 運作中 | 僑光科大開課/課表查詢入口 | 選課資訊專區 https://rcs.ocu.edu.tw/p/412-1024-2619.php?Lang=zh-tw;學生資訊系統 ccap.ocu.edu.tw/newsys。 2026-11-27 探測 HTTP 200 |
 
-### 育達科技大學（1063）
+### 育達科技大學（1063） · UniCourse slug `ydu`
 
 **校方系統**
 
@@ -1498,7 +1499,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [育達科技大學開課資料查詢](http://course.ydu.edu.tw/LP/) | 課程查詢 | 官方（育達科技大學教務處） | 免登入 | 運作中 | 育達科大開課資料查詢 | 選課系統 http://cur.ydu.edu.tw/stdsel/signform.asp;資訊入口 portal.ydu.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 美和科技大學（1064）
+### 美和科技大學（1064） · UniCourse slug `meiho`
 
 **校方系統**
 
@@ -1506,7 +1507,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [美和科技大學課程地圖資訊系統](https://coursemap.meiho.edu.tw/) | 課程地圖 | 官方（美和科技大學） | 不明 | 運作中 | 美和科大課程地圖 | 校務行政系統入口 https://www.meiho.edu.tw/p/404-1000-13542.php。 2026-11-27 探測 HTTP 200 |
 
-### 吳鳳科技大學（1065）
+### 吳鳳科技大學（1065） · UniCourse slug `wfu`
 
 **校方系統**
 
@@ -1514,7 +1515,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [吳鳳科技大學學生校務行政系統](https://ccam.cc.wfu.edu.tw/) | 其他、選課 | 官方（吳鳳科技大學） | 需登入 | 運作中 | 吳鳳科大學生校務行政系統 | 公開課程查詢未找到;家長入口 sais1.wfu.edu.tw/guardPortal。 2026-11-27 探測 HTTP 200 |
 
-### 修平科技大學（1069）
+### 修平科技大學（1069） · UniCourse slug `hust`
 
 **校方系統**
 
@@ -1524,7 +1525,7 @@
 
 **跨校平台涵蓋**：[ee-class 易課學習管理系統](https://tw.formosasoft.com/p/ee-class)
 
-### 長庚科技大學（1070）
+### 長庚科技大學（1070） · UniCourse slug `cgust`
 
 **校方系統**
 
@@ -1532,7 +1533,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [長庚科技大學學年度開課暨課程資料查詢](https://webmis.cgust.edu.tw/course/coursequery.asp) | 課程查詢、教學大綱 | 官方（長庚科技大學） | 免登入 | 運作中 | 長庚科大開課、課程規範大綱、進度表 | 校務資訊系統 webmis.cgust.edu.tw 含學生線上選課;選課說明 https://acad.cgust.edu.tw/p/412-1008-2578.php。 2026-11-27 探測 HTTP 200 |
 
-### 臺北城市科技大學（1071）
+### 臺北城市科技大學（1071） · UniCourse slug `tpcu`
 
 **校方系統**
 
@@ -1540,7 +1541,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [臺北城市科技大學全校/班級/教師課表查詢(tsint)](https://siw.tpcu.edu.tw/tsint/) | 課程查詢 | 官方（臺北城市科技大學教務處） | 部分需登入 | 運作中 | 城市科大課表查詢;選課 http://siw72.tpcu.edu.tw/tsint/ | 課程資訊查詢說明頁 https://aao.tpcu.edu.tw/p/412-1016-638.php?Lang=zh-tw。 2026-11-27 探測 HTTP 200 |
 
-### 敏實科技大學（1072）
+### 敏實科技大學（1072） · UniCourse slug `mitust`
 
 **校方系統**
 
@@ -1548,7 +1549,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [敏實科技大學課程/書單/教學大綱查詢(訪客)](https://ccourse.mitust.edu.tw/score/crs_info/crs_guest_rwd.aspx) | 課程查詢、教學大綱 | 官方（敏實科技大學教務處） | 免登入 | 運作中 | 敏實科大訪客課程、書單、教學大綱查詢 | 另有課表查詢 https://regist.mitust.edu.tw/register/shwCourseTable.ASP;115 學年起大綱 https://regist.mitust.edu.tw/mgtstock/cp_public/course_progress_public_search.asp;學生資訊系統 ccourse.mitust.edu.tw/score。 2026-11-27 探測 HTTP 200 |
 
-### 醒吾科技大學（1073）
+### 醒吾科技大學（1073） · UniCourse slug `hwu`
 
 **校方系統**
 
@@ -1558,7 +1559,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 文藻外語大學（1075）
+### 文藻外語大學（1075） · UniCourse slug `wzu`
 
 **校方系統**
 
@@ -1566,7 +1567,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [文藻外語大學選課專區(教務處)](http://d002.wzu.edu.tw/category/136230) | 選課、課程查詢 | 官方（文藻外語大學教務處） | 不明 | 運作中 | 文藻外語大學選課專區(全校開課清單) | 課程地圖 https://webnet.wzu.edu.tw/wzuEc/index.aspx;資訊服務入口網 sso.wzu.edu.tw;教學綱要需登入校務資訊系統查詢。 2026-11-27 探測 HTTP 200 |
 
-### 華夏科技大學（1076）
+### 華夏科技大學（1076） · UniCourse slug `hwh`
 
 **校方系統**
 
@@ -1574,7 +1575,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [華夏科技大學學生暨家長查詢服務系統(課表)](https://student.hwh.edu.tw/student/Q/Q01/CourseTable) | 課程查詢 | 官方（華夏科技大學） | 不明 | 運作中 | 華夏科大各班課表查詢 | 舊課程計畫表 http://campus.hwh.edu.tw/public/CourseComment.aspx(100 學年範例)。 2026-11-27 探測 HTTP 200 |
 
-### 致理科技大學（1078）
+### 致理科技大學（1078） · UniCourse slug `chihlee`
 
 **校方系統**
 
@@ -1584,7 +1585,7 @@
 
 **跨校平台涵蓋**：[NTUTBox Template API（各大學課程節次模板）](https://github.com/poterpan/ntutbox-template-api)
 
-### 宏國德霖科技大學（1080）
+### 宏國德霖科技大學（1080） · UniCourse slug `hdut`
 
 **校方系統**
 
@@ -1592,7 +1593,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [宏國德霖科技大學課程資訊查詢(課程大綱)](http://infosys.hdut.edu.tw/ALLTOP/module_dli_acad/A4/A4936_CusOutlineRep.php) | 課程查詢、教學大綱 | 官方（宏國德霖科技大學） | 不明 | 運作中 | 宏國德霖科大課程大綱查詢 | 「ALLTOP」為廠商模組路徑;選課操作 https://academicaffairs.hdut.edu.tw/p/404-1002-11756.php。 2026-11-27 探測 HTTP 200 |
 
-### 崇右影藝科技大學（1082）
+### 崇右影藝科技大學（1082） · UniCourse slug `cufa`
 
 **校方系統**
 
@@ -1600,7 +1601,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [崇右影藝科技大學網路選課](http://course.cufa.edu.tw/) | 選課 | 官方（崇右影藝科技大學） | 需登入 | 不明 | 崇右影藝科大網路選課 | 學生資訊服務系統 schinfo.cufa.edu.tw。 2026-11-27 本機探測失敗:<urlopen error timed out>;無法從本機確認,可能為防火牆/舊 TLS/校內限定 |
 
-### 台北海洋科技大學（1083）
+### 台北海洋科技大學（1083） · UniCourse slug `tumt`
 
 **校方系統**
 
@@ -1608,7 +1609,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [台北海洋科技大學課程查詢系統(系級頁)](https://dgad.tumt.edu.tw/p/412-1016-4487.php?Lang=zh-tw) | 課程查詢 | 官方（台北海洋科技大學電競數位遊戲與動畫設計系） | 不明 | 運作中 | 海洋科大電競數位遊戲與動畫設計系課程查詢(教室課表/班級課表) | 未找到全校公開課程查詢;各系自有頁(航海系/觀光系課程規劃頁)。 2026-11-27 探測 HTTP 200 |
 
-### 亞東科技大學（1084）
+### 亞東科技大學（1084） · UniCourse slug `aeust`
 
 **校方系統**
 
@@ -1616,7 +1617,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [亞東科技大學課程查詢系統](https://portal.aeust.edu.tw/index.php?sid=CosQuery&mode=Query) | 課程查詢 | 官方（亞東科技大學） | 免登入 | 運作中 | 亞東科大課程查詢 | 學生選課 https://s.aeust.edu.tw/;課程地圖 http://www.cmap.aeust.edu.tw/;個人入口 portal.aeust.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 南亞技術學院（1168）
+### 南亞技術學院（1168） · UniCourse slug `nanya`
 
 **校方系統**
 
@@ -1624,7 +1625,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [南亞技術學院課表/教學大綱查詢](https://web.nanya.edu.tw/school_service/student/stdcourse/class_d.htm) | 課程查詢、教學大綱 | 官方（南亞技術學院） | 不明 | 運作中 | 南亞技術學院教學大綱(class_d)、課表(class_t)、選課(select_class) | 2026-11-27 探測 HTTP 200 |
 
-### 黎明技術學院（1183）
+### 黎明技術學院（1183） · UniCourse slug `lit`
 
 **校方系統**
 
@@ -1632,7 +1633,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [黎明技術學院選課相關(教務處)](https://www.lit.edu.tw/academic/4032/) | 選課 | 官方（黎明技術學院教務處） | 需登入 | 運作中 | 黎明技術學院選課事務;網路選課走 sso.lit.edu.tw | 公開課程查詢未找到。 2026-11-27 探測 HTTP 200 |
 
-### 德育護理健康學院（1185）
+### 德育護理健康學院（1185） · UniCourse slug `dyhu`
 
 **校方系統**
 
@@ -1640,7 +1641,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [德育護理健康學院選課專區(教務處)](https://aca.dyhu.edu.tw/p/412-1022-37.php?Lang=zh-tw) | 選課 | 官方（德育護理健康學院教務處） | 不明 | 運作中 | 德育護理健康學院選課專區 | 2026-11-27 探測 HTTP 200 |
 
-### 馬偕醫護管理專科學校（1282）
+### 馬偕醫護管理專科學校（1282） · UniCourse slug `mkc`
 
 **校方系統**
 
@@ -1648,7 +1649,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [馬偕醫護管理專科學校快速選課網址(course.mkc)](https://cas.mkc.edu.tw/cas/login?service=https://course.mkc.edu.tw/index_cas.php) | 選課 | 官方（馬偕醫護管理專科學校） | 需登入 | 運作中 | 馬偕醫專選課(CAS 單一登入) | 數位學習為 TronClass(tronclass.mkc.edu.tw,Keycloak SSO identity.mkc.edu.tw)。 2026-11-27 探測 HTTP 200 |
 
-### 仁德醫護管理專科學校（1283）
+### 仁德醫護管理專科學校（1283） · UniCourse slug `jente`
 
 **校方系統**
 
@@ -1656,7 +1657,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [仁德醫護管理專科學校網路選課系統](http://webservice2.jente.edu.tw/school/students/) | 選課 | 官方（仁德醫護管理專科學校） | 需登入 | 不明 | 仁德醫專網路選課;夜間輔導選課 webservice.jente.edu.tw/nightclass/ | 課程地圖 http://ep.jente.edu.tw/LearningMap/CurriculumAndVocation.aspx;重補修課程查詢 webservice2.jente.edu.tw/repairs/classinfo.php;網站為 oljtwww.jente.edu.tw (Joomla)。 2026-11-27 本機探測失敗:<urlopen error [Errno -2] Name or service not known>;無法從本機確認,可能為防火牆/舊 TLS/校內限定 |
 
-### 樹人醫護管理專科學校（1284）
+### 樹人醫護管理專科學校（1284） · UniCourse slug `szmc`
 
 **校方系統**
 
@@ -1664,7 +1665,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [樹人醫護管理專科學校選課系統](https://course.szmc.edu.tw/szmc_all/sel/login) | 選課 | 官方（樹人醫護管理專科學校） | 需登入 | 運作中 | 樹人醫專選課 | 學生資訊網 https://sdnews.szmc.edu.tw/szmc_all/Home/Login。 2026-11-27 探測 HTTP 200 |
 
-### 慈惠醫護管理專科學校（1285）
+### 慈惠醫護管理專科學校（1285） · UniCourse slug `tzuhui`
 
 **校方系統**
 
@@ -1672,7 +1673,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [慈惠醫護管理專科學校學生資訊網(sc2008)](http://163.24.235.235/sc2008) | 其他、課程查詢 | 官方（慈惠醫護管理專科學校） | 不明 | 運作中 | 慈惠醫專學生資訊網(IP 位址入口) | 路徑 /sc2008 與台南應大 stu95.tut.edu.tw/sc2008 相同;校網 https://www.tzuhui.edu.tw/home?cid=122 為校務資訊系統頁。 2026-11-27 探測 HTTP 200 |
 
-### 耕莘健康管理專科學校（1286）
+### 耕莘健康管理專科學校（1286） · UniCourse slug `ctcn`
 
 **校方系統**
 
@@ -1680,7 +1681,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [耕莘健康管理專科學校新版校務行政系統(SAIS)](https://sais-main.ctcn.edu.tw/CTCN/Home/landing) | 其他、選課、課程查詢 | 官方（耕莘健康管理專科學校） | 需登入 | 運作中 | 耕莘健專新版校務行政系統 | 「SAIS」疑為廠商校務系統產品名;說明 https://www.ctcn.edu.tw/Link_q.aspx?q=LS;吳鳳科大亦有 sais1.wfu.edu.tw。 2026-11-27 探測 HTTP 200 |
 
-### 敏惠醫護管理專科學校（1287）
+### 敏惠醫護管理專科學校（1287） · UniCourse slug `mhchcm`
 
 **校方系統**
 
@@ -1688,7 +1689,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [敏惠醫護管理專科學校開課資訊(teacher_qry)](http://school.mhchcm.edu.tw/minhwei_webmis/teacher_qry_techguidtop.asp) | 課程查詢 | 官方（敏惠醫護管理專科學校） | 不明 | 不明 | 敏惠醫專開課資訊 | 校務資訊說明 https://c025.mhchcm.edu.tw/p/412-1025-83.php?Lang=zh-tw。 2026-11-27 本機探測失敗:<urlopen error timed out>;無法從本機確認,可能為防火牆/舊 TLS/校內限定 |
 
-### 育英醫護管理專科學校（1289）
+### 育英醫護管理專科學校（1289） · UniCourse slug `yuhing`
 
 **校方系統**
 
@@ -1696,7 +1697,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [育英醫護管理專科學校課表查詢專區(教務行政組)](https://www.yuhing.edu.tw/ischool/publish_page/11?cid=178) | 課程查詢、課程地圖 | 官方（育英醫護管理專科學校教務處） | 不明 | 運作中 | 育英醫專課表查詢、課程地圖 https://lms.yuhing.edu.tw/cmap/、開課師資統計 | 教學計畫 PDF 直接放在官網(例 …/ischool/wr/file/1/551/…pdf);頁面為 ischool 版型(與慈惠醫專相同 /ischool/publish_page/)。 2026-11-27 探測 HTTP 200 |
 
-### 聖母醫護管理專科學校（1291）
+### 聖母醫護管理專科學校（1291） · UniCourse slug `smc`
 
 **校方系統**
 
@@ -1704,7 +1705,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [聖母醫護管理專科學校聖母醫專網站(教務/課程)](https://www.smc.edu.tw/nss/p/index) | 其他 | 官方（聖母醫護管理專科學校） | 不明 | 運作中 | 聖母醫專官網;校內選課/成績查詢系統入口未能確認 | 公開課程查詢系統未找到;僅有課程規劃表 PDF(例 https://www.smc.edu.tw/uploads/1657079974902sN7pIvW1.pdf)。 2026-11-27 探測 HTTP 200 |
 
-### 新生醫護管理專科學校（1292）
+### 新生醫護管理專科學校（1292） · UniCourse slug `hsc`
 
 **校方系統**
 
@@ -1712,7 +1713,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [新生醫護管理專科學校教務處選課公告(新生e日遊)](https://aa.hsc.edu.tw/p/404-1001-48950.php) | 選課 | 官方（新生醫護管理專科學校教務處） | 需登入 | 運作中 | 新生醫專選課流程:經「新生e日遊」專科系統→教務系統→選課(加退選) | portal.hsc.edu.tw 從本機 DNS 解析失敗;首頁有「課程查詢」連結(web.hsc.edu.tw)。 2026-11-27 探測 HTTP 200 |
 
-### 崇仁醫護管理專科學校（1293）
+### 崇仁醫護管理專科學校（1293） · UniCourse slug `cjc`
 
 **校方系統**
 
@@ -1723,7 +1724,7 @@
 
 ## 宗教研修學院
 
-### 基督教台灣浸會神學院（1R02）
+### 基督教台灣浸會神學院（1R02） · UniCourse slug `tbts`
 
 **校方系統**
 
@@ -1731,7 +1732,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | [開設課表與課程內容](https://alumnus.tbts.edu.tw/info/class.php) | 課程查詢、教學大綱 | 官方（基督教台灣浸會神學院） | 免登入 | 不明 | 校務資訊公開專區按學年度列出課表與課程內容。 | 文件型公開資料，非即時查詢；索引可讀。 |
 
-### 臺北基督學院（1R03）
+### 臺北基督學院（1R03） · UniCourse slug `cct`
 
 **校方系統**
 
@@ -1741,11 +1742,11 @@
 | [臺北基督學院課程說明](https://www.cct.edu.tw/Administration/aao/course_elec/課程說明.pdf) | 教學大綱 | 官方（臺北基督學院） | 免登入 | 停止 | 雙語 PDF 列出課程編碼、名稱、學分及大綱。 | 搜尋索引有雙語課程說明；直連 HTTP 500，未讀取完整 PDF。 |
 | [臺北基督學院 TronClass 數位學習平台](https://cct.tronclass.com/) | LMS | 官方（臺北基督學院） | 需登入 | 不明 | 校方連結至託管的 TronClass 數位教學。 | 產品：TronClass，校方專屬子網域。 |
 
-### 一貫道天皇學院（1R04）
+### 一貫道天皇學院（1R04） · UniCourse slug `iktc`
 
 尚未盤點到任何網站。
 
-### 台灣神學研究學院（1R05）
+### 台灣神學研究學院（1R05） · UniCourse slug `tgst`
 
 **校方系統**
 
@@ -1754,7 +1755,7 @@
 | [台灣神學研究學院課程時間表](https://www.tgst.edu.tw/p/406-1001-8723,r40.php?Lang=zh-tw) | 課程查詢 | 官方（台灣神學研究學院） | 免登入 | 運作中 | 教務處公告神學碩士班 115-1 時間表；另有神學研道學碩士班課表。 | 文件型學期課表，未見全校動態查課入口。 |
 | [台灣神學研究學院數位學習平台](https://learning.tgst.edu.tw/) | LMS | 官方（台灣神學研究學院） | 部分需登入 | 不明 | 對外提供部分課程目錄及登入入口，校內使用 Moodle 教學空間。 | 產品：Moodle。moodle.tgst.edu.tw 另顯示同校登入畫面；未確認是否為不同實例，暫不重複計數。 |
 
-### 一貫道崇德學院（1R06）
+### 一貫道崇德學院（1R06） · UniCourse slug `iktcds`
 
 **校方系統**
 
@@ -1764,7 +1765,7 @@
 | [一貫道崇德學院課表及教學大綱](https://www.iktcds.edu.tw/Chong-De-School/curriculum.htm) | 課程查詢、教學大綱 | 官方（一貫道崇德學院） | 免登入 | 不明 | 官方教務處目錄公開學期課表，另設教學大綱分頁。 | 課表與大綱為同一網站的並列靜態目錄，未見動態查詢。 |
 | [一貫道崇德學院網路選課單](https://www.iktcds.edu.tw/Chong-De-School/online-course-selection-list.htm) | 選課 | 官方（一貫道崇德學院） | 不明 | 不明 | 官方按年級發布網路選課表單。 | 教務處列出的部分選課單由 Google Forms 託管；未送出選課。 |
 
-### 台灣基督長老教會南神神學院（1R07）
+### 台灣基督長老教會南神神學院（1R07） · UniCourse slug `ttcs`
 
 **校方系統**
 
@@ -1773,7 +1774,7 @@
 | [南神神學院課程資訊](https://www.ttcs.edu.tw/data.php?id=969&tpl=5) | 課程查詢、教學大綱、課程地圖 | 官方（台灣基督長老教會南神神學院） | 免登入 | 不明 | 教務處課程資訊、課程規劃與學期課表。 | 公開文件，無須登入該頁。 |
 | [南神神學院校務系統（TTC）](https://www.ttcs-sso.org.tw/TTC/) | 選課 | 官方（台灣基督長老教會南神神學院） | 需登入 | 不明 | 南神神學院的校務系統入口。 | 官方入口區分 TTC、FTTC、FTTCS、TTCS；此筆只收錄 TTC。 |
 
-### 中華福音神學研究學院（1R08）
+### 中華福音神學研究學院（1R08） · UniCourse slug `ces`
 
 **校方系統**
 
@@ -1782,7 +1783,7 @@
 | [中華福音神學研究學院課務註冊](https://www.ces.edu.tw/教務處/課務註冊/) | 課程查詢 | 官方（中華福音神學研究學院） | 免登入 | 不明 | 公布學期課務資訊與選課連結。 | 網站同時服務華神不同學制；此筆只計研究學院。 |
 | [華神學生選課系統](https://portal.ces.edu.tw/ASIS/B2KPortal/Default.aspx) | 選課 | 官方（中華福音神學研究學院） | 需登入 | 不明 | 學生登入辦理選課。 | 系統登入畫面；未接觸學生資料。 |
 
-### 唯心聖教學院（1R09）
+### 唯心聖教學院（1R09） · UniCourse slug `wxsjc`
 
 **校方系統**
 
@@ -1791,7 +1792,7 @@
 | [唯心聖教學院課表及課綱](https://www.wxsjc.edu.tw/page/1141101) | 課程查詢、教學大綱 | 官方（唯心聖教學院） | 免登入 | 不明 | 公開學年學期的課表及教學大綱。 |  |
 | [唯心聖教學院課程規劃](https://www.wxsjc.edu.tw/page/3-1-5-1) | 課程地圖 | 官方（唯心聖教學院） | 免登入 | 不明 | 官網公開研究課程規劃。 | 靜態頁，不是互動式修課地圖。 |
 
-### 福智佛教學院（1R10）
+### 福智佛教學院（1R10） · UniCourse slug `bwbc`
 
 **校方系統**
 
@@ -1803,7 +1804,7 @@
 
 ## 空中大學
 
-### 國立空中大學（0A01）
+### 國立空中大學（0A01） · UniCourse slug `nou`
 
 **校方系統**
 
@@ -1815,7 +1816,7 @@
 
 **跨校平台涵蓋**：[TaiwanLIFE 臺灣全民學習平臺](https://taiwanlife.org/)、[智慧大師 Wisdom Master 教學平台](https://www.sun.net.tw/)
 
-### 高雄市立空中大學（3A01）
+### 高雄市立空中大學（3A01） · UniCourse slug `ouk`
 
 **校方系統**
 

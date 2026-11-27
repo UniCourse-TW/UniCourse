@@ -12520,5 +12520,29 @@
     "evidence": [
       "gh api repos/JunTeng1113/nkust-course-timetable"
     ]
+  },
+  {
+    "name": "PTT NCHU-Courses 看板",
+    "url": "https://www.ptt.cc/bbs/NCHU-Courses/index.html",
+    "schools": [
+      "0006"
+    ],
+    "scope": "school",
+    "operator": "community",
+    "operatorName": "PTT",
+    "category": [
+      "review",
+      "forum"
+    ],
+    "features": "中興大學課程心得與評價的 BBS 看板",
+    "loginRequired": false,
+    "status": "active",
+    "lastChecked": "2026-11-27",
+    "sourceType": "web",
+    "repo": null,
+    "notes": "UniCourse 外部評價索引收錄的 4 個 PTT 看板之一（只存連結、標題與 120 字以內摘錄）。",
+    "evidence": [
+      "https://www.ptt.cc/bbs/NCHU-Courses/index.html (indexed by crawlers/reviews-ptt)"
+    ]
   }
 ]
