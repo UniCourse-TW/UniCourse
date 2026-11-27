@@ -14,7 +14,7 @@
     schoolNames?: Record<string, string>;
     showAuthor?: boolean;
     label?: string;
-    /** Two lines a row: category, course and title, then author, tags and a one-line summary. */
+    /** Compact rows: category, course and title on one line, then a one-line summary, then author and tags. */
     dense?: boolean;
   } = $props();
   const id = $props.id();
@@ -44,11 +44,13 @@
             </p>
             <h3 id="{id}-{post.id}"><a class="title" href={postHref(post.id)}>{post.title}</a></h3>
             {#if dense}
-              <p class="by line">
-                {#if showAuthor}<a class="over author" href={profileHref(post.author.username)}>{authorName(post.author)}</a>{/if}
-                {#each post.tags as tag (tag)}<a class="over tag" href={forumHref({ tag })}>#{tag}</a>{/each}
-                {#if post.excerpt.trim()}<span class="excerpt-inline">{oneLine(post.excerpt)}</span>{/if}
-              </p>
+              {#if post.excerpt.trim()}<p class="excerpt">{oneLine(post.excerpt)}</p>{/if}
+              {#if showAuthor || post.tags.length}
+                <p class="by line">
+                  {#if showAuthor}<a class="over author" href={profileHref(post.author.username)}>{authorName(post.author)}</a>{/if}
+                  {#each post.tags as tag (tag)}<a class="over tag" href={forumHref({ tag })}>#{tag}</a>{/each}
+                </p>
+              {/if}
             {:else}
               {#if post.excerpt.trim()}<p class="excerpt">{oneLine(post.excerpt)}</p>{/if}
               {#if showAuthor || post.tags.length}
@@ -115,6 +117,8 @@
   .by a:hover { color: var(--brand-ink); text-decoration: underline; }
   .by .author { color: var(--ink-2); }
   .by .author::before { content: '@'; color: var(--muted); }
+  /* Tags are small chips, so they never read as part of the summary. */
+  .by .tag { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: var(--t-xs); line-height: 1.6; }
   /* Links above the stretched title link stay clickable on their own. */
   .over { position: relative; z-index: 1; }
   h3 { margin-block: 0.125rem 0 !important; font-size: var(--t-md) !important; font-weight: 600 !important; letter-spacing: 0 !important; line-height: 1.45 !important; }
@@ -135,13 +139,12 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  /* Dense rows: the kicker sits on the title's line; author, tags and summary share the second line. */
+  /* Dense rows: the kicker sits on the title's line; the summary and the author/tags line follow. */
   .dense .main { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; }
   .dense .kicker { flex: none; }
   .dense h3 { flex: 1 1 12rem; min-inline-size: 0; margin: 0 !important; }
-  .dense .by.line { flex-basis: 100%; flex-wrap: nowrap; min-inline-size: 0; overflow: hidden; white-space: nowrap; }
-  .dense .by.line > * { flex: none; }
-  .dense .excerpt-inline { flex: 1 1 auto !important; min-inline-size: 0; overflow: hidden; color: var(--ink-2); text-overflow: ellipsis; }
+  .dense .excerpt { flex-basis: 100%; min-inline-size: 0; }
+  .dense .by.line { flex-basis: 100%; min-inline-size: 0; gap: 0 var(--space-2); }
   .dense article { padding-block: var(--space-2); }
   .stats { display: contents; }
   .stats div { text-align: end; }
@@ -153,8 +156,6 @@
     .cols { display: none; }
     article { grid-template-columns: minmax(0, 1fr); padding: var(--space-3); }
     .excerpt { -webkit-line-clamp: 2; line-clamp: 2; }
-    .dense .by.line { flex-wrap: wrap; white-space: normal; }
-    .dense .excerpt-inline { flex-basis: 100% !important; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; }
     .stats { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); margin: var(--space-1) 0 0; }
     .stats div { display: flex; gap: 0.25em; align-items: baseline; text-align: start; }
     dt { position: static; inline-size: auto; block-size: auto; overflow: visible; clip: auto; color: var(--muted); font-size: var(--t-sm); }
