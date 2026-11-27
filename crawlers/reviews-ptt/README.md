@@ -6,7 +6,9 @@ public PTT course boards: NTUcourse (ntu), NTHU_Course (nthu), NCTU-Teacher (nyc
 - Access: PTT's robots.txt carries `Content-Signal: search=yes,ai-train=no,use=reference` and `Allow: /`.
   One request per second, `UniCourseBot/0.1 (+https://unicourse.observe.tw)`, `over18` cookie.
 - Requests: list pages back to `--since` (default 2016-01-01), plus one article page per review post
-  (`[評價]`, `[心得]`, `[通識]`, …) for the date, author handle, push tally and a ≤ 120 character excerpt.
+  (`[評價]`, `[心得]`, `[通識]`, …) for the date, author handle, push tally and a ≤ 120 character excerpt of
+  the author's opinion (the board template's 心得/總結/其他 answer, never its fact header; see
+  `docs/external-reviews.md` → Excerpts).
   A full first run is roughly 1,500 list pages and several thousand articles; later runs reuse the cache in
   `<out>/.cache/` and only fetch new pages and articles.
 - Kept per post: URL, title, author handle, date, board, push score, excerpt, and term/course/teachers parsed

@@ -4,7 +4,7 @@ UniCourse keeps a **search index** of public course-review posts on other sites,
 "there are 12 posts about this course on PTT" and link to them. It is an index, not a mirror:
 
 - Stored per post: link, title, author handle, date, board, push/like count, an excerpt of **at most 120
-  characters** from the start of the body, and the matched school/course/teacher. Nothing else: no full text,
+  characters** of the post's opinion text, and the matched school/course/teacher. Nothing else: no full text,
   no images, no comment text.
 - Never republished in full, never used for model training (several sources say `ai-train=no`).
 - Sites without an explicit allowance get **outbound links only**: search URLs built from their public URL
@@ -78,11 +78,38 @@ Post (`(source, url)` is the identity; URLs are unique within a file):
 | `author` | string | no | Public author handle (PTT ID without nickname). |
 | `postedAt` | UTC instant | no | From the article header (時間, Asia/Taipei), else from the article id `M.<unix>.A.xxx`. |
 | `pushScore` | integer | no | Pushes minus boos: counted on the article page when fetched, else PTT's list value (capped at ±100, 爆/XX). |
-| `excerpt` | string ≤ 120 code points | no | Start of the body, whitespace collapsed, without header, `※` lines, links (images are links), signature and comments. |
+| `excerpt` | string ≤ 120 code points | no | The author's opinion in whole sentences (see *Excerpts* below); absent when the post has none or the NTUcourse author refused reuse. |
 | `tag` | string | no | Title tag without brackets (`評價`, `心得`, `問題`, …). |
 | `term` | `YYY-N` | no | Term parsed from the title (`113-1`, `1131`, `1072`, `(100-1)`). |
 | `courseTitle` | string | no | Course title parsed from the title. |
 | `teachers` | non-empty string[] | no | Teacher names parsed from the title (`、` `/` `,` separated). |
+
+### Excerpts
+
+Most review posts follow their board's template, whose first lines are facts (teacher, credits, textbook,
+grading), so the excerpt is not the start of the body. `crawlers/reviews-ptt/src/excerpt.ts` splits the body
+into template fields and takes the first field with an opinion answer, in this order:
+
+1. 總結 / 心得 / 結語 / 感想 / 評價 / 最後想說的話 (NTUcourse `Ψ 總結`, NCTU-Teacher `￠最後想說的話￠`,
+   NCHU-Courses `【心得/結語】`, NTHU_Course `心得：`),
+2. 其它 / 建議 / 補充 / 備註 / 老師的喜好、個性 (NTUcourse `ω 其它`, NCTU-Teacher `￥其他￥`),
+3. 推薦 / 注意事項 (NTUcourse `Ω 私心推薦指數`, NCHU-Courses `【注意事項】`),
+4. free text: a post without a template, the review after NTHU-style `課名：…` / `甜度：3 涼度：4` lines, and
+   fields with other labels (`【助教表現】`, `<學習>`),
+5. 上課方式 (often written as an opinion).
+
+An answer needs at least 16 letters to win (`一個字 修爆` loses to a later field); if none has, a short answer
+from steps 1–4 is enough from 4 letters (`算是好課`, not `爽課`). Label-value lines (`學分：3`, `涼度：★★★★`,
+`10% 期中考`, grade tables), star ratings, links, quoted text (`: …`, `> …`), forward headers (`作者:`,
+`發信人:`, `標  題:`) and template symbols never count. Templates copied without their symbols
+(`授課教師 (若為多人合授…)`, a bare `課名` line) are recognised too. The excerpt is whole sentences up to 120
+characters (lines the author's editor wrapped are joined, the author's own line breaks become spaces); a first
+sentence longer than that is cut at a comma and ends in `…`. When no field qualifies, the post has no excerpt.
+NTUcourse posts whose author answered 否/不… to the reuse question get no excerpt whatever their content.
+
+The crawler cache keeps parsed fields only, never article text, so `EXCERPT_VERSION` marks how each cached
+excerpt was made; articles parsed by an older version are refetched on the next run (and used without an
+excerpt until then).
 
 Strings are trimmed, non-empty and NUL-free, like course snapshots. Only posts dated on or after `--since`
 (default 2016-01-01, the catalog starts at 105-1) are kept. Article pages are fetched only for review tags

@@ -1,4 +1,5 @@
-import { EXCERPT_MAX, loadHtml, truncateCodePoints } from '@unicourse/crawler-kit';
+import { loadHtml } from '@unicourse/crawler-kit';
+import { selectExcerpt } from './excerpt.ts';
 
 export const PTT_ORIGIN = 'https://www.ptt.cc';
 
@@ -87,12 +88,10 @@ export function parsePttTime(raw: string): string | undefined {
   return Number.isFinite(utc) ? new Date(utc).toISOString().replace('.000Z', 'Z') : undefined;
 }
 
-const URL_PATTERN = /https?:\/\/\S+/g;
-
 /**
- * Parse an article page. Only the header (author handle, time), the push tally and a short excerpt are kept:
- * the excerpt is the first `EXCERPT_MAX` code points of the body text, after dropping the header, `※` lines,
- * links (images are posted as links), the signature and every comment.
+ * Parse an article page. Only the header (author handle, time), the push tally and a short excerpt are kept.
+ * The excerpt is the opinion text of the post (see `selectExcerpt`), chosen from the body without the header,
+ * `※` lines, images, the signature and every comment.
  */
 export function parseArticle(html: string): Article {
   const $ = loadHtml(html);
@@ -115,44 +114,47 @@ export function parseArticle(html: string): Article {
   const footer = content.lastIndexOf('\n--\n');
   if (footer >= 0) content = content.slice(0, footer);
 
-  const all = content.split('\n').map((line) => line.trim()).filter(Boolean);
-  // NTUcourse asks authors whether the post may be reused (※ 本文是否可提供臺大同學轉作其他非營利用途？).
-  // The answer is the next line; when it is 否, no excerpt is kept at all.
-  const question = all.findIndex((line) => line.includes('非營利用途'));
-  const answer = question >= 0 ? all[question + 1] : undefined;
-  const refused = answer != null && /^(否|不)/.test(answer);
-  const lines = all.filter(
-    (line, index) =>
-      !line.startsWith('※') && !line.startsWith('◆ From:') && !(question >= 0 && index === question + 1 && /^(是|否|不|其他)/.test(line))
+  // Blank lines (paragraphs) and indentation (line widths) are kept for excerpt selection.
+  const raw = content.split('\n').map((line) => line.trimEnd());
+  const all = raw.map((line) => line.trim());
+  const consent = reuseConsent(all);
+  const lines = raw.filter(
+    (_, index) => !consent.indexes.includes(index) && !all[index].startsWith('※') && !all[index].startsWith('◆ From:')
   );
-  const text = lines
-    .join(' ')
-    .replace(URL_PATTERN, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-
   const author = meta.get('作者')?.split(/\s+/)[0];
   return {
     author: author || undefined,
     postedAt: parsePttTime(meta.get('時間') ?? ''),
-    excerpt: refused ? undefined : cleanExcerpt(truncateCodePoints(text, EXCERPT_MAX).trim()),
+    excerpt: /^(否|不)/u.test(consent.answer ?? '') ? undefined : selectExcerpt(lines),
     pushScore
   };
 }
 
-/**
- * Drop the NTUcourse reuse-consent answer when it leads the excerpt (`（是／否／其他條件）：是 …`, the form used
- * when the answer follows on its own line). A 否 answer means no excerpt at all. Applied to cached excerpts too.
- */
-export function cleanExcerpt(excerpt: string | undefined): string | undefined {
-  if (!excerpt) return undefined;
-  const prefix = /^[（(]是[／/]否[／/]其他條件[）)][：:]?\s*/.exec(excerpt);
-  if (!prefix) return excerpt;
-  const answer = excerpt.slice(prefix[0].length);
-  if (/^(否|不)/.test(answer)) return undefined;
-  const rest = answer.replace(/^(是|其他)\s*/, '').trim();
-  return rest || undefined;
+// NTUcourse asks authors whether the post may be reused:
+//   ※ 本文是否可提供臺大同學轉作其他非營利用途？（須保留原作者 ID）
+//      （是／否／其他條件）：是
+// The answer follows the prompt on the same line or on the next one.
+const CONSENT_PROMPT = /[（(]是[／/]否[／/]其他條件[）)]\s*[:：]?\s*/u;
+
+/** The reuse question: the indexes of its lines and the author's answer, if the post has one. */
+export function reuseConsent(lines: string[]): { indexes: number[]; answer?: string } {
+  const question = lines.findIndex((line) => line.includes('非營利用途') || CONSENT_PROMPT.test(line));
+  if (question < 0) return { indexes: [] };
+  const indexes: number[] = [];
+  for (let index = question; index < Math.min(lines.length, question + 5); index += 1) {
+    const line = lines[index];
+    // The next template field means the author left the answer blank.
+    if (index > question && /學年度|授課教師/u.test(line)) break;
+    indexes.push(index);
+    const prompt = CONSENT_PROMPT.exec(line);
+    const answer = prompt ? line.slice(prompt.index + prompt[0].length).trim() : line.includes('非營利用途') ? '' : line;
+    if (answer) return { indexes, answer };
+  }
+  return { indexes };
 }
+
+/** True when an NTUcourse author answered 否 (or 不同意 …) to the reuse question: no excerpt at all. */
+export const refusedReuse = (lines: string[]) => /^(否|不)/u.test(reuseConsent(lines).answer ?? '');
 
 export interface ParsedTitle {
   tag?: string;
