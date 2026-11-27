@@ -2,7 +2,7 @@
   import { instructorHref } from '$lib/overview-paths';
   import { zeroBasedScale } from '$lib/ui/chart-scale';
   import { displayValue } from '$lib/ui/format';
-  import { fillRatio, historySlots, nearlyFull, type HistoryRow } from '$lib/course-history';
+  import { fillRatio, historySlots, nearlyFull, partialGroups, type HistoryRow } from '$lib/course-history';
 
   interface Props {
     rows: HistoryRow[];
@@ -30,6 +30,7 @@
   let hasCapacityOnly = $derived(rows.some((row) => row.enrolled == null && row.capacity != null));
   let hasUnpublished = $derived(rows.some((row) => row.enrolled == null && row.capacity == null));
   let partials = $derived(rows.filter((row) => row.partial));
+  let partialNotes = $derived(partialGroups(rows));
   /** Only capacities were published: the chart and the table talk about 名額 alone. */
   let capacityOnly = $derived(!hasEnrolled && hasCapacityOnly);
   /**
@@ -99,7 +100,7 @@
           {#if hasBoth}<span><i class="key cap"></i>名額</span>{/if}
           {#if hasCapacityOnly}<span><i class="key dashed"></i>{capacityOnly ? '名額（未公布修課人數）' : '只公布名額'}</span>{/if}
           {#if partials.length}<span><i class="key part"></i>只收錄部分班次</span>{/if}
-          {#if rows.some((row) => row.current)}<span><i class="key mark"></i>本班學期</span>{/if}
+          {#if rows.some((row) => row.current)}<span><i class="key mark"></i>本班所在學期</span>{/if}
         </span>
       </figcaption>
       <div class="plot" role="img" aria-label={chartLabel}>
@@ -132,7 +133,17 @@
                   <span class="tick" style:bottom={`${percent(row.capacity)}%`}></span>
                 {/if}
                 {#if row && row.enrolled == null && row.capacity == null}<span class="none">·</span>{/if}
+                {#if row?.partial}
+                  <!-- Said at the bar itself, so the low total is not first read as a drop. -->
+                  <span class="flag" style:bottom={`calc(${percent(Math.max(row.enrolled ?? 0, row.capacity ?? 0))}% + 4px)`}><span>只收錄</span><span class="flag-n">{row.offeringCount}班</span></span>
+                {/if}
               </div>
+            {/each}
+          </div>
+          <!-- Semester digits under each slot; the offering's own term is a filled marker, not an outline. -->
+          <div class="sem ui-tabular" style:--slots={slots.length}>
+            {#each slots as slot (slot.term)}
+              <span class:current={slot.row?.current} class:gap={!slot.row}>{#if slot.row?.current}<span class="sr-only">本班所在學期 </span>{/if}{slot.term.split('-')[1] ?? ''}</span>
             {/each}
           </div>
           <div class="x ui-tabular" style:--slots={slots.length} class:dense={years > 6}>
@@ -142,7 +153,7 @@
           </div>
         </div>
       </div>
-      <p class="note">{#each partials as row (row.term)}<b class="partial-note">{row.term} 只收錄到 {displayValue(row.offeringCount)} 班（其他學期通常約 {displayValue(row.usualSections)} 班），可能還沒匯入完整，長條偏低不代表修課人數驟減。</b>{/each}{#if !hasEnrolled}校方沒有公布修課人數，長條是各學期的名額，不是修課人數。{/if}{#if hasBoth}橫線是名額，長條超過橫線即超額。{/if}x 軸為學年度，每格一個學期（上、下學期依序排列）{#if gaps}；空格是該學期沒有開課紀錄{/if}{#if hasUnpublished}；「·」表示有開課但未公布人數與名額{/if}。多班次的學期為各班加總。</p>
+      <p class="note">{#each partialNotes as group (group.terms.join())}<b class="partial-note">{group.terms.join('、')} 只收錄 {displayValue(group.count)} 班（其他學期通常約 {displayValue(group.usual)} 班），斜線長條偏低是班次少，不代表{capacityOnly ? '名額' : '修課人數'}驟減。</b>{/each}{#if !hasEnrolled}校方沒有公布修課人數，長條是各學期的名額，不是修課人數。{/if}{#if hasBoth}橫線是名額，長條超過橫線即超額。{/if}x 軸下排是學年度，上排 1、2 是上、下學期{#if gaps}；空格是該學期沒有開課紀錄{/if}{#if hasUnpublished}；「·」表示有開課但未公布人數與名額{/if}。多班次的學期為各班加總。</p>
     </figure>
   {/if}
 
@@ -150,6 +161,16 @@
     <p class="note">{published === 0 ? '各學期都沒有公布修課人數與名額，因此只列出開課紀錄。' : `只有 ${published} 個學期公布人數，數值直接列在表格中。`}</p>
   {/if}
   <div class="frame" class:collapsible={rows.length > initialRows}>
+    <!-- The bar key sits on the table itself (phones too), not in a long column header. -->
+    <p class="table-key">
+      <span>{multiSection ? '各學期全班次合計，新到舊' : '各學期，新到舊'}</span>
+      {#if capacityOnly}<span>校方未公布修課人數，只列名額</span>
+      {:else if hasBoth}
+        <span><i class="tk fill" aria-hidden="true"></i>條長＝修課÷名額</span>
+        <span><i class="tk tick" aria-hidden="true"></i>刻線＝名額（100%）</span>
+        <span><i class="tk over" aria-hidden="true"></i>超出刻線＝超額</span>
+      {/if}
+    </p>
     <div class="scroll">
       <table>
         <caption class="sr-only">{courseCode} 各學期開課與修課人數，新到舊</caption>
@@ -157,7 +178,7 @@
           <tr>
             <th scope="col">學期</th>
             <th scope="col">授課教師</th>
-            <th scope="col" class="num">{#if capacityOnly}名額{#if multiSection}<span class="unit">（全班次合計）</span>{/if}<span class="unit">・未公布修課人數</span>{:else}修課人數／名額{#if multiSection}<span class="unit">（全班次合計）</span>{/if}{#if hasBoth}<span class="unit">・條＝修課÷名額，刻線＝100%</span>{/if}{/if}</th>
+            <th scope="col" class="num">{#if capacityOnly}名額{:else}修課／名額{/if}</th>
             <th scope="col">班次</th>
           </tr>
         </thead>
@@ -197,9 +218,9 @@
                   {:else if hasEnrolled && row.enrolled == null && row.capacity != null}<span class="only">只公布名額</span>{/if}
                 </span>
               </td>
-              <td class="sections" class:multi={row.offeringCount > 1} class:codes={row.offerings.length > 1}>
+              <td class="sections" class:multi={row.offeringCount > 1} class:codes={row.offerings.length > 1} class:trim={row.offeringCount > row.offerings.length}>
                 {#each row.offerings as offering (offering.id)}
-                  <span class="section">
+                  <span class="section" class:own={offering.id === currentId}>
                     {#if offering.id === currentId}
                       <span class="here" aria-current="page">本頁</span>
                     {:else}
@@ -244,7 +265,7 @@
   .key.cap { block-size: 0; inline-size: 12px; border-block-start: 2px solid var(--ink); border-radius: 0; }
   .key.part { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand) 55%, transparent) 0 2px, transparent 2px 4px); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 60%, transparent); }
   .key.dashed { border: 1.5px dashed color-mix(in srgb, var(--muted) 75%, transparent); }
-  .key.mark { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--brand) 70%, transparent); }
+  .key.mark { inline-size: 12px; block-size: 4px; border-radius: 1px; background: var(--brand); }
 
   .plot { display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: var(--space-2); }
   .y { position: relative; block-size: 9.5rem; min-inline-size: 1.5rem; color: var(--muted); font-size: var(--t-xs); }
@@ -255,26 +276,39 @@
   .grid.base { border-color: var(--control-line); }
   .slot { position: relative; display: flex; justify-content: center; align-items: end; block-size: 100%; }
   .slot > span { position: absolute; inset-block-end: 0; inline-size: min(70%, 2.25rem); border-radius: 2px 2px 0 0; }
-  .slot .cap.dashed { background: color-mix(in srgb, var(--muted) 10%, transparent); border: 1.5px dashed color-mix(in srgb, var(--ink-2) 80%, transparent); border-block-end: 0; }
+  .slot .cap.dashed { background: color-mix(in srgb, var(--muted) 14%, transparent); border: 2px dashed color-mix(in srgb, var(--ink-2) 85%, transparent); border-block-end: 0; }
   .slot .tick { z-index: 1; inline-size: min(90%, 2.75rem); block-size: 0; border-radius: 0; border-block-start: 2px solid var(--ink); box-shadow: 0 0 0 1px color-mix(in srgb, var(--panel-raised) 70%, transparent); translate: 0 1px; }
   .slot.current .cap.dashed { border-style: solid; border-color: var(--brand); background: var(--brand-wash); }
-  /* The offering's own term gets a full-height outline, so it is findable among similar bars without
-     a filled band that reads like a value. */
-  .slot.current::before { content: ''; position: absolute; inset: 0 6%; border-radius: 3px 3px 0 0; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--brand) 55%, transparent); }
-  /* A term with only part of its sections imported: hatched, so its low total reads as incomplete. */
-  .slot.partial .fill, .slot.partial.current .fill { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand) 60%, transparent) 0 3px, color-mix(in srgb, var(--brand) 20%, transparent) 3px 6px); box-shadow: inset 0 0 0 1px var(--brand); }
+  /* The offering's own term is marked under the baseline (a short bar plus the filled semester digit
+     below), never by an outline that could be read as a value. */
+  .slot.current::before { content: ''; position: absolute; inset-block-end: -5px; inset-inline: 12%; block-size: 3px; border-radius: 1px; background: var(--brand); }
+  /* Terms with far fewer sections than usual: hatched, whether the bar is enrolment or capacity only. */
+  .slot.partial .fill, .slot.partial .cap.dashed { background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--brand) 60%, transparent) 0 3px, color-mix(in srgb, var(--brand) 18%, transparent) 3px 6px); box-shadow: inset 0 0 0 1px var(--brand); border: 0; min-block-size: 3px; }
+  .slot > .flag { inset-block-end: auto; z-index: 2; display: grid; justify-items: center; inline-size: max-content; border-radius: 0; color: var(--ink); font-size: var(--t-xs); font-weight: 650; line-height: 1.2; text-align: center; white-space: nowrap; pointer-events: none; }
+  .flag-n { color: var(--brand-ink); }
   .slot .fill { background: color-mix(in srgb, var(--brand) 72%, var(--panel-raised)); }
   .slot.current .fill { background: var(--brand); }
   .slot.withdrawn .fill { background: color-mix(in srgb, var(--muted) 60%, var(--panel-raised)); }
   .slot.active::after { content: ''; position: absolute; inset-block: 0 -0.375rem; inset-inline: 50%; border-inline-start: 1px dashed var(--control-line); }
   .slot.active .fill { background: var(--brand-ink); }
   .slot .none { inset-block-end: 2px; inline-size: auto; color: var(--muted); font-size: var(--t-sm); line-height: 1; }
-  .x { display: grid; grid-template-columns: repeat(var(--slots), minmax(0.75rem, 1fr)); min-inline-size: calc(var(--slots) * 0.75rem); margin-block-start: var(--space-1); color: var(--muted); font-size: var(--t-xs); line-height: 1.2; }
+  .sem { display: grid; grid-template-columns: repeat(var(--slots), minmax(0.75rem, 1fr)); min-inline-size: calc(var(--slots) * 0.75rem); margin-block-start: 7px; color: var(--muted); font-size: 0.625rem; line-height: 1.4; text-align: center; }
+  .sem span { justify-self: center; min-inline-size: 1.1em; border-radius: 3px; }
+  .sem .gap { opacity: 0.55; }
+  .sem .current { padding-inline: 2px; background: var(--brand); color: var(--on-brand); font-weight: 700; }
+  .x { display: grid; grid-template-columns: repeat(var(--slots), minmax(0.75rem, 1fr)); min-inline-size: calc(var(--slots) * 0.75rem); margin-block-start: 2px; color: var(--ink-2); font-size: var(--t-xs); line-height: 1.2; }
   .x span { white-space: nowrap; overflow: visible; text-align: center; border-inline-start: 1px solid var(--line); }
   .x span:first-child { border-inline-start: 0; }
   .note { margin: var(--space-2) 0 0; color: var(--muted); font-size: var(--t-xs); line-height: 1.5; }
 
   .frame { position: relative; border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel-raised); overflow: hidden; }
+  .table-key { display: flex; flex-wrap: wrap; gap: 2px var(--space-4); align-items: center; margin: 0; padding: var(--space-2) 0.625rem; border-block-end: 1px solid var(--line); background: var(--table-head); color: var(--ink-2); font-size: var(--t-sm); }
+  .table-key > span:first-child { color: var(--muted); font-weight: 600; }
+  .table-key span { display: inline-flex; gap: 0.4em; align-items: center; }
+  .tk { display: inline-block; inline-size: 14px; block-size: 8px; border-radius: var(--radius-pill); }
+  .tk.fill { background: var(--brand); }
+  .tk.tick { inline-size: 2px; block-size: 12px; border-radius: 0; background: var(--ink); }
+  .tk.over { background: var(--warn); }
   .scroll { overflow-x: auto; scrollbar-width: thin; }
   table { inline-size: 100%; border-collapse: collapse; font-size: var(--t-base); line-height: var(--leading-table); }
   th, td { padding: 0.375rem 0.625rem; border-block-end: 1px solid var(--line); text-align: start; vertical-align: middle; }
@@ -287,7 +321,6 @@
   .num { text-align: end; }
   .names { min-inline-size: 6rem; overflow-wrap: anywhere; }
   .names .count { white-space: nowrap; }
-  thead .unit { font-weight: 500; }
   .cell-bar { display: flex; gap: var(--space-2); align-items: center; justify-content: end; }
   .track { position: relative; flex: 0 0 5.5rem; block-size: 10px; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .track > span { position: absolute; inset-block: 0; inset-inline-start: 0; border-radius: inherit; }
@@ -323,6 +356,13 @@
   @media (max-width: 40rem) {
     .chart { padding-inline: var(--space-3); }
     .x.dense span.odd { color: transparent; }
+    /* Narrow slots: only the offering's own term keeps its flag (top to bottom above the bar); other
+       hatched terms are named in the note under the chart. */
+    .slot > .flag { display: block; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: -0.02em; }
+    .slot:not(.current) > .flag { display: none; }
+    .table-key { gap: 2px var(--space-3); padding-inline: var(--space-3); font-size: var(--t-xs); }
+    /* Phones keep 本頁 and「全部 N 班」; single section links live behind「全部 N 班」. */
+    .sections.trim .section:not(.own) { display: none; }
     /* Each term becomes a two-line row (term + numbers, then teachers + sections), so nothing is
        clipped at 390 px and no horizontal scroll is needed. */
     table, tbody { display: block; }
@@ -340,8 +380,8 @@
     .names { grid-row: 2; grid-column: 1 / 3; align-self: center; }
     .sections { grid-row: 2; grid-column: 3; justify-content: end; }
     /* Several section codes need the full width: they get a third line and the teachers keep theirs. */
-    tbody tr:has(.sections.codes) .names { grid-column: 1 / -1; }
-    .sections.codes { grid-row: 3; grid-column: 1 / -1; justify-content: start; }
+    tbody tr:has(.sections.codes:not(.trim)) .names { grid-column: 1 / -1; }
+    .sections.codes:not(.trim) { grid-row: 3; grid-column: 1 / -1; justify-content: start; }
     .names { min-inline-size: 0; color: var(--ink-2); font-size: var(--t-sm); }
     .track { flex: 1 1 auto; max-inline-size: 8rem; }
     .value { min-inline-size: 0; }

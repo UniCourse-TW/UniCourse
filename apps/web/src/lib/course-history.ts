@@ -114,16 +114,35 @@ function median(values: number[]) {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
+/** A term is marked when it has at most this share of the course's usual sections a term. */
+export const partialShare = 1 / 3;
+/** Courses with fewer usual sections than this are never marked: 1 vs 3 sections is ordinary noise. */
+const partialMinUsual = 6;
+
 /**
- * A term is partial when it has at most a quarter of the sections the course usually has a term
- * (median of the other terms, at least 8 sections), e.g. 2 sections where other terms have ~38.
+ * One rule for every course: a term whose total covers far fewer sections than the course usually has
+ * (at most a third of the median of the other terms, which must be at least 6) is marked, so its low
+ * sum is not read as a drop. Marks 2 of a usual ~38 sections (FCU 111-1) and 2 of a usual ~8 (NTU
+ * 108-2) alike; the wording (「只收錄 N 班」) states what was imported without guessing why.
  */
 function markPartial(row: HistoryRow, all: HistoryRow[]): HistoryRow {
   const others = all.filter((other) => other !== row && other.offeringCount > 0).map((other) => other.offeringCount);
   if (others.length < 2) return row;
   const usual = median(others);
-  if (usual < 8 || row.offeringCount > usual / 4) return row;
+  if (usual < partialMinUsual || row.offeringCount > usual * partialShare) return row;
   return { ...row, partial: true, usualSections: Math.round(usual) };
+}
+
+/** Partial terms grouped by section count and usual count, for one sentence per group (「105-2、106-2 只收錄 2 班」). */
+export function partialGroups(rows: readonly HistoryRow[]) {
+  const groups = new Map<string, { terms: string[]; count: number; usual: number | null }>();
+  for (const row of [...rows].filter((r) => r.partial).sort((a, b) => compareTerms(a.term, b.term))) {
+    const key = `${row.offeringCount}/${row.usualSections}`;
+    const group = groups.get(key) ?? { terms: [], count: row.offeringCount, usual: row.usualSections };
+    group.terms.push(row.term);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
 }
 
 /**

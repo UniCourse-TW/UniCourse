@@ -23,6 +23,14 @@ test('course page lists external reviews from the demo index and outbound search
   // 篩選與排序 (desktop uses the per-teacher bars in the summary).
   const summary = section.locator('aside', { hasText: '依教師篩選' });
   await expect(summary).toContainText('本班教師');
+  // The summary counts double as filters.
+  const mine = section.getByRole('group', { name: '快速篩選' }).getByRole('button', { name: /本班教師/ });
+  await expect(mine).toBeEnabled();
+  await mine.click();
+  await expect(mine).toHaveAttribute('aria-pressed', 'true');
+  await expect(section.getByRole('status')).toContainText('本班教師');
+  await section.getByRole('button', { name: '清除篩選' }).first().click();
+  await expect(mine).toHaveAttribute('aria-pressed', 'false');
 
   const post = section.getByRole('listitem').filter({ hasText: '[心得] 114-2 線性代數 王示範' });
   await expect(post).toContainText('本班教師');
