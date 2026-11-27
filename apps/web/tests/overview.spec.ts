@@ -46,14 +46,15 @@ test('shows historical enrollment, filters the ranking and browses a school and 
   await expect(linearAlgebra.getByText('示範', { exact: true })).toBeVisible();
   await expect(linearAlgebra.getByText(/2 學期/)).toBeVisible();
   await expect(linearAlgebra.getByRole('img', { name: /114-2：55 人；115-1：58 人/ })).toBeVisible();
-  await expect(linearAlgebra.getByText('最近公布 115-1')).toBeVisible();
+  await expect(linearAlgebra.getByText('最近開課 115-1')).toBeVisible();
   await expect(linearAlgebra.getByText('較 114-2 +3')).toBeVisible();
   await expect(linearAlgebra.locator('svg rect')).toHaveCount(2);
   const singleTerm = ranking.getByRole('listitem').filter({ hasText: 'DEMO202' });
   await expect(singleTerm).toHaveCount(0);
   await rankingViews.getByRole('link', { name: '整體排行' }).click();
   await expect(rankingViews.getByRole('link', { name: '整體排行' })).toHaveAttribute('aria-current', 'true');
-  await expect(singleTerm.getByRole('img', { name: /115-1：72 人/ })).toBeVisible();
+  await expect(singleTerm.getByText('72 人', { exact: true })).toBeVisible();
+  await expect(singleTerm.getByText('最近開課 115-1')).toBeVisible();
   await expect(singleTerm.locator('svg')).toHaveCount(0);
   expect((await linearAlgebra.boundingBox())?.height).toBeLessThan(100);
   await ranking.getByText('計算方式', { exact: true }).click();

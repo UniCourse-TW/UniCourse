@@ -18,7 +18,7 @@
 
 <span class="bar-cell">
   {#if hasScale && valid !== null}
-    <span class="track" aria-hidden="true"><span class="fill" class:emphasis style:inline-size={`${percent}%`}></span></span>
+    <span class="track" aria-hidden="true"><span class="fill" class:emphasis class:positive={percent > 0} style:inline-size={`${percent}%`}></span></span>
   {/if}
   <span class="ui-tabular" title={valid === null ? '未公布' : undefined}>{displayValue(valid)}{#if valid !== null && unit}{` ${unit}`}{/if}</span>
 </span>
@@ -28,5 +28,6 @@
   .track { flex: 0 0 var(--bar-cell-track-size, 5rem); block-size: 10px; border-radius: var(--radius-pill); background: var(--line); }
   .ui-tabular { margin-inline-start: auto; }
   .fill { display: block; block-size: 100%; border-radius: inherit; background: var(--brand); opacity: 0.6; }
+  .positive { min-inline-size: min(3px, 100%); }
   .emphasis { opacity: 1; }
 </style>

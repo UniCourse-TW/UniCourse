@@ -19,14 +19,12 @@
   import SectionHeader from './ui/SectionHeader.svelte';
   import StatRow from './ui/StatRow.svelte';
   import StatTile from './ui/StatTile.svelte';
-  import { zeroBasedScale } from './ui/chart-scale';
   import { displayValue } from './ui/format';
   import { partialTerms } from './ui/partial-terms';
   import type { TableColumn } from './ui/types';
 
   let { schools, terms, overview }: { schools: School[]; terms: string[]; overview: Extract<PageData['content'], { kind: 'overview' }> } = $props();
 
-  let recentTerms = $derived(terms.slice(0, 6).reverse());
   let trendTerms = $derived.by(() => {
     const slots = terms.filter((term) => /^\d{3,4}-[12]$/.test(term)).map((term) => {
       const [year, semester] = term.split('-').map(Number);
@@ -41,14 +39,14 @@
     });
   });
   let trendPeriod = $derived(coveragePeriod(trendTerms));
-  type RankedCourse = CourseRanking & { rank: number | null };
+  type RankedCourse = CourseRanking & { rank: number | null; lastOffered: string | null };
   let columns = $derived<TableColumn<RankedCourse>[]>([
     { id: 'rank', label: '名次', numeric: true, width: '4.5rem' },
     { id: 'course', label: '課程', width: '30%' },
     { id: 'school', label: '學校' },
     { id: 'terms', label: '學期數', numeric: true, width: '5rem' },
     { id: 'enrollment', label: '累計修課人次', numeric: true, width: '13rem' },
-    { id: 'trend', label: '修課走勢（人）', headerNote: trendPeriod ?? undefined, width: '14.5rem' }
+    { id: 'trend', label: '修課走勢（人）', headerNote: '各課從 0 起，分別定尺度', width: '16rem' }
   ]);
 
   let rows = $derived.by(() => {
@@ -56,9 +54,9 @@
     return (overview.rankings ?? []).map((course) => ({ ...course, rank: course.enrolledTotal != null ? ++rank : null }));
   });
   let maximum = $derived(Math.max(0, ...rows.map((course) => metricValue(course) ?? 0)));
-  let trendMax = $derived(zeroBasedScale(rows.flatMap((course) => course.trend
-    .flatMap(({ term, enrolled }) => enrolled != null && trendTerms.includes(term) ? [enrolled] : []))).max);
-  let trendCaption = $derived(rankingTrendCaption(trendTerms, trendMax));
+  let trendCaption = $derived(rankingTrendCaption(trendTerms));
+  let compactRanking = $derived(overview.diverse && !overview.expanded && rows.length > 5);
+  let recentPeriod = $derived(coveragePeriod(overview.recentTerms));
   let hasPartialTrend = $derived(rows.some((course) => partialTerms(Object.entries(course.sectionsByTerm)).size > 0));
   let rankedSchools = $derived(new Set(rows.filter((course) => course.rank !== null).map((course) => course.school)).size);
   let leadingSchool = $derived.by(() => {
@@ -77,16 +75,12 @@
   let coverageColumns = $derived<TableColumn<(typeof deepCoverage)[number]>[]>([
     { id: 'school', label: '學校', value: (row) => row.name },
     { id: 'years', label: '學年覆蓋' },
-    { id: 'offerings', label: '班次', value: (row) => row.offerings, numeric: true, width: '6.5rem' }
+    { id: 'offerings', label: '班次', value: (row) => row.offerings, numeric: true, width: 'var(--coverage-count-width, 6.5rem)' }
   ]);
   let rankHref = $derived(rankingHref(overview.rankSchool, !overview.expanded, overview.includeNonAcademic, overview.diverse));
   let rankRetry = $derived(rankingHref(overview.rankSchool, overview.expanded, overview.includeNonAcademic, overview.diverse));
   let scopeHref = $derived(rankingHref('', overview.expanded, overview.includeNonAcademic, !overview.diverse));
   let rankingPending = $derived(navigating.to?.url.pathname === '/' && navigating.to.url.hash === '#ranking');
-  const schoolShortNames: Record<string, string> = {
-    ncu: '中央大學', nccu: '政治大學', nchu: '中興大學', ntnu: '臺灣師大', ntu: '臺灣大學', nthu: '清華大學',
-    nycu: '陽明交大', tnua: '臺北藝術大學', ntust: '臺灣科大', ccu: '中正大學', fcu: '逢甲大學'
-  };
 
   function href(course: CourseRanking) { return `/courses/${course.latestOfferingId}`; }
   function metricValue(course: CourseRanking) { return course.enrolledTotal ?? course.capacityTotal ?? null; }
@@ -134,7 +128,11 @@
     <StatTile label="開課班次" value={overview.totals?.offerings ?? null} note="可搜尋的班次" />
     <StatTile label="跨學期課程" value={overview.totals?.courses ?? null} note="同校同課號合併計算" />
     <StatTile label="已收錄大專校院" value={overview.totals && overview.institutions ? `${displayValue(overview.totals.schools)} / ${displayValue(overview.institutions.length)}` : overview.totals?.schools ?? null}>
-      {#snippet detail()}{#if overview.institutions}<span class="coverage-depth"><strong>{displayValue(deepCoverage.length)} 所</strong>收錄至少 4 學期</span>{/if}{/snippet}
+      {#snippet detail()}
+        {#if overview.institutions}
+          <span class="coverage-depth"><span><strong>{displayValue(deepCoverage.length)} 所</strong> 至少 4 期</span><span><strong>{displayValue(coveredSchools.length - deepCoverage.length)} 所</strong> 1–3 期</span></span>
+        {/if}
+      {/snippet}
     </StatTile>
     <StatTile label="已收錄學期" value={overview.totals?.terms.length ?? null} note={overview.totals?.terms[0] ? `最新學期 ${overview.totals.terms[0]}` : '最新學期未公布'} />
   </StatRow>
@@ -159,7 +157,9 @@
 {/snippet}
 
 <section class="home-section" id="ranking" aria-labelledby="ranking-title" aria-busy={rankingPending}>
-  <SectionHeader id="ranking-title" title="歷史累計修課人數排行" description={!overview.rankSchool && rankedSchools ? `本榜列出 ${displayValue(rows.filter(({ rank }) => rank !== null).length)} 門課，來自 ${displayValue(rankedSchools)} 校。依已公布的累計修課人次排序。` : '依同校同課號跨學期加總的修課人次排序。'}>
+  <SectionHeader id="ranking-title" title="歷史累計修課人數排行" description={overview.diverse && recentPeriod
+    ? `優先列出 ${recentPeriod} 有開課的課程，再按歷年累計人次排序。`
+    : '依同校同課號跨學期加總的修課人次排序。'}>
     {#snippet actions()}
       <form id="ranking-filters" method="GET" action="/#ranking" class="rank-form" onchange={applySchool}>
         {#if overview.expanded}<input type="hidden" name="rank_limit" value="50" />{/if}
@@ -172,12 +172,13 @@
   </SectionHeader>
   <div class="ranking-tools">
     {#if !overview.rankSchool}<nav class="ranking-views" aria-label="排行檢視">
+      <span>排行檢視</span>
       <a class="button secondary" href={overview.diverse ? rankRetry : scopeHref} aria-current={overview.diverse ? 'true' : undefined}>每校最多 2 門</a>
       <a class="button secondary" href={overview.diverse ? scopeHref : rankRetry} aria-current={!overview.diverse ? 'true' : undefined}>整體排行</a>
     </nav>{/if}
     <details class="ranking-method">
       <summary>ⓘ <span>計算方式</span></summary>
-      <p>各校收錄期數與公布程度不同，開設多年或多班的課更容易上榜。{#if leadingSchool && !overview.rankSchool && !overview.diverse}本榜以{leadingSchool[0]}（{displayValue(leadingSchool[1])} 門）最多。{/if}{#if overview.diverse}目前從整體前 100 門課保留每校至多 2 門。{/if}各課走勢最多有最近 10 個開課學期的數值。排行目前{overview.includeNonAcademic ? '納入' : '排除'}零學分及行政活動。只公布名額的課另列在有修課人數的課之後。</p>
+      <p>各校收錄期數與公布程度不同，開設多年或多班的課更容易上榜。{#if leadingSchool && !overview.rankSchool && !overview.diverse}本榜以{leadingSchool[0]}（{displayValue(leadingSchool[1])} 門）最多。{/if}{#if overview.diverse}從累計人次前 100 門中，每校最多取 2 門。本榜有 {displayValue(rows.length)} 門課、{displayValue(rankedSchools)} 校。{/if}各課走勢最多有最近 10 個開課學期的數值。排行目前{overview.includeNonAcademic ? '納入' : '排除'}零學分及行政活動。只公布名額的課另列在有修課人數的課之後。</p>
       <label class="rank-toggle"><input form="ranking-filters" type="checkbox" name="include_non_academic" value="true" checked={overview.includeNonAcademic} onchange={(event) => event.currentTarget.form?.requestSubmit()} />納入零學分及行政活動</label>
       <noscript><button type="submit" form="ranking-filters" class="button secondary">套用計算方式</button></noscript>
     </details>
@@ -197,17 +198,19 @@
         rowKey={(course) => course.latestOfferingId} rowHeaderColumn="course" minWidth="42rem" maxHeight="none" scrollHint={false}>
         {#snippet cell(course, column)}
           {#if column.id === 'rank'}<span class="rank-number">{displayValue(course.rank)}</span>
-          {:else if column.id === 'course'}<div class="rank-title">{@render courseTitle(course)}</div>
+          {:else if column.id === 'course'}<div class="rank-title">{@render courseTitle(course)}{#if course.lastOffered}<small>最近開課 {course.lastOffered}</small>{/if}</div>
           {:else if column.id === 'school'}<span class="school-meta">{course.schoolName} <small>{course.courseCode}</small></span>{#if course.isDemo}<Badge label="示範" tone="demo" />{/if}
           {:else if column.id === 'terms'}{displayValue(course.terms)}
           {:else if column.id === 'enrollment'}{@render metric(course)}
-          {:else if column.id === 'trend'}<OverviewRankingTrend {course} terms={trendTerms} {recentTerms} max={trendMax} />{/if}
+          {:else if column.id === 'trend'}<OverviewRankingTrend {course} terms={trendTerms} recentTerms={overview.recentTerms} />{/if}
         {/snippet}
       </DataTable>
     </div>
     <div class="rank-frame">
-      <ol class="mobile-ranking" aria-label="累計修課人數排行" role="list">
-        {#each rows as course (course.latestOfferingId)}
+      {#snippet mobileRows(courses: RankedCourse[], start: number)}
+      <ol class="mobile-ranking" start={start} aria-label={start === 1 ? '累計修課人數排行' : '累計修課人數排行（續）'} role="list">
+        {#each courses as course (course.latestOfferingId)}
+          {@const published = course.trend.filter(({ term, enrolled }) => enrolled != null && trendTerms.includes(term)).length}
           <li>
             <span class="rank-number" aria-label={course.rank === null ? '不列名次' : `第 ${course.rank} 名`}>{displayValue(course.rank)}</span>
             <div class="mobile-course">{@render courseTitle(course)}</div>
@@ -217,11 +220,21 @@
                 <span class="mobile-metric" aria-hidden="true">{@render metric(course)}</span>
               {:else}<small class="unpublished">人數與名額未公布</small>{/if}
             </div>
-            <span class="rank-meta">{course.schoolName} · <code>{course.courseCode}</code> · {course.terms} 學期 {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}</span>
-            <div class="mobile-trend"><OverviewRankingTrend {course} terms={trendTerms} {recentTerms} max={trendMax} /></div>
+            <span class="rank-meta">{course.schoolName} · <code>{course.courseCode}</code> · {course.terms} 學期{#if published && published < course.terms} · {published} 期有人數{/if} {#if course.isDemo}<Badge label="示範" tone="demo" />{/if}</span>
+            <div class="mobile-trend">
+              <OverviewRankingTrend {course} terms={trendTerms} recentTerms={overview.recentTerms} lastOffered={course.lastOffered} />
+            </div>
           </li>
         {/each}
       </ol>
+      {/snippet}
+      {@render mobileRows(compactRanking ? rows.slice(0, 5) : rows, 1)}
+      {#if compactRanking}
+        <details class="more-ranking">
+          <summary><span class="show-ranking">展開前 {rows.length} 名</span><span class="hide-ranking">收合至前 5 名</span></summary>
+          {@render mobileRows(rows.slice(5), 6)}
+        </details>
+      {/if}
       <div class="rank-footer">
         <OverviewRankingValues courses={rows} terms={trendTerms} />
         {#if rows.length >= 10 || overview.expanded}
@@ -238,7 +251,7 @@
   {#if overview.institutions === null}
     <ErrorState title="暫時無法取得收錄狀態" retryHref="/#coverage" />
   {:else if coveredSchools.length}
-    <p class="coverage-summary">已收錄 <strong>{displayValue(overview.totals?.schools)} 所</strong>；其中 <strong>{displayValue(deepCoverage.length)} 所</strong>涵蓋 4 個學期以上。各校學年覆蓋、班次及資料來源見收錄名錄。</p>
+    <p class="coverage-summary"><strong>{displayValue(deepCoverage.length)} 所</strong>涵蓋 4 個學期以上，<strong>{displayValue(coveredSchools.length - deepCoverage.length)} 所</strong>收錄 1–3 個學期。</p>
     {#if deepCoverage.length}
       <div class="coverage-schools">
         <DataTable caption="收錄至少 4 學期的學校" columns={coverageColumns} rows={deepCoverage} rowKey={(school) => school.slug} rowHref={(school) => schoolHref(school.slug)} minWidth="0" maxHeight="none" scrollHint={false}>
@@ -249,8 +262,7 @@
           {#snippet cell(school, column)}
             {#if column.id === 'years'}<Heatstrip cells={yearCoverage(school.terms, years)} label={school.name} hatchPartial />
             {:else if column.id === 'school'}
-              <span class="coverage-full">{school.name}</span>
-              <span class="coverage-short" aria-hidden="true" title={school.name}>{schoolShortNames[school.slug] ?? school.name}</span>
+              <span class="coverage-name">{school.name}</span>
               {#if school.terms[0] !== overview.totals?.terms[0]}<small class="coverage-recent">截至 {school.terms[0]}</small>{/if}
             {:else}{displayValue(column.value?.(school))}{/if}
           {/snippet}
@@ -281,21 +293,23 @@
   .snapshot { margin-block-start: var(--space-5); }
   .snapshot-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-3); }
   .snapshot-period { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1); margin: 0; color: var(--muted); font-size: var(--t-sm); }
-  .coverage-depth { display: block; }
+  .coverage-depth { display: flex; flex-wrap: wrap; column-gap: var(--space-2); }
+  .coverage-depth > span { white-space: nowrap; }
   .snapshot :global(.detail) { display: block; margin-inline-start: 0; }
   .rank-form { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-2); }
   .rank-toggle { display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--target-min); font-size: var(--t-sm); cursor: pointer; }
   .rank-toggle input { accent-color: var(--brand); }
   #ranking[aria-busy='true'] .rank-form { opacity: 0.7; }
   .ranking-tools { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-  .ranking-views { display: flex; gap: var(--space-1); }
+  .ranking-views { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1); }
+  .ranking-views > span { color: var(--muted); font-size: var(--t-sm); }
   .ranking-views [aria-current] { border-color: var(--brand-ring); background: var(--brand-wash); }
   .ranking-method summary { width: fit-content; align-content: center; min-height: var(--target-min); color: var(--brand-ink); cursor: pointer; font-size: var(--t-base); }
   .ranking-method p { max-width: 46rem; margin: 0; color: var(--muted); font-size: var(--t-base); }
   .button { display: inline-flex; justify-content: center; align-items: center; gap: var(--space-1); min-height: var(--target-min); padding-inline: var(--space-2); border: 1px solid transparent; border-radius: var(--radius-control); background: transparent; color: var(--brand-ink); font: 650 var(--t-base) / var(--leading-table) var(--font-sans); text-decoration: none; cursor: pointer; }
   .secondary { border-color: var(--control-line); }
   .button:hover { background: var(--brand-wash); }
-  .mobile-ranking, .coverage-short { display: none; }
+  .mobile-ranking, .more-ranking { display: none; }
   .rank-chart-key { display: block; margin: 0; text-wrap: pretty; }
   .trend-key { display: inline-flex; align-items: center; }
   .desktop-ranking { --table-pad-block: 0.3rem; }
@@ -313,6 +327,7 @@
   .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .coverage-summary { margin: 0; color: var(--ink-2); text-wrap: pretty; }
   .coverage-schools { --table-pad-block: .25rem; --heatstrip-cell-size: .875rem; }
+  .coverage-name { text-wrap: balance; }
   .coverage-recent { display: block; }
   .rank-frame { min-width: 0; }
   .rank-footer { display: grid; align-items: start; grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-1); }
@@ -331,6 +346,9 @@
     .rank-footer { border-block-start: 1px solid var(--line); padding: 0 var(--space-2); }
     .mobile-ranking li { display: grid; grid-template-columns: 1rem minmax(0, 1fr) minmax(6.75rem, auto); column-gap: var(--space-2); align-items: center; padding: 0 var(--space-3) 2px; }
     .mobile-ranking li + li { border-top: 1px solid var(--line); }
+    .more-ranking { display: block; border-block-start: 1px solid var(--line); }
+    .more-ranking summary { width: fit-content; min-height: var(--target-min); padding-inline: var(--space-3); align-content: center; color: var(--brand-ink); font-size: var(--t-base); font-weight: 650; cursor: pointer; }
+    .more-ranking[open] .show-ranking, .more-ranking:not([open]) .hide-ranking { display: none; }
     .mobile-ranking .rank-number { justify-self: end; font-size: var(--t-base); }
     .mobile-course { font-size: var(--t-md); font-weight: 650; line-height: var(--leading-tight); }
     .mobile-course a { display: flex; align-items: center; min-height: var(--target-min); padding-block: var(--space-1); }
@@ -338,17 +356,13 @@
     .mobile-total small { font-size: var(--t-sm); }
     .rank-meta { grid-column: 2 / -1; overflow-wrap: anywhere; line-height: 1.35; }
     .rank-meta code { font-family: var(--font-mono); }
-    .mobile-trend { grid-column: 2 / -1; --ranking-trend-height: 1.125rem; font-size: var(--t-base); }
-    .mobile-trend :global(.chart) { max-inline-size: 9rem; line-height: 1; }
-    .mobile-trend :global(.trend-value) { grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-2); align-items: baseline; }
-    .mobile-trend :global(.trend-value > :first-child) { grid-column: 1 / -1; }
+    .mobile-trend { grid-column: 2 / -1; font-size: var(--t-base); }
     .mobile-metric { display: block; width: 3.25rem; margin-block-start: .2rem; }
     .mobile-metric :global(.bar-cell > .ui-tabular), .mobile-metric .capacity-label { display: none; }
     .mobile-metric .metric :global(.bar-cell) { --bar-cell-track-size: 100%; width: 100%; }
     .mobile-metric .metric :global(.track) { block-size: 4px; }
-    .coverage-schools { --heatstrip-cell-size: clamp(.5rem, 2.45vw, .875rem); }
-    .coverage-short { display: inline; }
-    .coverage-full { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+    .coverage-schools { --heatstrip-cell-size: clamp(.45rem, 2.2vw, .875rem); --coverage-count-width: 4.5rem; --heatstrip-empty-line: var(--muted); }
+    .coverage-name { font-size: var(--t-sm); }
   }
   @media (max-width: 37rem) {
     .hero { gap: var(--space-2); }

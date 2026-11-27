@@ -55,18 +55,27 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
       client.GET('/api/institutions').catch(() => null)
     ]);
     const institutions = directory?.data?.institutions ?? null;
+    const recentTerms = terms?.data?.slice(0, 4) ?? [];
+    const candidates = rankings?.data?.map((row) => ({
+      ...row,
+      lastOffered: Object.keys(row.sectionsByTerm).sort((left, right) => right.localeCompare(left, 'zh-TW', { numeric: true }))[0] ?? null
+    }));
+    // Preserve the API's cumulative order within each recency group.
+    if (diverse) candidates?.sort((left, right) =>
+      Number(right.lastOffered !== null && recentTerms.includes(right.lastOffered)) -
+      Number(left.lastOffered !== null && recentTerms.includes(left.lastOffered)));
     const counts = new Map<string, number>();
-    const rankedRows = diverse ? rankings?.data?.filter((row) => {
+    const rankedRows = diverse ? candidates?.filter((row) => {
       if (row.enrolledTotal == null) return false;
       const count = counts.get(row.school) ?? 0;
       counts.set(row.school, count + 1);
       return count < 2;
-    }).slice(0, expanded ? 50 : 10) : rankings?.data;
+    }).slice(0, expanded ? 50 : 10) : candidates;
 
     return {
       schools: schools?.data ?? [], terms: terms?.data ?? [],
       content: {
-        kind: 'overview' as const, rankSchool, diverse, expanded, includeNonAcademic, rankings: rankedRows ?? null,
+        kind: 'overview' as const, rankSchool, diverse, expanded, includeNonAcademic, rankings: rankedRows ?? null, recentTerms,
         totals: institutions ? coverage(institutions) : null, latest: directory?.data?.updatedAt ?? null, institutions
       }
     };
