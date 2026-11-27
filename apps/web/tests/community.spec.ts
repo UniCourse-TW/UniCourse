@@ -107,11 +107,12 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(thread.getByRole('link', { name: '#期中考' })).toBeVisible();
   // The side card links back to the course.
   const card = page.getByRole('complementary', { name: '這門課' });
-  // On phones the card's course name is the link (the full card folds behind 詳情).
+  // On phones the course link stays visible and the historical figures expand on demand.
   await expect(card.getByRole('link', { name: '線性代數', exact: true }).first()).toHaveAttribute('href', `/courses/${course.id}`);
 
   // Reply (the thread's 寫回覆 link jumps to the box, which names the signed-in identity), then upvote the question.
-  await expect(thread.getByRole('link', { name: /^寫回覆/ })).toHaveAttribute('href', '#reply-form');
+  await thread.getByRole('link', { name: /^寫回覆/ }).click();
+  await expect(page.getByLabel('寫第一則回覆')).toBeFocused();
   await expect(page.locator('#reply-form')).toContainText('以 測試同學 的身分');
   // A thread with no replies asks for the first one; afterwards the box is the plain 寫回覆.
   await page.getByLabel('寫第一則回覆').fill(`同問 ${username}`);
@@ -133,7 +134,7 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   await expect(replyUpvote).toHaveAttribute('aria-pressed', 'true');
   await expect(reply.getByLabel('回覆分數')).toHaveText('+1');
 
-  const upvote = thread.getByRole('button', { name: '推', exact: true });
+  const upvote = thread.getByRole('button', { name: '推這篇文章', exact: true });
   await expect(upvote).toHaveAttribute('aria-pressed', 'false');
   await upvote.click();
   await expect(upvote).toHaveAttribute('aria-pressed', 'true');
@@ -152,12 +153,12 @@ test('registers, rates a course, posts a linked question, replies, votes and log
   }).toPass({ timeout: 20_000 });
   await expect(page.getByRole('heading', { name: '測試同學' })).toBeVisible();
   const activity = page.getByRole('group', { name: '活動統計' });
-  await expect(activity).toContainText('課程評價');
-  // One rating is not an average: no average tile, one footnote line with the progress towards three.
-  await expect(activity).not.toContainText('平均給分');
-  await expect(page.getByRole('region', { name: '活動摘要' })).toContainText('平均給分：樣本不足（1／3 則）');
+  // Below the sample threshold only the ratings section explains why there is no average or distribution.
+  await expect(activity).not.toContainText('樣本不足');
+  await expect(page.getByRole('region', { name: '課程評價（1）' })).toContainText('樣本不足（1／3 則）');
+  await expect(page.getByText('樣本不足', { exact: false })).toHaveCount(1);
   // The count tiles double as jump links to their sections.
-  await expect(activity.getByRole('link', { name: /課程評價 1 則/ })).toHaveAttribute('href', '#ratings');
+  await expect(activity.getByRole('link', { name: /查看評價，共 1 則/ })).toHaveAttribute('href', '#ratings');
   // The number is the accessible score and the adjacent stars are decorative.
   await expect(page.getByRole('table', { name: /的課程評價/ }).getByText('4 / 5', { exact: true })).toBeVisible();
   // Exact: the post rows also name the course (「國立清華大學 線性代數 DEMO201」) in their forum link.

@@ -99,10 +99,6 @@ export const load: PageServerLoad = async ({ fetch, url, locals }) => {
   // the list is not three sections of the same general course.
   const unfiltered = !filters.type && !query.school && !query.q && !query.tag;
   const young = unfiltered && posts.data.total < YOUNG_BELOW;
-  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const recentCount = young && all && all.posts.length === all.total
-    ? all.posts.filter((post) => Date.parse(post.createdAt) >= weekAgo).length
-    : null;
   const rank = (school?: string) =>
     client
       .GET('/api/rankings/courses', { params: { query: { limit: school ? 3 : 30, academic: true, school } } })
@@ -143,7 +139,6 @@ export const load: PageServerLoad = async ({ fetch, url, locals }) => {
       all: all?.total ?? null,
       ...Object.fromEntries(listTypes.map((type, index) => [type, byType[index]?.total ?? null]))
     } as Record<'all' | ListType, number | null>,
-    recentCount,
     latest: all?.posts[0]?.createdAt ?? null
   };
 };

@@ -44,28 +44,17 @@
   const sortHref = (sort: 'oldest' | 'newest') => `${here}${sort === 'newest' ? '?sort=newest' : ''}#replies-title`;
 
   const fmt = new Intl.NumberFormat('zh-TW');
-  /** Share of the published capacity taken, capped at the full bar; `null` when either side is unpublished. */
-  const share = (enrolled: number | null | undefined, capacity: number | null | undefined) =>
-    enrolled != null && capacity ? Math.round((enrolled / capacity) * 100) : null;
-
   let summary = $derived(course?.summary ?? null);
   let rating = $derived(course?.rating && course.rating.count > 0 ? course.rating : null);
   let signedOutHref = $derived(loginHref(`${here}${page.url.search}#reply-form`));
   let registerHref = $derived(loginHref(`${here}${page.url.search}#reply-form`, 'register'));
-  /** The reply box asks for what this kind of thread needs, not a generic 說點什麼. */
-  const replyPrompts: Record<string, string> = {
-    question: '修過嗎？說說作業量、給分或上課情形。',
-    article: '分享你的想法或提問。',
-    announcement: '有疑問可以在這裡提出。'
+  const replyPrompts = {
+    question: '分享你的經驗，或直接回答作者的問題。',
+    article: '分享你的想法，或回應作者的邀請。',
+    announcement: '對公告內容有疑問嗎？可以在這裡提問。'
   };
-  let replyPrompt = $derived(replyPrompts[post.type] ?? '分享你的想法或提問。');
-  /** Zero replies: a note beside the heading (it stays while typing, unlike a placeholder), by thread type. */
-  let emptyNote = $derived.by(() => {
-    const aboutCourse = Boolean(post.courseCode);
-    if (post.type === 'question') return aboutCourse ? '還沒有人回答。修過這門課的話，分享作業量、給分或上課情形。' : '還沒有人回答，第一則回覆就從你開始。';
-    if (post.type === 'article') return aboutCourse ? '還沒有回覆。修過這門課嗎？分享你的作業量或給分。' : '還沒有回覆，分享你的想法或提問。';
-    return '還沒有回覆。對公告有疑問可以在這裡提出。';
-  });
+  let replyPrompt = $derived(post.type === 'reply' ? undefined : replyPrompts[post.type]);
+
   /** The box grows with the text (JavaScript only), so a long answer never scrolls inside a 3-row frame. */
   function autogrow(box: HTMLTextAreaElement) {
     box.style.blockSize = 'auto';
@@ -124,19 +113,22 @@
       <form method="POST" action="?/vote" class="vote" aria-label={isReply ? `投票：${authorName(item.author)} 的回覆` : '本文投票'} use:enhance={voting(item.id)} aria-busy={pending}>
         <input type="hidden" name="target" value={item.id} />
         <span class="tally"><span class="label">推噓分數</span><span class="cm-score" data-sign={scoreSign(item.score)} aria-label="{kind}分數" aria-live="polite">{signed(item.score)}</span></span>
-        <button name="value" value={item.myVote === 1 ? 0 : 1} aria-pressed={item.myVote === 1} aria-label={isReply ? '推這則回覆' : undefined} disabled={pending}>
+        <button name="value" value={item.myVote === 1 ? 0 : 1} aria-pressed={item.myVote === 1} aria-label={isReply ? '推這則回覆' : '推這篇文章'} disabled={pending}>
           <span aria-hidden="true">▲</span><span>推</span>
         </button>
-        <button name="value" value={item.myVote === -1 ? 0 : -1} aria-pressed={item.myVote === -1} aria-label={isReply ? '噓這則回覆' : undefined} disabled={pending}>
+        <button name="value" value={item.myVote === -1 ? 0 : -1} aria-pressed={item.myVote === -1} aria-label={isReply ? '噓這則回覆' : '噓這篇文章'} disabled={pending}>
           <span aria-hidden="true">▼</span><span>噓</span>
         </button>
       </form>
     {:else}
       <p class="tally"><span class="label">推噓分數</span><span class="cm-score" data-sign={scoreSign(item.score)} aria-label="{kind}分數">{signed(item.score)}</span></p>
     {/if}
-    <!-- Signed out, the post shows only its score: the one sign-in call is the 參與討論 card after the replies. -->
-    {#if !isReply && user}
-      <a class="action reply-link" href="#reply-form">寫回覆 <span aria-hidden="true">↓</span></a>
+    {#if !isReply}
+      {#if user}
+        <a class="action reply-link" href="#reply-content">寫回覆 <span aria-hidden="true">↓</span></a>
+      {:else}
+        <a class="action reply-link" href="#reply-form">登入後可投票 <span aria-hidden="true">↓</span></a>
+      {/if}
     {/if}
   </div>
   {#if messageFor(item.id)}<p class="cm-alert" role="alert">{messageFor(item.id)}</p>{/if}
@@ -205,6 +197,7 @@
         {/if}
       {/if}
     {/if}
+    {#if course}<a class="course-jump" href="#related-course">課程資料 <span aria-hidden="true">↓</span></a>{/if}
   </nav>
 
   <div class="layout" class:with-aside={course}>
@@ -226,107 +219,85 @@
         </span>
         {@render manage(post, '文章')}
       </div>
-      {#if course}
-        <!-- Phones: the course in one line right under the byline (the full card follows the replies). -->
-        <p class="course-line">
-          <span class="eyebrow-inline">這門課</span>
-          {#if summary}
-            <a href="/courses/{summary.id}">{summary.title}</a> <span class="muted nowrap">{summary.schoolName}</span>
-            {#if summary.latestEnrolled != null}
-              <span class="facts-line"><span class="nowrap">{summary.latestTerm} 歷史資料：</span><span class="nowrap">已收錄 {summary.latestSections} 班合計 <strong class="num">{fmt.format(summary.latestEnrolled)}</strong> 人修課</span>{#if rating}<span class="rating-bit"><span class="sep">·</span><span class="nowrap">評價 <strong class="num">{rating.average?.toFixed(1)}</strong>（{rating.count} 則）</span></span>{/if}</span>
-            {:else}
-              <span class="facts-line"><span class="nowrap">{summary.terms} 個收錄學期</span>{#if rating}<span class="rating-bit"><span class="sep">·</span><span class="nowrap">評價 <strong class="num">{rating.average?.toFixed(1)}</strong>（{rating.count} 則）</span></span>{/if}</span>
-            {/if}
-          {:else}
-            <span class="mono">{post.courseCode}</span> <span class="muted">{schoolName}・不在目前收錄的課程中</span>
-          {/if}
-        </p>
-      {/if}
       <!-- User text is plain text: escaped by Svelte, line breaks preserved. -->
       <div class="content">{#each paragraphs(post.content) as paragraph, index (index)}<p>{paragraph}</p>{/each}</div>
       {@render controls(post, '文章')}
     </article>
 
     {#if course}
-      <!-- Desktop: a sticky side card. Phones: the same card after the replies (the post carries a one-line summary). -->
-      <aside class="course" aria-labelledby="course-card-title">
-        <h2 id="course-card-title" class="eyebrow">這門課</h2>
-          <div class="course-body">
+      <aside class="course" id="related-course" aria-label="這門課" tabindex="-1">
         {#if summary}
-          {@const taken = share(summary.latestEnrolled, summary.latestCapacity)}
+          <h2 class="eyebrow course-heading">這門課</h2>
           <p class="course-title">
-            <a href="/courses/{summary.id}">{summary.title}</a>
+            <a href="/courses/{summary.id}">{summary.title}<span class="history-link" aria-hidden="true"> 看歷年資料 <span aria-hidden="true">→</span></span></a>
             <span class="mono code">{summary.courseCode}</span>
             {#if summary.isDemo}<Badge label="示範" tone="demo" />{/if}
           </p>
-          <p class="sub">{[summary.schoolName, summary.department].filter(Boolean).join(' · ')}</p>
-          <dl class="facts">
-            <div>
-              <dt>收錄學期</dt>
-              <dd class="num">{summary.terms} 個學期{#if summary.terms > 1}<small>{summary.firstTerm}–{summary.latestTerm}</small>{/if}</dd>
+        {/if}
+        <details class="course-details">
+          <summary>{summary ? '收錄與相關討論' : '查看相關課程與討論'}</summary>
+          {#if summary}
+            <p class="sub course-school">{[summary.schoolName, summary.department].filter(Boolean).join(' · ')}</p>
+            <dl class="facts">
+              <div>
+                <dt>收錄學期</dt>
+                <dd class="num">{summary.terms} 個學期{#if summary.terms > 1}<small>{summary.firstTerm}–{summary.latestTerm}</small>{/if}</dd>
+              </div>
+              <div>
+                <dt><strong class="num">{summary.latestTerm} 歷史修課</strong><small>修課／名額 · {summary.partial ? '僅收錄' : '已收錄'} {summary.latestSections} 班</small></dt>
+                <dd class="num">
+                  <span class="nowrap">{#if summary.latestEnrolled != null}{fmt.format(summary.latestEnrolled)}{:else}<span title="校方未公布修課人數">—</span>{/if}
+                  / {#if summary.latestCapacity != null}{fmt.format(summary.latestCapacity)}{:else}<span title="校方未公布名額">—</span>{/if}</span>
+                </dd>
+              </div>
+              <div>
+                <dt>同學評價</dt>
+                <dd class="num">
+                  {#if rating}<span class="star" aria-hidden="true">★</span> {rating.average?.toFixed(1)}<span class="inline-n">（{rating.count} 則）</span>{:else}尚無評價{/if}
+                </dd>
+              </div>
+            </dl>
+            {#if summary.instructors.length}
+              <p class="sub teachers">{summary.latestTerm} 授課：{summary.instructors.join('、')}{#if summary.instructorCount > summary.instructors.length}<span class="nowrap"> 等 {summary.instructorCount} 位</span>{/if}</p>
+            {/if}
+            <a class="cm-btn secondary block course-link" href="/courses/{summary.id}">查看課程 <span aria-hidden="true">→</span></a>
+          {:else}
+            <p class="sub">
+              {schoolName} <span class="mono">{post.courseCode}</span> 不在目前收錄的課程中。
+              <a href={courseSearchHref(post.school ?? '', post.courseCode ?? '')}>搜尋這個課號</a>
+            </p>
+          {/if}
+          {#if course.otherCount === 0}
+            {@const another = `${forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}&compose=1`}
+            <div class="others-empty">
+              <p class="sub none">這門課目前只有這一篇討論。</p>
+              <a class="new-post" href={user ? another : loginHref(another)}><span aria-hidden="true">＋</span> 新增這門課的討論</a>
             </div>
-            <!-- The latest term's numbers on one line; the course page has every term and the totals. -->
-            <div class="latest">
-              <dt><strong class="num">{summary.latestTerm} 已收錄 {summary.latestSections} 班合計</strong><small>修課／名額 · 歷史資料</small></dt>
-              <dd class="num">
-                <span class="nowrap">{#if summary.latestEnrolled != null}{fmt.format(summary.latestEnrolled)}{:else}<span title="校方未公布修課人數">—</span>{/if}
-                / {#if summary.latestCapacity != null}{fmt.format(summary.latestCapacity)}{:else}<span title="校方未公布名額">—</span>{/if}</span>
-                {#if taken != null}<span class="pct">（{taken}%）</span>{/if}
-              </dd>
-              {#if taken != null}
-                <!-- The share of the capacity taken, to scale; a partial term's bar is lighter, the tag above says why. -->
-                <span class="ratio" class:over={taken > 100} class:partial-bar={summary.partial} aria-hidden="true"><span style:inline-size="{Math.min(100, taken)}%"></span></span>
+          {:else}
+            <div class="others-box">
+              <h3 class="eyebrow others-title">其他討論（{course.otherCount}）</h3>
+              {#if course.others.length}
+                <ul class="others">
+                  {#each course.others as other (other.id)}
+                    <li>
+                      <a href={postHref(other.id)}>{other.title}</a>
+                      <span class="n num">{postTypeLabels[other.type]} · {other.replyCount} 回覆</span>
+                    </li>
+                  {/each}
+                </ul>
+                {#if course.otherCount > course.others.length}
+                  <a class="all" href={forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}>看全部 {course.otherCount} 篇 →</a>
+                {/if}
               {/if}
             </div>
-            <div>
-              <dt>同學評價</dt>
-              <dd class="num">
-                {#if rating}<span class="star" aria-hidden="true">★</span> {rating.average?.toFixed(1)}<span class="inline-n">（{rating.count} 則）</span>{:else}尚無評價{/if}
-              </dd>
-            </div>
-          </dl>
-          {#if summary.instructors.length}
-            <p class="sub teachers">{summary.latestTerm} 授課：{summary.instructors.join('、')}{#if summary.instructorCount > summary.instructors.length}<span class="nowrap"> 等 {summary.instructorCount} 位</span>{/if}</p>
           {/if}
-          <a class="cm-btn secondary block course-link" href="/courses/{summary.id}">查看課程 <span aria-hidden="true">→</span></a>
-        {:else}
-          <p class="sub">
-            {schoolName} <span class="mono">{post.courseCode}</span> 不在目前收錄的課程中。
-            <a href={courseSearchHref(post.school ?? '', post.courseCode ?? '')}>搜尋這個課號</a>
-          </p>
-        {/if}
-        {#if course.otherCount === 0}
-          {@const another = `${forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}&compose=1`}
-          <div class="others-empty">
-            <p class="sub none">這門課目前只有這一篇討論。</p>
-            <a class="new-post" href={user ? another : loginHref(another)}><span aria-hidden="true">＋</span> 新增這門課的討論</a>
-          </div>
-        {:else}
-        <div class="others-box">
-          <h3 class="eyebrow others-title">其他討論（{course.otherCount}）</h3>
-          {#if course.others.length}
-            <ul class="others">
-              {#each course.others as other (other.id)}
-                <li>
-                  <a href={postHref(other.id)}>{other.title}</a>
-                  <span class="n num">{postTypeLabels[other.type]} · {other.replyCount} 回覆</span>
-                </li>
-              {/each}
-            </ul>
-            {#if course.otherCount > course.others.length}
-              <a class="all" href={forumHref({ school: post.school ?? '', courseCode: post.courseCode ?? '' })}>看全部 {course.otherCount} 篇 →</a>
-            {/if}
-          {/if}
-        </div>
-        {/if}
-          </div>
+        </details>
       </aside>
     {/if}
 
     <section class="replies" aria-labelledby="replies-title">
       <div class="replies-head">
         <h2 id="replies-title">回覆（{post.replies.length}）</h2>
-        {#if post.replies.length === 0}<p class="replies-empty">{emptyNote}</p>{/if}
         {#if post.replies.length >= SORT_TOGGLE_AT}
           <nav class="sort" aria-label="回覆排序">
             <a href={sortHref('oldest')} aria-current={newestFirst ? undefined : 'true'}>最早</a>
@@ -361,18 +332,17 @@
         </ol>
       {/if}
       {#if user}
-        <form method="POST" action="?/reply" class="reply-form cm-form"  id="reply-form" use:enhance={submitReply}>
+        <form method="POST" action="?/reply" class="reply-form cm-form" id="reply-form" use:enhance={submitReply}>
           <div class="cm-field">
             <div class="cm-label"><label for="reply-content">{post.replies.length ? '寫回覆' : '寫第一則回覆'}</label><span class="cm-hint">以 {user.displayName || `@${user.username}`} 的身分</span></div>
             <textarea id="reply-content" class="cm-input" name="content" required rows="3" maxlength="20000" defaultValue={replyDraft}
-              placeholder={replyPrompt} aria-describedby="reply-hint"
+              placeholder={replyPrompt} aria-describedby="reply-status"
               oninput={(event) => { replyText = event.currentTarget.value; autogrow(event.currentTarget); }}></textarea>
           </div>
           {#if form?.action === 'reply' && 'message' in form}<p class="cm-alert" role="alert">{form.message}</p>{/if}
-          <p class="cm-sr" id="reply-hint">純文字，保留換行。</p>
           <!-- Under the box: the condition / status on the left, the count on the right, then the button. -->
           <div class="row submit-row">
-            <p class="status" role="status">
+            <p class="status" id="reply-status" role="status">
               {#if announcement}<span class="ok"><span aria-hidden="true">✓</span> {announcement}</span>
               {:else if replying}<span class="hint">送出中，請稍候…</span>
               {:else}<span class="hint">{hydrated && replyEmpty ? '輸入內容後才能送出' : '純文字，保留換行'}</span>{/if}
@@ -383,12 +353,12 @@
           </div>
         </form>
       {:else}
-        <div class="login" id="reply-form">
+        <div class="login" id="reply-form" tabindex="-1">
           <h3>參與討論</h3>
-          <p>推、噓與回覆需要登入。</p>
+          <p>{post.replies.length ? '登入或建立帳號後，就能回到這裡投票或回覆。' : '登入或建立帳號後，就能回到這裡寫第一則回覆。'}</p>
           <div class="login-actions">
             <a class="cm-btn" href={signedOutHref}>登入並回到這篇討論</a>
-            <a class="register" href={registerHref}>還沒有帳號？<span class="register-cta">建立帳號 <span aria-hidden="true">→</span></span></a>
+            <a class="register" href={registerHref}>建立帳號 <span aria-hidden="true">→</span></a>
           </div>
         </div>
       {/if}
@@ -402,13 +372,13 @@
   .crumbs a { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand-ink) 45%, transparent); }
   .crumbs a:hover { text-decoration-color: currentColor; }
 
-  .layout { display: grid; gap: var(--space-6); grid-template-columns: minmax(0, 1fr); }
+  .layout { display: grid; gap: var(--space-8); grid-template-columns: minmax(0, 1fr); }
   .layout.with-aside { grid-template-columns: minmax(0, 1fr) 18.5rem; column-gap: var(--space-8); }
   .with-aside .post { grid-column: 1; grid-row: 1; }
   .with-aside .replies { grid-column: 1; grid-row: 2; }
   .with-aside .course { grid-column: 2; grid-row: 1 / span 2; align-self: start; position: sticky; inset-block-start: 5rem; }
 
-  .post { min-inline-size: 0; padding-block-end: var(--space-5); border-block-end: 1px solid var(--line); }
+  .post { min-inline-size: 0; padding-block-end: var(--space-3); border-block-end: 1px solid var(--line); }
   .kicker { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: center; font-size: var(--t-sm); }
   .kicker a { color: var(--muted); text-decoration: none; font-weight: 600; }
   .kicker a:hover { color: var(--brand-ink); text-decoration: underline; }
@@ -432,7 +402,7 @@
 
   .controls { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-1); align-items: center; margin-block-start: var(--space-4); }
   /* Author tools: a small ⋯ button at the end of the byline, the same on every width. */
-  .more { position: relative; display: inline-flex; align-items: center; }
+  .more { margin-inline-start: auto; position: relative; display: inline-flex; align-items: center; }
   .more > summary { list-style: none; }
   .more > summary::-webkit-details-marker { display: none; }
   .more-btn {
@@ -454,13 +424,12 @@
   .more-btn:hover, .more[open] > .more-btn { color: var(--brand-ink); border-color: var(--brand); background: var(--brand-wash); }
   /* No content-visibility here: its paint containment would clip the dropdown to a zero-size box. */
   .more:not([open])::details-content { display: none; }
-  .manage { position: absolute; inset-block-start: calc(100% + 4px); inset-inline-start: 0; z-index: 5; display: grid; gap: 0; min-inline-size: 14rem; max-inline-size: min(20rem, 88vw); padding: var(--space-1); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 18%, transparent); }
+  .manage { position: absolute; inset-block-start: calc(100% + 4px); inset-inline-end: 0; z-index: 5; display: grid; gap: 0; min-inline-size: 14rem; max-inline-size: min(20rem, 88vw); padding: var(--space-1); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); box-shadow: 0 8px 20px color-mix(in srgb, var(--ink) 18%, transparent); }
   .manage-note { padding: var(--space-2) var(--space-3); color: var(--muted); font-size: var(--t-sm); }
   .manage .action { min-block-size: var(--target-min); padding-inline: var(--space-3); color: var(--ink) !important; }
   .more:has(.panel[open]) .manage { max-inline-size: none; position: static; inline-size: 100%; border: 0; padding: 0; background: transparent; box-shadow: none; }
   .more:has(.panel[open]) > .more-btn { display: none; }
   .more:has(.panel[open]) { display: block; }
-  .reply-link { gap: 0.3em; }
   /* The labelled score, then two outlined toggles: only the buttons look pressable. */
   .vote { display: inline-flex; gap: var(--space-2); align-items: center; margin-inline-end: var(--space-2); }
   .tally { display: inline-flex; gap: 0.4em; align-items: baseline; margin: 0 var(--space-2) 0 0 !important; }
@@ -533,12 +502,10 @@
     cursor: not-allowed;
     filter: none;
   }
+  .reply-form textarea { scroll-margin-block-start: 8.5rem; }
   .reply-form textarea::placeholder { color: var(--muted); opacity: 1; }
-  .login-actions { display: flex; flex-wrap: wrap; flex-basis: 100%; gap: var(--space-2) var(--space-4); align-items: center; }
-  /* The second path is a text link with a full-size target, clearly below the solid sign-in button. */
-  .register { display: inline-flex; align-items: center; min-block-size: var(--target-min); color: var(--ink-2) !important; font-size: var(--t-base); text-decoration: none; }
-  .register-cta { margin-inline-start: 0.25em; color: var(--brand-ink); font-weight: 600; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--brand-ink) 45%, transparent); text-underline-offset: 0.2em; }
-  .register:hover .register-cta { text-decoration-color: currentColor; }
+  .login-actions { display: flex; flex-wrap: wrap; flex-basis: 100%; gap: 0 var(--space-5); align-items: center; }
+  .register { display: inline-flex; align-items: center; gap: 0.3em; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; }
 
   .course {
     position: relative;
@@ -550,8 +517,28 @@
     font-size: var(--t-base);
   }
   .eyebrow { color: var(--muted) !important; font-size: var(--t-sm) !important; font-weight: 600 !important; letter-spacing: 0 !important; }
-  /* The post's one-line course summary is for phones; wide screens have the side card. */
-  .course-line { display: none; }
+  .crumbs .course-jump, .history-link { display: none; }
+  .course { scroll-margin-block-start: 7rem; }
+  .course-details > summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-block-size: var(--target-min);
+    color: var(--ink-2);
+    font-size: var(--t-base);
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+  }
+  .course-details > summary::-webkit-details-marker { display: none; }
+  .course-details > summary::after { content: '▾' / ''; }
+  .course-details[open] > summary::after { content: '▴' / ''; }
+  @media (min-width: 56.001rem) {
+    @supports selector(::details-content) {
+      .course-details > summary { display: none; }
+      .course-details::details-content { display: contents; content-visibility: visible; }
+    }
+  }
   .inline-n { color: var(--muted); font-weight: 400; font-size: var(--t-sm); }
   .course-title { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); align-items: baseline; margin-block-start: var(--space-2) !important; }
   .course-title a { font-size: var(--t-lg); font-weight: 650; }
@@ -567,14 +554,6 @@
   .facts dt { color: var(--muted); font-size: var(--t-sm); }
   .facts dd { margin: 0; font-weight: 600; text-align: end; }
   .facts dt small, .facts dd small { display: block; color: var(--muted); font-weight: 400; font-size: var(--t-sm); }
-  .facts .latest dd { flex: 1 1 auto; }
-  /* The same 「只收錄 N 班」 mark as the course page, so a partial term is never read as a whole one. */
-  .ratio { display: block; flex-basis: 100%; block-size: 4px; margin-block-start: var(--space-1); border-radius: 2px; background: var(--chip); overflow: hidden; }
-  .ratio > span { display: block; block-size: 100%; border-radius: 2px; background: var(--brand); }
-  .ratio.over > span { background: var(--warn); }
-  /* A partial term's bar is paler, not hatched: the 僅收錄 N 班 tag above is the explanation. */
-  .ratio.partial-bar > span { background: color-mix(in srgb, var(--brand) 55%, var(--chip)); }
-  .pct { color: var(--muted); font-weight: 400; font-size: var(--t-sm); }
   .teachers { margin-block-end: var(--space-3) !important; }
   .nowrap { white-space: nowrap; }
   .others-empty { display: grid; margin-block-start: var(--space-3); padding-block-start: var(--space-2); border-block-start: 1px solid var(--line); }
@@ -588,7 +567,6 @@
   .replies { min-inline-size: 0; }
   .replies-head { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: baseline; justify-content: space-between; }
   .replies h2 { font-size: var(--t-xl) !important; }
-  .replies-empty { flex-basis: 100%; color: var(--ink-2); font-size: var(--t-base); text-wrap: pretty; }
   .sort { display: inline-flex; gap: 2px; padding: 2px; border-radius: var(--radius-pill); background: var(--chip); font-size: var(--t-sm); }
   .sort a { display: inline-flex; align-items: center; min-block-size: 2rem; padding: 0 var(--space-3); border-radius: var(--radius-pill); color: var(--ink-2); font-weight: 600; text-decoration: none; }
   .sort a[aria-current='true'] { color: var(--ink); background: var(--panel-raised); box-shadow: inset 0 0 0 1px var(--line); }
@@ -601,8 +579,7 @@
   .reply .timestamp { color: var(--ink-2); }
   .reply .content { margin-block-start: var(--space-1); }
   .reply .controls { margin-block-start: var(--space-2); }
-  .reply-form, .login { margin-block-start: var(--space-4); padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); scroll-margin-block-start: 5rem; }
-  .reply-form, .login { margin-block-start: var(--space-3); padding: var(--space-3) var(--space-4) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
+  .reply-form, .login { scroll-margin-block-start: 7rem; margin-block-start: var(--space-3); padding: var(--space-3) var(--space-4) var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
   .reply-form .cm-label { justify-content: flex-start; gap: 0 var(--space-3); }
   .reply-form .cm-hint { color: var(--ink-2); }
   .login { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; }
@@ -611,34 +588,16 @@
 
   @media (max-width: 56rem) {
     .layout.with-aside { grid-template-columns: minmax(0, 1fr); }
-    .with-aside .post, .with-aside .replies, .with-aside .course { grid-column: 1; grid-row: auto; position: static; }
-    /* The desktop sticky offset must not survive as a relative shift on phones. */
-    .with-aside .course { position: relative; inset-block-start: auto; }
-    .layout { gap: var(--space-4); }
-    /* Phones: the full card comes after the replies and the reply box, so the post reads straight into
-       its replies; the post carries the one-line summary instead. */
+    .with-aside :is(.post, .replies, .course) { grid-column: 1; grid-row: auto; position: static; }
     .with-aside .course { order: 3; }
-    .course-line {
-      display: block;
-      margin-block-start: var(--space-3) !important;
-      padding: var(--space-2) var(--space-3);
-      border-inline-start: 3px solid var(--brand);
-      border-radius: 0 var(--radius-control) var(--radius-control) 0;
-      background: var(--panel);
-      color: var(--ink-2);
-      font-size: var(--t-sm);
-      line-height: 1.6;
-    }
-    .course-line .eyebrow-inline { margin-inline-end: 0.4em; color: var(--muted); font-weight: 600; }
-    .course-line a { font-size: var(--t-base); font-weight: 650; }
-    .course-line .muted { margin-inline-start: 0.25em; color: var(--muted); }
-    .course-line .facts-line { display: block; }
-    /* The rating takes its own line rather than leaving a separator dangling at a line end. */
-    .course-line .rating-bit { display: block; }
-    .course-line .rating-bit > .sep { display: none; }
-    .course-line strong { color: var(--ink); font-weight: 650; }
-    .facts { margin-block: var(--space-2) var(--space-1); }
-    .teachers { margin-block-end: var(--space-2) !important; }
+    .crumbs .course-jump { display: inline-flex; gap: 0.2em; margin-inline-start: auto; }
+    .course-heading, .course-title .code, .course-link { display: none !important; }
+    .course { padding-block: var(--space-2) 0; }
+    .course-title { margin-block-start: 0 !important; }
+    .course-title a { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 0 var(--space-2); min-block-size: var(--target-min); }
+    .history-link { display: inline; font-size: var(--t-sm); font-weight: 600; }
+    .course-details[open] { padding-block-end: var(--space-3); }
+    .course-title + .course-details { border-block-start: 1px solid var(--line); }
   }
   @media (max-width: 40rem) {
     .crumbs { margin-block-end: var(--space-1); }
@@ -649,7 +608,7 @@
     .more-btn { min-block-size: var(--target-min); min-inline-size: var(--target-min); justify-content: center; margin-block: -0.5rem; padding: 0; }
     /* The label stays visible (管理文章 / 管理回覆), so the two menus are told apart without opening them. */
     .more-btn { padding-inline: var(--space-2); }
-    /* The menu hangs from the byline's left edge, wherever the button wrapped to. */
+    /* Align the dropdown with the management control at the end of the byline. */
     .meta { position: relative; }
     .more { position: static; }
     /* Phones: the time takes the byline's second line, without a dangling separator. */
@@ -659,6 +618,7 @@
     .submit-row .status:empty { display: none; }
     /* Phones: condition and count share the line under the box; the button gets its own full row. */
     .submit-row .send { flex-basis: 100%; }
-    .login-actions > .cm-btn { flex: 1 1 100%; }
+    .login-actions a { white-space: nowrap; }
+    .vote { margin-inline-end: 0; }
   }
 </style>
