@@ -8,12 +8,13 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const client = catalog(fetch);
   const path = { school: params.school };
   const includeNonAcademic = url.searchParams.get('include_non_academic') === 'true';
-  const rankingQuery = { ...path, limit: 10, academic: !includeNonAcademic };
-  const [result, institutionResult, trendResult, rankingResult] = await Promise.all([
+  const rankingQuery = { ...path, limit: 100, academic: !includeNonAcademic };
+  const [result, institutionResult, trendResult, rankingResult, termsResult] = await Promise.all([
     client.GET('/api/schools/{school}', { params: { path } }).catch(() => error(503, UNAVAILABLE)),
     client.GET('/api/institutions').catch(() => null),
     client.GET('/api/schools/{school}/trends', { params: { path } }).catch(() => null),
-    client.GET('/api/rankings/courses', { params: { query: rankingQuery } }).catch(() => null)
+    client.GET('/api/rankings/courses', { params: { query: rankingQuery } }).catch(() => null),
+    client.GET('/api/terms').catch(() => null)
   ]);
 
   if (result.response.status === 404) error(404, '找不到這所學校。');
@@ -29,11 +30,22 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const totalPages = Math.max(1, Math.ceil(matches.length / pageSize));
   const requestedPage = Number(url.searchParams.get('page'));
   const page = Number.isSafeInteger(requestedPage) ? Math.min(Math.max(1, requestedPage), totalPages) : 1;
+  const recentTerms = termsResult?.data?.slice(0, 4) ?? [];
+  const rankings = rankingResult?.data?.map((row) => {
+    const lastOffered = Object.keys(row.sectionsByTerm)
+      .sort((left, right) => right.localeCompare(left, 'zh-TW', { numeric: true }))[0] ?? null;
+    return { ...row, lastOffered, recent: lastOffered !== null && recentTerms.includes(lastOffered) };
+  });
+  // The API orders candidates by cumulative enrollment. Preserve that order within each group.
+  rankings?.sort((left, right) => Number(right.recent) - Number(left.recent));
+
   return {
     school,
     institution: institutionResult?.data?.institutions.find(({ slug }) => slug === school.slug) ?? null,
     trends: trendResult?.data ?? null,
-    rankings: rankingResult?.data ?? null,
+    rankings: rankings?.filter(({ enrolledTotal }) => enrolledTotal !== null).slice(0, 10) ?? null,
+    capacities: rankingResult?.data?.slice(0, 10).filter(({ enrolledTotal, capacityTotal }) => enrolledTotal === null && capacityTotal !== null) ?? [],
+    recentTerms,
     includeNonAcademic,
     units: {
       query, sort, page, totalPages, total: departments.length, matched: matches.length, start: (page - 1) * pageSize + 1,
