@@ -22,7 +22,23 @@
   let yearsLabel = $derived(data.years.length > 1 ? `${data.years[0]}–${data.years.at(-1)}` : data.years[0]);
   let sampleStatuses = $derived(new Set(data.rows.map(directoryStatus)));
   let uniformStatus = $derived(sampleStatuses.size === 1 ? directoryStatus(data.rows[0]) : null);
-  const legend = [{ label: '未收錄', value: 0 }, { label: '1 學期', value: 1 }, { label: '2 學期', value: 2 }];
+  const dateFormat = new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: 'numeric', day: 'numeric', timeZone: 'Asia/Taipei' });
+  const importDay = (school: Institution) => school.latestImportedAt ? dateFormat.format(new Date(school.latestImportedAt)) : undefined;
+  let importedRows = $derived(data.rows.filter(hasImportedOfferings));
+  let commonTerm = $derived(commonValue(importedRows.map((school) => school.terms[0])));
+  let commonDay = $derived(commonValue(importedRows.map(importDay)));
+  const coverageLabels = ['未收錄', '1 學期', '2 學期'];
+  function commonValue(values: (string | undefined)[]) {
+    if (values.length < 2) return undefined;
+    const counts = new Map<string, number>();
+    for (const value of values) {
+      if (!value) continue;
+      const count = (counts.get(value) ?? 0) + 1;
+      if (count > values.length / 2) return value;
+      counts.set(value, count);
+    }
+  }
+  const legend = coverageLabels.map((label, value) => ({ label, value }));
   const directorySortOptions = [
     { value: 'status:asc', label: '依收錄狀態' }, { value: 'name:asc', label: '依校名' },
     { value: 'terms:desc', label: '學期數最多' }, { value: 'offerings:desc', label: '班次最多' },
@@ -35,8 +51,8 @@
   const ownershipOptions = ownerships.map((value) => ({ value, label: ownershipLabels[value] }));
   const statusOptions = statuses.map((value) => ({ value, label: directoryStatusLabels[value] }));
   let depth = $derived([
-    { id: 'longer', label: '收錄 4 期以上', count: data.breadth.longer, color: 'var(--seq-4)' },
-    { id: 'recent', label: '收錄 1–3 期', count: data.breadth.recent, color: 'var(--seq-2)' },
+    { id: 'longer', label: '4 期以上', count: data.breadth.longer, color: 'var(--seq-4)' },
+    { id: 'recent', label: '1–3 期', count: data.breadth.recent, color: 'var(--seq-2)' },
     { id: 'empty', label: '尚無班次', count: data.total - data.coverage.schools, color: 'var(--control-line)' }
   ]);
   let depthFilter = $derived(depth.find(({ id }) => id === filters.depth));
@@ -121,7 +137,7 @@
 {/snippet}
 
 {#snippet sourceDetails(school: Institution)}
-  {#if school.latestImportedAt}<p class="browse-note">最近更新 {importedAt(school.latestImportedAt)}（臺北時間）</p>{/if}
+  {#if school.latestImportedAt}<p class="browse-note">最近更新 <time datetime={school.latestImportedAt}>{importedAt(school.latestImportedAt)}</time>（臺北時間）</p>{/if}
   {#if school.note}<p class="browse-note">{school.note}</p>{/if}
   {#if sourceInfo(school)?.href === '#resource-network'}<a href="#resource-network">課程資源網說明</a>{/if}
   {#if school.issue}<a href={`${ISSUES_URL}/${school.issue}`} rel="external">{school.name}收錄紀錄 ↗</a>{/if}
@@ -145,12 +161,7 @@
     <StatTile label="已匯入班次" value={data.coverage.offerings} note={period ?? undefined} />
     {#if data.total}
       <div class="coverage-progress">
-        <p class="browse-note">收錄學期分布 · 選擇類別篩選</p>
-        <div class="status-segments" aria-hidden="true">
-          {#each depth as { id, count, color } (id)}
-            <span class={id} style:flex-grow={count} style:background-color={color} hidden={!count}></span>
-          {/each}
-        </div>
+        <p class="browse-note">依收錄學期數篩選</p>
         <ul class="depth-key" aria-label="收錄學期分布" role="list">
           {#each depth as { id, label, count, color } (id)}
             <li><a href={depthHref(id)} aria-current={filters.depth === id ? 'true' : undefined}><i class={id} style:background-color={color} aria-hidden="true"></i>{label} <strong>{displayValue(count)} 所</strong></a></li>
@@ -173,11 +184,6 @@
       {#if filters.source}<input type="hidden" name="source" value={filters.source} />{/if}
       <label class="browse-field">搜尋學校{#key filters.q}<input name="q" type="search" maxlength="100" defaultValue={filters.q} placeholder="輸入校名或代碼" />{/key}</label>
       <button class="browse-button browse-primary" type="submit">搜尋</button>
-      {#if data.total > data.coverage.schools}
-        <a class="empty-shortcut" href={depthHref('empty')} aria-current={filters.depth === 'empty' ? 'true' : undefined}>
-          {filters.depth === 'empty' ? '取消只看尚無班次' : '只看尚無班次'}
-        </a>
-      {/if}
       <details class="advanced-filters" open={Boolean(filters.ownership || filters.status)}>
         <summary>篩選與排序</summary>
         <div class="advanced-panel">
@@ -216,10 +222,8 @@
 
     {#if data.rows.length}
       <div class="table-meta">
-        <p class="browse-note">{filtered ? '符合條件' : '共'} {displayValue(data.shown)} 所 · 顯示 {data.start + 1}–{data.end} 所{#if uniformStatus} · 本頁皆{directoryStatusLabels[uniformStatus]}（{displayValue(data.rows.length)} 所）{/if}</p>
-        <div class="top-pagination">
-          <Pagination url={new URL('#directory', page.url)} page={data.page} totalPages={data.totalPages} label="學校名錄上方分頁" />
-        </div>
+        <p class="browse-note">{filtered ? '符合條件' : '共'} {displayValue(data.shown)} 所 · 顯示 {data.start + 1}–{data.end} 所{#if uniformStatus} · 本頁皆{directoryStatusLabels[uniformStatus]}{/if}</p>
+        {#if data.totalPages > 1}<a class="page-jump" href="#directory-pages">前往分頁 ↓</a>{/if}
       </div>
       {#if data.years.length}
         <div class="legend browse-note" aria-label="學年覆蓋圖例">
@@ -229,9 +233,15 @@
           {/each}
         </div>
       {/if}
+      <div class="table-notes">
+        {#if data.maxOfferings}<p class="browse-note" id="directory-scale">班次條採線性比例，滿格 {displayValue(data.maxOfferings)} 班。</p>{/if}
+        {#if commonTerm || commonDay}
+          <p class="browse-note common-meta">本頁已收錄學校{#if commonTerm}多收錄至 {commonTerm}{/if}{#if commonTerm && commonDay}，{/if}{#if commonDay}多於 {commonDay} 更新（臺北時間）{/if}。</p>
+        {/if}
+      </div>
       <!-- svelte-ignore a11y_no_noninteractive_tabindex (The named table region is horizontally scrollable.) -->
       <div class="directory-frame" role="region" aria-label="大專校院收錄狀態（表格）" tabindex="0">
-        <table style:--coverage-years={Math.max(1, data.years.length)}>
+        <table aria-describedby={data.maxOfferings ? 'directory-scale' : undefined} style:--coverage-years={Math.max(1, data.years.length)}>
           <caption>大專校院收錄狀態</caption>
           <thead>
             <!-- svelte-ignore a11y_no_redundant_roles (Keep Safari table semantics when mobile rows use grid.) -->
@@ -246,10 +256,7 @@
               </span>
             </th>
             <th role="columnheader" scope="col" class="numeric term-column" aria-sort={sortState('terms')}>{@render sortLabel('terms', '學期')}</th>
-            <th role="columnheader" scope="col" class="numeric offering-column" aria-sort={sortState('offerings')}><a class="offering-sort" href={sortHref('offerings')}>
-              <span>班次<span aria-hidden="true"> {data.sort === 'offerings' ? (data.direction === 'asc' ? '↑' : '↓') : '↕'}</span>{#if data.maxOfferings} <small>平方根</small>{/if}</span>
-              {#if data.maxOfferings}<small>滿格 {displayValue(data.maxOfferings)} 班</small>{/if}
-            </a></th>
+            <th role="columnheader" scope="col" class="numeric offering-column" aria-sort={sortState('offerings')}>{@render sortLabel('offerings', '班次')}</th>
             <th role="columnheader" scope="col" class="wide-column" aria-sort={sortState('updated')}>{@render sortLabel('updated', '最近更新')}</th>
             <th role="columnheader" scope="col" class="note-cell">資料來源</th>
           </tr></thead>
@@ -259,6 +266,7 @@
                 {@const status = directoryStatus(school)}
                 {@const imported = hasImportedOfferings(school)}
                 {@const source = sourceInfo(school)}
+                {@const day = importDay(school)}
                 {@const missing = imported ? missingTerms(school) : []}
                 <!-- svelte-ignore a11y_no_redundant_roles (Keep Safari table semantics when mobile rows use grid.) -->
                 <tr role="row" class:unimported={!imported}>
@@ -278,28 +286,28 @@
                   </td>
                   <td role="cell" class="numeric term-column" title={imported ? undefined : '本站尚無可查詢的班次'}>
                     {displayValue(imported ? school.terms.length : null)}
-                    {#if imported}<small class="mobile-coverage latest-term">最新 {school.terms[0]}</small>{/if}
                   </td>
                   <td role="cell" class="numeric offering-column" title={imported ? undefined : '本站尚無可查詢的班次'}>{#if imported}
-                      <span class="offering-value"><span class="offering-track" aria-hidden="true"><span style:inline-size={`${100 * Math.sqrt(school.offerings / data.maxOfferings)}%`}></span></span>{displayValue(school.offerings)}</span>
+                      <span class="offering-value"><span class="offering-track" aria-hidden="true"><span style:inline-size={`${data.maxOfferings ? 100 * school.offerings / data.maxOfferings : 0}%`}></span></span>{displayValue(school.offerings)}</span>
                     {:else}—{/if}</td>
                   <td role="cell" class="wide-column">{#if school.latestImportedAt}<time datetime={school.latestImportedAt} title={`${importedAt(school.latestImportedAt)}（臺北時間）`}><span aria-hidden="true">{shortImportedAt(school.latestImportedAt)}</span><span class="full-date">{importedAt(school.latestImportedAt)}（臺北時間）</span></time>{:else}<span title="未有匯入紀錄">—</span>{/if}</td>
                   <td role="cell" class="note-cell">
-                    {#if imported}
-                      {#if school.latestImportedAt}
-                        <time class="mobile-coverage mobile-date" datetime={school.latestImportedAt} title={`${importedAt(school.latestImportedAt)}（臺北時間）`}>更新 {shortImportedAt(school.latestImportedAt).split(' ')[0]}</time>
-                      {:else}<span class="mobile-coverage mobile-date">更新未記錄</span>{/if}
-                    {/if}
-                    <details class="full-coverage" class:desktop-details={imported}>
-                      <summary aria-label={`${school.name}的收錄明細`}>
+                    <details class="full-coverage">
+                      <summary aria-label={`${school.name}的收錄明細`} title="收錄明細">
                         <span class="source-summary">
                           {#if !imported}<span class="mobile-date">{importState(school)}</span>{/if}
                           {#if source}<span class="desktop-source">{source.shortName}・{source.frequency}更新</span>{/if}
+                          {#if imported && commonTerm !== school.terms[0]}<span class="mobile-date nowrap">最新 {school.terms[0]}</span>{/if}
+                          {#if imported && (!day || day !== commonDay)}
+                            {#if school.latestImportedAt}<time class="mobile-date nowrap" datetime={school.latestImportedAt}>更新 {day}</time>
+                            {:else}<span class="mobile-date">更新未記錄</span>{/if}
+                          {/if}
                         </span>
-                        <span class="detail-label">收錄明細</span>
+                        <span class="detail-icon" aria-hidden="true">▾</span>
                       </summary>
                       {#if imported}
                         <p class="browse-note">涵蓋 {coveragePeriod(school.terms)} · 最新 {school.terms[0]}</p>
+                        <p class="browse-note">學年覆蓋：{cells.map(({ period, value }) => `${period} 學年 ${coverageLabels[value ?? 0]}`).join('、')}。</p>
                         {#if missing.length}<p class="browse-note">全站收錄期別中，本校缺 {missing.join('、')}。</p>{/if}
                       {/if}
                       {@render sourceDetails(school)}
@@ -311,7 +319,9 @@
         </table>
       </div>
       <p id="resource-network" class="browse-note">— 表示尚無可查班次。<span>校方每日更新，教育部課程資源網每週更新。資源網未提供上課時間、教室及名額。</span></p>
-      <Pagination url={new URL('#directory', page.url)} page={data.page} totalPages={data.totalPages} label="學校名錄分頁" numbered />
+      {#if data.totalPages > 1}
+        <div id="directory-pages"><Pagination url={new URL('#directory', page.url)} page={data.page} totalPages={data.totalPages} label="學校名錄分頁" numbered /></div>
+      {/if}
     {:else if filtered}
       <EmptyState title="沒有符合條件的學校" description="試試簡稱、學校代碼，或放寬篩選條件。">
         {#snippet action()}<a href="/schools">清除篩選</a>{/snippet}
@@ -338,27 +348,25 @@
   .directory { padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); }
   .source-link { display: inline-flex; align-items: center; gap: .2em; min-block-size: 1.5rem; font-size: var(--t-sm); white-space: nowrap; }
   .directory-page .browse-note { text-wrap: pretty; }
-  :is(#directory, #sources, #resource-network) { scroll-margin-block-start: 6.25rem; }
+  :is(#directory, #directory-pages, #sources, #resource-network) { scroll-margin-block-start: 6.25rem; }
   .national-status { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-2); }
   .coverage-progress { display: grid; align-content: center; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-panel); background: var(--panel); }
-  .directory-filter { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, auto); gap: var(--space-2); align-items: end; }
+  .directory-filter { display: grid; grid-template-columns: minmax(0, 1fr) repeat(2, auto); gap: var(--space-2); align-items: end; }
   .directory-filter:has(details[open]) .advanced-filters { grid-column: 1 / -1; }
   .advanced-panel { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel); }
   .advanced-controls { display: flex; align-items: end; gap: var(--space-2); }
   .advanced-controls { flex-wrap: wrap; }
   .advanced-filters > summary { min-block-size: var(--target-min); align-content: center; cursor: pointer; width: fit-content; color: var(--brand); font-size: var(--t-base); font-weight: 650; }
-  .empty-shortcut { display: inline-flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-sm); }
-  .empty-shortcut[aria-current] { font-weight: 650; }
   .directory-filter button { cursor: pointer; font-family: inherit; }
-  .status-segments { display: flex; block-size: .45rem; overflow: hidden; border-radius: var(--radius-pill); }
-  .status-segments span:not([hidden]) { flex-basis: 0; min-inline-size: 3px; }
-  :is(.status-segments span, .depth-key i).recent { background-image: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--ink) 40%, transparent) 4px 5px); }
+  .depth-key i.recent { background-image: repeating-linear-gradient(135deg, transparent 0 4px, color-mix(in srgb, var(--ink) 40%, transparent) 4px 5px); }
   .depth-key strong { font-variant-numeric: tabular-nums; }
   .depth-key { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1) var(--space-2); list-style: none; padding: 0; margin: 0; color: var(--ink-2); font-size: var(--t-sm); }
   .depth-key a { min-block-size: var(--target-min); display: inline-flex; align-items: center; gap: .25em; padding-inline: var(--space-1); border: 1px solid var(--control-line); border-radius: var(--radius-control); text-decoration: none; }
   .depth-key a:hover { background: var(--hover-row); }
   .depth-key i { display: inline-block; inline-size: .9rem; block-size: .45rem; margin-inline-end: var(--space-1); border-radius: 2px; }
   small { color: var(--muted); font-size: var(--t-sm); font-weight: normal; }
+  .table-notes:empty, .page-jump, .common-meta { display: none; }
+  .nowrap { white-space: nowrap; }
   .table-meta { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-2); }
   .legend, .legend > span { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .5rem; font-size: var(--t-sm); }
   .legend { --heatstrip-empty-line: var(--muted); margin-block: .18rem .35rem; --heatstrip-cell-size: 10px; }
@@ -394,19 +402,20 @@
   .coverage-ticks > span:last-child:not(:only-child) { justify-content: end; }
   .coverage :global(.cell) { inline-size: 100%; aspect-ratio: 1; block-size: auto; }
   .directory-frame { --heatstrip-partial-hatch: repeating-linear-gradient(135deg, transparent 0 2px, var(--brand-ring) 2px 3px, transparent 3px 5px); --heatstrip-empty-line: var(--ink-2); }
-  .full-coverage > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-1); min-block-size: var(--target-min); align-content: center; color: var(--ink-2); font-size: var(--t-sm); cursor: pointer; }
+  .full-coverage > summary {
+    display: grid; grid-template-columns: minmax(0, 1fr) var(--target-min); align-items: center;
+    min-block-size: var(--target-min); color: var(--ink-2); font-size: var(--t-sm); cursor: pointer; list-style: none;
+  }
   .full-coverage > summary::-webkit-details-marker { display: none; }
-  .detail-label { color: var(--brand-ink); font-weight: 650; white-space: nowrap; }
-  summary:hover .detail-label { text-decoration: underline; }
-  .detail-label::after { content: ' ▾'; }
-  .full-coverage[open] .detail-label::after { content: ' ▴'; }
+  .detail-icon { display: grid; place-items: center; color: var(--muted); border-radius: var(--radius-control); min-block-size: 2rem; }
+  summary:hover .detail-icon { color: var(--brand-ink); background: var(--chip); }
+  .full-coverage[open] .detail-icon { rotate: 180deg; }
   .full-coverage > :not(summary) { overflow-wrap: anywhere; }
   .full-coverage a { display: flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-sm); }
   .mobile-date { display: none; color: var(--muted); }
   @media (min-width: 58.001rem) and (pointer: fine) {
     .full-coverage > summary { min-block-size: 2rem; }
   }
-  .mobile-coverage { display: none; }
   .desktop-reason { margin-inline-start: var(--space-1); }
   .csv-link { min-height: var(--target-min); align-content: center; font-size: var(--t-sm); }
   .numeric { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -417,8 +426,6 @@
   .note-cell a:hover { text-decoration: underline; }
   .offering-column { min-inline-size: 10.5rem; border-inline-start: 1px solid var(--line); padding-inline-start: var(--space-3); }
   thead .offering-column { text-align: start; }
-  .offering-sort { flex-direction: column; justify-content: center; align-items: start; gap: 0; }
-  .offering-sort small { font-variant-numeric: tabular-nums; }
   .offering-value { display: grid; grid-template-columns: minmax(0, 1fr) 8ch; align-items: center; gap: var(--space-1); }
   .offering-track { height: 6px; background: var(--chip); border-radius: var(--radius-pill); }
   .offering-track span { display: block; min-inline-size: 3px; block-size: 100%; background: var(--series-1); border-radius: inherit; }
@@ -443,11 +450,9 @@
     tbody .school-name { display: flex; flex-wrap: wrap; gap: 0 .3rem; align-items: center; }
     tbody .school-name a { display: flex; align-items: center; min-block-size: var(--target-min); }
     .school-meta :not(.browse-code) { display: none; }
-    .latest-term { font-size: var(--t-xs); font-variant-numeric: tabular-nums; margin-block-start: .15rem; }
     .term-column { grid-column: 2; grid-row: 1; }
     .offering-column { grid-column: 3; grid-row: 1; border: 0; padding: .2rem; }
     thead .offering-column { text-align: end; }
-    .offering-sort { align-items: end; }
     .offering-value { grid-template-columns: minmax(0, 1fr) 6.75ch; }
     .coverage {
       grid-column: 1;
@@ -458,44 +463,34 @@
     thead .coverage { height: auto; padding-block: 0 var(--space-1); }
     .coverage-ticks { font-size: var(--t-xs); }
     .middle-tick { display: none; }
-    .top-pagination, .desktop-details { display: none; }
+    .page-jump { display: inline-flex; align-items: center; min-block-size: var(--target-min); font-size: var(--t-sm); white-space: nowrap; }
+    .common-meta { display: block; }
     .desktop-reason { display: none; }
-    .mobile-coverage { display: block; }
-    .note-cell { grid-column: 2 / -1; grid-row: 2; align-self: stretch; padding-block: 0; }
-    tr:not(.unimported) .note-cell { grid-column: 3; text-align: end; padding-block-end: .25rem; }
-    .note-cell:has(details[open]:not(.desktop-details)) { grid-column: 1 / -1; grid-row: 3; }
-    .full-coverage > summary {
-      position: relative; display: flex; justify-content: flex-end; align-items: center;
-      min-block-size: 1.5rem; color: var(--muted);
-    }
+    .note-cell { grid-column: 2 / -1; grid-row: 2; padding-block: 0; }
+    .full-coverage > summary { position: relative; z-index: 1; min-block-size: 1.5rem; }
     .full-coverage:not([open]) > summary::before {
-      content: ''; position: absolute; z-index: 1; inset: calc(1.5rem - var(--target-min)) 0 0;
+      content: ''; position: absolute; inset: calc(1.5rem - var(--target-min)) 0 0 auto; inline-size: var(--target-min);
     }
     .full-coverage[open] > summary { min-block-size: var(--target-min); }
-    .unimported .full-coverage:not([open]) > summary::before { inset-inline-start: auto; inline-size: 5.5rem; }
-    .full-coverage[open] > summary { justify-content: flex-start; }
-    .mobile-date { display: inline; font-size: var(--t-base); white-space: normal; }
-    .unimported .mobile-date { font-size: var(--t-sm); }
-    .unimported .note-cell { grid-column: 1 / -1; }
-    .unimported .coverage { grid-row: 1; display: none; }
-    .unimported .full-coverage > summary { justify-content: space-between; }
+    .detail-icon { min-block-size: 1.5rem; }
+    .full-coverage .source-summary { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); }
+    .mobile-date { display: inline; font-size: var(--t-sm); }
+    .unimported .note-cell, .note-cell:has(details[open]) { grid-column: 1 / -1; }
+    .unimported .coverage { display: none; }
     .full-coverage[open] { padding-block-end: var(--space-1); }
+    .full-coverage[open] a { position: relative; z-index: 1; }
     tbody tr { position: relative; }
-    tbody .school-name a::after {
-      content: ''; position: absolute; inset: 0;
-    }
+    tbody .school-name a::after { content: ''; position: absolute; inset: 0; }
     tbody tr:focus-within > * { background: var(--hover-row); }
   }
   @media (max-width: 680px) {
     .source-link { position: relative; }
     .depth-key { gap: var(--space-1); }
+    .depth-key i { margin-inline-end: 0; }
     .source-link::after { content: ''; position: absolute; inset: -0.625rem 0; }
     .national-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .directory { padding-block-start: var(--space-1); }
     .coverage-progress { grid-column: 1 / -1; padding-block: var(--space-2); }
-    .directory-filter { grid-template-columns: minmax(0, 1fr) auto; gap: 0 var(--space-2); }
-    .advanced-filters { grid-column: 1 / -1; }
-    .empty-shortcut { grid-column: 2; grid-row: 2; justify-self: end; }
-    .directory-filter:has(.empty-shortcut) .advanced-filters:not([open]) { grid-column: 1; grid-row: 2; }
+    .directory-filter { gap: 0 var(--space-2); }
   }
 </style>

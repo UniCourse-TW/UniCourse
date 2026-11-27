@@ -13,7 +13,6 @@
   import DataTable from '$lib/ui/DataTable.svelte';
   import EmptyState from '$lib/ui/EmptyState.svelte';
   import ErrorState from '$lib/ui/ErrorState.svelte';
-  import FilterBar from '$lib/ui/FilterBar.svelte';
   import FilterSelect from '$lib/ui/FilterSelect.svelte';
   import Pagination from '$lib/ui/Pagination.svelte';
   import SectionHeader from '$lib/ui/SectionHeader.svelte';
@@ -98,10 +97,19 @@
 <svelte:head><title>{school.name}｜UniCourse</title></svelte:head>
 
 {#snippet unitFilter()}
-  <FilterBar action={`${schoolHref(school.slug)}#departments`} label={`搜尋${school.name}的開課單位`} clearHref={units.query ? clearUnits : undefined} hidden={data.includeNonAcademic ? { include_non_academic: 'true' } : {}}>
+  <form class="unit-filter" method="GET" action={`${schoolHref(school.slug)}#departments`} aria-label={`搜尋${school.name}的開課單位`}>
+    {#if data.includeNonAcademic}<input type="hidden" name="include_non_academic" value="true" />{/if}
     <label class="browse-field">搜尋開課單位{#key units.query}<input name="unit" type="search" defaultValue={units.query} maxlength="100" placeholder="例如 資訊、通識、教務" />{/key}</label>
-    <FilterSelect name="unit_sort" label="排序" allLabel={null} value={units.sort} options={[{ value: 'offerings', label: '班次最多' }, { value: 'courses', label: '課程最多' }, { value: 'name', label: '名稱' }]} />
-  </FilterBar>
+    <button type="submit" class="browse-button browse-primary">搜尋</button>
+    <details class="unit-sort">
+      <summary>排序</summary>
+      <div>
+        <FilterSelect name="unit_sort" label="排序" allLabel={null} value={units.sort} options={[{ value: 'offerings', label: '班次最多' }, { value: 'courses', label: '課程最多' }, { value: 'name', label: '名稱' }]} />
+        <button type="submit" class="browse-button">套用排序</button>
+      </div>
+    </details>
+    {#if units.query}<p class="browse-note unit-matches">符合 {displayValue(units.matched)} 個 <a href={clearUnits}>清除搜尋</a></p>{/if}
+  </form>
 {/snippet}
 
 <div class="browse-page school-page" id="school-top">
@@ -128,7 +136,7 @@
     </div>
   </header>
 
-  <SectionLinks {sections} />
+  <SectionLinks {sections} arrows />
 
   <div class="browse-compact-stats"><StatRow label="收錄概況">
     <StatTile label="開課班次" value={institution?.offerings ?? school.offerings} unit="班" />
@@ -166,32 +174,32 @@
     <section class="browse-stack unit-section" aria-labelledby="departments">
       <div class="unit-heading">
         <h2 id="departments">開課單位（{displayValue(units.total)}）</h2>
-        <a class="unit-jump" href="#ranking">跳至校內排行 ↓</a>
+        <a class="unit-jump" href="#ranking">校內排行 ↓</a>
         <p class="browse-note">課程依課號去重。{units.max ? `班次條滿格為 ${displayValue(units.max)} 班。` : ''}</p>
       </div>
-      {#if units.total}<div class="unit-filter">{@render unitFilter()}</div>{/if}
+      {#if units.total}{@render unitFilter()}{/if}
       {#if units.rows.length}
-        {#if units.query}<p class="browse-note">符合搜尋的單位有 {displayValue(units.matched)} 個。</p>{/if}
         <DataTable caption="開課單位歷年班次與課程" columns={unitColumns} rows={units.rows} rowKey={(row) => row.name} rowHref={(row) => departmentHref(school.slug, row.name)} minWidth="100%" maxHeight="none" scrollHint={false}>
           {#snippet cell(row, column)}
             {#if column.id === 'offerings'}<div class="unit-total"><BarCell value={row.offerings} max={units.max} /></div>
             {:else}{displayValue(column.value?.(row))}{/if}
           {/snippet}
         </DataTable>
-        <Pagination url={new URL('#departments', page.url)} page={units.page} totalPages={units.totalPages} label="開課單位分頁" />
+        <Pagination url={new URL('#departments', page.url)} page={units.page} totalPages={units.totalPages} label="開課單位分頁" compact showPageWords jump />
       {:else}
         <EmptyState title={units.query ? '沒有符合條件的開課單位' : '目前沒有開課單位'} description={units.query ? '換個關鍵字試試。' : '待資料匯入後，這裡會顯示各單位。'} />
       {/if}
     </section>
 
     <section class="browse-stack" aria-labelledby="ranking">
-      <SectionHeader title="歷年累計修課人次排行" id="ranking" description={`${period ?? '歷年'} 公布人次加總。${data.recentTerms.length ? '近四學期有收錄者優先。' : '依累計人次排序。'}`} />
+      <SectionHeader title="歷年累計修課人次排行" id="ranking" />
       <div class="ranking-controls">
+        <p class="browse-note rank-scope">{period ? period + '，' : '歷年'}公布人次加總。{data.recentTerms.length ? '近四學期有收錄者優先。' : '依人次排序。'}排行及前 50 門共用篩選。</p>
         <form method="GET" action={`${schoolHref(school.slug)}#ranking`}>
           {#if units.query}<input type="hidden" name="unit" value={units.query} />{/if}
           {#if units.sort !== 'offerings'}<input type="hidden" name="unit_sort" value={units.sort} />{/if}
           {#if units.page > 1}<input type="hidden" name="page" value={units.page} />{/if}
-          <label class="rank-toggle"><input type="checkbox" name="include_non_academic" value="true" checked={data.includeNonAcademic} onchange={(event) => event.currentTarget.form?.requestSubmit()} /> 納入零學分及行政活動</label>
+          <label class="rank-toggle" title="變更本校人次排行和「看前 50 門」的課程範圍"><input type="checkbox" name="include_non_academic" value="true" checked={data.includeNonAcademic} onchange={(event) => event.currentTarget.form?.requestSubmit()} /> 納入零學分及行政活動</label>
           {#if navigating.to?.url.hash === '#ranking'}<span class="browse-note" role="status">更新排行中…</span>{/if}
           <noscript><button class="browse-button">套用</button></noscript>
         </form>
@@ -224,7 +232,7 @@
             </ol>
             {#if ranked.length > phonePreview}
               <details class="capacity-details">
-                <summary>再顯示 {ranked.length - phonePreview} 門</summary>
+                <summary>顯示其餘 {ranked.length - phonePreview} 門人次排行課程</summary>
                 <ol start={phonePreview + 1} role="list">
                   {#each ranked.slice(phonePreview) as row, index (row.courseCode)}{@render rankItem(row, index + phonePreview)}{/each}
                 </ol>
@@ -236,7 +244,7 @@
         {/if}
         {#if data.capacities.length}
           <details class="browse-stack capacity-details">
-            <summary>另有 {data.capacities.length} 門公布名額的課</summary>
+            <summary>查看另 {data.capacities.length} 門課的公布名額</summary>
             <BarList label="累計名額（不列入人次排行）" unit="名" items={data.capacities.map((row) => ({ label: row.title, value: row.capacityTotal ?? null, href: courseHref(row) }))} />
           </details>
         {/if}
@@ -244,7 +252,7 @@
       {/if}
     </section>
   </div>
-  <a class="back-to-top" href="#school-top">回到頂端 ↑</a>
+  <a class="back-to-top" href="#school-top">↑ 回到頂端</a>
 </div>
 
 <style>
@@ -280,7 +288,17 @@
   .school-page .browse-compact-stats :global(.tile > p) { font-size: .8125rem; }
   .back-to-top { justify-self: start; align-content: center; min-block-size: var(--target-min); font-size: var(--t-base); }
   .edition { white-space: nowrap; }
+  .unit-filter { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--space-1) var(--space-2); align-items: end; }
+  .unit-filter button { font: inherit; font-weight: 650; cursor: pointer; }
+  .unit-sort:not([open]) > summary { white-space: nowrap; }
+  .unit-sort > summary { min-block-size: var(--target-min); min-inline-size: var(--target-min); align-content: center; color: var(--brand-ink); font-size: var(--t-sm); cursor: pointer; }
+  .unit-sort[open] { grid-column: 1 / -1; }
+  .unit-filter:has(.unit-sort[open]) { grid-template-columns: minmax(0, 1fr) auto; }
+  .unit-sort > div { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-2); }
+  .unit-matches { grid-column: 1 / -1; }
+  .unit-matches a { display: inline-flex; align-items: center; min-block-size: var(--target-min); margin-inline-start: var(--space-2); }
   .ranking-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+  .rank-scope { flex: 1 1 14rem; }
   .rank-toggle { display: inline-flex; padding-inline: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); gap: var(--space-2); align-items: center; min-block-size: var(--target-min); cursor: pointer; }
   .rank-toggle input { inline-size: 1rem; block-size: 1rem; margin: 0; accent-color: var(--brand); }
   .rank-toggle:has(input:focus-visible) { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
@@ -319,11 +337,7 @@
     }
     .unit-section :global(thead th) { white-space: normal; }
     .unit-total :global(.bar-cell) { gap: var(--space-1); grid-template-columns: minmax(0, 1fr) 5ch; }
-    .unit-filter :global(form) { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
-    .unit-filter .browse-field { grid-column: 1 / -1; }
-    .unit-filter :global(.actions) { display: contents; }
-    .unit-filter :global(.actions button) { padding-inline: var(--space-2); }
-    .unit-filter :global(.actions a) { grid-column: 1 / -1; justify-self: start; }
+    .unit-filter .browse-button { padding-inline: var(--space-2); }
     .mobile-rank { display: block; }
     .rank-scale { margin-block-end: var(--space-1); }
     .rank-period { display: flex; flex-wrap: wrap; column-gap: var(--space-1); }
@@ -332,10 +346,11 @@
     .mobile-rank .rank-index { grid-row: 1; min-block-size: 1.75rem; border-radius: var(--radius-control); background: var(--chip); }
     .mobile-rank li + li { border-block-start: 1px solid var(--line); }
     .mobile-rank li a { display: flex; align-items: center; min-block-size: var(--target-min); font-weight: 650; }
-    .rank-measures { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(5.5rem, max-content); align-items: center; gap: var(--space-1) var(--space-3); }
+    .rank-measures { grid-column: 1 / -1; display: grid; gap: 2px; }
     .rank-measures p { font-size: var(--t-sm); }
-    .rank-total { display: grid; justify-items: end; }
-    .rank-total :global(.bar-cell) { display: grid; grid-template-columns: minmax(1.5rem, 1fr) max-content; font-size: var(--t-sm); }
+
+    .rank-total :global(.bar-cell) { display: grid; grid-template-columns: minmax(0, 1fr) 6.25em; gap: var(--space-1); font-size: var(--t-sm); white-space: nowrap; }
+    .rank-total :global(.ui-tabular:only-child) { grid-column: 2; }
     .rank-total :global(.track) { block-size: 5px; }
   }
   @media (max-width: 23rem) {
