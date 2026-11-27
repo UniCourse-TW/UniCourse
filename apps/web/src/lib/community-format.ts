@@ -106,3 +106,18 @@ export function scoreSign(value: number) {
 export function initial(name: string) {
   return [...name.trim()][0]?.toLocaleUpperCase('zh-TW') ?? '?';
 }
+
+/** Key of a cross-term course in title lookups: `fcu/GBCP101`. */
+export function courseKey(school: string, courseCode: string) {
+  return `${school}/${courseCode}`;
+}
+
+/**
+ * The title without a leading course name that the row already shows (「公民參與 作業量如何？」 →
+ * 「作業量如何？」). Titles that are only the course name, or do not start with it, stay as they are.
+ */
+export function titleWithoutCourse(title: string, courseTitle: string | undefined) {
+  if (!courseTitle || !title.startsWith(courseTitle)) return title;
+  const rest = title.slice(courseTitle.length).replace(/^[\s:：\-－｜|・,，]+/u, '');
+  return rest.length >= 2 ? rest : title;
+}
