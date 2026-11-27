@@ -13,6 +13,7 @@
       children: [
         { id: 'reviews-kept', title: '保存內容' },
         { id: 'reviews-boards', title: '收錄看板' },
+        { id: 'reviews-policy', title: '收錄原則' },
         { id: 'reviews-removal', title: '更新與移除' }
       ]
     },
@@ -46,15 +47,15 @@
   <section aria-labelledby="sources">
     <div class="h2-row"><h2 id="sources">資料來源與授權</h2>{@render toToc()}</div>
     <p>本站的資料有三種來源，每一筆課程都保留原始連結，可回到校方頁面核對：</p>
-    <table role="table" class="sources">
+    <table role="table" class="sources stacked">
       <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">資料</th><th role="columnheader" scope="col">來源</th><th role="columnheader" scope="col">授權與使用方式</th></tr></thead>
       <tbody role="rowgroup">
         <tr role="row"><td role="cell" data-label="資料">學校名錄</td><td role="cell" data-label="來源">教育部大專校院名錄等開放資料</td><td role="cell" data-label="授權與使用">政府資料開放授權條款；依原始檔重新產生，不手動修改。</td></tr>
         <tr role="row"><td role="cell" data-label="資料">課程與修課人數</td><td role="cell" data-label="來源">各校公開課程查詢系統、教育部課程資源網</td><td role="cell" data-label="授權與使用">只抓取無需登入的公開頁面，遵守各站 robots 規則，夜間低頻更新。</td></tr>
-        <tr role="row"><td role="cell" data-label="資料">課程網站總覽</td><td role="cell" data-label="來源">UniCourse 逐校盤點</td><td role="cell" data-label="授權與使用">列在<a href="/landscape">課程網站總覽</a>，資料檔隨原始碼公開。</td></tr>
+        <tr role="row"><td role="cell" data-label="資料">課程網站總覽</td><td role="cell" data-label="來源">UniCourse 逐校盤點</td><td role="cell" data-label="授權與使用"><span>列在<a href="/landscape">課程網站總覽</a>，資料檔隨原始碼公開。</span></td></tr>
       </tbody>
     </table>
-    <p>校方系統要求登入、使用驗證碼或以 robots 規則拒絕抓取時，本站不會收錄該校資料，並在各校收錄狀態頁標示「受阻」。本站的程式碼與資料檔以開源方式公開於 GitHub。</p>
+    <p>校方系統要求登入、使用驗證碼或以 robots 規則拒絕抓取時，本站不會收錄該校資料；各校實際的收錄進度請見各校收錄狀態頁。本站的程式碼與資料檔以開源方式公開於 GitHub。</p>
   </section>
 
   <section aria-labelledby="account">
@@ -81,7 +82,7 @@
     <h3 id="reviews-boards">目前收錄的看板</h3>
     <p>只收錄 PTT（批踢踢實業坊）上專門討論課程的四個看板，從 2016 年起的文章。</p>
     <!-- Four rows: shown in full on every device (phones stack the columns). -->
-      <table role="table" class="boards">
+      <table role="table" class="boards stacked">
         <thead role="rowgroup"><tr role="row"><th role="columnheader" scope="col">看板</th><th role="columnheader" scope="col">對應學校</th><th role="columnheader" scope="col">備註</th></tr></thead>
         <tbody role="rowgroup">
           <tr role="row"><td role="cell" data-label="看板">NTUcourse</td><td role="cell" data-label="對應學校">國立臺灣大學</td><td role="cell" data-label="備註" title="作者在評價範本中選「否」（不同意轉載）的文章不存摘要，只列標題。">不同意轉載的文章只列標題</td></tr>
@@ -90,16 +91,12 @@
           <tr role="row"><td role="cell" data-label="看板">NCHU-Courses</td><td role="cell" data-label="對應學校">國立中興大學</td><td role="cell" data-label="備註">文章較少</td></tr>
         </tbody>
       </table>
-    <h3>為什麼可以收錄、哪些網站只給連結</h3>
-    <!-- Phones fold the technical part behind a plain title; the robots terms stay inside. -->
-    <details class="phone-fold">
-      <summary><span class="fold-title"><span class="fold-label">哪些網站可以收錄</span><span class="fold-count">：PTT 可以；其他網站只給連結</span></span></summary>
-      <ul>
-        <li>只收錄站方 robots 檔以 <code>Content-Signal: search=yes</code> 明確允許建立搜尋索引的網站；PTT 屬於這一類，同時標明 <code>ai-train=no</code>。</li>
-        <li>歐趴糖、Dcard、想鑑你 NTU Rating 等沒有明確允許的網站，課程頁只提供用課名與教師組成的站外搜尋連結；本站不抓取、不儲存這些網站的任何內容。</li>
-        <li>各站的處理方式也列在<a href="/landscape#third-party">課程網站總覽的第三方查課網站</a>。</li>
-      </ul>
-    </details>
+    <h3 id="reviews-policy">哪些網站可以收錄？</h3>
+    <p>PTT 明確允許建立搜尋索引，其他課程評論網站目前只提供搜尋連結。</p>
+    <ul>
+      <li>只索引 robots 檔以 <code>Content-Signal: search=yes</code> 明確允許搜尋的網站。PTT 同時標明 <code>ai-train=no</code>。</li>
+      <li>歐趴糖、Dcard、想鑑你 NTU Rating 等網站的處理方式列在<a href="/landscape#third-party">課程網站總覽</a>。</li>
+    </ul>
     <h3 id="reviews-removal">更新與移除</h3>
     <p class="update-note">索引由維護者定期重新抓取並匯入，不是每晚自動更新，新文章會晚一段時間才出現。原文在 PTT 刪除後，本站不會自動得知；<a class="private" href={PRIVATE_REPORT_URL} rel="noopener external">私密聯絡維護者<span aria-hidden="true"> ↗</span></a>或用下方<a href="#removal">聯絡與移除</a>的任一管道告訴我們，該筆索引會被移除。</p>
   </section>
@@ -107,20 +104,21 @@
   <section aria-labelledby="removal">
     <div class="h2-row"><h2 id="removal">聯絡與移除</h2>{@render toToc()}</div>
     <p>先選管道：<strong>涉及個資、帳號或不想公開的請求走私密聯絡</strong>，一般的資料錯誤可以公開回報。</p>
+    <p>兩種管道都需要免費的 GitHub 帳號。私密回報只有維護者可見，目前的私密聯絡管道為 GitHub。</p>
     <div class="contact-routes">
-      <div>
-        <p class="route-kind">公開回報</p>
-        <h3>可公開的資料錯誤</h3>
-        <p>更正課程資料、回報錯配的外部文章。請不要附上學號、聯絡方式等個人資料。</p>
-        <p class="route-row"><a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 建立 issue <span aria-hidden="true">↗</span></a><span class="route-tag">結果公開</span></p>
-        <p class="route-meta"><span>需要免費的 GitHub 帳號</span><span>請附頁面連結</span><span>通常七天內回覆在同一則 issue</span></p>
-      </div>
       <div>
         <p class="route-kind">私密聯絡</p>
         <h3>含個資或不想公開的請求</h3>
-        <p>移除索引中與你有關的文章、帳號問題，或任何不想公開提出的請求；文章作者、被提及的教師或當事人都可以提出。用 GitHub 的私密回報表單送出，目前沒有不經 GitHub 的私密管道。</p>
-        <p class="route-row"><a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">私密回報給維護者 <span aria-hidden="true">↗</span></a><span class="route-tag private">僅維護者可見</span></p>
-        <p class="route-meta"><span>需要免費的 GitHub 帳號</span><span>請附頁面連結</span><span>通常七天內回覆在同一則回報</span></p>
+        <p>移除與你有關的索引或處理帳號問題。文章作者、被提及的教師或當事人都可以提出。</p>
+        <p class="route-row"><a class="route" href={PRIVATE_REPORT_URL} rel="noopener external">在 GitHub 私密回報 <span aria-hidden="true">↗</span></a><span class="route-tag private">僅維護者可見</span></p>
+        <ul class="route-meta"><li>附上相關頁面連結</li><li>通常七天內在同一則回報回覆</li></ul>
+      </div>
+      <div>
+        <p class="route-kind">公開回報</p>
+        <h3>可公開的資料錯誤</h3>
+        <p>回報錯配的外部文章或其他資料錯誤。請勿附上個資。</p>
+        <p class="route-row"><a class="route" href={PUBLIC_REPORT_URL} rel="noopener external">在 GitHub 建立 issue <span aria-hidden="true">↗</span></a><span class="route-tag">結果公開</span></p>
+        <ul class="route-meta"><li>附上相關頁面連結</li><li>通常七天內在同一則 issue 回覆</li></ul>
       </div>
     </div>
     <p>移除索引不影響原網站上的文章；要刪除原文請聯絡該網站。</p>

@@ -24,11 +24,13 @@
     search?: boolean;
     /** Prefilled search text, e.g. a course code or name taken from the address. */
     query?: string;
+    crossTerm?: boolean;
+    context?: string;
     /** Current path, for the retry link on server errors. */
     retryHref?: string;
   }
 
-  let { status, message, title, description, primary, secondary, also = [], search = false, query = '', retryHref }: Props = $props();
+  let { status, message, title, description, primary, secondary, also = [], search = false, query = '', crossTerm = false, context, retryHref }: Props = $props();
 
   /** Fixed example searches that find courses at most schools (not a popularity list), offered when the
       address gave no clue about the course; three, so they stay on one row at 390 px. */
@@ -71,7 +73,7 @@
 
 <div class="error-wrap">
 <section class="error-page" class:outage={!notFound} aria-labelledby="error-title">
-  <p class="eyebrow"><span class="ui-tabular code">{status}</span>{#if !notFound}暫時無法取得{#if message && message !== detail} · {message}{/if}{/if}</p>
+  <p class="eyebrow"><span class="ui-tabular code">{status}</span>{#if context}<span>{context}</span>{:else if !notFound}暫時無法取得{#if message && message !== detail} · {message}{/if}{/if}</p>
   <h1 id="error-title">{heading}</h1>
   <p class="detail">{detail}</p>
   {#if search}
@@ -98,10 +100,14 @@
       <button type="submit">搜尋課程</button>
     </form>
     <!-- The address names no course, so these are fixed examples (labelled as such), not this course's school. -->
-    <nav class="examples" aria-label="試試這些課名">
-      <span class="examples-label">試試這些課名</span>
-      <ul>{#each examples as example (example)}<li><a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: example })}`}>{example}</a></li>{/each}</ul>
-    </nav>
+    {#if crossTerm}
+      <a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: query })}`}>查「{query}」的其他學期 <span aria-hidden="true">→</span></a>
+    {:else if !query && !back}
+      <nav class="examples" aria-label="試試這些課名">
+        <span class="examples-label">試試這些課名</span>
+        <ul>{#each examples as example (example)}<li><a class="chip" href={`/?${new URLSearchParams({ term: 'all', q: example })}`}>{example}</a></li>{/each}</ul>
+      </nav>
+    {/if}
   {/if}
   <!-- With a search box the form's button is the one primary action; the other ways out are all text links below. -->
   {#if !search || back}
@@ -208,6 +214,7 @@
   .also a { display: inline-flex; gap: 0.3em; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-size: var(--t-base); font-weight: 600; text-underline-offset: 0.15em; }
   /* The first way out (the data route: 各校收錄狀態) leads; the rest are plain links. */
   .also a.lead-out { color: var(--brand-ink); font-weight: 650; }
+  .also a[href='/forum'] { color: var(--muted); font-weight: 500; }
   .also a:hover { color: var(--brand-ink); }
 
   @media (max-width: 40rem) {
@@ -223,7 +230,7 @@
     /* The label on its own line, then one wrapping row of 40 px chips (no grid, so no ragged columns). */
     .examples { display: grid; gap: var(--space-2); inline-size: 100%; }
     .examples ul { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-    .chip { min-block-size: 2.5rem; }
+    .chip { min-block-size: var(--target-min); }
     /* The ways out share wrapping 44 px rows (two per line) instead of one tall row each. */
     .also ul { gap: 0 var(--space-4); }
   }

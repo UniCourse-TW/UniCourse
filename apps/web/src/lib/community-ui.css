@@ -76,7 +76,6 @@
   white-space: nowrap;
   cursor: pointer;
   touch-action: manipulation;
-  transition: opacity 120ms ease;
 }
 .cm-btn:hover { text-decoration: none; filter: brightness(1.08); }
 .cm-btn.secondary { color: var(--brand-ink) !important; background: var(--panel-raised); border-color: var(--brand); }
@@ -85,10 +84,9 @@
 .cm-btn.quiet:hover { background: var(--hover-row); filter: none; }
 .cm-btn.danger { color: var(--on-brand) !important; background: var(--down); border-color: var(--down); }
 .cm-btn.block { inline-size: 100%; }
-.cm-btn[aria-busy='true'] { opacity: 0.6; cursor: progress; filter: none; }
-/* Busy keeps the label at full contrast (5.0:1 light, 5.5:1 dark): only the fill softens, and a 16 px
+/* Busy keeps the label at full contrast: only the fill softens, and a 16 px
    ring turns beside the words (static under prefers-reduced-motion). */
-.cm-btn[aria-busy='true'] { background: color-mix(in srgb, var(--brand) 78%, var(--panel)); border-color: transparent; cursor: progress; filter: none; }
+.cm-btn[aria-busy='true'] { background: color-mix(in srgb, var(--brand) 88%, var(--panel)); border-color: transparent; cursor: progress; filter: none; }
 .cm-btn[aria-busy='true']::before {
   content: '';
   flex: none;
