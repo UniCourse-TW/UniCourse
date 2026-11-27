@@ -115,15 +115,23 @@ export function isSchoolSite(site: Pick<Site, 'scope' | 'schools'>) {
 }
 
 /**
- * How UniCourse treats a third-party site's content (plan.md): posts from boards whose robots
- * `Content-Signal` allows search get a ≤ 120-character excerpt in the review index; every other
- * site only gets an outbound link.
+ * PTT boards whose posts UniCourse indexes (crawlers/reviews-ptt/src/boards.ts, docs/external-reviews.md).
+ * The terms page names the same four; any other PTT entry (the board index, other school boards) is
+ * only linked.
+ */
+export const INDEXED_PTT_BOARDS = ['NTUcourse', 'NTHU_Course', 'NCTU-Teacher', 'NCHU-Courses'] as const;
+
+/**
+ * How UniCourse treats a third-party site's content (plan.md): posts from the indexed PTT course boards
+ * get a ≤ 120-character excerpt in the review index; every other site only gets an outbound link.
  */
 export type IndexPolicy = 'excerpt' | 'link';
 export const indexPolicyLabels: Record<IndexPolicy, string> = { excerpt: '索引摘要', link: '只給連結' };
 export function indexPolicy(site: Pick<Site, 'url'>): IndexPolicy {
   try {
-    return new URL(site.url).hostname.endsWith('ptt.cc') ? 'excerpt' : 'link';
+    const url = new URL(site.url);
+    const board = /^\/bbs\/([^/]+)\//u.exec(url.pathname)?.[1];
+    return url.hostname.endsWith('ptt.cc') && board && (INDEXED_PTT_BOARDS as readonly string[]).includes(board) ? 'excerpt' : 'link';
   } catch {
     return 'link';
   }
@@ -190,6 +198,8 @@ export interface SchoolSection {
   third: Site[];
   /** Cross-school platforms that list this school. */
   via: Pick<Site, 'name' | 'url'>[];
+  /** Status split of the school's own sites (official and third party). */
+  status: Record<SiteStatus, number>;
 }
 
 export interface Landscape {
@@ -210,7 +220,7 @@ export interface Landscape {
   };
   /** Status split per education system (filtered set), for the stacked bars. */
   bySystem: { system: EducationSystem; label: string; active: number; inactive: number; unknown: number }[];
-  /** Schools with the most third-party sites (whole dataset). */
+  /** Schools with the most third-party sites (filtered set, like every other number on the page). */
   topThird: { code: string; id: string; name: string; count: number }[];
   thirdParty: Site[];
   cross: Site[];
@@ -267,7 +277,12 @@ export function buildLandscape(filters: LandscapeFilters): Landscape {
       city: institution.city,
       official,
       third,
-      via
+      via,
+      status: {
+        active: own.filter((site) => site.status === 'active').length,
+        inactive: own.filter((site) => site.status === 'inactive').length,
+        unknown: own.filter((site) => site.status === 'unknown').length
+      }
     });
   }
 
@@ -287,7 +302,7 @@ export function buildLandscape(filters: LandscapeFilters): Landscape {
     .filter((row) => row.active + row.inactive + row.unknown > 0);
 
   const thirdCounts = new Map<string, number>();
-  for (const site of sites) {
+  for (const site of kept) {
     if (isOfficial(site) || !isSchoolSite(site)) continue;
     thirdCounts.set(site.schools[0], (thirdCounts.get(site.schools[0]) ?? 0) + 1);
   }
