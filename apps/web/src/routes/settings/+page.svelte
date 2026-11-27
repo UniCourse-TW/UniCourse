@@ -59,6 +59,7 @@
     const target = event.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
     if (target.name in current) current = { ...current, [target.name]: target.value };
     savedVisible = false;
+    savedFlash = false;
   }
 
   const length = (text: string) => [...text].length;

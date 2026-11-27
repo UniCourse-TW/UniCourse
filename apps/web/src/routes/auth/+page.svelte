@@ -495,7 +495,7 @@
           </div>
           <!-- The optional field is a text disclosure (no frame: a frame reads as a drop zone or an empty chip). -->
           <details class="optional" open={Boolean(form && 'displayName' in form && form.displayName) || errorAt === 'displayName'}>
-            <summary><span class="chev" aria-hidden="true"></span><span class="optional-label">顯示名稱（選填，公開）</span></summary>
+            <summary><span class="chev" aria-hidden="true"></span><span class="optional-label">顯示名稱（選填）</span><span class="optional-public">會公開</span></summary>
             <div class="cm-field">
               <div class="cm-label near"><label for="displayName">顯示名稱</label><span class="cm-hint">公開在個人頁、評價與文章；未填則以帳號署名，最多 50 字，之後可改</span></div>
               <input id="displayName" class="cm-input" name="displayName" maxlength="50" autocomplete="nickname" placeholder="例如 小蔡"
@@ -733,6 +733,7 @@
   /* The marker leads the label, like the site's other disclosures. */
   .optional .chev::before { content: '▸'; color: var(--brand-ink); }
   .optional[open] .chev::before { content: '▾'; }
+  .optional-public { padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
   .optional summary:hover .optional-label { text-decoration: underline; text-underline-offset: 0.15em; }
   .optional summary::-webkit-details-marker { display: none; }
   .optional[open] summary .optional-label { color: var(--ink); }

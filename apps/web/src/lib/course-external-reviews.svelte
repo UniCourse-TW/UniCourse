@@ -678,7 +678,9 @@
     /* The other sites as one compact row of equal buttons (site name only; the query is in the link). */
     .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); }
     .links a { justify-content: center; max-inline-size: 100%; padding-inline: var(--space-2); text-align: center; }
-    .links .query, .links .site-in { display: none; }
+    .links .query { display: none; }
+    /* 「在」 stays in the accessible name; only its pixels go on phones. */
+    .links .site-in { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
     .strip .links { flex: 1 1 100%; }
     /* The post list comes before the per-year chart; the type chips and the two scope toggles stay on top. */
     .summary { display: contents; }
