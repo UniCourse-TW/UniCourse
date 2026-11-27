@@ -27,8 +27,8 @@
 </script>
 
 <!--
-  Category, course and author follow the title and excerpt. Tags sit at the end of the context row
-  on desktop and on their own line on phones. The stretched title link sits behind the other links.
+  Category, course, author and tags follow the title and excerpt. The stretched title link sits behind
+  the other links.
 -->
 <div class="post-list" class:dense class:with-context={showCourse}>
   <div class="cols" aria-hidden="true">
@@ -47,7 +47,7 @@
               {#if post.school && showCourse}
                 <a class="over ctx" href={forumHref({ school: post.school, courseCode: post.courseCode ?? undefined })}>
                   <!-- School, course and code are separate parts (each kept whole) with a visible divider. -->
-                  <span class="part">{schoolNames[post.school] ?? post.school}</span>{#if post.courseCode}<span class="part course"><span class="divider" aria-hidden="true">·</span>{courseTitle ?? post.courseCode}</span>{#if !showAuthor && courseTitle}{' '}<span class="part mono code">{post.courseCode}</span>{/if}{/if}
+                  <span class="part">{schoolNames[post.school] ?? post.school}</span>{#if post.courseCode}<span class="divider" aria-hidden="true">·</span><span class="part course">{courseTitle ?? post.courseCode}</span>{#if !showAuthor && courseTitle}<span class="part mono code">{post.courseCode}</span>{/if}{/if}
                 </a>
               {/if}
             </p>
@@ -125,13 +125,14 @@
   }
   .kicker .cm-type { font-size: 0.8125rem; }
   .kicker .part { overflow-wrap: anywhere; }
-  .kicker .divider { margin-inline: 0.35em; color: var(--axis); }
-  .kicker .code { color: var(--muted); }
+  .kicker .divider { color: var(--muted); }
+  .kicker .code { color: var(--muted); font-size: 0.8125rem; }
   .kicker .course { font-weight: 600; }
   .kicker .cm-type[data-type='article'] { color: var(--brand-ink); background: var(--brand-wash); }
   /* Every secondary link in a row (course, author) has the same cue: ink text with a thin muted underline;
      the brand colour is kept for the title, the row's main link. Tags are the only chips. */
-  .ctx { color: var(--ink-2) !important; text-decoration: none; }
+  .ctx { display: inline-flex; flex-wrap: wrap; gap: 0 0.35em; color: var(--ink-2) !important; text-decoration: none; }
+  .with-context .author { font-size: var(--t-base); }
   /* The underline sits under the words only, never under the divider between school and course. */
   .ctx .part, .author { text-decoration: underline; text-decoration-color: var(--axis); text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
   .ctx:hover { color: var(--brand-ink) !important; }
@@ -140,7 +141,7 @@
   .post-list:not(.with-context) .author::before { content: '@'; }
   .tags { display: flex; flex: 1 1 0; flex-wrap: nowrap; gap: 0 var(--space-2); min-inline-size: 0; overflow: hidden; white-space: nowrap; }
   .tag { flex: none; padding: 0 6px; border-radius: var(--radius-pill); background: var(--chip); color: var(--ink-2) !important; font-size: 0.8125rem; line-height: 1.6; text-decoration: none; }
-  .with-context .tags { flex: 0 1 auto; flex-wrap: wrap; overflow: visible; margin-inline-start: auto; }
+  .with-context .tags { flex: 0 1 auto; flex-wrap: wrap; overflow: visible; }
   .with-context .tag { flex: 0 1 auto; white-space: normal; overflow-wrap: anywhere; }
   .tag:hover { color: var(--brand-ink) !important; text-decoration: underline; }
   .tag-type { display: none; flex: none; font-size: 0.8125rem; }
@@ -160,7 +161,8 @@
   .stats .when { grid-column: 4; }
   dt { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   dd { margin: 0; color: var(--ink-2); font-size: var(--t-base); font-variant-numeric: tabular-nums; }
-  .when dd { color: var(--muted); }
+  .when dd { color: var(--ink-2); }
+  .with-context .cols { font-size: 0.8125rem; }
   /* Replies and score in one weight; only the sign carries colour (green up, red down, grey zero). */
   dd.cm-score { font-weight: 400; }
   dd.cm-score[data-sign='zero'] { color: var(--muted); }
@@ -188,15 +190,25 @@
     dt { position: static; inline-size: auto; block-size: auto; overflow: visible; clip: auto; color: var(--muted); font-size: var(--t-sm); }
     dd { font-size: var(--t-sm); }
     .when dt { display: none; }
-    .with-context .ctx, .with-context .tag { display: inline-block; padding-block: 0.25rem; }
-    .with-context .ctx { min-block-size: 1.625rem; }
-    .with-context .who { margin-block-start: 0 !important; }
+    .with-context article { padding-block: var(--space-2); }
+    .with-context .kicker { margin-block-start: 0 !important; flex-basis: auto; }
+    .with-context :is(.ctx, .tag) {
+      display: inline-flex;
+      align-items: center;
+      min-inline-size: var(--target-min);
+      min-block-size: var(--target-min);
+    }
+    .with-context .tag { justify-content: center; background: transparent; padding-inline: var(--space-1); }
+    .with-context .tag:hover { background: var(--chip); }
+    .with-context .who { order: 5; margin-block-start: 0 !important; max-inline-size: min(9em, 36%); }
     .with-context .who::after { content: none; }
-    .with-context .stats { flex: 0 0 auto; gap: var(--space-2); margin-inline-start: auto; white-space: nowrap; }
-    .with-context .stats .replies { margin-inline-start: 0; padding-inline-start: 0; }
+    .with-context .author { display: block; min-inline-size: var(--target-min); line-height: var(--target-min); }
+    .with-context .kicker .code { display: none; }
+    .with-context .stats { order: 6; flex: 1 0 auto; gap: var(--space-2); margin: 0; align-items: baseline; white-space: nowrap; }
+    .with-context :is(dt, dd) { font-size: 0.8125rem; }
+    .with-context .stats .replies { margin-inline-start: 0; }
     .with-context .stats .score::before { content: none; }
-    .with-context .tags { flex-basis: 100%; margin-block-start: var(--space-1) !important; }
-    .with-context .tag { padding-inline: var(--space-2); }
-
+    .with-context .tags { order: 3; flex: 0 1 auto; margin-block-start: 0 !important; gap: 0 var(--space-1); }
+    .with-context article::after { content: ''; order: 4; flex-basis: 100%; }
   }
 </style>
