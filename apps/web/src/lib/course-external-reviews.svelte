@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ExternalReview, ExternalReviews } from '@unicourse/api-client';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { slashDate } from '$lib/community-format';
   import {
     displayAuthor,
@@ -179,6 +179,13 @@
     kind = '';
   }
 
+  export async function jumpToTeacher() {
+    if (!activeFilters || mineCount === 0) return;
+    clearFilters();
+    await tick();
+    document.getElementById('external-mine')?.scrollIntoView();
+  }
+
   function teacherLabel(name: string) {
     return own.has(name) ? `${name}（本班）` : name;
   }
@@ -201,16 +208,17 @@
        list grows in small batches. -->
   <ol class="list" class:collapsible={!ready && items.length > preview} aria-label={labelledby ? undefined : '外部文章'} aria-labelledby={labelledby}>
     {#each ready ? items.slice(0, limit) : items as row, index (row.key)}
+      {@const title = Array.from(row.post.title.trimEnd())}
       <li class:extra={index >= preview} class:mine={row.mine}>
         <article>
           <h3 class="title" title={row.post.title}>
-            <a href={row.post.url} target="_blank" rel="noopener noreferrer nofollow">{row.post.title}<span class="out" aria-hidden="true">↗</span><span class="sr-only">（開啟 {row.post.sourceLabel} 原文）</span></a>
+            <a href={row.post.url} target="_blank" rel="noopener noreferrer nofollow">{title.slice(0, -2).join('')}<span class="title-end">{title.slice(-2).join('')}<span class="out" aria-hidden="true">↗</span></span><span class="sr-only">（開啟 {row.post.sourceLabel} 原文）</span></a>
             <!-- Phones show the push count on the title line, so the meta line has room and the excerpt gets two lines. -->
-            {#if row.post.pushScore}<span class="push title-push num" class:down={row.post.pushScore < 0} aria-hidden="true">推 {pushLabel(row.post.pushScore)}</span>{/if}
+            {#if row.post.pushScore}<span class="push title-push num" class:down={row.post.pushScore < 0}>推 {pushLabel(row.post.pushScore)}</span>{/if}
           </h3>
           <!-- Every post says whose class it is about: this class's teacher, another named teacher, or no teacher in the title. -->
           <p class="meta">
-            {#if row.mine}<span class="badge-mine">本班教師</span>
+            {#if row.mine}<span class="badge-mine">{grouped ? postKindLabels[row.kind] : '本班教師'}</span>
             {:else if row.teachers.length}{#if !grouped}<span class="scope-tag">其他教師</span>{/if}<span class="post-teacher">{row.teachers.join('、')}</span>
             {:else}<span class="scope-tag unknown" title="標題沒有寫教師，無法判斷是哪一班">未標教師</span>{/if}
             {#if row.post.isDemo}<Badge label="示範資料" tone="demo" />{/if}
@@ -376,7 +384,7 @@
             aria-controls="external-toolbar"
             disabled={!ready}
             onclick={() => (filtersOpen = !filtersOpen)}
-          >教師、學期與排序{#if activeFilters}<span class="active num">{activeFilters}</span>{/if}<span aria-hidden="true">{filtersOpen ? ' ▴' : ' ▾'}</span></button>
+          ><span class="filter-label">{filtersOpen || !(teacher || term) ? '教師、學期與排序' : `${teacher ? teacherLabel(teacher) : '全部教師'}・${term === noTerm ? '學期未標' : term || '全部學期'}`}</span>{#if activeFilters}<span class="active num">{activeFilters}</span>{/if}<span aria-hidden="true">{filtersOpen ? ' ▴' : ' ▾'}</span></button>
         </div>
 
         <div class="toolbar" class:open={filtersOpen} id="external-toolbar" role="group" aria-label="篩選與排序外部文章">
@@ -601,7 +609,7 @@
 
   .list { display: grid; padding: 0; list-style: none; border-block-start: 1px solid var(--line); }
   .list.collapsible:not(:has(+ .more[open])) li.extra { display: none; }
-  .list li { border-block-end: 1px solid var(--line); }
+  .list li { border-block-end: 1px solid color-mix(in srgb, var(--control-line) 55%, var(--line)); }
   .list li.mine { box-shadow: inset 3px 0 0 var(--brand); }
   article { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 4rem; gap: 2px var(--space-3); padding: var(--space-2) var(--space-2) var(--space-3) var(--space-3); }
   article > :not(.side-push) { grid-column: 1; }
@@ -609,6 +617,7 @@
   .list li:hover { background: var(--hover-row); }
   .title { color: inherit; font-size: var(--t-md); font-weight: 650; line-height: 1.45; overflow-wrap: anywhere; }
   .title a { text-decoration: none; }
+  .title-end { white-space: nowrap; }
   .title a::after { content: ''; position: absolute; inset: 0; }
   .title a:hover { text-decoration: underline; }
   .title a:focus-visible { outline: none; }
@@ -663,7 +672,10 @@
     .posts > .toolbar { order: 0; }
     /* The page's jump chips already stick under the header, so the list bar stays in flow. */
     .list-bar { padding-block: var(--space-1); }
+    .list-bar { flex-wrap: wrap; }
     .list-bar .status { flex: 1 1 8rem; }
+    .list-bar .filter-toggle { max-inline-size: 100%; }
+    .filter-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .list-bar:has(.filter-toggle[aria-expanded='true']) { position: static; }
     .meta :is(.author, .board, .title-only) { display: none; }
     .meta { gap: 0 var(--space-2); }

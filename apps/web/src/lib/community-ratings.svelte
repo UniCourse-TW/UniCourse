@@ -1,7 +1,7 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { page } from '$app/state';
-  import { authorName, averageScore, shortDate } from '$lib/community-format';
+  import { authorName, averageScore, slashDate } from '$lib/community-format';
   import Stars from '$lib/community-stars.svelte';
   import { loginHref, profileHref } from '$lib/community-paths';
   import type { CommunityUser, MyRating, Rating, RatingStats } from '$lib/community-types';
@@ -67,7 +67,7 @@
         <p id="forum-title">還沒有同學在 UniCourse 評價或討論這門課<span class="counts">（0 則評價・0 篇討論）</span></p>
         <div class="first-buttons">
           {#if !user}<a class="cta-button" href={loginHref(`${page.url.pathname}#ratings`)}>登入後評分</a>{:else if !ratings.mine}<a class="cta-button" href="#rate-form">給這門課評分 ↓</a>{/if}
-          <a class="cta-button" href={firstDiscussionHref}>發表第一篇文章</a>
+          <a class="cta-link" href={firstDiscussionHref}>發表第一篇文章</a>
         </div>
       </div>
     {:else}
@@ -114,7 +114,7 @@
             <p class="who">
               <a href={profileHref(rating.username)}>{authorName(rating)}</a>
               <Stars score={rating.score} />
-              <time class="when num" datetime={rating.updatedAt}>{shortDate(rating.updatedAt)}</time>
+              <time class="when num" datetime={rating.updatedAt}>{slashDate(rating.updatedAt)}</time>
             </p>
             {#if rating.review}<p class="text">{rating.review}</p>{/if}
           </li>
@@ -188,8 +188,9 @@
   .first-actions > p { scroll-margin-block-start: 7.5rem; grid-column: 1; color: var(--ink-2); font-size: var(--t-base); }
   .first-actions .counts { color: var(--muted); }
   .first-buttons { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-wrap: wrap; gap: var(--space-2); }
-  .cta-button { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-base); font-weight: 650; text-decoration: none; white-space: nowrap; }
-  .cta-button:hover { background: var(--hover-row); }
+  .cta-button { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--brand); border-radius: var(--radius-control); background: var(--brand); color: var(--on-brand) !important; font-size: var(--t-base); font-weight: 650; text-decoration: none; white-space: nowrap; }
+  .cta-button:hover { filter: brightness(1.08); }
+  .cta-link { display: inline-flex; align-items: center; justify-content: center; min-block-size: var(--target-min); padding-inline: var(--space-2); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; text-underline-offset: 0.15em; }
   .ratings :is(h2, p) { margin: 0; }
   .ratings a { color: var(--brand-ink); text-underline-offset: 0.15em; }
   .ratings :is(a, button, input, textarea, summary):focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); }

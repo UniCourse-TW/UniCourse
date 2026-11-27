@@ -22,7 +22,7 @@
      resets it by hand from a private report; what to send, what never to send, how long it takes, and what
      to do without a GitHub account. No contact address is invented here. -->
 <details class="reset-help" class:quiet class:start={align === 'start'} {id} bind:open>
-  <summary>{#if note}<span class="note">{note}</span>{/if}<span class="label">{summary}</span><span class="chev" aria-hidden="true"></span></summary>
+  <summary>{#if note}<span class="note">{note}</span>{/if}<span class="action"><span class="label">{summary}</span><span class="chev" aria-hidden="true"></span></span></summary>
   <div class="body">
     <!-- The answer first (who resets it, how long), then the steps; what to write is a list of its own. -->
     <p class="lead">沒有 email 自動重設：維護者手動處理，通常七天內回覆。</p>
@@ -48,6 +48,7 @@
   summary::-webkit-details-marker { display: none; }
   summary:hover .label { text-decoration: underline; text-underline-offset: 0.15em; }
   summary:focus-visible { outline: var(--focus-ring); outline-offset: var(--focus-offset); border-radius: var(--radius-control); }
+  .action { display: inline-flex; gap: var(--space-1); align-items: center; white-space: nowrap; }
   .chev::before { content: '▾'; color: var(--muted); }
   details[open] .chev::before { content: '▴'; }
   .quiet summary { color: var(--ink-2); }
