@@ -196,14 +196,14 @@
   .num, .mono { font-variant-numeric: tabular-nums; }
   .mono { font-family: var(--font-mono); font-size: 0.95em; }
   h2 { font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); }
-  .scope { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: var(--t-sm); overflow-wrap: anywhere; }
+  .scope { margin-block-start: var(--space-1) !important; color: var(--muted); font-size: 0.8125rem; overflow-wrap: anywhere; }
 
   .summary { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-5); align-items: center; max-inline-size: 34rem; }
   .average { display: grid; justify-items: start; gap: 0.125rem; }
   .average strong { font-size: 2.25rem; font-weight: 650; line-height: 1.05; }
-  .average .count { color: var(--muted); font-size: var(--t-sm); }
+  .average .count { color: var(--muted); font-size: 0.8125rem; }
   .histogram { display: grid; gap: 0.3rem; margin: 0; }
-  .bar-row { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr); gap: var(--space-2); align-items: center; font-size: var(--t-sm); }
+  .bar-row { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr); gap: var(--space-2); align-items: center; font-size: 0.8125rem; }
   .bar-row dt { color: var(--muted); }
   .bar-row dd { display: grid; grid-template-columns: minmax(0, 1fr) 2.25rem; gap: var(--space-2); align-items: center; margin: 0; }
   .bar { display: block; block-size: 10px; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
@@ -216,15 +216,17 @@
   .first { display: grid; gap: var(--space-1); color: var(--ink-2); font-size: var(--t-base); }
   .first .lead { color: var(--ink); font-size: var(--t-lg); font-weight: 650; }
   .first .cta { font-weight: 650; }
-  .sparse-note { margin-block-start: calc(-1 * var(--space-2)) !important; padding: var(--space-2) var(--space-3); border-inline-start: 3px solid var(--warn); background: var(--warn-wash); color: var(--ink); font-size: var(--t-sm); }
+  .sparse-note { margin-block-start: calc(-1 * var(--space-2)) !important; padding: var(--space-2) var(--space-3); border-inline-start: 3px solid var(--warn); background: var(--warn-wash); color: var(--ink); font-size: 0.8125rem; }
   .sparse-note a { margin-inline-start: var(--space-1); font-weight: 650; }
 
   .list { display: grid; margin: 0; padding: 0; list-style: none; border-block-start: 1px solid var(--line); }
   .list li { padding-block: var(--space-3); border-block-end: 1px solid var(--line); }
   .list.collapsible:not(:has(+ .more[open])) li.extra { display: none; }
+  /* A 44 px tall target that does not change the line height. */
+  .who a { padding-block: 0.75rem; margin-block: -0.75rem; }
   .who { display: flex; flex-wrap: wrap; gap: 0.125rem var(--space-3); align-items: baseline; font-size: var(--t-base); }
   .who a { font-weight: 650; overflow-wrap: anywhere; }
-  .when { margin-inline-start: auto; color: var(--muted); font-size: var(--t-sm); }
+  .when { margin-inline-start: auto; color: var(--muted); font-size: 0.8125rem; }
   .text { margin-block-start: var(--space-1) !important; color: var(--ink-2); font-size: var(--t-base); white-space: pre-wrap; overflow-wrap: anywhere; }
   .more summary { display: flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
   .more summary::-webkit-details-marker, .mine summary::-webkit-details-marker { display: none; }
@@ -240,21 +242,21 @@
   .mine summary:hover .edit { text-decoration: underline; text-underline-offset: 0.15em; }
   .rate { display: grid; gap: var(--space-3); padding: var(--space-1) var(--space-3) var(--space-3); }
   fieldset { min-inline-size: 0; margin: 0; padding: 0; border: 0; }
-  legend { padding: 0; color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; }
+  legend { padding: 0; color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
   .scores { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-1); margin-block-start: var(--space-1); }
   .score { position: relative; }
   .score input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
   .score > span { display: grid; place-items: center; gap: 0; min-block-size: 3rem; padding-block: 0.25rem; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); line-height: 1.2; }
   .score b { font-size: var(--t-base); font-weight: 650; }
-  .score i { color: var(--warn); font-size: 0.625rem; font-style: normal; letter-spacing: 0.02em; }
+  .score i { color: var(--warn); font-size: 0.8125rem; font-style: normal; letter-spacing: 0.02em; }
   .score input:hover + span { background: var(--hover-row); }
   .score input:checked + span { border-color: var(--brand); background: var(--brand); color: var(--on-brand); }
   .score input:checked + span i { color: var(--on-brand); }
   .score input:focus-visible + span { outline: var(--focus-ring); outline-offset: var(--focus-offset); }
-  .review { display: grid; gap: var(--space-1); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; }
+  .review { display: grid; gap: var(--space-1); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
   textarea { inline-size: 100%; min-block-size: 5.5rem; padding: 0.5rem 0.75rem; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--bg); color: var(--ink); font: 400 1rem / 1.6 var(--font-sans); resize: vertical; }
   textarea::placeholder { color: var(--muted); }
-  .hint { margin-block-start: calc(-1 * var(--space-2)) !important; color: var(--muted); font-size: var(--t-sm); text-align: end; }
+  .hint { margin-block-start: calc(-1 * var(--space-2)) !important; color: var(--muted); font-size: 0.8125rem; text-align: end; }
   .actions { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: center; }
   button { min-block-size: var(--target-min); font: inherit; font-size: var(--t-base); font-weight: 650; cursor: pointer; touch-action: manipulation; }
   .primary { padding: 0 var(--space-5); border: 1px solid var(--brand); border-radius: var(--radius-control); background: var(--brand); color: var(--on-brand); }

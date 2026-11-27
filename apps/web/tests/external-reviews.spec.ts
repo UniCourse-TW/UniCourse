@@ -14,6 +14,10 @@ test('course page lists external reviews from the demo index and outbound search
   // External reviews have a section shortcut alongside ratings and site discussions.
   const sections = page.getByRole('navigation', { name: '本頁段落' });
   await expect(sections.getByRole('link', { name: /外站討論/ })).toHaveAttribute('href', '#external-reviews');
+  // The chips start with the history and mark the section in view (one sticky row on phones).
+  await expect(sections.getByRole('link').first()).toHaveText('歷年開課');
+  await page.locator('#history').evaluate((node) => node.scrollIntoView({ block: 'start' }));
+  await expect(sections.getByRole('link', { name: '歷年開課' })).toHaveAttribute('aria-current', 'location');
 
   const section = page.locator('#external-reviews');
   await expect(section.getByRole('heading', { name: /外站討論（PTT）/ })).toContainText('1 篇');

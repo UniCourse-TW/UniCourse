@@ -117,10 +117,14 @@
   // Filters work after hydration; without JavaScript the default order and「顯示全部」still do.
   let ready = $state(false);
   onMount(() => {
-    if (window.matchMedia('(max-width: 40rem)').matches) initialPosts = 5;
+    if (window.matchMedia('(max-width: 40rem)').matches) {
+      initialPosts = 5;
+      yearsOpen = false;
+    }
     ready = true;
   });
   let filtersOpen = $state(false);
+  let yearsOpen = $state(true);
   let teacher = $state<string>('');
   /** Only posts naming this offering's teachers (`mine`), or only everyone else's (`others`). */
   let scope = $state<'' | 'mine' | 'others'>('');
@@ -159,7 +163,7 @@
   let mineLine = $derived.by(() => {
     const names = instructors.join('、');
     if (mineReviews === mineRows.length) return `本班教師 ${names} 的心得評價`;
-    if (mineReviews === 0) return `本班教師 ${names}・還沒有心得評價`;
+    if (mineReviews === 0) return `本班教師 ${names}：0 篇心得、${mineRows.length} 篇提問或討論`;
     return `本班教師 ${names} 的文章`;
   });
 
@@ -187,7 +191,7 @@
 </script>
 
 {#snippet linkText(link: { label: string; query: string | undefined })}
-  <span class="site">在 <b>{link.label}</b> 搜尋</span>{#if link.query}<span class="query">「{link.query}」</span>{/if}<span class="out" aria-hidden="true">↗</span><span class="sr-only">（開啟外部網站）</span>
+  <span class="site"><span class="site-in">在&nbsp;</span><b>{link.label}</b>&nbsp;搜尋</span>{#if link.query}<span class="query">「{link.query}」</span>{/if}<span class="out" aria-hidden="true">↗</span><span class="sr-only">（開啟外部網站）</span>
 {/snippet}
 
 {#snippet postList(items: Row[], labelledby: string | undefined, listId: string)}
@@ -204,12 +208,14 @@
             <!-- Phones show the push count on the title line, so the meta line has room and the excerpt gets two lines. -->
             {#if row.post.pushScore}<span class="push title-push num" class:down={row.post.pushScore < 0} aria-hidden="true">推 {pushLabel(row.post.pushScore)}</span>{/if}
           </h3>
+          <!-- Every post says whose class it is about: this class's teacher, another named teacher, or no teacher in the title. -->
           <p class="meta">
-            {#if row.mine}<span class="badge-mine">本班教師</span>{/if}
+            {#if row.mine}<span class="badge-mine">本班教師</span>
+            {:else if row.teachers.length}{#if !grouped}<span class="scope-tag">其他教師</span>{/if}<span class="post-teacher">{row.teachers.join('、')}</span>
+            {:else}<span class="scope-tag unknown" title="標題沒有寫教師，無法判斷是哪一班">未標教師</span>{/if}
             {#if row.post.isDemo}<Badge label="示範資料" tone="demo" />{/if}
             {#if row.post.postedAt}<time class="num" datetime={row.post.postedAt}>{slashDate(row.post.postedAt)}</time>{/if}
             {#if row.post.term}<span class="mono">{row.post.term}</span>{/if}
-            {#if row.teachers.length && !row.mine}<span class="post-teacher">{row.teachers.join('、')}</span>{/if}
             {#if boards.length > 1}<span class="board">{row.post.board}</span>{/if}
             {#if row.author}<span class="author">{row.author}</span>{/if}
             {#if !row.parts.length}
@@ -331,7 +337,7 @@
                 >
                   <span class="name">{entry.name}{#if entry.mine}<span class="here">本班</span>{/if}</span>
                   <span class="bar" aria-hidden="true"><span style:width={`${percentage}%`}></span></span>
-                  <span class="num n">{entry.count} 篇・{Math.round(percentage)}%</span>
+                  <span class="num n" title={`佔 ${Math.round(percentage)}%`}><b>{entry.count}</b> 篇</span>
                 </button>
               </li>
             {/each}
@@ -344,23 +350,6 @@
           {#if untagged}<p class="note">另有 {untagged} 篇標題沒有寫教師。</p>{/if}
         </div>
 
-        {#if perYear.length > 1}
-          <figure class="block years">
-            <figcaption>每年發文數（篇）{#if peakYear}<span class="cap-range num">最多 {peakYear.count} 篇（{peakYear.year}）</span>{/if}</figcaption>
-            <div class="columns" role="img" aria-label={`每年發文數：${perYear.map((entry) => `${entry.year} 年 ${entry.count} 篇`).join('、')}`}>
-              {#each perYear as entry (entry.year)}
-                <!-- A year without indexed posts says 0 on the baseline, so it is not read as missing data. -->
-                <span class="column" class:zero={!entry.count} title={`${entry.year} 年 ${entry.count} 篇`}>
-                  {#if entry.count}
-                    <span class="value num" style:inset-block-end={`${(entry.count / yearMax) * 100}%`}>{entry.count}</span>
-                    <span class="fill" style:height={`${(entry.count / yearMax) * 100}%`}></span>
-                  {:else}<span class="value num">0</span>{/if}
-                </span>
-              {/each}
-            </div>
-            <div class="axis num" aria-hidden="true">{#each perYear as entry, index (entry.year)}<span>{shortYear(entry.year, index)}</span>{/each}</div>
-          </figure>
-        {/if}
       </aside>
 
       <div class="posts">
@@ -416,11 +405,33 @@
           </div>
         </div>
 
+        {#if perYear.length > 1}
+          <!-- Posts per year: a short strip above the list on wide screens; phones fold it after the list. -->
+          <details class="years-box" bind:open={yearsOpen}>
+            <summary>每年發文數 <span class="cap-range num">{perYear[0].year}–{perYear.at(-1)?.year}・最多 {peakYear?.count} 篇</span></summary>
+            <figure class="years">
+              <figcaption>每年發文數（篇）{#if peakYear}<span class="cap-range num">最多 {peakYear.count} 篇（{peakYear.year}）</span>{/if}</figcaption>
+              <div class="columns" role="img" aria-label={`每年發文數：${perYear.map((entry) => `${entry.year} 年 ${entry.count} 篇`).join('、')}`}>
+                {#each perYear as entry (entry.year)}
+                  <!-- A year without indexed posts says 0 on the baseline, so it is not read as missing data. -->
+                  <span class="column" class:zero={!entry.count} title={`${entry.year} 年 ${entry.count} 篇`}>
+                    {#if entry.count}
+                      <span class="value num" style:inset-block-end={`${(entry.count / yearMax) * 100}%`}>{entry.count}</span>
+                      <span class="fill" style:height={`max(3px, ${(entry.count / yearMax) * 100}%)`}></span>
+                    {:else}<span class="value num">0</span>{/if}
+                  </span>
+                {/each}
+              </div>
+              <div class="axis num" aria-hidden="true">{#each perYear as entry, index (entry.year)}<span>{shortYear(entry.year, index)}</span>{/each}</div>
+            </figure>
+          </details>
+        {/if}
+
         {#if grouped}
           <!-- This offering's teacher gets a box of its own, so a lone question is never read as the top review. -->
           <div class="mine-box" class:empty={mineReviews === 0}>
             <h3 class="group-head" id="external-mine">{mineLine}</h3>
-            {#if mineReviews === 0}<p class="mine-empty">只找到 {mineRows.length} 篇提問或討論（如下）。再往下是其他教師開同一門課的文章，內容不一定適用本班。</p>{/if}
+            {#if mineReviews === 0}<p class="mine-empty">以下其他教師的文章，不一定適用本班。</p>{/if}
             {@render postList(mineRows, 'external-mine', 'mine')}
           </div>
           <h3 class="group-head others" id="external-others">其他教師與標題沒寫教師・心得評價在前</h3>
@@ -444,7 +455,7 @@
   .num { font-variant-numeric: tabular-nums; }
   .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
   h2 { font-size: var(--t-xl); font-weight: 650; line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); }
-  h3 { font-size: var(--t-sm); font-weight: 650; color: var(--ink-2); }
+  h3 { font-size: 0.8125rem; font-weight: 650; color: var(--ink-2); }
   button { font: inherit; cursor: pointer; touch-action: manipulation; }
   button:disabled { cursor: default; }
 
@@ -458,7 +469,7 @@
   .strip-lead b { font-weight: 650; }
   .links { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: 0; list-style: none; }
   /* Labels may wrap inside their own box (the site name never breaks), so a long one cannot spill out. */
-  .links a { display: inline-flex; flex-wrap: wrap; gap: 0 0.25em; align-items: center; min-block-size: var(--target-min); padding: var(--space-1) var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: var(--t-sm); font-weight: 500; line-height: 1.35; text-decoration: none; overflow-wrap: anywhere; }
+  .links a { display: inline-flex; flex-wrap: wrap; gap: 0 0.25em; align-items: center; min-block-size: var(--target-min); padding: var(--space-1) var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink) !important; font-size: 0.8125rem; font-weight: 500; line-height: 1.35; text-decoration: none; overflow-wrap: anywhere; }
   .links li { min-inline-size: 0; }
   .links .site { min-inline-size: 0; }
   .links .site b { font-weight: 650; }
@@ -476,7 +487,7 @@
   .teacher-select { display: none !important; }
   .head-count { margin-inline-start: var(--space-2); color: var(--muted); font-size: var(--t-md); font-weight: 600; }
   .dek { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: baseline; color: var(--ink-2); font-size: 0.8125rem; overflow-wrap: anywhere; }
-  .how summary { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: 1.75rem; color: var(--ink-2); font-weight: 600; list-style: none; cursor: pointer; }
+  .how summary { display: inline-flex; gap: 0.25em; align-items: center; min-block-size: var(--target-min); color: var(--ink-2); font-weight: 600; list-style: none; cursor: pointer; }
   .how summary::-webkit-details-marker { display: none; }
   .how summary:hover { color: var(--brand-ink); }
   .how ul { padding: 0; list-style: none; }
@@ -491,7 +502,7 @@
   .layout > .summary { position: sticky; inset-block-start: 4.75rem; }
   .summary { display: grid; gap: var(--space-4); min-inline-size: 0; }
   .figures { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-2); }
-  .figure { display: grid; align-content: start; justify-items: start; gap: 0.125rem; min-inline-size: 0; padding: var(--space-2) var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--brand) 5%, var(--panel-raised)); color: var(--muted); font-size: var(--t-sm); text-align: start; }
+  .figure { display: grid; align-content: start; justify-items: start; gap: 0.125rem; min-inline-size: 0; padding: var(--space-2) var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); border-radius: var(--radius-control); background: color-mix(in srgb, var(--brand) 5%, var(--panel-raised)); color: var(--ink-2); font-size: 0.8125rem; text-align: start; }
   .fig-value { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: baseline; }
   .figure:not(:disabled):hover { border-color: var(--brand); background: var(--hover-row); }
   .figure[aria-pressed='true'] { border-color: var(--brand); background: var(--brand-wash); box-shadow: inset 3px 0 0 var(--brand); }
@@ -499,60 +510,69 @@
   .fig-label { color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
   .figure b { color: var(--ink); font-size: var(--t-xl); font-weight: 650; }
   .fig-unit { margin-inline-start: 0.25em; }
-  .fig-act { color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; }
+  .fig-act { color: var(--brand-ink); font-size: 0.8125rem; font-weight: 600; }
   .col-head { color: var(--ink); font-size: var(--t-base); font-weight: 650; }
-  .title-push { display: none; margin-inline-start: var(--space-2); font-size: var(--t-sm); white-space: nowrap; }
+  .title-push { display: none; margin-inline-start: var(--space-2); font-size: 0.8125rem; white-space: nowrap; }
   .block { display: grid; gap: var(--space-2); }
   .teachers { display: grid; gap: 3px; padding: 0; list-style: none; }
   .teachers.collapsible:not(:has(+ .more-teachers[open])) li.extra { display: none; }
   /* Each teacher is a visible button row: outlined, hover tint, and a brand bar on the left when chosen. */
-  .teacher { display: grid; grid-template-columns: minmax(0, 7rem) minmax(0, 1fr) max-content; gap: var(--space-2); align-items: center; inline-size: 100%; min-block-size: 2.25rem; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font-size: 0.8125rem; text-align: start; }
+  .teacher { display: grid; grid-template-columns: minmax(0, 7rem) minmax(0, 1fr) 3.25rem; gap: var(--space-2); align-items: center; inline-size: 100%; min-block-size: 2.25rem; padding: 0 var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font-size: 0.8125rem; text-align: start; }
   .teacher:not(:disabled):hover { border-color: var(--control-line); background: var(--hover-row); }
   .teacher[aria-pressed='true'] { border-color: var(--brand); background: var(--brand-wash); box-shadow: inset 3px 0 0 var(--brand); }
   .teacher:disabled { background: transparent; }
   .by-teacher .hint { color: var(--muted); font-size: 0.8125rem; font-weight: 500; }
   .teacher:disabled { color: var(--ink-2); }
   .teacher .name { display: inline-flex; gap: var(--space-1); align-items: center; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .here, .badge-mine { flex: none; padding: 0 6px; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-size: var(--t-xs); font-weight: 650; line-height: 1.6; }
+  .here, .badge-mine, .scope-tag { flex: none; padding: 0 6px; border-radius: var(--radius-pill); background: var(--brand-wash); color: var(--brand-ink); font-size: 0.8125rem; font-weight: 650; line-height: 1.6; }
+  .scope-tag { background: var(--chip); color: var(--ink-2); font-weight: 600; }
+  .scope-tag.unknown { background: none; box-shadow: inset 0 0 0 1px var(--control-line); }
   .teacher .bar { display: block; block-size: 8px; border-radius: var(--radius-pill); background: var(--chip); overflow: hidden; }
   .teacher .bar span { display: block; min-inline-size: 4px; block-size: 100%; border-radius: inherit; background: color-mix(in srgb, var(--brand) 60%, var(--panel)); }
   .teacher.mine .bar span, .teacher[aria-pressed='true'] .bar span { background: var(--brand); }
-  .teacher .n { color: var(--ink-2); text-align: end; white-space: nowrap; }
-  .more-teachers summary, .more summary { display: flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; list-style: none; cursor: pointer; }
+  .teacher .n { color: var(--ink-2); font-size: var(--t-base); text-align: end; white-space: nowrap; }
+  .teacher .n b { color: var(--ink); font-size: var(--t-md); font-weight: 650; }
+  .more-teachers summary, .more summary { display: flex; align-items: center; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
   .more-teachers summary::-webkit-details-marker, .more summary::-webkit-details-marker { display: none; }
   :is(.more-teachers, .more)[open] .closed, :is(.more-teachers, .more):not([open]) .opened { display: none; }
-  .note { color: var(--muted); font-size: var(--t-sm); }
+  .note { color: var(--ink-2); font-size: 0.8125rem; }
 
-  .years figcaption { color: var(--ink-2); font-size: 0.8125rem; font-weight: 650; }
-  .columns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; align-items: end; block-size: 4.5rem; padding-block-start: 1rem; border-block-end: 1px solid var(--control-line); }
+  /* Wide screens: the per-year strip sits open above the list (its summary hidden), 64 px of bars. */
+  .years-box > summary { display: none; }
+  .years-box { padding-block-end: var(--space-2); border-block-end: 1px solid var(--line); }
+  .years { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0 var(--space-4); align-items: end; }
+  .years > .columns, .years > .axis { grid-column: 2; }
+  .years figcaption { grid-row: 1 / span 2; align-self: center; display: grid; color: var(--ink-2); font-size: 0.8125rem; font-weight: 650; }
+  .columns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; align-items: end; block-size: 4rem; padding-block-start: 1rem; border-block-end: 1px solid var(--control-line); }
   .column { position: relative; display: flex; flex-direction: column; justify-content: end; align-items: stretch; block-size: 100%; }
   .column .fill { display: block; min-block-size: 2px; border-radius: 2px 2px 0 0; background: color-mix(in srgb, var(--brand) 70%, var(--panel)); }
   .column .value { position: absolute; inset-inline: 0; color: var(--ink); font-size: 0.8125rem; font-weight: 600; line-height: 1rem; text-align: center; }
   .column.zero .value { inset-block-end: 2px; color: var(--muted); font-weight: 500; }
-  .axis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin-block-start: 2px; color: var(--muted); font-size: var(--t-sm); text-align: center; white-space: nowrap; }
+  .axis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 3px; margin-block-start: 2px; color: var(--ink-2); font-size: var(--t-sm); text-align: center; white-space: nowrap; }
   .axis span:first-child { text-align: start; }
   .axis span:last-child { text-align: end; }
-  .cap-range { margin-inline-start: var(--space-1); color: var(--muted); font-weight: 500; }
+  .cap-range { margin-inline-start: var(--space-1); color: var(--ink-2); font-weight: 500; }
 
   .posts { display: grid; gap: var(--space-2); min-inline-size: 0; }
   .posts > .toolbar { order: -1; }
+  .posts > .years-box { order: -1; }
   .posts > .col-head { order: -2; }
   .toolbar { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: end; justify-content: space-between; }
   .kinds { display: flex; flex-wrap: wrap; gap: var(--space-1); }
   .summary > .kinds { margin-block-start: calc(-1 * var(--space-2)); }
-  .chip { display: inline-flex; gap: 0.35em; align-items: center; min-block-size: 2.25rem; padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; }
-  .chip .num { color: var(--muted); font-weight: 500; }
+  .chip { display: inline-flex; gap: 0.35em; align-items: center; min-block-size: 2.25rem; padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-pill); background: var(--panel-raised); color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
+  .chip .num { color: var(--ink-2); font-weight: 500; }
   .chip:not(:disabled):hover { background: var(--hover-row); }
   .chip[aria-pressed='true'] { border-color: var(--brand); background: var(--brand); color: var(--on-brand); }
   .chip[aria-pressed='true'] .num { color: var(--on-brand); }
   .selects { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-  .selects label { display: grid; gap: 2px; color: var(--ink-2); font-size: var(--t-sm); font-weight: 600; }
-  select { min-block-size: 2.25rem; max-inline-size: 13rem; padding: 0 var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font: 500 var(--t-sm) / 1.2 var(--font-sans); }
+  .selects label { display: grid; gap: 2px; color: var(--ink-2); font-size: 0.8125rem; font-weight: 600; }
+  select { min-block-size: 2.25rem; max-inline-size: 13rem; padding: 0 var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font: 500 0.8125rem / 1.2 var(--font-sans); }
   .list-bar { display: flex; gap: var(--space-2); align-items: center; justify-content: space-between; }
   .status { min-block-size: 1.5rem; color: var(--ink-2); font-size: 0.8125rem; }
-  .filter-toggle { display: none; flex: none; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font-size: var(--t-sm); font-weight: 600; }
+  .filter-toggle { display: none; flex: none; gap: var(--space-1); align-items: center; min-block-size: var(--target-min); padding: 0 var(--space-3); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font-size: 0.8125rem; font-weight: 600; }
   .filter-toggle[aria-expanded='true'] { border-color: var(--brand); }
-  .filter-toggle .active { display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 4px; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); }
+  .filter-toggle .active { display: inline-grid; place-items: center; min-inline-size: 1.25rem; block-size: 1.25rem; padding: 0 4px; border-radius: var(--radius-pill); background: var(--brand); color: var(--on-brand); font-size: 0.8125rem; }
   .group-head { color: var(--ink-2); font-size: 0.8125rem; font-weight: 650; }
   .group-head.others { margin-block-start: var(--space-3); }
   .mine-box { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px solid color-mix(in srgb, var(--brand) 35%, var(--line)); border-radius: var(--radius-panel); background: color-mix(in srgb, var(--brand) 5%, var(--panel-raised)); }
@@ -560,7 +580,7 @@
   .mine-empty { color: var(--ink-2); font-size: 0.8125rem; }
   .mine-box .list { border-block-start: 1px solid var(--line); }
   .mine-box .list li:last-child { border-block-end: 0; }
-  .grow { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: center; justify-content: center; color: var(--muted); font-size: var(--t-sm); }
+  .grow { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); align-items: center; justify-content: center; color: var(--ink-2); font-size: 0.8125rem; }
   .grow-btn { min-block-size: var(--target-min); padding: 0 var(--space-4); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; }
   .grow-btn:hover { background: var(--hover-row); }
   .grow .clear { min-block-size: var(--target-min); margin: 0; }
@@ -568,7 +588,7 @@
   /* Another teacher's post names that teacher in ink, so the list can be scanned by teacher. */
   .meta .post-teacher { color: var(--ink); font-weight: 600; }
   .status b { color: var(--ink); }
-  .clear { margin-inline-start: var(--space-2); padding: 0; border: 0; background: none; color: var(--brand-ink); font-size: var(--t-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
+  .clear { margin-inline-start: var(--space-2); padding: 0 var(--space-1); min-block-size: var(--target-min); border: 0; background: none; color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
   .none { padding: var(--space-4) 0; color: var(--ink-2); }
 
   .list { display: grid; padding: 0; list-style: none; border-block-start: 1px solid var(--line); }
@@ -585,13 +605,13 @@
   .title a:hover { text-decoration: underline; }
   .title a:focus-visible { outline: none; }
   article:has(a:focus-visible) { outline: var(--focus-ring); outline-offset: -2px; border-radius: var(--radius-control); }
-  .out { margin-inline-start: 0.25em; color: var(--muted); font-size: 0.85em; font-weight: 500; }
+  .out { margin-inline-start: 0.25em; color: var(--ink-2); font-weight: 500; }
   .meta { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; color: var(--ink-2); font-size: var(--t-base); }
-  .meta .author { color: var(--muted); }
+  .meta .author { color: var(--ink-2); }
   .push { color: var(--up); font-weight: 650; }
   .push.down { color: var(--down); }
   .excerpt { display: -webkit-box; color: var(--ink-2); font-size: var(--t-base); line-height: 1.6; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; }
-  .excerpt .label { margin-inline-end: 0.35em; padding: 0 4px; border-radius: 3px; background: var(--chip); color: var(--muted); font-size: var(--t-xs); font-weight: 650; }
+  .excerpt .label { margin-inline-end: 0.35em; padding: 0 4px; border-radius: 3px; background: var(--chip); color: var(--ink-2); font-size: 0.8125rem; font-weight: 650; }
   .excerpt .sep { color: var(--muted); }
   .more { border-block-start: 0; }
   .more summary { justify-content: center; font-size: var(--t-base); }
@@ -618,8 +638,20 @@
     .figure { min-block-size: var(--target-min); }
     .figure b { font-size: var(--t-lg); }
     .columns { block-size: 3.5rem; }
+    /* Phones: the per-year chart folds after the list behind a named summary. */
+    .posts > .years-box { order: 3; }
+    .elsewhere .links { flex: 1 1 100%; }
+    .years-box { padding-block: 0; border-block: 1px solid var(--line); }
+    .years-box > summary { display: flex; gap: var(--space-2); align-items: center; justify-content: space-between; min-block-size: var(--target-min); color: var(--brand-ink); font-size: var(--t-base); font-weight: 600; list-style: none; cursor: pointer; }
+    .years-box > summary::-webkit-details-marker { display: none; }
+    .years-box > summary::after { content: '▾'; }
+    .years-box[open] > summary::after { content: '▴'; }
+    .years-box > summary .cap-range { margin-inline-end: auto; font-size: 0.8125rem; }
+    .years { display: block; padding-block-end: var(--space-2); }
+    .years figcaption { display: none; }
     .posts > .toolbar { order: 0; }
-    .list-bar { position: sticky; inset-block-start: var(--external-header-height, calc(3.75rem + 1px)); z-index: 3; padding-block: var(--space-1); background: var(--panel); }
+    /* The page's jump chips already stick under the header, so the list bar stays in flow. */
+    .list-bar { padding-block: var(--space-1); }
     .list-bar .status { flex: 1 1 8rem; }
     .list-bar:has(.filter-toggle[aria-expanded='true']) { position: static; }
     .meta :is(.author, .board, .title-only) { display: none; }
@@ -643,11 +675,15 @@
     select { inline-size: 100%; max-inline-size: none; min-block-size: var(--target-min); }
     .chip { min-block-size: var(--target-min); }
     .teacher { min-block-size: var(--target-min); }
-    .links a { max-inline-size: 100%; padding-inline: var(--space-2); }
+    /* The other sites as one compact row of equal buttons (site name only; the query is in the link). */
+    .links { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); }
+    .links a { justify-content: center; max-inline-size: 100%; padding-inline: var(--space-2); text-align: center; }
     .links .query { display: none; }
+    /* 「在」 stays in the accessible name; only its pixels go on phones. */
+    .links .site-in { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .strip .links { flex: 1 1 100%; }
     /* The post list comes before the per-year chart; the type chips and the two scope toggles stay on top. */
     .summary { display: contents; }
-    .summary > .years { order: 2; }
     .layout { display: flex; flex-direction: column; align-items: stretch; }
     .posts { order: 1; }
     .figures { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }

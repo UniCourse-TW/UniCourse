@@ -198,10 +198,17 @@ test('registers, rates a course, posts a linked question, replies, votes and log
 
 test('rejects a wrong password inline and keeps next on the same origin', async ({ page }) => {
   await page.goto('/auth?next=//evil.example/');
+  // Wait for hydration (the password toggle is rendered by JavaScript), so the sign-in is the enhanced one.
+  await expect(page.getByRole('button', { name: '顯示密碼' })).toBeVisible();
   await page.getByLabel('帳號').fill('nobody_here');
   await page.getByLabel('密碼').fill('wrong password');
   await page.getByRole('button', { name: '登入' }).click();
   await expect(page.getByRole('alert')).toContainText('帳號或密碼錯誤');
+  // Focus lands on the error summary, which offers both fields to fix (which half was wrong is unknown).
+  const summary = page.locator('#auth-error');
+  await expect(summary).toBeFocused();
+  await summary.getByRole('link', { name: '修改帳號' }).click();
+  await expect(page.getByLabel('帳號')).toBeFocused();
   await expect(page.locator('input[name="next"]')).toHaveValue('/');
   // Password help is folded under the form; 「忘記密碼？」 beside the field opens it in place (no e-mail
   // reset, what to send, no GitHub alternative).
@@ -241,13 +248,14 @@ test('saves a profile while the phone preview is open', async ({ page }) => {
   const bio = page.getByLabel('自我介紹', { exact: true });
   await bio.fill('這是草稿。');
   const preview = page.locator('.preview-fold summary');
-  await expect(preview).toContainText('預覽變更後的個人頁');
+  await expect(preview).toContainText('編輯預覽');
+  await expect(preview).toContainText('編輯中，尚未公開');
   await preview.click();
   await expect(page.locator('.preview-fold .bio')).toHaveText('這是草稿。');
   await save.click();
 
   await expect(page.getByRole('status')).toContainText('已儲存，個人頁已更新');
-  await expect(preview).toContainText('已儲存的版本');
+  await expect(preview).toContainText('公開版本');
   await bio.fill('這次還沒儲存。');
   await expect(page.getByRole('status')).toContainText('有 1 項變更尚未儲存');
 });

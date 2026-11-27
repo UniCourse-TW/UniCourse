@@ -18,7 +18,9 @@ export const load: PageServerLoad = async ({ fetch, locals, url }) => {
   const signedIn = locals.user ? { username: locals.user.username, displayName: locals.user.displayName } : null;
   // The signed-in card shows what the account has done so far (counts only; the profile has the list).
   const activity = signedIn ? await activityOf(fetch, signedIn.username) : null;
-  return { mode, next, prefill, signedIn, activity } as const;
+  // Back here after「登出」(?out=1): the form confirms it, once, while nobody is signed in.
+  const signedOut = !signedIn && url.searchParams.get('out') === '1';
+  return { mode, next, prefill, signedIn, activity, signedOut } as const;
 };
 
 /** Up to two names close to `taken` that no account uses yet (a profile lookup answers 404). */
