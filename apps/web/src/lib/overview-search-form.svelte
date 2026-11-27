@@ -19,6 +19,16 @@
   let advancedCount = $derived(Number(Boolean(filters?.department && !selectedSchool)) + Number(Boolean(filters && filters.sort !== 'relevance')));
   let loading = $derived(navigating.to?.url.pathname === '/' && navigating.to.url.searchParams.has('term'));
 
+  let keyword = $state<HTMLInputElement>();
+  let ready = $state(false);
+  $effect(() => { ready = true; });
+
+  function clearKeyword() {
+    if (!keyword) return;
+    keyword.value = '';
+    keyword.focus();
+  }
+
   function changeFilter(event: Event) {
     const select = event.currentTarget as HTMLSelectElement;
     if (!filters || !select.form) return;
@@ -67,19 +77,21 @@
 {/snippet}
 
   <form id="course-search" action="/" method="GET" role="search" aria-label="課程搜尋" class:result-filters={filters && !empty} class:has-department={filters && selectedSchool && !empty} class:empty class:compact>
-    <label class="keyword">
-      <span class="keyword-label">關鍵字</span>
-      <span class="search-input">
+    <div class="keyword">
+      <label for="course-keyword" class="keyword-label">關鍵字</label>
+      <div class="search-input" class:has-clear={empty && ready && filters?.query}>
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.75" /><path d="m15 15 4 4" /></svg>
         {#key filters?.query ?? ''}
-          <input id="course-keyword" name="q" type="search" defaultValue={filters?.query ?? ''} maxlength="100" placeholder="課名、教師或課號" />
+          <input id="course-keyword" name="q" type="search" bind:this={keyword} defaultValue={filters?.query ?? ''} maxlength="100" placeholder="課名、教師或課號" />
         {/key}
-      </span>
-    </label>
+        {#if empty && ready && filters?.query}<button type="button" class="clear-keyword" aria-label="清空關鍵字" onclick={clearKeyword}>×</button>{/if}
+      </div>
+    </div>
     {#if !empty}{@render schoolField()}{@render termField()}{/if}
     <button type="submit" aria-busy={loading}>{loading ? '搜尋中…' : empty ? '重新搜尋' : '搜尋'}</button>
     {#if filters && empty}
       <input type="hidden" name="sort" value={filters.sort} />
+      {#if filters.group}<input type="hidden" name="group" value={filters.group} />{/if}
       <div class="empty-scope">{@render schoolField()}{@render termField()}</div>
       {#if filters.department}{@render departmentField(filters.department)}{/if}
     {:else if filters}
@@ -109,7 +121,11 @@
   label { min-width: 0; display: grid; gap: var(--space-1); color: var(--ink-2); font-size: var(--t-sm); font-weight: 680; }
   input, select, button { width: 100%; min-height: var(--target-min); padding: 0 var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font: var(--t-base) / var(--leading-table) var(--font-sans); }
   input::placeholder { color: var(--muted); }
+  .keyword { min-width: 0; display: grid; gap: var(--space-1); }
   .search-input { position: relative; }
+  .search-input.has-clear input { padding-inline-end: var(--target-min); }
+  .search-input.has-clear input::-webkit-search-cancel-button { display: none; }
+  .clear-keyword { position: absolute; inset: 0 0 0 auto; width: var(--target-min); padding: 0; background: transparent; color: var(--ink-2); font-size: var(--t-xl); }
   .search-input svg { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
   .search-input input { padding-inline: 2.35rem var(--space-2); font-size: 1rem; }
   button { padding-inline: var(--space-4); border-color: transparent; background: var(--brand); color: var(--on-brand); font-weight: 650; cursor: pointer; }
@@ -132,8 +148,8 @@
     .compact { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: stretch; }
     .compact > .keyword { grid-column: 1 / 3; }
     .compact > button { grid-area: 1 / 3; padding-inline: var(--space-2); }
-    .compact > label:nth-of-type(2) { grid-column: 1; }
-    .compact > label:nth-of-type(3) { grid-column: 2 / 4; }
+    .compact > label:has(select[name='school']) { grid-column: 1; }
+    .compact > label:has(select[name='term']) { grid-column: 2 / 4; }
     .compact .keyword-label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
     .compact > label:not(.keyword) { display: flex; align-items: center; gap: .3rem; padding-inline-start: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); }
     .compact > label:not(.keyword) span { flex: none; }

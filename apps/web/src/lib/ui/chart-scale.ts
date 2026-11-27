@@ -25,8 +25,12 @@ export function linePath(points: readonly PlotPoint[]): string {
 }
 
 export function zeroBasedScale(values: readonly number[], intervals = 4) {
-  let rawMin = 0;
-  let rawMax = 0;
+  return chartScale(values, intervals, true);
+}
+
+export function chartScale(values: readonly number[], intervals = 4, includeZero = false) {
+  let rawMin = includeZero ? 0 : values[0] ?? 0;
+  let rawMax = rawMin;
   for (const value of values) {
     rawMin = Math.min(rawMin, value);
     rawMax = Math.max(rawMax, value);

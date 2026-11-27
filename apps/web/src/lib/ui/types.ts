@@ -42,6 +42,7 @@ export interface MatrixPoint {
   enrolled: number | null;
   href?: string;
   destination?: string;
+  destinationTerm?: string;
   partial?: boolean;
 }
 

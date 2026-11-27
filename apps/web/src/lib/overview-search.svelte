@@ -4,7 +4,7 @@
   import type { Offering, School } from '@unicourse/api-client';
   import type { PageData } from '../routes/$types';
   import { credits, requirement } from './format';
-  import { departmentHref, instructorHref, overviewSearchHref, popularSearches, searchSorts } from './overview-paths';
+  import { departmentHref, instructorHref, overviewSearchHref, searchExamples, searchSorts } from './overview-paths';
   import OverviewSearchForm from './overview-search-form.svelte';
   import { scheduleLines } from './schedule';
   import { reportedCapacity } from './schools-offerings';
@@ -32,7 +32,7 @@
   let hasEnrollment = $derived(courses.some((course) => course.enrolled != null));
   let hasReportedCapacity = $derived(courses.some((course) => course.enrolled != null && reportedCapacity(course) != null));
   let hasUnreportedCapacity = $derived(courses.some((course) => course.enrolled != null && reportedCapacity(course) == null));
-  let groupMode = $derived(filters.group ?? (filters.sort === 'relevance' && !filters.school ? 'title' : 'none'));
+  let groupMode = $derived(filters.group ?? 'none');
   let groups = $derived.by(() => {
     const grouped = new Map<string, Offering[]>();
     for (const course of courses) {
@@ -45,10 +45,9 @@
     return groupMode === 'term' ? entries.sort(([left], [right]) => right.localeCompare(left, 'zh-TW', { numeric: true })) : entries;
   });
   let groupedCourses = $derived(groups.flatMap(([, rows]) => rows));
-  let groupLabels = $derived(new Map<string, string>(groups.flatMap(([key, rows], index): [string, string][] => {
+  let groupLabels = $derived(new Map<string, string>(groups.flatMap(([key, rows]): [string, string][] => {
     if (groupMode === 'term') return [[rows[0].id, `${key} 學期 · 本頁 ${rows.length} 班`]];
     if (groupMode === 'title' && rows.length > 1) return [[rows[0].id, `${key} · 本頁小計：${new Set(rows.map(({ school }) => school)).size} 校、${rows.length} 班`]];
-    if (groupMode === 'title' && groups[index - 1]?.[1].length > 1) return [[rows[0].id, '其他課程']];
     return [];
   })));
   let hasDemo = $derived(courses.some((course) => course.isDemo));
@@ -59,10 +58,11 @@
   let range = $derived(result && result.total ? `顯示 ${displayValue(result.offset + 1)}–${displayValue(result.offset + courses.length)} 筆 · 共 ${displayValue(result.total)} 筆` : '');
   let pending = $derived(navigating.to?.url.pathname === '/' && navigating.to.url.search !== page.url.search
     && (navigating.to.url.searchParams.has('q') || navigating.to.url.searchParams.has('term')));
-  let queryLabel = $derived(Array.from(filters.query).length > 24 ? `${Array.from(filters.query).slice(0, 24).join('')}…` : filters.query);
   let looksLikeCode = $derived(/^(?:[a-z]{1,10}\d{2,12}|\d{4,12})(?:-[a-z0-9]{1,4})?$/i.test(filters.query));
   let shorterCode = $derived(filters.query.match(/^([a-z]{1,10}\d{2,12}|\d{4,12})[-\s]+[a-z0-9]{1,4}$/i)?.[1]);
-  let browseSchools = $derived(schools.filter((school) => school.slug !== filters.school).slice(0, 9));
+  let browseSchools = $derived(search.browseSchools);
+  let shortQuery = $derived(!shorterCode && /^\p{Script=Han}{4,}$/u.test(filters.query) ? Array.from(filters.query).slice(0, 2).join('') : '');
+  let sortLabel = $derived(filters.sort === 'relevance' && !filters.query ? '學期新到舊' : searchSorts.find(({ value }) => value === filters.sort)?.label);
   let displayMenu = $state<HTMLDetailsElement>();
   const nycuPeriods: Readonly<Record<string, string>> = { y: '06:00–06:50', z: '07:00–07:50', n: '12:20–13:10', a: '18:30–19:20', b: '19:30–20:20', c: '20:30–21:20', d: '21:30–22:20' };
 
@@ -83,7 +83,7 @@
     { id: 'enrollment', label: '修課人數／名額', numeric: true, width: '12.5rem' }
   ];
   let available = $derived({
-    instructors: courses.some((course) => course.instructors.length || schedule(course)),
+    instructors: courses.some((course) => course.instructors.length || schedule(course).text !== '時地未公布'),
     credits: courses.some((course) => course.credits != null),
     requirement: courses.some((course) => requirement(course)),
     enrollment: courses.some((course) => course.enrolled != null || reportedCapacity(course) != null)
@@ -121,8 +121,7 @@
 </script>
 
 <header class="search-header">
-  <p class="eyebrow">UniCourse <span>／</span> 大學課程觀測站</p>
-  <h1>{queryLabel ? `搜尋「${queryLabel}」` : '搜尋課程'}</h1>
+  <h1>{filters.query ? `搜尋「${filters.query}」` : '搜尋課程'}</h1>
   <p class="dek">
     <span role="status">
       {#if pending}<strong>正在搜尋班次…</strong><span aria-hidden="true"> · </span>
@@ -136,27 +135,31 @@
 {#if !isEmpty}
 <section class="toolbar" aria-label="搜尋與篩選">
   <OverviewSearchForm {schools} {terms} {filters} {departments} externalSort={Boolean(result)} />
-  {#if hasFilters && !isEmpty}
+  {@render activeFilters()}
+</section>
+{/if}
+
+{#snippet activeFilters()}
+  {#if hasFilters}
     <div class="active-filters" role="group" aria-label="已套用的篩選">
       <span>已套用</span>
       {#if filters.school}<a class="active-chip" href={allSchools} aria-label={`移除篩選：${schoolName}`}>{schoolName} <span aria-hidden="true">×</span></a>{/if}
       {#if filters.term !== 'all'}<a class="active-chip" href={allTerms} aria-label={`移除篩選：${filters.term} 學期`}>{filters.term} 學期 <span aria-hidden="true">×</span></a>{/if}
       {#if filters.department}<FilterChip {url} name="department" label={filters.department} />{/if}
-      <a class="clear" href={relaxed}>清除篩選</a>
+      <a class="clear" href={relaxed}>{isEmpty && filters.query ? '保留關鍵字，清除篩選' : '清除篩選'}</a>
     </div>
   {/if}
-</section>
-{/if}
+{/snippet}
 
 {#snippet facets(kind: 'school' | 'term')}
-    {#if kind === 'school' && quickSchools.length > 1}
+    {#if kind === 'school'}
       <nav class="quick-filters" aria-label="依學校縮小範圍">
         {#each quickSchools as [school, count] (school)}
           <a class="quick-chip" href={overviewSearchHref({ ...filters, school, department: '' })}>{schools.find((item) => item.slug === school)?.name ?? school} <span class="ui-tabular">{displayValue(count)} 班</span></a>
         {/each}
       </nav>
     {/if}
-    {#if kind === 'term' && quickTerms.length > 1}
+    {#if kind === 'term'}
       <nav class="quick-filters" aria-label="依學期縮小範圍">
         {#each quickTerms as [term, count] (term)}
           <a class="quick-chip" href={overviewSearchHref({ ...filters, term })}>{term} <span class="ui-tabular">{displayValue(count)}</span></a>
@@ -199,8 +202,8 @@
   {@const enrolled = course.enrolled}
   {@const capacity = reportedCapacity(course)}
   <span class="enrollment ui-tabular">
-    {#if hasEnrollment}
-      <span class="meter" class:missing={enrolled == null} class:unknown={capacity == null} class:over={enrolled != null && capacity != null && enrolled > capacity} aria-hidden="true">
+    {#if hasReportedCapacity}
+      <span class="meter" class:missing={enrolled == null || capacity == null} class:over={enrolled != null && capacity != null && enrolled > capacity} aria-hidden="true">
         {#if enrolled != null}<i style:width={`${100 * enrolled / enrollmentMax}%`}></i>{/if}
         {#if enrolled != null && capacity != null}<span class="capacity-marker" style:left={`${100 * capacity / enrollmentMax}%`}></span>{/if}
       </span>
@@ -209,7 +212,7 @@
       <span class="measure" title={enrolled > capacity ? '修課人數超過校方公布名額；兩欄可能採不同口徑' : undefined}>
         <span class="sr-only">修課人數／名額：</span><span>{displayValue(enrolled)} / {displayValue(capacity)}</span>
       </span>
-    {:else if enrolled != null}<span class="measure">{displayValue(enrolled)} 人<small>名額未公布</small></span>
+    {:else if enrolled != null}<span class="measure"><span>{displayValue(enrolled)} / <span title="名額未公布"><span class="sr-only">名額未公布</span><span aria-hidden="true">—</span></span></span></span>
     {:else if capacity != null}<span class="measure muted">名額 {displayValue(capacity)}<small>人數未公布</small></span>
     {:else}<span class="measure muted" title="修課人數／名額未公布">{mobile ? '修課人數／名額未公布' : '—'}</span>{/if}
   </span>
@@ -228,33 +231,34 @@
       <h2>沒有符合的課程</h2>
       <p>{looksLikeCode || shorterCode ? '可核對課號，或改用較短的課名、教師全名。' : '試試較短的課名、課號或教師全名。'}</p>
       <OverviewSearchForm {schools} {terms} {filters} {departments} empty />
+      {@render activeFilters()}
       <div class="empty-actions">
         {#if shorterCode}<a class="text-action" href={overviewSearchHref({ ...filters, query: shorterCode })}>移除班別，查課號 {shorterCode}</a>{/if}
-        {#if hasFilters && (allTerms !== relaxed || filters.term === 'all')}<a class="button secondary" href={relaxed}>{filters.query ? '保留關鍵字，清除篩選' : '清除篩選'}</a>{/if}
+        {#if !hasFilters}<a class="text-action" href={shortQuery && !search.suggestions.length ? overviewSearchHref({ ...filters, query: shortQuery }) : '#course-keyword'}>{shortQuery && !search.suggestions.length ? `試搜「${shortQuery}」` : '改搜課號'}</a>{/if}
         {#if filters.term !== 'all'}<a class="text-action" href={allTerms}>查全部學期</a>{/if}
         {#if filters.school && allSchools !== relaxed}<a class="text-action" href={allSchools}>改搜所有學校</a>{/if}
       </div>
-      <nav class="empty-examples" aria-label="搜尋建議"><strong>{search.suggestions.length ? '相近的關鍵字' : '熱門搜尋'}</strong>
-        {#each search.suggestions.length ? search.suggestions : popularSearches as query (query)}<a class="button secondary" href={overviewSearchHref(search.suggestions.length ? { ...filters, query } : { query, term: 'all' })}>{search.suggestions.length ? `試搜「${query}」` : query}</a>{/each}
+      <nav class="empty-examples" aria-label="搜尋建議"><strong>{search.suggestions.length ? '相近的關鍵字' : '搜尋範例'}</strong>
+        {#each search.suggestions.length ? search.suggestions : searchExamples as query (query)}<a class="button secondary" href={overviewSearchHref(search.suggestions.length ? { ...filters, query } : { query, term: 'all' })}>{search.suggestions.length ? `試搜「${query}」` : query}</a>{/each}
       </nav>
       </div>
       <aside class="empty-browse" aria-label="依學校瀏覽">
-        <h3>從學校瀏覽</h3>
+        <h3><a href="/schools">看所有學校 <span aria-hidden="true">→</span></a></h3>
+        {#if browseSchools.length}<p>收錄至少四學期，依學期數及班次排序。</p>{/if}
         <ul>{#each browseSchools as school (school.slug)}<li><a href={`/schools/${encodeURIComponent(school.slug)}`}>{school.name}</a></li>{/each}</ul>
-        <a class="text-action" href="/schools">看所有學校 <span aria-hidden="true">→</span></a>
       </aside>
     </div>
   {:else}
     <div class="result-top">
       <p class="ui-tabular range">{range}</p>
+      <p class="sort-status">排序 · {sortLabel}{#if groupMode !== 'none'}（組內）{/if}</p>
       <details class="distribution" bind:this={displayMenu}><summary>結果顯示</summary>
         <div class="display-options">
       <label class="result-sort">排序 <select form="course-search" name="sort" onchange={(event) => event.currentTarget.form?.requestSubmit()}>
         {#each searchSorts as option (option.value)}<option value={option.value} selected={option.value === filters.sort}>{option.label}</option>{/each}
       </select></label>
       <label class="result-sort">本頁分組 <select form="course-search" name="group" onchange={(event) => event.currentTarget.form?.requestSubmit()}>
-        <option value="" selected={!filters.group}>自動</option>
-        <option value="none" selected={filters.group === 'none'}>不分組</option>
+        <option value="" selected={groupMode === 'none'}>不分組</option>
         <option value="title" selected={filters.group === 'title'}>依課名分組</option>
         <option value="term" selected={filters.group === 'term'}>依學期分組</option>
       </select></label>
@@ -263,12 +267,25 @@
       <a href="/#coverage">資料來源</a></div>
       </details>
     </div>
-    {#if quickFacet}<div class="result-context"><span>本頁{quickFacet === 'school' ? '學校' : '學期'}</span>{@render facets(quickFacet)}</div>{/if}
-    {#if hasEnrollment}<p class="meter-legend"><strong>修課人數／名額</strong>　條長＝人數（本頁等尺度）{#if hasReportedCapacity} · 刻線＝名額 · 橘＝超額{/if}{#if hasUnreportedCapacity} · 灰虛線＝名額未公布{/if}</p>{/if}
+    {#if totalPages > 1}<div class="top-pagination"><Pagination {url} page={search.page} {totalPages} label="班次分頁（結果前）" /></div>{/if}
+    {#if quickFacet}
+      <details class="result-context">
+        <summary>本頁{quickFacet === 'school' ? `學校 · ${quickSchools.length} 校` : `學期 · ${quickTerms.length} 期`}</summary>
+        <p>班數按本頁結果計算。點選後會篩選全部結果。</p>
+        {@render facets(quickFacet)}
+      </details>
+    {/if}
+    {#if hasEnrollment}<p class="meter-legend"><strong>修課人數／名額</strong>{#if hasReportedCapacity}　條長＝人數（本頁等尺度） · 刻線＝名額 · 橘＝超額{/if}{#if hasUnreportedCapacity} · —＝名額未公布{/if}</p>{/if}
     <div class="desktop-results">
       {#key `${href}|${result.offset}`}
       <DataTable caption="開課班次" {columns} {order} rows={groupedCourses} rowKey={(course) => course.id} groupLabel={(row) => groupLabels.get(row.id)}
         minWidth="52rem" maxHeight="none" scrollHint={false}>
+        {#snippet header(column, direction)}
+          {#if column.id === 'course' || column.id === 'enrollment'}
+            {@const sort = column.id === 'course' ? 'title' : 'enrolled'}
+            <a class="sort-link" href={overviewSearchHref({ ...filters, sort, group: undefined })}>{column.label} <span aria-hidden="true">{direction === 'descending' ? '↓' : direction === 'ascending' ? '↑' : '↕'}</span></a>
+          {:else}{column.label}{/if}
+        {/snippet}
         {#snippet cell(course, column)}
           {#if column.id === 'course'}
             <a class="title-line" href={courseHref(course)}>{@render title(course)}</a>
@@ -292,9 +309,13 @@
       {#key `${href}|${result.offset}`}
       {#each groups as [key, rows] (key)}
         {#if groupMode === 'title' && rows.length > 1}
-          <details class="course-group" open><summary>{key} <span class="group-count">本頁 {new Set(rows.map(({ school }) => school)).size} 校、{rows.length} 班</span><span class="group-expand">展開 {rows.length} 班</span></summary>
-            {#each rows as course (course.id)}{@render card(course)}{/each}
-          </details>
+          <section class="course-group" aria-label={key}>
+            <h2>{key} <span class="group-count">本頁 {new Set(rows.map(({ school }) => school)).size} 校、{rows.length} 班</span></h2>
+            {#each rows.slice(0, 3) as course (course.id)}{@render card(course, true)}{/each}
+            {#if rows.length > 3}<details><summary>顯示其餘 {rows.length - 3} 班</summary>
+              {#each rows.slice(3) as course (course.id)}{@render card(course, true)}{/each}
+            </details>{/if}
+          </section>
         {:else}
           {#if groupMode === 'term'}<p class="term-group">{groupLabels.get(rows[0].id)}</p>{/if}
           {#each rows as course (course.id)}{@render card(course)}{/each}
@@ -302,22 +323,33 @@
       {/each}
       {/key}
     </div>
-    {#snippet card(course: Offering)}
-        {@const meetingTime = schedule(course)}
-        <article>
-          <div class="card-heading">
-            <h2><a href={courseHref(course)}>{@render title(course)}</a></h2>
-          </div>
-          <div class="card-line school-line">
-            <strong>{course.schoolName}</strong>
-            {#if course.department}<span class="card-unit" title={course.department}>{@render unit(course)}</span>{/if}
-          </div>
-          <p class="schedule-text"><span>{@render teachers(course)}</span><span title={meetingTime.raw}>{meetingTime.text}</span></p>
-          <div class="card-bottom">
-            <div class="card-code"><span class="term">{course.term}</span>{@render code(course)}{#if course.credits != null}<span class="course-credits">{credits(course.credits)}</span>{/if}{#if requirement(course)}<span class="card-requirement">{@render category(course)}</span>{/if}</div>
-            {@render enrollment(course, true)}
-          </div>
-        </article>
+    {#snippet card(course: Offering, grouped = false)}
+      {@const meetingTime = schedule(course)}
+      <article>
+        <div class="card-heading">
+          <h2><a href={courseHref(course)} aria-label={grouped ? `${course.title} · ${course.schoolName} · ${course.courseCode}` : undefined}>
+            {#if grouped}{@render code(course)}{:else}{@render title(course)}{/if}
+          </a></h2>
+          {@render enrollment(course, true)}
+        </div>
+        <div class="card-line school-line">
+          <strong>{course.schoolName}</strong>
+          {#if course.department}<span class="card-unit" title={course.department}>{@render unit(course)}</span>{/if}
+        </div>
+        <div class="card-meta">
+          <span class="term">{course.term}</span>
+          {#if course.credits != null}<span>{credits(course.credits)}</span>{/if}
+          {#if requirement(course)}{@render category(course)}{/if}
+          {#if !grouped}{@render code(course)}{/if}
+          {#if grouped && course.isDemo}<Badge label="示範" tone="demo" />{/if}
+        </div>
+        {#if course.instructors.length || meetingTime.text !== '時地未公布'}
+          <p class="schedule-text">
+            {#if course.instructors.length}<span>{@render teachers(course)}</span>{/if}
+            {#if meetingTime.text !== '時地未公布'}<span title={meetingTime.raw}>{meetingTime.text}</span>{/if}
+          </p>
+        {/if}
+      </article>
     {/snippet}
     <div class="result-footer">
       {#if totalPages > 1}<p class="ui-tabular">{range}</p>{/if}
@@ -329,8 +361,6 @@
 
 <style>
   .search-header { overflow-wrap: anywhere; }
-  .eyebrow { margin: 0 0 var(--space-1); color: var(--muted); font-size: var(--t-sm); font-weight: 650; }
-  .eyebrow span { color: var(--brand-ink); }
   h1 { margin: 0; font-size: var(--t-3xl); line-height: var(--leading-tight); letter-spacing: var(--tracking-heading); overflow-wrap: anywhere; text-wrap: balance; }
   .dek { margin: var(--space-1) 0 0; color: var(--muted); font-size: var(--t-base); }
   .dek strong { color: var(--ink); }
@@ -345,7 +375,7 @@
   .distribution p { margin: 0 0 var(--space-2); }
   .display-options { display: grid; gap: var(--space-2); }
   .display-options p { margin: 0; }
-  .quick-filters { display: flex; min-width: 0; overflow-x: auto; align-items: center; gap: var(--space-1) var(--space-2); margin: 0; padding: 2px var(--space-4) 2px 2px; font-size: var(--t-sm); scrollbar-width: thin; mask-image: linear-gradient(to right, black calc(100% - 12px), transparent); }
+  .quick-filters { display: flex; flex-wrap: wrap; min-width: 0; align-items: center; gap: var(--space-1) var(--space-2); margin: 0; padding: 2px var(--space-4) 2px 2px; font-size: var(--t-sm); }
   .quick-filters .quick-chip { flex: none; border: 1px solid var(--line); }
   .quick-chip { max-width: 100%; background: var(--panel-raised); color: var(--ink-2); font-size: var(--t-sm); overflow-wrap: anywhere; text-decoration: none; }
   .quick-chip span { min-width: 1.4rem; border-radius: var(--radius-pill); background: var(--panel-raised); text-align: center; }
@@ -353,21 +383,24 @@
   .results { min-width: 0; margin-block-start: var(--space-2); }
   .result-top { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); align-items: center; margin-block-end: var(--space-1); }
   .distribution { margin-inline-start: auto; }
-  .result-context { display: flex; align-items: center; gap: 0 var(--space-2); margin-block-end: var(--space-2); color: var(--muted); font-size: var(--t-sm); }
-  .result-context > span { flex: none; font-weight: 650; }
+  .result-context { margin-block-end: var(--space-2); color: var(--muted); font-size: var(--t-sm); }
+  .result-context summary { width: fit-content; min-height: var(--target-min); align-content: center; cursor: pointer; color: var(--brand-ink); font-weight: 650; }
+  .result-context p { margin: 0 0 var(--space-1); }
+  .sort-status { margin: 0; color: var(--ink-2); font-size: var(--t-sm); }
+  .sort-link { display: inline-block; padding-block: var(--space-1); }
+  .top-pagination { margin-block: var(--space-2); }
+  .course-group h2 { margin: var(--space-2) 0; font-size: var(--t-base); }
+  .course-group { padding-block-end: var(--space-2); }
   .course-group summary { min-height: var(--target-min); align-content: center; color: var(--brand-ink); cursor: pointer; font-size: var(--t-base); font-weight: 650; }
   .group-count { display: inline-block; padding-inline: var(--space-2); border-radius: var(--radius-pill); background: var(--panel); color: var(--ink-2); font-size: var(--t-sm); }
-  .group-expand { display: inline-block; margin-inline-start: var(--space-1); font-size: var(--t-sm); }
-  .course-group[open] .group-expand { display: none; }
   .meter-legend { margin: 0 0 var(--space-2); color: var(--ink-2); font-size: var(--t-sm); }
   .course-group, .term-group { padding: 0 var(--space-3); margin: 0; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--table-head); }
-  .course-group[open] { padding-block-end: var(--space-2); }
   .course-group article + article { margin-block-start: var(--space-1); }
   .term-group { padding-block: var(--space-2); color: var(--ink-2); font-weight: 650; }
   .range { margin: 0; color: var(--muted); font-size: var(--t-sm); }
   .result-sort { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--muted); font-size: var(--t-sm); }
   .result-sort select { min-block-size: var(--target-min); min-inline-size: 0; max-inline-size: 8.25rem; padding-inline: var(--space-1); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--ink); font: inherit; }
-  .desktop-results { --table-pad-block: 0.2rem; }
+  .desktop-results { --table-group-bg: var(--brand-wash); --table-group-font-size: .8125rem; --table-pad-block: 0.2rem; }
   .desktop-results :global(table) { table-layout: fixed; overflow-wrap: anywhere; font-size: 0.875rem; }
   .desktop-results :global(td a:not(:hover, :focus-visible)) { text-decoration: none; }
   .title-line { display: inline-flex; flex-wrap: wrap; gap: 0 var(--space-1); align-items: center; min-width: 0; max-width: 100%; }
@@ -384,8 +417,6 @@
   .meter.missing { visibility: hidden; }
   .meter i { height: 100%; border-radius: inherit; background: var(--brand); }
   .meter.over i { background: var(--warn); }
-  .meter.unknown { height: 3px; background: transparent; }
-  .meter.unknown i { border-block-start: 2px dashed var(--control-line); border-radius: 0; background: transparent; }
   mark { background: var(--brand-wash); color: var(--brand-ink); border-radius: 2px; }
   .capacity-marker { position: absolute; inset-block: -2px; inline-size: 1px; background: var(--ink); }
   .sr-only { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
@@ -403,7 +434,7 @@
   .empty-examples strong { flex-basis: 100%; }
   .empty-browse { border-inline-start: 1px solid var(--line); padding-inline-start: var(--space-4); }
   .empty-browse h3 { margin: 0; font-size: var(--t-lg); }
-  .empty-browse ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 var(--space-2); list-style: none; padding: 0; margin: var(--space-2) 0 0; }
+  .empty-browse ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr)); gap: 0 var(--space-2); list-style: none; padding: 0; margin: var(--space-2) 0 0; }
   .empty-browse ul a { display: inline-flex; min-height: var(--target-min); align-items: center; font-size: var(--t-base); }
   .text-action { display: inline-flex; align-items: center; gap: var(--space-1); min-block-size: var(--target-min); }
   .button { display: inline-flex; align-items: center; justify-content: center; min-height: var(--target-min); padding-inline: var(--space-3); border: 1px solid transparent; border-radius: var(--radius-control); text-decoration: none; font: inherit; font-weight: 650; cursor: pointer; }
@@ -420,21 +451,19 @@
     .card-heading a { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-1); min-height: var(--target-min); }
     .term { flex: none; color: var(--ink-2); }
     .card-line { display: flex; align-items: baseline; gap: var(--space-2); color: var(--ink-2); }
-    .card-unit { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card-unit { min-width: 0; }
     .school-line strong { color: var(--ink); }
-    .card-requirement, .course-credits { color: var(--muted); font-size: var(--t-xs); }
-    .schedule-text { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); gap: var(--space-2); margin: var(--space-1) 0 0; color: var(--ink-2); font-size: var(--t-sm); }
-    .card-bottom { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .125rem var(--space-2); margin-block-start: var(--space-1); padding-block-start: .125rem; border-block-start: 1px solid var(--line); }
-    .card-code { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-1); font-size: var(--t-sm); }
-    .card-code .code { font-size: .8125rem; }
-    .card-code > span + span::before { content: '·'; margin-inline-end: var(--space-1); color: var(--muted); }
+    .schedule-text, .card-meta { display: flex; flex-wrap: wrap; gap: .125rem var(--space-2); margin: .125rem 0 0; color: var(--ink-2); font-size: var(--t-sm); }
+    .card-meta > :not(:global(.badge)) { padding-inline: .25rem; border-radius: var(--radius-pill); background: var(--chip); }
+    .card-heading .enrollment { display: grid; justify-items: end; gap: .125rem; }
+    .card-heading .meter { width: 3.5rem; }
+    .card-heading .measure { grid-row: 1; }
     .enrollment { margin-inline-start: auto; font-size: var(--t-sm); }
     .measure small { display: inline; margin-inline-start: var(--space-1); }
     .meter { flex-basis: 2.75rem; }
   }
   @media (max-width: 37rem) {
     h1 { font-size: var(--t-2xl); }
-    .eyebrow { display: none; }
     .toolbar { margin-block-start: var(--space-2); }
     .result-top { gap: 0 var(--space-2); }
     .active-filters { flex-wrap: nowrap; overflow-x: auto; padding: 2px; }

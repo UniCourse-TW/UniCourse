@@ -3,65 +3,68 @@
   import { partialTermLabel, partialTerms } from './ui/partial-terms';
 
   export function rankingTrendCaption(terms: string[], rows: CourseRanking[]) {
+    if (!terms.length) return '近期未公布修課人數。';
     const hasPartial = rows.some((course) => [...partialTerms(Object.entries(course.sectionsByTerm))].some((term) => terms.includes(term)));
-    return terms.length ? `圖表共用時間軸與人數尺度（自 0 起）；缺期斷線。少於 4 期，列出數值。${hasPartial ? '部分班次以空心點或文字標示。' : ''}` : '近期未公布修課人數。';
+    return `各列縱軸依本課最低、最高人數縮放。缺期斷線，差值與前次公布相比。${hasPartial ? '空心點與＊表示部分班次，該期不計差值。' : ''}`;
   }
 </script>
 
 <script lang="ts">
+  import { linePath, lineSegments } from './ui/chart-scale';
   import { displayValue } from './ui/format';
 
-  let { course, terms, max }: { course: CourseRanking; terms: string[]; max: number } = $props();
+  let { course, terms }: { course: CourseRanking; terms: string[] } = $props();
   let byTerm = $derived(new Map(course.trend.map(({ term, enrolled }) => [term, enrolled])));
-  let measured = $derived(terms.flatMap((term, index) => {
-    const value = byTerm.get(term);
-    return value == null ? [] : [{ term, value, index, x: 4 + 88 * index / Math.max(1, terms.length - 1), y: 28 - 24 * value / Math.max(1, max) }];
-  }));
-  let published = $derived(course.trend.filter(({ enrolled }) => enrolled != null).sort((left, right) => left.term.localeCompare(right.term)));
-  let latest = $derived(published.at(-1));
-  let previous = $derived(published.at(-2));
-  let delta = $derived(latest?.enrolled != null && previous?.enrolled != null ? latest.enrolled - previous.enrolled : null);
-  let outsideWindow = $derived(latest && !terms.includes(latest.term));
+  let samples = $derived(terms.map((term) => byTerm.get(term) ?? null));
+  let values = $derived(samples.filter((value): value is number => value !== null));
+  let low = $derived(Math.min(...values));
+  let high = $derived(Math.max(...values));
   let partial = $derived(partialTerms(Object.entries(course.sectionsByTerm)));
-  let breakdown = $derived(measured.map(({ term, value }) => `${term}：${displayValue(value)} 人${partial.has(term) ? `（${partialTermLabel}）` : ''}`).join('；'));
+  let points = $derived(samples.map((value, index) => value === null ? null : ({
+    term: terms[index], value,
+    x: terms.length < 2 ? 48 : 4 + 88 * index / (terms.length - 1),
+    y: low === high ? 16 : 26 - 20 * (value - low) / (high - low)
+  })));
+  let segments = $derived(lineSegments(points));
+  let latest = $derived(points.findLast((point) => point !== null));
+  let previous = $derived(points.slice(0, latest ? terms.indexOf(latest.term) : 0).findLast((point) => point !== null));
+  let delta = $derived(latest && previous && !partial.has(latest.term) && !partial.has(previous.term) ? latest.value - previous.value : null);
+  let breakdown = $derived(terms.map((term, index) => `${term}：${samples[index] === null ? '未公布' : `${displayValue(samples[index])} 人`}${partial.has(term) ? `（${partialTermLabel}）` : ''}`).join('；'));
+  let lastPublished = $derived(course.trend.filter(({ enrolled }) => enrolled != null).sort((left, right) => left.term.localeCompare(right.term)).at(-1));
 </script>
 
 <span class="trend">
-  {#if measured.length >= 4}<svg viewBox="0 0 96 32" role="img" aria-label={breakdown}>
-    <title>{breakdown}</title>
-    {#each measured as point, index (point.term)}
-      {@const previous = measured[index - 1]}
-      {#if previous && point.index - previous.index === 1}<path class="series" d={`M${previous.x} ${previous.y}L${point.x} ${point.y}`} vector-effect="non-scaling-stroke" />{/if}
-    {/each}
-    {#each measured as point (point.term)}<circle class:partial-point={partial.has(point.term)} cx={point.x} cy={point.y} r="2" />{/each}
-  </svg>{/if}
-  {#if measured.length > 0 && measured.length < 4}
-    <span class="history ui-tabular" title={breakdown}>
-      {#each measured as { term, value }, index (term)}{#if index > 0}<span aria-hidden="true">{' → '}</span>{/if}<span class="observation">{term} {displayValue(value)}{#if partial.has(term)}<abbr title={partialTermLabel}>＊</abbr>{/if}</span>{/each}
-    </span>
-  {/if}
-  <span class="latest ui-tabular" class:sparse={measured.length > 0 && measured.length < 4}>
-    {#if latest && latest.enrolled != null}
-      <span>最後公布 {latest.term}{#if measured.length === 0 || measured.length >= 4} · {displayValue(latest.enrolled)} 人{/if}</span>
-      {#if outsideWindow}<span>（近期未公布）</span>{/if}
-      {#if measured.length >= 4 && delta !== null && previous && !partial.has(latest.term) && !partial.has(previous.term)}<span title={`與前次公布 ${previous.term} 相比`}>較前次 {delta > 0 ? '+' : ''}{displayValue(delta)} 人</span>{/if}
-      {#if partial.has(latest.term)}<span class="partial-mark" title={partialTermLabel}>部分班次</span>{/if}
-    {:else}<span>近期未公布</span>{/if}
+  <svg viewBox="0 0 96 32" preserveAspectRatio="none" role={latest ? 'img' : undefined} aria-hidden={!latest || undefined} aria-label={latest ? breakdown : undefined}>
+    {#if latest}
+      <title>{breakdown}</title>
+      {#each segments as segment}
+        {#if segment.length > 1}<path class="series" d={linePath(segment)} vector-effect="non-scaling-stroke" />{/if}
+      {/each}
+      {#each points as point, index (terms[index])}
+        {#if point}<circle class:partial-point={partial.has(point.term)} cx={point.x} cy={point.y} r="2.4" />{/if}
+      {/each}
+    {:else}
+      <line x1="43" x2="53" y1="16" y2="16" class="empty-mark" />
+    {/if}
+  </svg>
+  <span class="trend-value ui-tabular">
+    {#if latest}
+      <strong>{displayValue(latest.value)} <small>人</small></strong>
+      <small title={delta !== null && previous ? `與前次公布 ${previous.term} 相比` : undefined}>{latest.term}{#if partial.has(latest.term)} <abbr title={partialTermLabel}>＊</abbr>{/if}{#if delta !== null}{' · '}{delta >= 0 ? '+' : ''}{displayValue(delta)}{/if}</small>
+    {:else}
+      <small title={lastPublished ? `最後公布 ${lastPublished.term} · ${displayValue(lastPublished.enrolled)} 人` : undefined}>近期未公布</small>
+    {/if}
   </span>
 </span>
 
 <style>
-  .trend { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; gap: .1rem; font-size: var(--t-sm); color: var(--ink-2); }
-  .latest { display: flex; flex-wrap: wrap; gap: 0 var(--space-1); color: var(--muted); }
-  .latest:empty { display: none; }
-  .history { overflow-wrap: normal; }
-  .observation { display: inline-block; white-space: nowrap; }
-  abbr { text-decoration: none; color: var(--warn); }
-  svg { display: block; inline-size: 96px; block-size: 32px; max-inline-size: 100%; }
-  path { fill: none; }
-  .series { stroke: var(--brand); stroke-width: 1.5; }
+  .trend { display: grid; grid-template-columns: var(--ranking-trend-width, 96px) minmax(0, 1fr); align-items: center; gap: .4rem; color: var(--ink); white-space: nowrap; }
+  .trend-value { display: grid; align-content: center; min-block-size: 2.125rem; line-height: 1.15; }
+  small { color: var(--ink-2); font-size: var(--t-sm); font-weight: 450; }
+  abbr { color: var(--warn); text-decoration: none; }
+  svg { display: block; width: 100%; height: 32px; }
+  .series, .empty-mark { fill: none; stroke: var(--brand); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .empty-mark { stroke: var(--control-line); }
   circle { fill: var(--brand); }
   .partial-point { fill: var(--panel-raised); stroke: var(--brand); stroke-width: 1.2; }
-  .partial-mark { color: var(--warn); white-space: nowrap; }
-  .sparse { font-size: var(--t-sm); }
 </style>

@@ -35,7 +35,9 @@ export const load: PageServerLoad = async ({ fetch, params, url }) => {
   const sort = searchSorts.find(({ value }) => value === url.searchParams.get('sort'))?.value ?? (query ? 'relevance' : 'enrolled');
   const classFilter = ['required', 'elective'].find((value) => value === url.searchParams.get('class_filter')) ?? '';
   const requestedPage = Number(url.searchParams.get('page'));
-  const pageSize = 50;
+  // Search returns up to 50 rows per request. Retain the full batch while a
+  // requirement is applied, so a small term is filtered in full.
+  const pageSize = classFilter ? 50 : 24;
   const safePage = Number.isSafeInteger(requestedPage) ? Math.max(1, requestedPage) : 1;
   let page = Math.min(safePage, Math.max(1, Math.ceil(total / pageSize)));
   const results = (pageNumber: number) => client.GET('/api/courses/search', {

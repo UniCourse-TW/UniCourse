@@ -4,18 +4,20 @@
 
   interface Props {
     label: string;
+    summary?: string;
+    minWidth?: string;
     columns: readonly TableColumn<Row>[];
     rows: readonly Row[];
     rowKey: (row: Row) => string | number;
     rowHref?: (row: Row) => string | undefined;
   }
 
-  let { label, columns, rows, rowKey, rowHref }: Props = $props();
+  let { label, summary = '查看數值表格', minWidth = '0', columns, rows, rowKey, rowHref }: Props = $props();
 </script>
 
 <details>
-  <summary>查看數值表格</summary>
-  <DataTable caption={`${label}：數值表格`} {columns} {rows} {rowKey} {rowHref} minWidth="0" maxHeight="none" scrollHint={false} />
+  <summary>{summary}</summary>
+  <DataTable caption={`${label}：數值表格`} {columns} {rows} {rowKey} {rowHref} {minWidth} maxHeight="none" scrollHint={minWidth !== '0'} />
 </details>
 
 <style>

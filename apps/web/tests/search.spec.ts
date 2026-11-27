@@ -7,14 +7,20 @@ test('searches Chinese titles, filters by school and opens the mobile details pa
   await page.getByRole('button', { name: '搜尋' }).click();
   // The overview page also lists demo courses named 資料結構 in the ranking, so wait for the search URL.
   await page.waitForURL(/[?&]q=/);
-  const grouped = page.locator('details.course-group').filter({ hasText: '本頁 2 校、2 班' });
-  await expect(grouped).toHaveAttribute('open', '');
   await expect(page.getByRole('link', { name: '資料結構' })).toHaveCount(2);
   await expect(page.getByText('共 2 班次')).toBeVisible();
   await expect(page.getByRole('article').first().getByText('修課人數／名額未公布')).toBeVisible();
-  await expect(grouped.getByRole('article')).toHaveCount(2);
+  await expect(page.getByRole('article')).toHaveCount(2);
+  await expect(page.getByText('排序 · 關聯性（最相關）')).toBeVisible();
+  await page.waitForLoadState('networkidle');
   await page.getByText('結果顯示', { exact: true }).click();
   await expect(page.getByRole('combobox', { name: '排序' })).toHaveValue('relevance');
+  await page.getByRole('combobox', { name: '本頁分組' }).selectOption('title');
+  await expect(page).toHaveURL(/[?&]group=title(?:&|$)/);
+  const grouped = page.getByRole('region', { name: '資料結構' });
+  await expect(grouped.getByText('本頁 2 校、2 班')).toBeVisible();
+  await expect(grouped.getByRole('article')).toHaveCount(2);
+  await page.getByText('本頁學校 · 2 校', { exact: true }).click();
   await expect(page.getByRole('navigation', { name: '依學校縮小範圍' }).getByRole('link', { name: '國立臺灣師範大學 1 班' })).toBeVisible();
   await page.waitForLoadState('networkidle');
 
@@ -140,6 +146,9 @@ test('keeps global filters on pagination redirects and offers applicable empty-s
   await expect(page.getByText(/0 班次.*所有學校.*全部學期/)).toBeVisible();
   await expect(results.getByText(/較短的課名/)).toBeVisible();
   await expect(results.getByRole('link', { name: '看所有學校' })).toBeVisible();
+  await results.getByRole('button', { name: '清空關鍵字' }).click();
+  await expect(results.getByRole('searchbox')).toHaveValue('');
+  await expect(results.getByRole('searchbox')).toBeFocused();
   await expect(page.getByRole('link', { name: '前往查課' })).not.toHaveAttribute('aria-current', 'location');
   await page.goto('/?q=zzzz&school=nthu&term=115-1');
   await expect(results.getByRole('link', { name: '保留關鍵字，清除篩選' })).toHaveAttribute('href', '/?q=zzzz&term=all');
@@ -148,7 +157,7 @@ test('keeps global filters on pagination redirects and offers applicable empty-s
   await expect(results.getByRole('link', { name: '改搜所有學校' })).toHaveAttribute('href', '/?q=zzzz&term=115-1');
   await page.goto('/?q=線性代數錯&term=all');
   await results.getByRole('link', { name: '試搜「線性代數」' }).click();
-  await expect(results.locator('details.course-group').filter({ hasText: '本頁 1 校、2 班' })).toHaveAttribute('open', '');
+  await expect(results.getByRole('article')).toHaveCount(2);
   await expect(results.getByRole('link', { name: /^線性代數/ })).toHaveCount(2);
 });
 

@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { safeNext } from '$lib/community-paths';
-import { coverage } from '$lib/institutions';
+import { coverage, hasImportedOfferings } from '$lib/institutions';
 import { overviewSearchHref, searchPageSize, searchSorts, type OverviewSearchFilters } from '$lib/overview-paths';
 import { catalog } from '$lib/server/catalog';
 import type { Actions, PageServerLoad } from './$types';
@@ -95,7 +95,9 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
   const chars = Array.from(query);
   const chunk = Math.max(2, Math.min(6, Math.floor(chars.length / 2)));
   const fragments = codePrefix ? [codePrefix] : looksLikeName ? [chars.slice(0, chunk).join('').trim(), chars.slice(-chunk).join('').trim()] : [];
-  const nearby = result?.data?.total === 0 ? await Promise.all([...new Set(fragments)].filter((fragment) => fragment.length >= 2).map((fragment) => client.GET('/api/courses/search', {
+  const empty = result?.data?.total === 0;
+  const directory = empty ? client.GET('/api/institutions').catch(() => null) : null;
+  const nearby = empty ? await Promise.all([...new Set(fragments)].filter((fragment) => fragment.length >= 2).map((fragment) => client.GET('/api/courses/search', {
     params: { query: { ...scope, q: fragment, sort: 'relevance' } }
   }).catch(() => null))) : [];
   const candidates = new Set(nearby.flatMap((response) => (response?.data?.courses ?? []).flatMap(({ title, titleEn, courseCode, instructors }) =>
@@ -104,12 +106,17 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     .filter(({ distance }) => distance <= (chars.length < 7 ? 1 : 2))
     .sort((left, right) => left.distance - right.distance).slice(0, 5).map(({ text }) => text);
 
+  const browseSchools = (await directory)?.data?.institutions
+    .filter((row) => row.slug !== school && hasImportedOfferings(row) && row.terms.length >= 4)
+    .sort((left, right) => right.terms.length - left.terms.length || right.offerings - left.offerings)
+    .slice(0, 4).map(({ slug, name }) => ({ slug, name })) ?? [];
+
   return {
     schools: schools?.data ?? [],
     terms: term !== 'all' && !options.includes(term) ? [term, ...options] : options,
     content: {
       kind: 'search' as const, filters, page, totalPages, result: result?.data ? { ...result.data, courses: result.data.courses.slice(0, searchPageSize) } : null,
-      suggestions,
+      suggestions, browseSchools,
       invalid: result?.response.status === 400,
       departments: departments?.data ?? [...new Set((result?.data?.courses ?? []).flatMap((course) => course.department ? [course.department] : []))].sort()
     }

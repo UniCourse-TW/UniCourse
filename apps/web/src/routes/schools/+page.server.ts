@@ -42,7 +42,6 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
     updatedAt: updatedAt ?? null,
     total: institutions.length,
     campusSources: campusSources.length,
-    notStarted: institutions.filter((school) => directoryStatus(school) === 'none').map(({ name }) => name),
     breadth: {
       longer: institutions.filter((school) => hasImportedOfferings(school) && school.terms.length > 3).length,
       recent: institutions.filter((school) => hasImportedOfferings(school) && school.terms.length <= 3).length
@@ -53,7 +52,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
       status,
       count: institutions.filter((institution) => directoryStatus(institution) === status).length
     })),
-    systems: systems.filter((system) => institutions.some((institution) => institution.system === system)),
+    systems: systems.map((system) => ({ system, count: institutions.filter((row) => row.system === system).length })).filter(({ count }) => count > 0),
     shown: shown.length,
     rows: sortInstitutions(shown, sort, direction).slice(start, start + pageSize)
   };
