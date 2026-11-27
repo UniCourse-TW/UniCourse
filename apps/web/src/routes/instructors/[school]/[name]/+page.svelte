@@ -22,7 +22,7 @@
   let instructor = $derived(data.instructor);
   let summary = $derived(instructor.summary);
   let base = $derived(instructorHref(instructor.school, instructor.name));
-  let filtered = $derived(Boolean(data.term || data.courseCode));
+  let filtered = $derived(Boolean(data.term || data.year || data.courseCode));
   let truncated = $derived(data.listed < summary.offerings);
   let enrollment = $derived(publishedEnrollment(data.trends));
   let rating = $derived(meanRating(data.summaryRatings));
@@ -38,6 +38,7 @@
     : data.courses);
   let ratedCourses = $state<HTMLDetailsElement>();
   const ratedCourseHref = (code: string) => `${base}?${new URLSearchParams({ course: code })}#offerings`;
+  const yearOfferingsHref = (course: string, year: string) => `${base}?${new URLSearchParams({ course, year })}#offerings`;
 </script>
 
 <svelte:head><title>{instructor.name} · {instructor.schoolName}｜UniCourse</title></svelte:head>
@@ -49,10 +50,9 @@
   <header class="browse-head" id="instructor-top" tabindex="-1">
     <div class="browse-stack">
       <h1>{instructor.name}</h1>
-      <p class="browse-dek"><span>{instructor.schoolName}課程資料</span>{#if span}<span>授課學期 {span}</span>{/if}
-        {#if data.updatedAt}<span>列表更新於 <time datetime={data.updatedAt} title={importedAt(data.updatedAt)}>{shortImportedAt(data.updatedAt)}</time>・臺北時間</span>{/if}</p>
       <div class="identity">
-        <p class="browse-note identity-note">同校同名教師合併顯示。</p>
+        <p class="browse-dek"><span>{instructor.schoolName}・同校同名教師合併顯示</span>{#if span}<span>{span} 授課</span>{/if}
+          {#if data.updatedAt}<span>更新於 <time datetime={data.updatedAt} title={importedAt(data.updatedAt)}>{shortImportedAt(data.updatedAt)}</time>・臺北時間</span>{/if}</p>
         {#if summary.departments.length}
           <details class="instructor-units">
             <summary>{displayValue(summary.departments.length)} 個開課單位</summary>
@@ -90,11 +90,11 @@
   <section class="browse-stack instructor-section history-section" aria-labelledby="history">
     <SectionHeader title="歷年授課" id="history" />
     {#if truncated}<p class="browse-note">各課程的學年統計僅計入最近 {displayValue(data.listed)} 班；下方可查看完整的各學期總數。</p>{/if}
-    <SchoolsTeachingHistory periods={data.matrix.periods} rows={data.matrix.rows} trends={data.trends} />
+    <SchoolsTeachingHistory periods={data.matrix.periods} rows={data.matrix.rows} trends={data.trends} {yearOfferingsHref} />
   </section>
 
   <section class="browse-stack instructor-section offering-section" aria-labelledby="offerings">
-    <SectionHeader title={`開課列表（${displayValue(data.listed)} 班）`} id="offerings" />
+    <SectionHeader title={data.year ? `${data.year} 學年開課列表（${displayValue(data.matched)} 班）` : `開課列表（${displayValue(data.listed)} 班）`} id="offerings" />
     {@render offeringFilters()}
     {#if data.ratedCourses.length > 1}
       <details class="rating-courses" id="rated-courses" bind:this={ratedCourses}>
@@ -133,7 +133,7 @@
 
 {#snippet offeringFilters()}
   <div class="instructor-filters">
-    <FilterBar action={`${base}#offerings`} label="開課列表篩選" clearHref={filtered || data.oldestFirst ? `${base}#offerings` : undefined}>
+    <FilterBar action={`${base}#offerings`} label="開課列表篩選" hidden={data.year ? { year: data.year } : undefined} clearHref={filtered || data.oldestFirst ? `${base}#offerings` : undefined}>
       <FilterSelect name="term" label="學期" value={data.term} options={termOptions} />
       <FilterSelect name="course" label="課程" value={data.courseCode} options={courseOptions} />
       <FilterSelect name="sort" label="分組排序" allLabel={null} value={data.oldestFirst ? 'oldest' : 'newest'} options={sortOptions} />
@@ -144,8 +144,8 @@
 <style>
   .instructor-page { --t-sm: max(13px, .75rem); --t-xs: max(13px, .6875rem); gap: var(--space-3); margin-block-start: calc(-1 * var(--space-3)); }
   .browse-head .browse-stack { gap: var(--space-1); }
-  .identity { display: flex; flex-wrap: wrap; align-items: center; gap: 0 var(--space-3); }
-  .identity:has(details[open]) { display: block; }
+  .identity { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 var(--space-3); }
+  .identity:has(details[open]) > details { flex-basis: 100%; }
   .instructor-stats :global(.tile) { min-block-size: 100%; padding-block: var(--space-2); }
   .rating-tile { display: grid; color: inherit; text-decoration: none; border-radius: var(--radius-panel); }
   .rating-tile :global(dt) { color: var(--brand-ink); }
@@ -165,7 +165,6 @@
   .back-to-top { display: inline-grid; align-items: center; justify-self: start; min-block-size: var(--target-min); }
   .instructor-units summary { min-block-size: var(--target-min); cursor: pointer; align-content: center; width: fit-content; color: var(--brand-ink); font-size: var(--t-base); }
   .instructor-units a { display: inline-grid; align-items: center; min-block-size: var(--target-min); min-inline-size: var(--target-min); }
-  .identity-note { color: var(--ink-2); }
   .instructor-filters :global(.field) { flex: 0 1 auto; }
   .instructor-filters :global(select[name='course']) { min-inline-size: 0; max-inline-size: min(50vw, 17rem); }
   @media (min-width: 40.0625rem) {

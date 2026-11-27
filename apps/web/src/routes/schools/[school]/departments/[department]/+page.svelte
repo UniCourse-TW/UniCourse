@@ -26,13 +26,15 @@
     { label: '未分類', count: data.breakdown.unknown, color: 'var(--axis)' }
   ].filter(({ count }) => count > 0));
   let termOptions = $derived([...new Set([...data.terms, data.term].filter((term) => term !== 'all'))].sort().reverse());
-  let semesterNav = $state<HTMLElement>();
-  $effect(() => {
-    const current = semesterNav?.querySelector(`[data-term="${data.term}"]`);
-    if (semesterNav && current) {
-      const left = current.getBoundingClientRect().left - semesterNav.getBoundingClientRect().left + semesterNav.scrollLeft;
-      semesterNav.scrollLeft = left > semesterNav.clientWidth - current.clientWidth - 12 ? left - 12 : 0;
+  let termsByYear = $derived.by(() => {
+    const years = new Map<string, string[]>();
+    for (const term of termOptions) {
+      const year = term.split('-')[0];
+      const terms = years.get(year);
+      if (terms) terms.push(term);
+      else years.set(year, [term]);
     }
+    return [...years];
   });
   let hasSearch = $derived(Boolean(data.query || page.url.searchParams.has('sort')));
   let orderOptions = $derived([
@@ -79,14 +81,33 @@
   <SchoolsSectionLinks sections={[{ id: 'offerings', label: '課表' }, { id: 'department-history', label: '歷年開課變化' }]} />
 
   <section class="browse-stack timetable" id="offerings" aria-labelledby="timetable-title">
-    <div class="semester-picker">
-      <span class="control-label" aria-hidden="true">學期</span>
-      <nav class="term-links semester-links" aria-label="切換學期" bind:this={semesterNav}>
-        {#each ['all', ...termOptions] as term (term)}
-          <a href={termHref(term)} data-term={term} aria-current={term === data.term ? 'true' : undefined}>{term === 'all' ? '所有學期' : term}</a>
+    <nav class="semester-picker" aria-label="切換學期">
+      <div class="term-links semester-links">
+        <span class="control-label" aria-hidden="true">學期</span>
+        {#each ['all', ...termOptions.slice(0, 6)] as term, index (term)}
+          <a href={termHref(term)} class:wide-term={index > 2} aria-current={term === data.term ? 'true' : undefined}>{term === 'all' ? '所有學期' : term}</a>
         {/each}
-      </nav>
-    </div>
+      </div>
+      {#if termOptions.length > 2}
+        {#key data.term}
+          <details class:wide-picker={termOptions.length <= 6}>
+            <summary>按學年 <span aria-hidden="true">⌄</span></summary>
+            <ul class="semester-years" aria-label="依學年切換學期" role="list">
+              {#each termsByYear as [year, terms] (year)}
+                <li>
+                  <strong>{year} 學年</strong>
+                  <div class="term-links">
+                    {#each [...terms].reverse() as term (term)}
+                      <a href={termHref(term)} aria-label={`${term} 學期`} aria-current={term === data.term ? 'true' : undefined}>{term}</a>
+                    {/each}
+                  </div>
+                </li>
+              {/each}
+            </ul>
+          </details>
+        {/key}
+      {/if}
+    </nav>
     <div>
       <SectionHeader title={`${termLabel}課表`} id="timetable-title" />
       <p class="browse-note"><strong>{displayValue(data.total)} 班</strong>{#if courseCount !== null} · {displayValue(courseCount)} 門課{/if}{#if data.complete} · {displayValue(data.teachers)} 位授課教師{/if}</p>
@@ -144,7 +165,7 @@
         {#if data.totalPages > 1}
           <div class="top-pagination"><Pagination url={new URL('#offerings', page.url)} page={data.page} totalPages={data.totalPages} label="課表上方分頁" /></div>
         {/if}
-        <p class="browse-note import-note">人數與名額為匯入時紀錄。{#if data.offerings.some(({ credits }) => credits === 0)}0 學分依校方資料列示。{/if}</p>
+        <p class="browse-note import-note">人數、名額及餘額為匯入紀錄。{#if data.offerings.some(({ credits }) => credits === 0)} <span>0 學分依校方資料。</span>{/if}</p>
       </div>
       <SchoolsOfferingTable offerings={data.offerings} ratings={data.ratings} mode="department" caption={`${termLabel}開課班次`} showTerm={data.term === 'all'} order={tableOrder} />
     {:else}
@@ -188,6 +209,7 @@
   .history { margin-block-start: var(--space-4); padding-block-start: var(--space-4); border-block-start: 1px solid var(--line); }
   .results-summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--space-2); }
   .import-note:not(:first-child) { padding-inline-start: var(--space-2); border-inline-start: 1px solid var(--line); }
+  .import-note span { white-space: nowrap; }
   .results-count { color: var(--ink-2); }
   .table-footer, .timetable-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-1) var(--space-2); }
   .back-link { display: inline-grid; align-items: center; justify-self: start; min-block-size: var(--target-min); font-size: var(--t-base); }
@@ -199,9 +221,15 @@
   .term-links a[aria-current] { background: var(--brand-wash); color: var(--brand-ink); font-weight: 750; box-shadow: inset 0 -2px var(--brand); }
   .control-label { flex: none; margin-inline-end: var(--space-1); color: var(--ink-2); font-size: var(--t-sm); font-weight: 650; }
   .term-links a:hover { background: var(--brand-wash); }
-  .semester-picker { display: flex; align-items: center; gap: .25rem; min-inline-size: 0; }
-  .semester-links { overflow-x: auto; scrollbar-width: thin; padding: 4px; margin: -4px; }
-  .semester-links a:first-child { margin-inline-end: var(--space-1); }
+  .semester-picker { display: flex; align-items: center; flex-wrap: wrap; gap: .25rem; min-inline-size: 0; }
+  .semester-picker details { position: relative; }
+  .semester-picker summary { display: flex; align-items: center; gap: .35rem; min-block-size: var(--target-min); padding-inline: .55rem; border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); color: var(--brand-ink); font-size: var(--t-sm); font-weight: 650; cursor: pointer; white-space: nowrap; }
+  .semester-picker summary::-webkit-details-marker { display: none; }
+  .semester-picker details[open] summary { background: var(--brand-wash); }
+  .semester-picker details[open] summary > span:last-child { transform: rotate(180deg); }
+  .semester-years { position: absolute; z-index: 4; inset-inline-end: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); inline-size: 15rem; gap: var(--space-2) var(--space-3); max-block-size: min(50vh, 22rem); overflow-y: auto; margin: var(--space-1) 0 0; padding: var(--space-2); list-style: none; background: var(--panel-raised); border: 1px solid var(--control-line); border-radius: var(--radius-panel); box-shadow: var(--shadow-sm); font-size: var(--t-sm); }
+  .semester-years li { display: grid; gap: .25rem; align-content: start; }
+  .semester-years .term-links { flex-wrap: wrap; }
   .timetable-search { display: flex; align-items: center; flex: 1 1 13rem; gap: var(--space-2); min-inline-size: 0; padding-inline-start: var(--space-2); border: 1px solid var(--control-line); border-radius: var(--radius-control); background: var(--panel-raised); font-size: var(--t-sm); font-weight: 650; color: var(--ink-2); }
   .timetable-search > span { white-space: nowrap; }
   .timetable-controls input[type='search'] { flex: 1; min-inline-size: 0; min-height: var(--target-min); padding-inline: var(--space-1) var(--space-2); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--ink); font: inherit; font-size: 1rem; font-weight: 400; }
@@ -221,6 +249,8 @@
     .timetable { grid-area: timetable; }
     .history { grid-area: history; }
     .department-page > .back-link { grid-area: top; }
+    .semester-picker .wide-picker { display: none; }
+    .semester-years { inset-inline: 0 auto; }
   }
   @media (min-width: 64rem) {
     .timetable-controls { flex: 1 1 32rem; }
@@ -232,6 +262,10 @@
     .results-summary { align-items: center; justify-content: space-between; gap: var(--space-1) var(--space-2); }
     .results-summary .import-note { flex-basis: 100%; padding-inline-start: 0; border-inline-start: 0; }
     .term-links a { padding-inline: .5rem; }
+    .semester-links .wide-term { display: none; }
+  }
+  @media (max-width: 22rem) {
+    .semester-links .control-label { display: none; }
   }
   @media (max-width: 39rem) {
     .department-page :global(:is(#department-top, #offerings, #department-history)) { scroll-margin-block-start: 3rem; }
